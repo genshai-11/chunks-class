@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "chunks-voicecloning-genshai"
+  },
+  "targets": {
+    "chunks-voicecloning-genshai": {
+      "hosting": {
+        "chunks-classroom": [
+          "chunks-classroom"
+        ]
+      }
+    }
   }
 }

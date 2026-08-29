@@ -2,26 +2,30 @@
   "entities": {
     "Course": {
       "title": "Course",
-      "description": "Master course curriculum catalog for English Chunks training",
+      "description": "Dynamic course curriculum catalog supporting arbitrary courses and levels",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "level_code": { "type": "string", "enum": ["LEVEL_A", "LEVEL_B"] },
+        "level_code": { "type": "string", "pattern": "^[A-Z0-9_-]+$" },
         "title": { "type": "string" },
         "description": { "type": "string" },
         "total_days": { "type": "number" },
         "total_chunks": { "type": "number" },
+        "default_sessions_count": { "type": "number", "default": 15 },
         "source": { "type": "string" },
-        "is_active": { "type": "boolean" }
+        "is_active": { "type": "boolean" },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" }
       },
       "required": ["id", "level_code", "title", "total_days", "total_chunks"]
     },
     "LessonDoc": {
       "title": "LessonDoc",
-      "description": "15-day lesson containing chunk collections, prosody notations, and translations",
+      "description": "Curriculum lesson containing chunks, prosody notations, and translations",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
+        "course_id": { "type": "string" },
         "level_code": { "type": "string" },
         "day_number": { "type": "number" },
         "lesson_title": { "type": "string" },
@@ -35,7 +39,7 @@
     },
     "Cohort": {
       "title": "Cohort",
-      "description": "15-session cohort class schedule and audio configuration",
+      "description": "Cohort class schedule and audio configuration with dynamic session count",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -46,23 +50,24 @@
         "start_date": { "type": "string" },
         "total_sessions": { "type": "number" },
         "schedule_pattern": { "type": "object" },
+        "audio_settings": { "type": "object" },
         "sessions": { "type": "array" }
       },
-      "required": ["id", "title", "level_code", "start_date", "total_sessions", "sessions"]
+      "required": ["id", "title", "level_code", "course_id", "start_date", "total_sessions", "sessions"]
     }
   },
   "firestore": {
     "/courses/{courseId}": {
       "schema": "Course",
-      "description": "Available courses catalog"
+      "description": "Master catalog of dynamic courses"
     },
     "/lessons/{lessonId}": {
       "schema": "LessonDoc",
-      "description": "Curriculum lessons with all chunks and prosody metadata"
+      "description": "Curriculum lessons with chunks and audio metadata"
     },
     "/cohorts/{cohortId}": {
       "schema": "Cohort",
-      "description": "Active class cohorts and 15-session schedules"
+      "description": "Active class cohorts with dynamic session scheduling"
     }
   }
 }

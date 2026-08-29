@@ -1,51 +1,44 @@
 import { LessonDoc, ChunkItem, CourseLevel } from '../types';
-import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
-import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
-import { CURRICULUM_CATALOG_LEVEL_B } from '../data/curriculumData';
+import { getLessonById as getFirestoreLessonById, getLessonsByLevel, getAllLessons } from '../services/firestoreService';
 
 export const lessonsApi = {
   /**
-   * Get all lessons for a curriculum level
+   * Get all lessons for any dynamic course or level code
    */
-  getLessonsByLevel(level: CourseLevel): LessonDoc[] {
-    return level === 'LEVEL_A' ? CURRICULUM_CATALOG_LEVEL_A : CURRICULUM_CATALOG_LEVEL_B;
+  async getLessonsByLevel(courseIdOrLevel: CourseLevel | string): Promise<LessonDoc[]> {
+    return await getLessonsByLevel(courseIdOrLevel);
   },
 
   /**
-   * Get a single lesson by ID with Firestore live fetch and fallback
+   * Get a single lesson by ID
    */
   async getLesson(lessonId: string): Promise<LessonDoc | null> {
-    try {
-      const live = await getFirestoreLessonById(lessonId);
-      if (live && live.chunks && live.chunks.length > 0) return live;
-    } catch {}
-
-    const all = [...CURRICULUM_CATALOG_LEVEL_A, ...CURRICULUM_CATALOG_LEVEL_B];
-    return all.find(l => l.id === lessonId) || null;
+    return await getFirestoreLessonById(lessonId);
   },
 
   /**
-   * Search chunks across curriculum
+   * Search chunks across any or all courses dynamically
    */
-  searchChunks(query: string, level?: CourseLevel): { chunk: ChunkItem; lesson: LessonDoc }[] {
-    const q = query.trim().toLowerCase();
+  async searchChunks(queryStr: string, courseIdOrLevel?: CourseLevel | string): Promise<{ chunk: ChunkItem; lesson: LessonDoc }[]> {
+    const q = queryStr.trim().toLowerCase();
     if (!q) return [];
 
-    const lessons = level 
-      ? this.getLessonsByLevel(level) 
-      : [...CURRICULUM_CATALOG_LEVEL_A, ...CURRICULUM_CATALOG_LEVEL_B];
+    const lessons = courseIdOrLevel 
+      ? await this.getLessonsByLevel(courseIdOrLevel) 
+      : await getAllLessons();
 
     const results: { chunk: ChunkItem; lesson: LessonDoc }[] = [];
 
     for (const lesson of lessons) {
+      if (!lesson.chunks) continue;
       for (const chunk of lesson.chunks) {
         if (
-          chunk.english.toLowerCase().includes(q) ||
-          chunk.vietnamese.toLowerCase().includes(q) ||
+          chunk.english?.toLowerCase().includes(q) ||
+          chunk.vietnamese?.toLowerCase().includes(q) ||
           (chunk.speaker && chunk.speaker.toLowerCase().includes(q))
         ) {
           results.push({ chunk, lesson });
-          if (results.length >= 100) return results;
+          if (results.length >= 150) return results;
         }
       }
     }

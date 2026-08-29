@@ -1,6 +1,6 @@
-import { ClassSession, Cohort, CourseLevel } from '../types';
-import { CURRICULUM_CATALOG_LEVEL_B } from '../data/curriculumData';
-import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
+import { ClassSession, Cohort, CourseLevel, LessonDoc } from '../types';
+import { getLessonsByLevel } from '../services/firestoreService';
+import { curriculumRegistry } from '../services/curriculumRegistry';
 
 const WEEKDAY_MAP: Record<string, number> = {
   "Mon": 1, "Tue": 2, "Wed": 3, "Thu": 4, "Fri": 5, "Sat": 6, "Sun": 0
@@ -20,9 +20,101 @@ export const VIETNAMESE_WEEKDAY_MAP: Record<string, string> = {
   "Sun": "Sun"
 };
 
+export interface CalculateSessionParams {
+  courseIdOrLevel: CourseLevel | string;
+  startDateStr?: string;
+  daysOfWeek?: string[];
+  startTime?: string;
+  endTime?: string;
+  totalSessions?: number;
+  customLessons?: LessonDoc[];
+  holidays?: string[];
+}
+
 /**
- * Robust, timezone-safe calculation of 15 class sessions.
- * Maps Days 1-15 1-to-1 to Sessions 1-15.
+ * Universal, Timezone-Safe Dynamic Session Generator.
+ * Handles ANY number of sessions (5, 10, 15, 20, 30+), ANY course ID, and arbitrary curriculum lengths.
+ */
+export async function calculateSessions(params: CalculateSessionParams): Promise<ClassSession[]> {
+  const {
+    courseIdOrLevel,
+    startDateStr = '',
+    daysOfWeek = ["Mon", "Wed", "Fri"],
+    startTime = "19:30",
+    endTime = "21:00",
+    holidays = []
+  } = params;
+
+  let catalog: LessonDoc[] = params.customLessons || [];
+  if (catalog.length === 0) {
+    catalog = await getLessonsByLevel(courseIdOrLevel);
+  }
+
+  // Filter out Day 0 (Word List) if day_number > 0 exists
+  const drillLessons = catalog.filter(l => l.day_number > 0);
+  const activeLessons = drillLessons.length > 0 ? drillLessons : catalog;
+
+  const targetSessionsCount = params.totalSessions || (activeLessons.length > 0 ? activeLessons.length : 15);
+
+  let year: number, month: number, day: number;
+  if (!startDateStr) {
+    const today = new Date();
+    year = today.getFullYear();
+    month = today.getMonth() + 1;
+    day = today.getDate();
+  } else {
+    const parts = startDateStr.split('-').map(Number);
+    year = parts[0];
+    month = parts[1];
+    day = parts[2];
+  }
+
+  // Noon local time avoids UTC day-shifting
+  let current = new Date(year, month - 1, day, 12, 0, 0);
+  const targetDays = new Set((daysOfWeek.length > 0 ? daysOfWeek : ["Mon", "Wed", "Fri"]).map(d => WEEKDAY_MAP[d]));
+  const sessions: ClassSession[] = [];
+  let count = 1;
+  let safetyLoop = 0;
+  const maxSafetyLoop = 730;
+
+  while (count <= targetSessionsCount && safetyLoop < maxSafetyLoop) {
+    safetyLoop++;
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, '0');
+    const d = String(current.getDate()).padStart(2, '0');
+    const isoDate = `${y}-${m}-${d}`;
+    const dayOfWeek = current.getDay();
+
+    if (targetDays.has(dayOfWeek) && !holidays.includes(isoDate)) {
+      const meta = activeLessons[count - 1] || {
+        day_number: count,
+        id: `${String(courseIdOrLevel).toLowerCase()}_day_${count}`,
+        lesson_title: `Day ${count} - Interactive Chunk Drill`,
+        lesson_type: "Standard Lesson"
+      };
+
+      sessions.push({
+        session_number: count,
+        scheduled_date: isoDate,
+        day_of_week: INT_TO_DAY[dayOfWeek],
+        start_time: startTime,
+        end_time: endTime,
+        day_number: meta.day_number ?? count,
+        lesson_id: meta.id,
+        lesson_title: meta.lesson_title,
+        lesson_type: meta.lesson_type || 'Standard Lesson',
+        status: count === 1 ? 'in_progress' : 'scheduled'
+      });
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return sessions;
+}
+
+/**
+ * Synchronous 15-session recurrence generator with dynamic registry lookup
  */
 export function calculate15Sessions(
   levelCode: CourseLevel = "LEVEL_B",
@@ -49,7 +141,6 @@ export function calculate15Sessions(
     day = parts[2];
   }
 
-  // Create date at local noon (12:00:00) to be completely immune to DST / UTC midnight shifts
   let current = new Date(year, month - 1, day, 12, 0, 0);
   const targetDays = new Set(daysOfWeek.map(d => WEEKDAY_MAP[d]));
   const sessions: ClassSession[] = [];
@@ -57,10 +148,7 @@ export function calculate15Sessions(
   let safetyLoop = 0;
   const maxSafetyLoop = 365;
 
-  // Retrieve standard 15 classroom lessons (Excluding Level A Day 0 Word List)
-  const catalog = levelCode === 'LEVEL_A'
-    ? CURRICULUM_CATALOG_LEVEL_A.filter(l => l.day_number > 0)
-    : CURRICULUM_CATALOG_LEVEL_B;
+  const catalog = curriculumRegistry.getLessons(levelCode).filter(l => l.day_number > 0);
 
   while (count <= 15 && safetyLoop < maxSafetyLoop) {
     safetyLoop++;
@@ -73,7 +161,7 @@ export function calculate15Sessions(
     if (targetDays.has(dayOfWeek) && !holidays.includes(isoDate)) {
       const meta = catalog[count - 1] || {
         day_number: count,
-        id: `${levelCode.toLowerCase()}_day_${count}`,
+        id: `${String(levelCode).toLowerCase()}_day_${count}`,
         lesson_title: `Day ${count} - Standard Chunk Drill Session`,
         lesson_type: "Standard Lesson"
       };
@@ -113,7 +201,7 @@ export function createDefaultCohort(
     id: "cohort_" + Date.now(),
     title,
     level_code: levelCode,
-    course_id: levelCode === 'LEVEL_A' ? 'course_level_a' : 'course_level_b',
+    course_id: String(levelCode).toLowerCase().includes('a') ? 'course_level_a' : 'course_level_b',
     teacher_id: "teacher_genshai",
     start_date: startDate,
     schedule_pattern: {
@@ -125,6 +213,8 @@ export function createDefaultCohort(
     total_sessions: 15,
     sessions,
     audio_settings: {
+      voice_profile_primary: "aura-asteria-en",
+      voice_profile_secondary: "vi-VN-Neural2-A",
       voice_profile_en: "aura-asteria-en",
       voice_profile_vi: "vi-VN-Neural2-A",
       language_mode: "EN_THEN_VI",
@@ -154,7 +244,7 @@ export function exportScheduleAsICS(cohort: Cohort): string {
 
     icsContent.push(
       "BEGIN:VEVENT",
-      `SUMMARY:[CHUNKS Session ${s.session_number}/15] ${s.lesson_title}`,
+      `SUMMARY:[CHUNKS Session ${s.session_number}/${cohort.total_sessions || 15}] ${s.lesson_title}`,
       `DESCRIPTION:Cohort: ${cohort.title}\\nLesson: ${s.lesson_title}\\nType: ${s.lesson_type}`,
       `DTSTART:${cleanDate}T${cleanStart}`,
       `DTEND:${cleanDate}T${cleanEnd}`,

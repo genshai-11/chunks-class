@@ -12,9 +12,7 @@ import {
   where 
 } from 'firebase/firestore';
 import { Course, Cohort, LessonDoc, ChunkItem, CourseLevel } from '../types';
-import { CURRICULUM_CATALOG_LEVEL_B } from '../data/curriculumData';
-import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
-import { calculate15Sessions } from '../utils/scheduler';
+import { curriculumRegistry } from './curriculumRegistry';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4",
@@ -28,89 +26,10 @@ const firebaseConfig = {
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
-// Master Course Catalog Default Seed
-export const DEFAULT_COURSES: Course[] = [
-  {
-    id: "course_level_a",
-    level_code: "LEVEL_A",
-    title: "Level A - Foundation English Chunks",
-    description: "16 Lessons (Word List + Day 1..15) with 4,480 essential conversational and survival chunks.",
-    total_days: 16,
-    total_chunks: 4480,
-    source: "Genshai Foundation Curriculum (ERES Design)",
-    is_active: true
-  },
-  {
-    id: "course_level_b",
-    level_code: "LEVEL_B",
-    title: "Level B - Spoken Chunks Masterclass",
-    description: "14 Advanced Masterclasses (Day 2..15) with 3,371 real-world business, social & spoken mastery chunks.",
-    total_days: 14,
-    total_chunks: 3371,
-    source: "Genshai Masterclass Level B (14 PDF Curriculum)",
-    is_active: true
-  }
-];
-
-// Initial default cohort seed
-export const DEFAULT_COHORTS: Cohort[] = [
-  {
-    id: "cohort_level_a_k24",
-    title: "Level A - Evening Cohort K24 (Mon-Wed-Fri)",
-    level_code: "LEVEL_A",
-    course_id: "course_level_a",
-    teacher_id: "teacher_genshai",
-    start_date: "2026-08-01",
-    schedule_pattern: {
-      days_of_week: ["Mon", "Wed", "Fri"],
-      start_time: "19:30",
-      end_time: "21:00",
-      duration_minutes: 90
-    },
-    total_sessions: 15,
-    sessions: calculate15Sessions("LEVEL_A", "2026-08-01", ["Mon", "Wed", "Fri"], "19:30", "21:00"),
-    audio_settings: {
-      voice_profile_en: 'en-US-Journey-F',
-      voice_profile_vi: 'vi-VN-Neural2-A',
-      language_mode: 'EN_THEN_VI',
-      auto_advance_delay_sec: 0,
-      default_speed: 1.0,
-      repeat_count: 1
-    },
-    created_at: "2026-08-01T00:00:00Z",
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "cohort_level_b_k24",
-    title: "Level B - Spoken Masterclass K24 (Tue-Thu-Sat)",
-    level_code: "LEVEL_B",
-    course_id: "course_level_b",
-    teacher_id: "teacher_genshai",
-    start_date: "2026-08-02",
-    schedule_pattern: {
-      days_of_week: ["Tue", "Thu", "Sat"],
-      start_time: "19:30",
-      end_time: "21:00",
-      duration_minutes: 90
-    },
-    total_sessions: 15,
-    sessions: calculate15Sessions("LEVEL_B", "2026-08-02", ["Tue", "Thu", "Sat"], "19:30", "21:00"),
-    audio_settings: {
-      voice_profile_en: 'en-US-Journey-F',
-      voice_profile_vi: 'vi-VN-Neural2-A',
-      language_mode: 'EN_THEN_VI',
-      auto_advance_delay_sec: 0,
-      default_speed: 1.0,
-      repeat_count: 1
-    },
-    created_at: "2026-08-02T00:00:00Z",
-    updated_at: new Date().toISOString()
-  }
-];
-
 export interface DatabaseStatus {
   isConnected: boolean;
   isSynced: boolean;
+  totalCoursesInDb: number;
   totalLessonsInDb: number;
   totalCohortsInDb: number;
   lastChecked: string;
@@ -118,27 +37,42 @@ export interface DatabaseStatus {
   error?: string | null;
 }
 
-// 1. Fetch All Courses from Firestore
+// --------------------------------------------------------------------------
+// 1. Fetch All Courses Dynamically
+// --------------------------------------------------------------------------
 export async function getCourses(): Promise<Course[]> {
   try {
     const snapshot = await getDocs(collection(db, 'courses'));
     if (!snapshot.empty) {
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+      const courses = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Course));
+      return courses;
     }
   } catch (err) {
-    console.warn('[Firestore] getCourses fallback:', err);
+    console.warn('[Firestore] getCourses fallback to registry:', err);
   }
-  return DEFAULT_COURSES;
+
+  return curriculumRegistry.getAllCourses();
 }
 
-// 2. Fetch Cohorts by Course Level
-export async function getCohorts(levelCode?: string): Promise<Cohort[]> {
+// --------------------------------------------------------------------------
+// 2. Fetch Cohorts by Course Level or Course ID
+// --------------------------------------------------------------------------
+export async function getCohorts(filterIdentifier?: string): Promise<Cohort[]> {
   try {
     const cohortsRef = collection(db, 'cohorts');
-    const q = levelCode ? query(cohortsRef, where('level_code', '==', levelCode)) : cohortsRef;
-    const snapshot = await getDocs(q);
+    let snapshot;
+    if (filterIdentifier) {
+      const isLevelCode = filterIdentifier.startsWith('LEVEL_') || filterIdentifier.includes('_');
+      const q = isLevelCode 
+        ? query(cohortsRef, where('level_code', '==', filterIdentifier))
+        : query(cohortsRef, where('course_id', '==', filterIdentifier));
+      snapshot = await getDocs(q);
+    } else {
+      snapshot = await getDocs(cohortsRef);
+    }
+
     if (!snapshot.empty) {
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cohort));
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Cohort));
     }
   } catch (err) {
     console.warn('[Firestore] getCohorts fallback:', err);
@@ -149,16 +83,19 @@ export async function getCohorts(levelCode?: string): Promise<Cohort[]> {
     const saved = localStorage.getItem('chunks_firestore_synced_cohorts');
     if (saved) {
       const parsed: Cohort[] = JSON.parse(saved);
-      return levelCode ? parsed.filter(c => c.level_code === levelCode) : parsed;
+      return filterIdentifier 
+        ? parsed.filter(c => c.level_code === filterIdentifier || c.course_id === filterIdentifier) 
+        : parsed;
     }
   } catch {}
 
-  return levelCode ? DEFAULT_COHORTS.filter(c => c.level_code === levelCode) : DEFAULT_COHORTS;
+  return [];
 }
 
-// 3. Fetch Lesson By ID (CRITICAL: Directly extracts single document .chunks array)
-export async function getLessonById(lessonId: string): Promise<LessonDoc> {
-  console.log(`[Firestore] Fetching lesson: ${lessonId}`);
+// --------------------------------------------------------------------------
+// 3. Fetch Lesson By ID (Dynamic fallback without hardcoded prefix heuristics)
+// --------------------------------------------------------------------------
+export async function getLessonById(lessonId: string): Promise<LessonDoc | null> {
   try {
     const docRef = doc(db, 'lessons', lessonId);
     const snapshot = await getDoc(docRef);
@@ -166,12 +103,12 @@ export async function getLessonById(lessonId: string): Promise<LessonDoc> {
     if (snapshot.exists()) {
       const data = snapshot.data();
       const chunksArray: ChunkItem[] = Array.isArray(data.chunks) ? data.chunks : [];
-      console.log(`[Firestore] Successfully loaded ${lessonId}: ${chunksArray.length} chunks.`);
 
       return {
         id: snapshot.id,
-        level_code: data.level_code || (lessonId.startsWith('level_b') ? 'LEVEL_B' : 'LEVEL_A'),
-        day_number: data.day_number || 1,
+        course_id: data.course_id,
+        level_code: data.level_code || 'CUSTOM',
+        day_number: data.day_number ?? 0,
         lesson_title: data.lesson_title || snapshot.id,
         lesson_type: data.lesson_type || 'Standard Lesson',
         total_chunks: chunksArray.length,
@@ -184,31 +121,34 @@ export async function getLessonById(lessonId: string): Promise<LessonDoc> {
     console.warn(`[Firestore] getLessonById notice for ${lessonId}:`, err);
   }
 
-  // Fallback to local catalog if doc doesn't exist yet in Firestore
-  if (lessonId.startsWith('level_a')) {
-    const foundA = CURRICULUM_CATALOG_LEVEL_A.find(l => l.id === lessonId);
-    if (foundA) return foundA;
-  }
-  const foundB = CURRICULUM_CATALOG_LEVEL_B.find(l => l.id === lessonId);
-  return foundB || CURRICULUM_CATALOG_LEVEL_B[0];
+  // Fallback to dynamic curriculum registry
+  return curriculumRegistry.getLessonById(lessonId);
 }
 
-// 4. Fetch All Lessons for a Course Level
-export async function getLessonsByLevel(levelCode: 'LEVEL_A' | 'LEVEL_B'): Promise<LessonDoc[]> {
+// --------------------------------------------------------------------------
+// 4. Fetch All Lessons for ANY Course / Level
+// --------------------------------------------------------------------------
+export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string): Promise<LessonDoc[]> {
   try {
     const lessonsRef = collection(db, 'lessons');
-    const q = query(lessonsRef, where('level_code', '==', levelCode));
-    const snapshot = await getDocs(q);
+    let q = query(lessonsRef, where('level_code', '==', courseIdOrLevel));
+    let snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      q = query(lessonsRef, where('course_id', '==', courseIdOrLevel));
+      snapshot = await getDocs(q);
+    }
     
     if (!snapshot.empty) {
-      return snapshot.docs.map(doc => {
-        const data = doc.data();
+      return snapshot.docs.map(d => {
+        const data = d.data();
         const chunks = Array.isArray(data.chunks) ? data.chunks : [];
         return {
-          id: doc.id,
-          level_code: data.level_code || levelCode,
-          day_number: data.day_number || 0,
-          lesson_title: data.lesson_title || doc.id,
+          id: d.id,
+          course_id: data.course_id,
+          level_code: data.level_code || courseIdOrLevel,
+          day_number: data.day_number ?? 0,
+          lesson_title: data.lesson_title || d.id,
           lesson_type: data.lesson_type || 'Standard Lesson',
           total_chunks: chunks.length,
           categories: data.categories || [],
@@ -218,62 +158,47 @@ export async function getLessonsByLevel(levelCode: 'LEVEL_A' | 'LEVEL_B'): Promi
       }).sort((a, b) => a.day_number - b.day_number);
     }
   } catch (err) {
-    console.warn(`[Firestore] getLessonsByLevel warning for ${levelCode}:`, err);
+    console.warn(`[Firestore] getLessonsByLevel notice for ${courseIdOrLevel}:`, err);
   }
 
-  return levelCode === 'LEVEL_A' ? CURRICULUM_CATALOG_LEVEL_A : CURRICULUM_CATALOG_LEVEL_B;
+  // Fallback to in-memory registry
+  return curriculumRegistry.getLessons(courseIdOrLevel);
 }
 
-/**
- * Fetch all lessons (Level A or Level B)
- */
-export async function getAllLessons(levelCode?: CourseLevel | string): Promise<LessonDoc[]> {
-  const code: 'LEVEL_A' | 'LEVEL_B' = levelCode === 'LEVEL_A' ? 'LEVEL_A' : 'LEVEL_B';
-  return getLessonsByLevel(code);
+export async function getAllLessons(courseIdOrLevel?: CourseLevel | string): Promise<LessonDoc[]> {
+  if (courseIdOrLevel) {
+    return getLessonsByLevel(courseIdOrLevel);
+  }
+  try {
+    const snapshot = await getDocs(collection(db, 'lessons'));
+    if (!snapshot.empty) {
+      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LessonDoc));
+    }
+  } catch {}
+  return curriculumRegistry.getAllLessons();
 }
 
-/**
- * Save / Update a lesson document in Firestore & Local storage
- */
+// --------------------------------------------------------------------------
+// 5. Save / Update Lesson & Chunks
+// --------------------------------------------------------------------------
 export async function saveLesson(lesson: LessonDoc): Promise<void> {
   try {
     const docRef = doc(db, 'lessons', lesson.id);
     await setDoc(docRef, lesson, { merge: true });
-    console.log(`[Firestore] Saved lesson ${lesson.id} with ${lesson.chunks.length} chunks.`);
   } catch (e) {
     console.warn(`[Firestore] saveLesson warning for ${lesson.id}:`, e);
   }
-
-  try {
-    const localKey = lesson.level_code === 'LEVEL_A' ? 'chunks_lessons_level_a' : 'chunks_lessons_level_b';
-    const existing = await getAllLessons(lesson.level_code as CourseLevel);
-    const index = existing.findIndex(l => l.id === lesson.id);
-    if (index >= 0) {
-      existing[index] = lesson;
-    } else {
-      existing.push(lesson);
-    }
-    localStorage.setItem(localKey, JSON.stringify(existing));
-  } catch {}
 }
 
-/**
- * Add or Update an individual chunk inside the lesson's .chunks array
- */
 export async function addOrUpdateChunk(lessonId: string, chunk: ChunkItem): Promise<LessonDoc | null> {
   const lesson = await getLessonById(lessonId);
   if (!lesson) return null;
 
   const chunks = [...lesson.chunks];
   const chunkIndex = chunks.findIndex(c => c.chunk_id === chunk.chunk_id);
-  
-  if (chunkIndex >= 0) {
-    chunks[chunkIndex] = chunk;
-  } else {
-    chunks.push(chunk);
-  }
+  if (chunkIndex >= 0) chunks[chunkIndex] = chunk;
+  else chunks.push(chunk);
 
-  // Update categories and count
   const distinctCategories = Array.from(new Set(chunks.map(c => c.category)));
   const updatedLesson: LessonDoc = {
     ...lesson,
@@ -286,9 +211,6 @@ export async function addOrUpdateChunk(lessonId: string, chunk: ChunkItem): Prom
   return updatedLesson;
 }
 
-/**
- * Delete a chunk from a lesson's .chunks array
- */
 export async function deleteChunk(lessonId: string, chunkId: string): Promise<LessonDoc | null> {
   const lesson = await getLessonById(lessonId);
   if (!lesson) return null;
@@ -307,9 +229,9 @@ export async function deleteChunk(lessonId: string, chunkId: string): Promise<Le
   return updatedLesson;
 }
 
-/**
- * Save cohort to Firestore
- */
+// --------------------------------------------------------------------------
+// 6. Cohort CRUD Operations
+// --------------------------------------------------------------------------
 export async function saveCohort(cohort: Cohort): Promise<void> {
   try {
     const docRef = doc(db, 'cohorts', cohort.id);
@@ -320,20 +242,14 @@ export async function saveCohort(cohort: Cohort): Promise<void> {
 
   try {
     const saved = localStorage.getItem('chunks_firestore_synced_cohorts');
-    let cohorts: Cohort[] = saved ? JSON.parse(saved) : [...DEFAULT_COHORTS];
+    let cohorts: Cohort[] = saved ? JSON.parse(saved) : [];
     const index = cohorts.findIndex(c => c.id === cohort.id);
-    if (index >= 0) {
-      cohorts[index] = cohort;
-    } else {
-      cohorts.unshift(cohort);
-    }
+    if (index >= 0) cohorts[index] = cohort;
+    else cohorts.unshift(cohort);
     localStorage.setItem('chunks_firestore_synced_cohorts', JSON.stringify(cohorts));
   } catch {}
 }
 
-/**
- * Delete cohort from Firestore
- */
 export async function deleteFirestoreCohort(cohortId: string): Promise<void> {
   try {
     await deleteDoc(doc(db, 'cohorts', cohortId));
@@ -344,19 +260,19 @@ export async function deleteFirestoreCohort(cohortId: string): Promise<void> {
     const saved = localStorage.getItem('chunks_firestore_synced_cohorts');
     if (saved) {
       const cohorts: Cohort[] = JSON.parse(saved);
-      const filtered = cohorts.filter(c => c.id !== cohortId);
-      localStorage.setItem('chunks_firestore_synced_cohorts', JSON.stringify(filtered));
+      localStorage.setItem('chunks_firestore_synced_cohorts', JSON.stringify(cohorts.filter(c => c.id !== cohortId)));
     }
   } catch {}
 }
 
-/**
- * Check health & live status of Firestore database connection
- */
+// --------------------------------------------------------------------------
+// 7. Dynamic Health Check
+// --------------------------------------------------------------------------
 export async function checkFirestoreHealth(): Promise<DatabaseStatus> {
   const status: DatabaseStatus = {
     isConnected: false,
     isSynced: false,
+    totalCoursesInDb: 0,
     totalLessonsInDb: 0,
     totalCohortsInDb: 0,
     lastChecked: new Date().toISOString(),
@@ -365,9 +281,9 @@ export async function checkFirestoreHealth(): Promise<DatabaseStatus> {
   };
 
   try {
-    const testDocRef = doc(db, 'courses', 'course_level_b');
-    await getDoc(testDocRef);
+    const coursesSnap = await getDocs(collection(db, 'courses'));
     status.isConnected = true;
+    status.totalCoursesInDb = coursesSnap.size;
 
     const lessonsSnap = await getDocs(collection(db, 'lessons'));
     status.totalLessonsInDb = lessonsSnap.size;
@@ -375,7 +291,7 @@ export async function checkFirestoreHealth(): Promise<DatabaseStatus> {
     const cohortsSnap = await getDocs(collection(db, 'cohorts'));
     status.totalCohortsInDb = cohortsSnap.size;
 
-    status.isSynced = status.totalLessonsInDb >= 15;
+    status.isSynced = status.totalLessonsInDb > 0 && status.totalCoursesInDb > 0;
     return status;
   } catch (err: any) {
     status.isConnected = false;
@@ -384,40 +300,75 @@ export async function checkFirestoreHealth(): Promise<DatabaseStatus> {
   }
 }
 
-/**
- * Push entire curriculum catalog (Level A & Level B) with full .chunks arrays directly to Firestore
- */
+export const DEFAULT_COURSES: Course[] = curriculumRegistry.getAllCourses();
+
+// --------------------------------------------------------------------------
+// 8. Safe Chunked Batch Sync (Prevents Firestore 500-operation limit breach)
+// --------------------------------------------------------------------------
 export async function syncAllCurriculumToFirestore(
+  onProgressOrCourses?: ((current: number, total: number, message: string) => void) | Course[],
+  customLessons?: LessonDoc[],
   onProgress?: (current: number, total: number, message: string) => void
 ): Promise<{ success: boolean; totalLessons: number; totalChunks: number; error?: string }> {
   try {
-    const allLessons = [...CURRICULUM_CATALOG_LEVEL_A, ...CURRICULUM_CATALOG_LEVEL_B];
-    const total = allLessons.length + DEFAULT_COURSES.length + DEFAULT_COHORTS.length;
-    const batch = writeBatch(db);
+    let coursesToSync: Course[];
+    let lessonsToSync: LessonDoc[];
+    let progressCb: ((current: number, total: number, message: string) => void) | undefined;
+
+    if (typeof onProgressOrCourses === 'function') {
+      progressCb = onProgressOrCourses;
+      coursesToSync = curriculumRegistry.getAllCourses();
+      lessonsToSync = curriculumRegistry.getAllLessons();
+    } else {
+      coursesToSync = onProgressOrCourses || curriculumRegistry.getAllCourses();
+      lessonsToSync = customLessons || curriculumRegistry.getAllLessons();
+      progressCb = onProgress;
+    }
+
+    const totalOps = coursesToSync.length + lessonsToSync.length;
+    let processedOps = 0;
     let totalChunkCount = 0;
 
-    onProgress?.(1, total, 'Preparing courses & cohorts batch...');
-    for (const course of DEFAULT_COURSES) {
+    const BATCH_SIZE = 400; // Safe threshold under Firestore 500 limit
+
+    // 1. Sync Courses
+    let batch = writeBatch(db);
+    let countInBatch = 0;
+
+    for (const course of coursesToSync) {
       batch.set(doc(db, 'courses', course.id), course, { merge: true });
+      countInBatch++;
+      processedOps++;
+      if (countInBatch >= BATCH_SIZE) {
+        await batch.commit();
+        batch = writeBatch(db);
+        countInBatch = 0;
+        progressCb?.(processedOps, totalOps, `Synced ${processedOps}/${totalOps} items...`);
+      }
     }
 
-    for (const cohort of DEFAULT_COHORTS) {
-      batch.set(doc(db, 'cohorts', cohort.id), cohort, { merge: true });
-    }
-
-    onProgress?.(5, total, 'Preparing 30 lessons (7,851 chunks) batch...');
-    for (const lesson of allLessons) {
-      totalChunkCount += lesson.chunks.length;
+    // 2. Sync Lessons
+    for (const lesson of lessonsToSync) {
+      totalChunkCount += (lesson.chunks?.length || 0);
       batch.set(doc(db, 'lessons', lesson.id), lesson, { merge: true });
+      countInBatch++;
+      processedOps++;
+      if (countInBatch >= BATCH_SIZE) {
+        await batch.commit();
+        batch = writeBatch(db);
+        countInBatch = 0;
+        progressCb?.(processedOps, totalOps, `Synced ${processedOps}/${totalOps} items...`);
+      }
     }
 
-    onProgress?.(total - 1, total, 'Committing atomic batch writes to Firestore...');
-    await batch.commit();
+    if (countInBatch > 0) {
+      await batch.commit();
+    }
 
-    onProgress?.(total, total, `Đồng bộ thành công ${total} documents và ${totalChunkCount} chunks lên Firestore!`);
+    progressCb?.(totalOps, totalOps, `Đồng bộ hoàn tất ${lessonsToSync.length} lessons (${totalChunkCount} chunks) cho ${coursesToSync.length} courses!`);
     return {
       success: true,
-      totalLessons: allLessons.length,
+      totalLessons: lessonsToSync.length,
       totalChunks: totalChunkCount
     };
   } catch (err: any) {
@@ -430,7 +381,7 @@ export async function syncAllCurriculumToFirestore(
   }
 }
 
-// Aliases for compatibility
+// Aliases for backward compatibility
 export const saveLessonToFirestore = saveLesson;
 export const getFirestoreCohorts = getCohorts;
 export const saveFirestoreCohort = saveCohort;

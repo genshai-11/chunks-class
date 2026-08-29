@@ -1,4 +1,5 @@
 import { deepgramTts, DEEPGRAM_AURA_VOICES } from './deepgramTtsService';
+import { LanguageMode } from '../types';
 
 export interface VoiceOption {
   id: string;
@@ -344,7 +345,7 @@ class AudioPlayService {
   async playBilingualSequence(
     englishText: string,
     vietnameseText: string,
-    mode: 'EN_ONLY' | 'VI_ONLY' | 'EN_THEN_VI' | 'VI_THEN_EN' = 'EN_THEN_VI',
+    mode: LanguageMode = 'EN_THEN_VI',
     englishAudioUrl?: string | null,
     voiceEn: string = 'aura-asteria-en',
     voiceVi: string = 'vi-VN-Neural2-A',
