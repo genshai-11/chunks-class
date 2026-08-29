@@ -38,7 +38,10 @@ export interface ChunkItem {
   ipa?: string | null;
   source_file?: string;
   source_page?: number;
+  source_sheet?: string;
+  source_row?: number;
   notes?: string;
+  [key: string]: any;
 }
 
 export interface LessonDoc {
@@ -51,7 +54,9 @@ export interface LessonDoc {
   total_chunks: number;
   categories: string[];
   chunks: ChunkItem[];
+  source_files?: string[];
   created_at: string;
+  [key: string]: any;
 }
 
 export interface ClassSession {
