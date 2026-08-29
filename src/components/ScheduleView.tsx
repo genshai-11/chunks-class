@@ -62,6 +62,20 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       editStartTime,
       editEndTime
     );
+
+    // Preserve existing session statuses (completed/in_progress)
+    const mergedSessions = newSessions.map((newS) => {
+      const existing = (cohort.sessions || []).find(s => s.session_number === newS.session_number);
+      if (existing) {
+        return {
+          ...newS,
+          status: existing.status,
+          notes: existing.notes || newS.notes
+        };
+      }
+      return newS;
+    });
+
     const updatedCohort: Cohort = {
       ...cohort,
       title: editTitle.trim() || cohort.title,
@@ -72,7 +86,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         end_time: editEndTime,
         duration_minutes: 90
       },
-      sessions: newSessions,
+      sessions: mergedSessions,
       updated_at: new Date().toISOString()
     };
     onUpdateCohort(updatedCohort);
@@ -98,7 +112,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const handleDateChange = (sessionNumber: number, newDate: string) => {
     const updatedSessions = sessions.map(s => {
       if (s.session_number === sessionNumber) {
-        const d = new Date(newDate);
+        const parts = newDate.split('-').map(Number);
+        const d = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
         const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         return { ...s, scheduled_date: newDate, day_of_week: days[d.getDay()] };
       }

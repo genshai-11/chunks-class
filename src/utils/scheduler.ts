@@ -20,6 +20,10 @@ export const VIETNAMESE_WEEKDAY_MAP: Record<string, string> = {
   "Sun": "Sun"
 };
 
+/**
+ * Robust, timezone-safe calculation of 15 class sessions.
+ * Maps Days 1-15 1-to-1 to Sessions 1-15.
+ */
 export function calculate15Sessions(
   levelCode: CourseLevel = "LEVEL_B",
   startDateStr: string = "",
@@ -28,22 +32,42 @@ export function calculate15Sessions(
   endTime: string = "21:00",
   holidays: string[] = []
 ): ClassSession[] {
+  if (!daysOfWeek || daysOfWeek.length === 0) {
+    daysOfWeek = ["Mon", "Wed", "Fri"];
+  }
+
+  let year: number, month: number, day: number;
   if (!startDateStr) {
     const today = new Date();
-    startDateStr = today.toISOString().split('T')[0];
+    year = today.getFullYear();
+    month = today.getMonth() + 1;
+    day = today.getDate();
+  } else {
+    const parts = startDateStr.split('-').map(Number);
+    year = parts[0];
+    month = parts[1];
+    day = parts[2];
   }
-  
+
+  // Create date at local noon (12:00:00) to be completely immune to DST / UTC midnight shifts
+  let current = new Date(year, month - 1, day, 12, 0, 0);
   const targetDays = new Set(daysOfWeek.map(d => WEEKDAY_MAP[d]));
-  let current = new Date(startDateStr);
   const sessions: ClassSession[] = [];
   let count = 1;
   let safetyLoop = 0;
+  const maxSafetyLoop = 365;
 
-  const catalog = levelCode === 'LEVEL_A' ? CURRICULUM_CATALOG_LEVEL_A : CURRICULUM_CATALOG_LEVEL_B;
+  // Retrieve standard 15 classroom lessons (Excluding Level A Day 0 Word List)
+  const catalog = levelCode === 'LEVEL_A'
+    ? CURRICULUM_CATALOG_LEVEL_A.filter(l => l.day_number > 0)
+    : CURRICULUM_CATALOG_LEVEL_B;
 
-  while (count <= 15 && safetyLoop < 120) {
+  while (count <= 15 && safetyLoop < maxSafetyLoop) {
     safetyLoop++;
-    const isoDate = current.toISOString().split('T')[0];
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, '0');
+    const d = String(current.getDate()).padStart(2, '0');
+    const isoDate = `${y}-${m}-${d}`;
     const dayOfWeek = current.getDay();
 
     if (targetDays.has(dayOfWeek) && !holidays.includes(isoDate)) {
@@ -79,7 +103,10 @@ export function createDefaultCohort(
   levelCode: CourseLevel = "LEVEL_B"
 ): Cohort {
   const today = new Date();
-  const startDate = today.toISOString().split('T')[0];
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  const startDate = `${y}-${m}-${d}`;
   const sessions = calculate15Sessions(levelCode, startDate, ["Mon", "Wed", "Fri"], "19:30", "21:00");
 
   return {
@@ -98,8 +125,8 @@ export function createDefaultCohort(
     total_sessions: 15,
     sessions,
     audio_settings: {
-      voice_profile_en: "en-US-Journey-F",
-      voice_profile_vi: "vi-VN-Standard-A",
+      voice_profile_en: "aura-asteria-en",
+      voice_profile_vi: "vi-VN-Neural2-A",
       language_mode: "EN_THEN_VI",
       auto_advance_delay_sec: 0,
       default_speed: 1.0,

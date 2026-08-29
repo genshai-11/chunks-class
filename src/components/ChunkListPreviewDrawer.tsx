@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ChunkItem, LessonPart } from '../types';
 import { 
   X, 
@@ -38,6 +38,25 @@ export const ChunkListPreviewDrawer: React.FC<ChunkListPreviewDrawerProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const activeItemRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to active chunk when drawer opens
+  useEffect(() => {
+    if (isOpen && activeItemRef.current) {
+      setTimeout(() => {
+        activeItemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [isOpen]);
+
+  // Handle Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   // Categories list
   const categories = useMemo(() => {
@@ -206,6 +225,7 @@ export const ChunkListPreviewDrawer: React.FC<ChunkListPreviewDrawerProps> = ({
               return (
                 <div
                   key={chunk.chunk_id || originalIndex}
+                  ref={isCurrent ? activeItemRef : null}
                   className={`p-3 rounded-xl border transition-all duration-150 flex items-start justify-between gap-3 group ${
                     isCurrent
                       ? 'border-[#DC2626] bg-[#DC2626]/[0.06] shadow-sm ring-1 ring-[#DC2626]'

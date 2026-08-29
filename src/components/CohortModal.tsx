@@ -155,8 +155,8 @@ export const CohortModal: React.FC<CohortModalProps> = ({
                 }}
                 className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-lg text-xs font-semibold focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
               >
-                <option value="LEVEL_B">Level B (Spoken Masterclass - 7,851 Chunks)</option>
-                <option value="LEVEL_A">Level A (Foundation - 150 Spoken Chunks)</option>
+                <option value="LEVEL_A">Level A (Foundation - 4,480 Chunks • 16 Lessons)</option>
+                <option value="LEVEL_B">Level B (Spoken Masterclass - 3,371 Chunks • 14 Lessons)</option>
               </select>
             </div>
 

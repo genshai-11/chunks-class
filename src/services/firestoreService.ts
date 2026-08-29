@@ -7,6 +7,7 @@ import {
   getDoc, 
   setDoc, 
   deleteDoc, 
+  writeBatch,
   query, 
   where 
 } from 'firebase/firestore';
@@ -391,31 +392,29 @@ export async function syncAllCurriculumToFirestore(
 ): Promise<{ success: boolean; totalLessons: number; totalChunks: number; error?: string }> {
   try {
     const allLessons = [...CURRICULUM_CATALOG_LEVEL_A, ...CURRICULUM_CATALOG_LEVEL_B];
-    const total = allLessons.length + DEFAULT_COURSES.length;
-    let current = 0;
-
-    // 1. Sync Courses
-    for (const course of DEFAULT_COURSES) {
-      current++;
-      onProgress?.(current, total, `Syncing course ${course.title}...`);
-      await setDoc(doc(db, 'courses', course.id), course, { merge: true });
-    }
-
-    // 2. Sync Lessons with Chunks Array
+    const total = allLessons.length + DEFAULT_COURSES.length + DEFAULT_COHORTS.length;
+    const batch = writeBatch(db);
     let totalChunkCount = 0;
-    for (const lesson of allLessons) {
-      current++;
-      totalChunkCount += lesson.chunks.length;
-      onProgress?.(current, total, `Writing ${lesson.id} (${lesson.chunks.length} chunks array) to Firestore...`);
-      await setDoc(doc(db, 'lessons', lesson.id), lesson, { merge: true });
+
+    onProgress?.(1, total, 'Preparing courses & cohorts batch...');
+    for (const course of DEFAULT_COURSES) {
+      batch.set(doc(db, 'courses', course.id), course, { merge: true });
     }
 
-    // 3. Sync Initial Cohorts
     for (const cohort of DEFAULT_COHORTS) {
-      await setDoc(doc(db, 'cohorts', cohort.id), cohort, { merge: true });
+      batch.set(doc(db, 'cohorts', cohort.id), cohort, { merge: true });
     }
 
-    onProgress?.(total, total, `Synced ${total} documents and ${totalChunkCount} chunks successfully!`);
+    onProgress?.(5, total, 'Preparing 30 lessons (7,851 chunks) batch...');
+    for (const lesson of allLessons) {
+      totalChunkCount += lesson.chunks.length;
+      batch.set(doc(db, 'lessons', lesson.id), lesson, { merge: true });
+    }
+
+    onProgress?.(total - 1, total, 'Committing atomic batch writes to Firestore...');
+    await batch.commit();
+
+    onProgress?.(total, total, `Đồng bộ thành công ${total} documents và ${totalChunkCount} chunks lên Firestore!`);
     return {
       success: true,
       totalLessons: allLessons.length,

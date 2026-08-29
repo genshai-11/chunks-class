@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export interface ClickerHandlers {
   onNext: () => void;
@@ -10,16 +10,25 @@ export interface ClickerHandlers {
   onToggleChunkList?: () => void;
   onToggleFullscreen?: () => void;
   onSetLoop?: (count: number) => void;
+  isModalOpen?: boolean;
 }
 
 export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean = true) {
+  const handlersRef = useRef<ClickerHandlers>(handlers);
+  handlersRef.current = handlers;
+
   useEffect(() => {
     if (!enabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Avoid intercepting when user is typing in an input or textarea
+      // 1. Guard against typing inside input, textarea, select
       const activeTag = document.activeElement?.tagName.toLowerCase();
       if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
+        return;
+      }
+
+      // 2. Guard against clicker actions when a Modal / Overlay is open
+      if (handlersRef.current.isModalOpen && e.code !== 'Escape') {
         return;
       }
 
@@ -27,56 +36,51 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
         e.preventDefault();
       }
 
+      const h = handlersRef.current;
       switch (e.code) {
         case 'PageDown':
         case 'ArrowRight':
         case 'Space':
-          handlers.onNext();
+          h.onNext();
           break;
         case 'PageUp':
         case 'ArrowLeft':
-          handlers.onPrev();
+          h.onPrev();
           break;
         case 'KeyB':
         case 'Period':
-          handlers.onToggleBlackout();
+          h.onToggleBlackout();
           break;
         case 'KeyV':
-          handlers.onToggleSubtitle();
+          h.onToggleSubtitle();
           break;
         case 'KeyR':
-          handlers.onReplayAudio();
+          h.onReplayAudio();
           break;
         case 'KeyP':
-          if (handlers.onTogglePartsDrawer) {
-            handlers.onTogglePartsDrawer();
-          }
+          h.onTogglePartsDrawer?.();
           break;
         case 'KeyL':
-          if (handlers.onToggleChunkList) {
-            handlers.onToggleChunkList();
-          }
+          h.onToggleChunkList?.();
           break;
         case 'KeyF':
         case 'F5':
           e.preventDefault();
-          if (handlers.onToggleFullscreen) {
-            handlers.onToggleFullscreen();
-          }
+          h.onToggleFullscreen?.();
           break;
         case 'Digit1':
-          if (handlers.onSetLoop) handlers.onSetLoop(1);
+          h.onSetLoop?.(1);
           break;
         case 'Digit2':
-          if (handlers.onSetLoop) handlers.onSetLoop(2);
+          h.onSetLoop?.(2);
           break;
         case 'Digit3':
-          if (handlers.onSetLoop) handlers.onSetLoop(3);
+          h.onSetLoop?.(3);
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlers, enabled]);
+  }, [enabled]); // Attached ONCE per enablement change — eliminates render thrashing!
 }

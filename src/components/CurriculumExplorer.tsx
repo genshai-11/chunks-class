@@ -154,23 +154,43 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
     }
   };
 
+  const PAGE_SIZE = 50;
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [debouncedQuery, setDebouncedQuery] = useState<string>('');
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim().toLowerCase());
+      setCurrentPage(1);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedLevel, selectedDay, selectedCategory]);
+
   // Filtered Chunks memo
   const filteredChunks = useMemo(() => {
+    const q = debouncedQuery;
     let list: { chunk: ChunkItem; lesson: LessonDoc }[] = [];
 
     lessons.forEach(lesson => {
       if (selectedDay === 'all' || lesson.day_number === selectedDay) {
         (lesson.chunks || []).forEach(chunk => {
           if (selectedCategory === 'all' || chunk.category === selectedCategory) {
-            const matchesSearch = 
-              !searchQuery ||
-              chunk.english.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              chunk.vietnamese.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              (chunk.beat_prosody && chunk.beat_prosody.toLowerCase().includes(searchQuery.toLowerCase())) ||
-              (chunk.ipa && chunk.ipa.toLowerCase().includes(searchQuery.toLowerCase()));
-
-            if (matchesSearch) {
+            if (!q) {
               list.push({ chunk, lesson });
+            } else {
+              const matchesSearch = 
+                (chunk.english && chunk.english.toLowerCase().includes(q)) ||
+                (chunk.vietnamese && chunk.vietnamese.toLowerCase().includes(q)) ||
+                (chunk.beat_prosody && chunk.beat_prosody.toLowerCase().includes(q)) ||
+                (chunk.ipa && chunk.ipa.toLowerCase().includes(q));
+
+              if (matchesSearch) {
+                list.push({ chunk, lesson });
+              }
             }
           }
         });
@@ -178,7 +198,13 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
     });
 
     return list;
-  }, [lessons, selectedDay, selectedCategory, searchQuery]);
+  }, [lessons, selectedDay, selectedCategory, debouncedQuery]);
+
+  const totalPages = Math.ceil(filteredChunks.length / PAGE_SIZE) || 1;
+  const paginatedChunks = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredChunks.slice(start, start + PAGE_SIZE);
+  }, [filteredChunks, currentPage]);
 
   // Total statistics
   const totalChunksInLevel = useMemo(() => {
@@ -350,14 +376,14 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                 Curriculum & Chunks Management
               </span>
               <span className="text-xs text-[#6B6B6B] font-mono">
-                • {selectedLevel === 'LEVEL_A' ? '150 Foundation Chunks' : '7,851 Masterclass Chunks'}
+                • {selectedLevel === 'LEVEL_A' ? '4,480 Foundation Chunks • 16 Lessons' : '3,371 Masterclass Chunks • 14 Lessons'}
               </span>
             </div>
             <h1 className="font-display font-bold text-2xl text-[#0A0A0A] tracking-tight">
               {selectedLevel === 'LEVEL_A' ? 'Level A - Foundation English Chunks' : 'Level B - Spoken Chunks Masterclass'}
             </h1>
             <p className="text-sm text-[#6B6B6B] mt-1">
-              Quản lý toàn bộ kho giáo trình, thêm/sửa/xóa cụm câu phản xạ, kiểm tra ngữ điệu trọng âm, và xem trước chế độ lớp học.
+              Quản lý toàn bộ kho 7,851 cụm câu giáo trình, thêm/sửa/xóa cụm câu phản xạ, kiểm tra ngữ điệu trọng âm, và xem trước chế độ lớp học.
             </p>
           </div>
 
@@ -370,7 +396,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                   selectedLevel === 'LEVEL_A' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                 }`}
               >
-                Level A (150 Chunks)
+                Level A (4,480 Chunks)
               </button>
               <button
                 onClick={() => { setSelectedLevel('LEVEL_B'); setSelectedDay('all'); }}
@@ -378,7 +404,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                   selectedLevel === 'LEVEL_B' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                 }`}
               >
-                Level B (7,851 Chunks)
+                Level B (3,371 Chunks)
               </button>
             </div>
 
@@ -484,7 +510,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
-            {filteredChunks.map(({ chunk, lesson }, idx) => {
+            {paginatedChunks.map(({ chunk, lesson }, idx) => {
               const isPlaying = playingChunkId === chunk.chunk_id;
 
               return (
@@ -594,6 +620,52 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Pagination Controls Bar */}
+        {filteredChunks.length > PAGE_SIZE && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-white rounded-2xl border border-[#E8E8EC] shadow-xs">
+            <span className="text-xs text-zinc-600 font-mono">
+              Hiển thị <strong>{(currentPage - 1) * PAGE_SIZE + 1} – {Math.min(currentPage * PAGE_SIZE, filteredChunks.length)}</strong> trên tổng số <strong>{filteredChunks.length}</strong> chunks (Trang {currentPage}/{totalPages})
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-xs font-bold text-zinc-700 disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              >
+                ← Trang Trước
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum = i + 1;
+                  if (totalPages > 5 && currentPage > 3) {
+                    pageNum = Math.min(totalPages - 4 + i, Math.max(1, currentPage - 2 + i));
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                        currentPage === pageNum
+                          ? 'bg-[#DC2626] text-white shadow-xs'
+                          : 'border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-xs font-bold text-zinc-700 disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              >
+                Trang Sau →
+              </button>
+            </div>
           </div>
         )}
       </div>
