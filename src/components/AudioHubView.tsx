@@ -20,14 +20,28 @@ import {
 } from 'lucide-react';
 
 interface AudioHubViewProps {
-  settings: CohortAudioSettings;
+  settings?: CohortAudioSettings;
   onUpdateSettings: (settings: CohortAudioSettings) => void;
 }
+
+const DEFAULT_AUDIO_SETTINGS: CohortAudioSettings = {
+  voice_profile_en: 'aura-asteria-en',
+  voice_profile_vi: 'vi-VN-Neural2-A',
+  language_mode: 'EN_THEN_VI',
+  auto_advance_delay_sec: 0,
+  default_speed: 1.0,
+  repeat_count: 1
+};
 
 export const AudioHubView: React.FC<AudioHubViewProps> = ({
   settings,
   onUpdateSettings
 }) => {
+  const currentSettings: CohortAudioSettings = {
+    ...DEFAULT_AUDIO_SETTINGS,
+    ...(settings || {})
+  };
+
   const [testEnglishText, setTestEnglishText] = useState<string>(
     "Once you master these chunks, speaking English becomes effortless."
   );
@@ -88,12 +102,12 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
       await audioPlayer.playBilingualSequence(
         testEnglishText,
         testVietnameseText,
-        settings.language_mode,
+        currentSettings.language_mode,
         null,
-        settings.voice_profile_en,
-        settings.voice_profile_vi,
-        settings.default_speed,
-        settings.repeat_count
+        currentSettings.voice_profile_en,
+        currentSettings.voice_profile_vi,
+        currentSettings.default_speed,
+        currentSettings.repeat_count
       );
       setActiveAudioSource(audioPlayer.getLastSource());
     } catch (e) {
@@ -110,7 +124,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
         sampleText,
         null,
         voiceId,
-        settings.default_speed,
+        currentSettings.default_speed,
         true // force cloud TTS test
       );
       setActiveAudioSource(audioPlayer.getLastSource());
@@ -270,12 +284,12 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
 
           <div className="space-y-2.5">
             {(activeVoiceEngine === 'GOOGLE' ? voiceProfilesEn : voiceProfilesDeepgram).map((v) => {
-              const isSelected = settings.voice_profile_en === v.id;
+              const isSelected = currentSettings.voice_profile_en === v.id;
               const isPlayingThis = playingVoiceId === v.id;
               return (
                 <div
                   key={v.id}
-                  onClick={() => onUpdateSettings({ ...settings, voice_profile_en: v.id })}
+                  onClick={() => onUpdateSettings({ ...currentSettings, voice_profile_en: v.id })}
                   className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                     isSelected
                       ? 'border-[#DC2626] bg-[#DC2626]/[0.04] ring-1 ring-[#DC2626]/20'
@@ -316,11 +330,11 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             </h3>
             <div className="space-y-2">
               {voiceProfilesVi.map((v) => {
-                const isSelected = settings.voice_profile_vi === v.id;
+                const isSelected = currentSettings.voice_profile_vi === v.id;
                 return (
                   <div
                     key={v.id}
-                    onClick={() => onUpdateSettings({ ...settings, voice_profile_vi: v.id })}
+                    onClick={() => onUpdateSettings({ ...currentSettings, voice_profile_vi: v.id })}
                     className={`p-2.5 rounded-lg border transition-all cursor-pointer text-xs ${
                       isSelected
                         ? 'border-[#DC2626] bg-[#DC2626]/[0.04] font-semibold text-[#0A0A0A]'
@@ -358,9 +372,9 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
               ].map((m) => (
                 <button
                   key={m.id}
-                  onClick={() => onUpdateSettings({ ...settings, language_mode: m.id as LanguageMode })}
+                  onClick={() => onUpdateSettings({ ...currentSettings, language_mode: m.id as LanguageMode })}
                   className={`p-2.5 rounded-lg border text-xs font-mono font-semibold transition-all cursor-pointer ${
-                    settings.language_mode === m.id
+                    currentSettings.language_mode === m.id
                       ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
                       : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                   }`}
@@ -375,15 +389,15 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-[#0A0A0A]">Playback Speed:</span>
-              <span className="font-mono font-bold text-[#DC2626]">{settings.default_speed}x</span>
+              <span className="font-mono font-bold text-[#DC2626]">{currentSettings.default_speed}x</span>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {[0.75, 0.9, 1.0, 1.2].map((s) => (
                 <button
                   key={s}
-                  onClick={() => onUpdateSettings({ ...settings, default_speed: s })}
+                  onClick={() => onUpdateSettings({ ...currentSettings, default_speed: s })}
                   className={`py-2 rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
-                    settings.default_speed === s
+                    currentSettings.default_speed === s
                       ? 'bg-[#DC2626] text-white border-[#DC2626]'
                       : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                   }`}
@@ -398,15 +412,15 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-[#0A0A0A]">Loop Repetitions per Chunk:</span>
-              <span className="font-mono font-bold text-[#DC2626]">{settings.repeat_count} time(s)</span>
+              <span className="font-mono font-bold text-[#DC2626]">{currentSettings.repeat_count} time(s)</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[1, 2, 3].map((r) => (
                 <button
                   key={r}
-                  onClick={() => onUpdateSettings({ ...settings, repeat_count: r })}
+                  onClick={() => onUpdateSettings({ ...currentSettings, repeat_count: r })}
                   className={`py-2 rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
-                    settings.repeat_count === r
+                    currentSettings.repeat_count === r
                       ? 'bg-amber-500 text-white border-amber-500'
                       : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                   }`}
@@ -423,8 +437,8 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
               Auto-Advance Delay:
             </label>
             <select
-              value={settings.auto_advance_delay_sec}
-              onChange={(e) => onUpdateSettings({ ...settings, auto_advance_delay_sec: Number(e.target.value) })}
+              value={currentSettings.auto_advance_delay_sec}
+              onChange={(e) => onUpdateSettings({ ...currentSettings, auto_advance_delay_sec: Number(e.target.value) })}
               className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-lg text-xs font-mono font-semibold"
             >
               <option value={0}>Manual Stepping (Recommended — Wireless Clicker Control)</option>
