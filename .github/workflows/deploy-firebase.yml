@@ -1,0 +1,54 @@
+name: Deploy CHUNKS Platform to Firebase Hosting ($0/mo Always Free)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy:
+    name: Build, Typecheck & Deploy to Firebase
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚡ Setup Bun Environment
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 📦 Install Dependencies
+        run: bun install --frozen-lockfile || bun install
+
+      - name: 🔍 Typecheck TypeScript
+        run: bun x tsc --noEmit
+
+      - name: 🏗️ Build Production Bundle
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4' }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'chunks-voicecloning-genshai.firebaseapp.com' }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'chunks-voicecloning-genshai' }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'chunks-mirror-audio-284566312743' }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '284566312743' }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID || '1:284566312743:web:038f451f2fc5fa25d30cf8' }}
+          VITE_ENABLE_GOOGLE_TTS: 'true'
+          VITE_GOOGLE_TTS_VOICE_NAME: 'en-US-Journey-F'
+          VITE_GOOGLE_TTS_LANGUAGE_CODE: 'en-US'
+        run: bun run build
+
+      - name: 🚀 Deploy to Firebase Hosting & Deploy Firestore Rules
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CHUNKS_VOICECLONING_GENSHAI }}'
+          channelId: live
+          projectId: chunks-voicecloning-genshai
