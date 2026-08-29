@@ -573,16 +573,23 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all cursor-pointer shadow-xs ${
               activeAudioSource === 'GCS_MASTER'
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
-                : activeAudioSource === 'GOOGLE_CLOUD_AI'
-                  ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100'
-                  : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                : activeAudioSource === 'DEEPGRAM_AURA'
+                  ? 'bg-purple-50 text-purple-900 border-purple-300 hover:bg-purple-100'
+                  : activeAudioSource === 'GOOGLE_CLOUD_AI'
+                    ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100'
+                    : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
             }`}
-            title="Kiểm tra kết nối âm thanh & chẩn đoán Google Cloud TTS"
+            title="Kiểm tra kết nối âm thanh & chẩn đoán Audio Engine"
           >
             {activeAudioSource === 'GCS_MASTER' ? (
               <>
                 <Radio className="w-3 h-3 text-emerald-600" />
                 <span>GCS MP3</span>
+              </>
+            ) : activeAudioSource === 'DEEPGRAM_AURA' ? (
+              <>
+                <Zap className="w-3 h-3 text-purple-600 fill-purple-500" />
+                <span>Deepgram Aura</span>
               </>
             ) : activeAudioSource === 'GOOGLE_CLOUD_AI' ? (
               <>

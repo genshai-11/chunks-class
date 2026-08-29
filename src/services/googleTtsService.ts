@@ -54,7 +54,7 @@ export const GOOGLE_TTS_VOICES: VoiceOption[] = [
     name: 'en-US-Neural2-F (Google Studio Clarity)',
     languageCode: 'en-US',
     gender: 'FEMALE',
-    description: 'Broadcast-grade studio voice with balanced intonation.',
+    description: 'Broadcast-grade studio clarity with balanced intonation.',
     provider: 'GOOGLE'
   },
   {
@@ -97,7 +97,7 @@ export const ALL_VOICES: VoiceOption[] = [
 
 class AudioPlayService {
   private currentAudio: HTMLAudioElement | null = null;
-  private audioCache = new Map<string, string>(); // text -> base64 audio
+  private audioCache = new Map<string, string>(); // key -> audio url/dataUri
   private gcsAvailabilityCache = new Map<string, boolean>();
   private lastSource: AudioSourceType = 'BROWSER_LOCAL';
   private activeProvider: AudioProvider = 'GOOGLE_TTS';
@@ -108,8 +108,8 @@ class AudioPlayService {
   constructor() {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('chunks_custom_tts_api_key');
-        if (saved) this.customApiKey = saved.trim();
+        const savedKey = localStorage.getItem('chunks_custom_tts_api_key');
+        if (savedKey) this.customApiKey = savedKey.trim();
 
         const savedProvider = localStorage.getItem('chunks_active_audio_provider');
         if (savedProvider === 'DEEPGRAM_AURA' || savedProvider === 'GOOGLE_TTS') {
@@ -238,21 +238,24 @@ class AudioPlayService {
   /**
    * Test Deepgram Aura TTS API connectivity
    */
-  async testDeepgramConnection(): Promise<{ ok: boolean; message: string }> {
+  async testDeepgramConnection(): Promise<{ success: boolean; message: string }> {
     try {
       const base64 = await deepgramTts.synthesizeText("Deepgram Aura online test", "aura-asteria-en");
-      return { ok: !!base64, message: "Deepgram Aura Connected (Asteria Online)" };
+      return { success: !!base64, message: "Deepgram Aura Connected (Asteria Online)" };
     } catch (e: any) {
-      return { ok: false, message: e?.message || "Deepgram Connection Failed" };
+      return { success: false, message: e?.message || "Deepgram Connection Failed" };
     }
   }
 
   /**
-   * Play Chunk Audio:
-   * 1. If permanent GCS URL is provided, stream directly.
-   * 2. If provider is DEEPGRAM_AURA or voice is aura-*, use Deepgram Speak API.
-   * 3. Fallback to Google Cloud Text-to-Speech API.
-   * 4. Fallback to Browser Speech if offline.
+   * Play Chunk Audio with clean Engine Prioritization:
+   * 1. Check in-memory preparation cache (Instant 0ms).
+   * 2. If provider is DEEPGRAM_AURA or voice is aura-*:
+   *    Synthesize and play via Deepgram Aura API.
+   * 3. If provider is GOOGLE_TTS:
+   *    If permanent GCS URL is provided & available, stream directly.
+   *    Else synthesize via Google Cloud Text-to-Speech API.
+   * 4. Fallback to Browser Speech if network/API fails.
    */
   async playChunk(
     text: string,
@@ -266,49 +269,60 @@ class AudioPlayService {
 
     this.setAudioLoading(true);
     try {
-      // 1. Permanent GCS Master URL
-      if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
-        try {
-          this.setLastSource('GCS_MASTER');
-          await this.playUrl(permanentAudioUrl, speed);
-          return;
-        } catch (err) {
-          console.warn(`[Audio] Permanent GCS URL unreachable (${permanentAudioUrl}), falling back to synthesis...`);
-        }
+      const isVietnamese = voiceName.startsWith('vi') || /[\u00C0-\u1EF9]/.test(text);
+      const isDeepgram = !isVietnamese && (this.activeProvider === 'DEEPGRAM_AURA' || voiceName.startsWith('aura-'));
+
+      // Check Cache First
+      const cacheKey = `${voiceName}_${speed}_${text.trim()}`;
+      if (this.audioCache.has(cacheKey)) {
+        const cached = this.audioCache.get(cacheKey)!;
+        this.setLastSource(isDeepgram ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI');
+        await this.playBase64(cached, speed);
+        return;
       }
 
-      // Check if text is Vietnamese
-      const isVietnamese = voiceName.startsWith('vi') || /[\u00C0-\u1EF9]/.test(text);
-
-      // 2. Deepgram Aura Synthesis (for English)
-      if (!isVietnamese && (this.activeProvider === 'DEEPGRAM_AURA' || voiceName.startsWith('aura-'))) {
+      // 1. DEEPGRAM AURA ENGINE (If selected by teacher)
+      if (isDeepgram) {
         try {
           const dgModel = voiceName.startsWith('aura-') ? voiceName : 'aura-asteria-en';
           const base64 = await deepgramTts.synthesizeText(text, dgModel);
           if (base64) {
+            this.audioCache.set(cacheKey, base64);
             this.setLastSource('DEEPGRAM_AURA');
             await this.playBase64(base64, speed);
             return;
           }
         } catch (dgErr: any) {
-          console.warn(`[Audio] Deepgram Aura synthesis failed (${dgErr?.message}), trying Google TTS...`);
+          console.warn(`[Audio] Deepgram Aura synthesis failed (${dgErr?.message}), trying Google TTS...`, dgErr);
         }
       }
 
-      // 3. Google Cloud Text-to-Speech Synthesis
+      // 2. GCS PERMANENT AUDIO (If not forced to dynamic TTS and not using Deepgram)
+      if (!forceCloudTts && !isDeepgram && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
+        try {
+          this.setLastSource('GCS_MASTER');
+          await this.playUrl(permanentAudioUrl, speed);
+          return;
+        } catch (err) {
+          console.warn(`[Audio] GCS master audio unreachable (${permanentAudioUrl}), synthesizing via Google TTS...`);
+        }
+      }
+
+      // 3. GOOGLE CLOUD TEXT-TO-SPEECH
       try {
         const googleVoice = isVietnamese ? (voiceName.startsWith('vi') ? voiceName : 'vi-VN-Neural2-A') : voiceName;
         const base64Audio = await this.synthesizeWithGoogleTTS(text, googleVoice, speed);
         if (base64Audio) {
+          this.audioCache.set(cacheKey, base64Audio);
           this.setLastSource('GOOGLE_CLOUD_AI');
           await this.playBase64(base64Audio, speed);
           return;
         }
       } catch (err: any) {
-        console.warn(`[Audio] Google Cloud TTS synthesis notice (${err?.message}), trying local browser fallback...`);
+        console.warn(`[Audio] Google Cloud TTS unavailable (${err?.message}), falling back to local Browser Model...`);
       }
 
-      // 4. Browser Local Speech
+      // 4. BROWSER LOCAL SPEECH SYNTHESIS FALLBACK
       this.setLastSource('BROWSER_LOCAL');
       await this.playBrowserTts(text, voiceName, speed);
     } finally {
@@ -332,16 +346,20 @@ class AudioPlayService {
   ): Promise<void> {
     this.stop();
 
+    // Determine effective voice
+    const isDeepgram = this.activeProvider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-');
+    const effectiveVoiceEn = isDeepgram && !voiceEn.startsWith('aura-') ? 'aura-asteria-en' : voiceEn;
+
     for (let r = 0; r < repeatCount; r++) {
       if (mode === 'EN_ONLY') {
         onStepChange?.('en');
-        await this.playChunk(englishText, englishAudioUrl, voiceEn, speed);
+        await this.playChunk(englishText, isDeepgram ? null : englishAudioUrl, effectiveVoiceEn, speed);
       } else if (mode === 'VI_ONLY') {
         onStepChange?.('vi');
         await this.playChunk(vietnameseText, null, voiceVi, speed);
       } else if (mode === 'EN_THEN_VI') {
         onStepChange?.('en');
-        await this.playChunk(englishText, englishAudioUrl, voiceEn, speed);
+        await this.playChunk(englishText, isDeepgram ? null : englishAudioUrl, effectiveVoiceEn, speed);
         await new Promise(res => setTimeout(res, 250));
         onStepChange?.('vi');
         await this.playChunk(vietnameseText, null, voiceVi, speed);
@@ -350,7 +368,7 @@ class AudioPlayService {
         await this.playChunk(vietnameseText, null, voiceVi, speed);
         await new Promise(res => setTimeout(res, 350));
         onStepChange?.('en');
-        await this.playChunk(englishText, englishAudioUrl, voiceEn, speed);
+        await this.playChunk(englishText, isDeepgram ? null : englishAudioUrl, effectiveVoiceEn, speed);
       }
 
       if (r < repeatCount - 1) {
@@ -374,18 +392,28 @@ class AudioPlayService {
     let failed = 0;
     const total = chunks.length;
 
+    const isDeepgram = provider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-');
+    const model = isDeepgram ? (voiceEn.startsWith('aura-') ? voiceEn : 'aura-asteria-en') : voiceEn;
+
     for (let i = 0; i < chunks.length; i++) {
       const c = chunks[i];
       onProgress?.(i + 1, total, `Synthesizing chunk #${i + 1}: "${c.english.slice(0, 30)}..."`);
 
       try {
-        if (provider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-')) {
-          const dgModel = voiceEn.startsWith('aura-') ? voiceEn : 'aura-asteria-en';
-          await deepgramTts.synthesizeText(c.english, dgModel);
+        const cacheKey = `${model}_1_${c.english.trim()}`;
+        if (isDeepgram) {
+          const base64 = await deepgramTts.synthesizeText(c.english, model);
+          if (base64) {
+            this.audioCache.set(cacheKey, base64);
+            prepared++;
+          }
         } else {
-          await this.synthesizeWithGoogleTTS(c.english, voiceEn, 1.0);
+          const base64 = await this.synthesizeWithGoogleTTS(c.english, model, 1.0);
+          if (base64) {
+            this.audioCache.set(cacheKey, base64);
+            prepared++;
+          }
         }
-        prepared++;
       } catch (err) {
         console.warn(`[Batch Audio] Failed chunk #${i + 1}:`, err);
         failed++;
@@ -397,7 +425,7 @@ class AudioPlayService {
   }
 
   private async synthesizeWithGoogleTTS(text: string, voiceName: string, speed: number): Promise<string> {
-    const cacheKey = `${voiceName}_${speed}_${text}`;
+    const cacheKey = `${voiceName}_${speed}_${text.trim()}`;
     if (this.audioCache.has(cacheKey)) {
       return this.audioCache.get(cacheKey)!;
     }

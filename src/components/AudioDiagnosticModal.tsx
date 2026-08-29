@@ -12,7 +12,8 @@ import {
   ExternalLink,
   Laptop,
   Cloud,
-  Check
+  Check,
+  Zap
 } from 'lucide-react';
 import { audioPlayer, AudioSourceType } from '../services/googleTtsService';
 
@@ -38,6 +39,20 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [currentSource, setCurrentSource] = useState<AudioSourceType>(audioPlayer.getLastSource());
   const [isPlayingSample, setIsPlayingSample] = useState<boolean>(false);
+  const [deepgramTestResult, setDeepgramTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testingDeepgram, setTestingDeepgram] = useState<boolean>(false);
+
+  const runDeepgramTest = async () => {
+    setTestingDeepgram(true);
+    try {
+      const res = await audioPlayer.testDeepgramConnection();
+      setDeepgramTestResult(res);
+    } catch (e: any) {
+      setDeepgramTestResult({ success: false, message: e?.message || 'Connection error' });
+    } finally {
+      setTestingDeepgram(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -46,6 +61,7 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
       setBrowserVoices(voices);
       setCurrentSource(audioPlayer.getLastSource());
       runTest();
+      runDeepgramTest();
     }
   }, [isOpen]);
 
@@ -173,14 +189,49 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
             )}
           </div>
 
-          {/* 2. Audio Source Indicator & Why sound didn't change */}
+            {/* Deepgram Aura Test Card */}
+            <div className="p-4 rounded-xl border bg-purple-50/40 border-purple-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-purple-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-purple-600 fill-purple-500" />
+                  Deepgram Aura TTS AI Engine
+                </span>
+                <button
+                  onClick={() => runDeepgramTest()}
+                  disabled={testingDeepgram}
+                  className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white border border-purple-300 text-purple-800 font-semibold hover:bg-purple-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3 h-3 ${testingDeepgram ? 'animate-spin' : ''}`} />
+                  <span>{testingDeepgram ? 'Testing...' : 'Test Deepgram'}</span>
+                </button>
+              </div>
+
+              {deepgramTestResult && (
+                <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${
+                  deepgramTestResult.success
+                    ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                    : 'bg-rose-50 text-rose-900 border-rose-200'
+                }`}>
+                  {deepgramTestResult.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="font-bold text-xs">
+                    {deepgramTestResult.message}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Audio Source Indicator & Why sound didn't change */}
           <div className="p-4 rounded-xl border border-zinc-200 bg-white space-y-3">
             <h3 className="font-bold text-zinc-900 text-xs flex items-center gap-1.5">
               <Headphones className="w-4 h-4 text-[#DC2626]" />
               Nguồn âm thanh đang phát hiện tại:
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
               <div className={`p-3 rounded-lg border flex flex-col justify-between ${
                 currentSource === 'GCS_MASTER'
                   ? 'bg-emerald-50/80 border-emerald-300 text-emerald-900'
@@ -190,31 +241,43 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
                   <Radio className="w-3.5 h-3.5 text-emerald-600" />
                   1. GCS Master Audio
                 </div>
-                <p className="text-[10px] mt-1 text-zinc-500">File MP3 phòng thu đã render sẵn trên Cloud Storage</p>
+                <p className="text-[10px] mt-1 text-zinc-500">File MP3 phòng thu đã render sẵn</p>
+              </div>
+
+              <div className={`p-3 rounded-lg border flex flex-col justify-between ${
+                currentSource === 'DEEPGRAM_AURA'
+                  ? 'bg-purple-50/80 border-purple-300 text-purple-900 ring-1 ring-purple-400'
+                  : 'bg-zinc-50 border-zinc-200 text-zinc-500'
+              }`}>
+                <div className="flex items-center gap-1.5 font-bold text-[11px]">
+                  <Zap className="w-3.5 h-3.5 text-purple-600 fill-purple-500" />
+                  2. Deepgram Aura AI
+                </div>
+                <p className="text-[10px] mt-1 text-zinc-500">Giọng Asteria/Luna sinh trực tiếp</p>
               </div>
 
               <div className={`p-3 rounded-lg border flex flex-col justify-between ${
                 currentSource === 'GOOGLE_CLOUD_AI'
-                  ? 'bg-blue-50/80 border-blue-300 text-blue-900'
+                  ? 'bg-blue-50/80 border-blue-300 text-blue-900 ring-1 ring-blue-400'
                   : 'bg-zinc-50 border-zinc-200 text-zinc-500'
               }`}>
                 <div className="flex items-center gap-1.5 font-bold text-[11px]">
                   <Cloud className="w-3.5 h-3.5 text-blue-600" />
-                  2. Google Cloud TTS AI
+                  3. Google Cloud TTS
                 </div>
-                <p className="text-[10px] mt-1 text-zinc-500">Giọng Journey / Studio sinh trực tiếp qua API</p>
+                <p className="text-[10px] mt-1 text-zinc-500">Giọng Journey/Studio sinh qua Google API</p>
               </div>
 
               <div className={`p-3 rounded-lg border flex flex-col justify-between ${
                 currentSource === 'BROWSER_LOCAL'
-                  ? 'bg-amber-50/80 border-amber-300 text-amber-900'
+                  ? 'bg-amber-50/80 border-amber-300 text-amber-900 ring-1 ring-amber-400'
                   : 'bg-zinc-50 border-zinc-200 text-zinc-500'
               }`}>
                 <div className="flex items-center gap-1.5 font-bold text-[11px]">
                   <Laptop className="w-3.5 h-3.5 text-amber-600" />
-                  3. Model Máy (Browser)
+                  4. Model Máy (Browser)
                 </div>
-                <p className="text-[10px] mt-1 text-zinc-500">Giọng robot tổng hợp mặc định của trình duyệt/máy tính</p>
+                <p className="text-[10px] mt-1 text-zinc-500">Giọng Web Speech máy tính fallback khi offline</p>
               </div>
             </div>
 
