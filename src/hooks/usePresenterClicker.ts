@@ -7,6 +7,7 @@ export interface ClickerHandlers {
   onToggleSubtitle: () => void;
   onReplayAudio: () => void;
   onTogglePartsDrawer?: () => void;
+  onToggleChunkList?: () => void;
   onToggleFullscreen?: () => void;
   onSetLoop?: (count: number) => void;
 }
@@ -49,6 +50,11 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
         case 'KeyP':
           if (handlers.onTogglePartsDrawer) {
             handlers.onTogglePartsDrawer();
+          }
+          break;
+        case 'KeyL':
+          if (handlers.onToggleChunkList) {
+            handlers.onToggleChunkList();
           }
           break;
         case 'KeyF':

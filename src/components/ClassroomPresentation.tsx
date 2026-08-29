@@ -6,6 +6,7 @@ import { getLessonById as getFirestoreLessonById } from '../services/firestoreSe
 import { audioPlayer, GOOGLE_TTS_VOICES, VoiceOption } from '../services/googleTtsService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
 import { PartsDrawer, groupChunksIntoParts } from './PartsDrawer';
+import { ChunkListPreviewDrawer } from './ChunkListPreviewDrawer';
 import { PresentationProgressBar } from './PresentationProgressBar';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
 import { AudioSourceType } from '../services/googleTtsService';
@@ -35,7 +36,9 @@ import {
   SignalMedium,
   SignalLow,
   Wifi,
-  WifiOff
+  WifiOff,
+  BookOpen,
+  TrendingUp
 } from 'lucide-react';
 
 interface ClassroomPresentationProps {
@@ -64,6 +67,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [isBlackout, setIsBlackout] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isPartsDrawerOpen, setIsPartsDrawerOpen] = useState<boolean>(false);
+  const [isChunkListOpen, setIsChunkListOpen] = useState<boolean>(false);
 
   // Audio parameters & Real Google Cloud TTS Models
   const [selectedVoice, setSelectedVoice] = useState<string>(
@@ -145,6 +149,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const currentChunk: ChunkItem = chunks[currentChunkIndex] || chunks[0];
 
   const parts: LessonPart[] = groupChunksIntoParts(chunks);
+  const currentPart = parts.find(p => currentChunkIndex >= p.start_index && currentChunkIndex <= p.end_index) || parts[0] || null;
+
+  // Dual Progress % Computations
+  const partChunkTotal = currentPart ? currentPart.chunk_count : 0;
+  const partChunkCurrent = currentPart ? Math.max(0, Math.min(partChunkTotal, currentChunkIndex - currentPart.start_index + 1)) : 0;
+  const partProgressPercent = partChunkTotal > 0 ? Math.round((partChunkCurrent / partChunkTotal) * 100) : 0;
+  const classProgressPercent = chunks.length > 0 ? Math.round(((currentChunkIndex + 1) / chunks.length) * 100) : 0;
 
   // Verify GCS resource availability on chunk or lesson changes
   const verifyGcsAvailability = async (chunkItem?: ChunkItem) => {
@@ -320,6 +331,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     onToggleSubtitle: handleToggleSubtitle,
     onReplayAudio: handleReplay,
     onTogglePartsDrawer: handleTogglePartsDrawer,
+    onToggleChunkList: () => setIsChunkListOpen(prev => !prev),
     onToggleFullscreen: handleToggleFullscreen,
     onSetLoop: handleSetLoop
   }, true);
@@ -440,9 +452,36 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             ))}
           </select>
 
-          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-[#DC2626] text-white">
-            Chunk {currentChunkIndex + 1} / {chunks.length}
-          </span>
+          {/* Dual Progress % Metrics Badges */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {currentPart && (
+              <button
+                onClick={() => setIsPartsDrawerOpen(true)}
+                className={`text-xs font-mono font-bold px-2.5 py-1 rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
+                  highContrastDark
+                    ? 'bg-[#DC2626]/20 text-[#DC2626] border-[#DC2626]/40'
+                    : 'bg-[#DC2626]/[0.08] text-[#DC2626] border-[#DC2626]/20 hover:bg-[#DC2626]/[0.15]'
+                }`}
+                title={`Part ${currentPart.part_index}: ${currentPart.category.toUpperCase()} (${partChunkCurrent}/${partChunkTotal} chunks)`}
+              >
+                <Layers className="w-3 h-3" />
+                <span>Part {currentPart.part_index}: {partProgressPercent}%</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => setIsChunkListOpen(true)}
+              className={`text-xs font-mono font-bold px-2.5 py-1 rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
+                highContrastDark
+                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+              }`}
+              title={`Class Total: ${currentChunkIndex + 1}/${chunks.length} chunks`}
+            >
+              <TrendingUp className="w-3 h-3" />
+              <span>Class: {currentChunkIndex + 1}/{chunks.length} ({classProgressPercent}%)</span>
+            </button>
+          </div>
         </div>
 
         {/* Action Controls */}
@@ -553,6 +592,20 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               </option>
             ))}
           </select>
+
+          {/* Words List Drawer Toggle */}
+          <button
+            onClick={() => setIsChunkListOpen(prev => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+              isChunkListOpen
+                ? 'bg-[#DC2626] text-white border-[#DC2626]'
+                : 'bg-white text-[#0A0A0A] border-[#E8E8EC] hover:bg-zinc-50'
+            }`}
+            title="Vocabulary & Chunks Preview Drawer (Key: L)"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className="font-mono">Words List (L)</span>
+          </button>
 
           {/* Parts Drawer Toggle */}
           <button
@@ -906,7 +959,37 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
         <span className="text-zinc-500">Google Cloud TTS (Journey / Studio Models)</span>
       </div>
-      {/* 8. AUDIO ENGINE DIAGNOSTICS MODAL */}
+      {/* 8. PARTS NAVIGATION DRAWER */}
+      <PartsDrawer
+        isOpen={isPartsDrawerOpen}
+        onClose={() => setIsPartsDrawerOpen(false)}
+        parts={parts}
+        currentChunkIndex={currentChunkIndex}
+        onSelectPart={(startIndex) => {
+          setCurrentChunkIndex(startIndex);
+          playCurrentChunkAudio(chunks[startIndex]);
+        }}
+      />
+
+      {/* 9. VOCABULARY & CHUNKS PREVIEW DRAWER */}
+      <ChunkListPreviewDrawer
+        isOpen={isChunkListOpen}
+        onClose={() => setIsChunkListOpen(false)}
+        chunks={chunks}
+        currentIndex={currentChunkIndex}
+        parts={parts}
+        currentPart={currentPart}
+        highContrastDark={highContrastDark}
+        onSelectChunk={(targetIndex) => {
+          setCurrentChunkIndex(targetIndex);
+          playCurrentChunkAudio(chunks[targetIndex]);
+        }}
+        onPreviewAudio={(targetChunk) => {
+          playCurrentChunkAudio(targetChunk);
+        }}
+      />
+
+      {/* 10. AUDIO ENGINE DIAGNOSTICS MODAL */}
       <AudioDiagnosticModal
         isOpen={isDiagnosticOpen}
         onClose={() => setIsDiagnosticOpen(false)}
