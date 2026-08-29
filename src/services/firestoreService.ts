@@ -33,20 +33,20 @@ export const DEFAULT_COURSES: Course[] = [
     id: "course_level_a",
     level_code: "LEVEL_A",
     title: "Level A - Foundation English Chunks",
-    description: "Essential spoken chunks, everyday survival navigation, social dialogues & conversational fluency.",
-    total_days: 15,
-    total_chunks: 150,
-    source: "Genshai Foundation Curriculum",
+    description: "16 Lessons (Word List + Day 1..15) with 4,480 essential conversational and survival chunks.",
+    total_days: 16,
+    total_chunks: 4480,
+    source: "Genshai Foundation Curriculum (ERES Design)",
     is_active: true
   },
   {
     id: "course_level_b",
     level_code: "LEVEL_B",
     title: "Level B - Spoken Chunks Masterclass",
-    description: "7,851 editorial chunks, prosody stress notation, business smarketing, and advanced speech mastery.",
-    total_days: 15,
-    total_chunks: 7851,
-    source: "Genshai Masterclass Level B",
+    description: "14 Advanced Masterclasses (Day 2..15) with 3,371 real-world business, social & spoken mastery chunks.",
+    total_days: 14,
+    total_chunks: 3371,
+    source: "Genshai Masterclass Level B (14 PDF Curriculum)",
     is_active: true
   }
 ];

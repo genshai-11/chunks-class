@@ -1,17 +1,22 @@
+import { deepgramTts, DEEPGRAM_AURA_VOICES, DeepgramVoiceOption } from './deepgramTtsService';
+
 export interface VoiceOption {
   id: string;
   name: string;
   languageCode: string;
   gender: 'FEMALE' | 'MALE';
   description: string;
+  provider: 'GOOGLE' | 'DEEPGRAM';
 }
 
-export type AudioSourceType = 'GCS_MASTER' | 'GOOGLE_CLOUD_AI' | 'BROWSER_LOCAL';
+export type AudioProvider = 'GOOGLE_TTS' | 'DEEPGRAM_AURA';
+export type AudioSourceType = 'GCS_MASTER' | 'GOOGLE_CLOUD_AI' | 'DEEPGRAM_AURA' | 'BROWSER_LOCAL';
 
 export interface AudioConnectionStatus {
   cloudTtsStatus: 'CONNECTED' | 'BLOCKED' | 'ERROR' | 'UNTESTED';
   cloudTtsStatusCode?: number;
   cloudTtsError?: string | null;
+  deepgramStatus?: 'CONNECTED' | 'BLOCKED' | 'ERROR' | 'UNTESTED';
   gcsStatus: 'CONNECTED' | 'UNTESTED' | 'ERROR';
   activeSource: AudioSourceType;
   lastTestedAt: string | null;
@@ -22,53 +27,72 @@ export interface AudioConnectionStatus {
 export const GOOGLE_TTS_VOICES: VoiceOption[] = [
   {
     id: 'en-US-Journey-F',
-    name: 'en-US-Journey-F (Natural Dialogue - Female)',
+    name: 'en-US-Journey-F (Google Natural Female)',
     languageCode: 'en-US',
     gender: 'FEMALE',
-    description: 'Ultra-realistic American English conversational voice.'
+    description: 'Ultra-realistic American English conversational voice.',
+    provider: 'GOOGLE'
   },
   {
     id: 'en-US-Journey-M',
-    name: 'en-US-Journey-M (Natural Dialogue - Male)',
+    name: 'en-US-Journey-M (Google Natural Male)',
     languageCode: 'en-US',
     gender: 'MALE',
-    description: 'Ultra-realistic American English conversational voice (Male).'
+    description: 'Ultra-realistic American English conversational voice (Male).',
+    provider: 'GOOGLE'
   },
   {
     id: 'en-US-Studio-O',
-    name: 'en-US-Studio-O (Studio Master - Female)',
+    name: 'en-US-Studio-O (Google Studio Master)',
     languageCode: 'en-US',
     gender: 'FEMALE',
-    description: 'High-clarity studio master for phonetic pronunciation drills.'
+    description: 'High-clarity studio master for phonetic pronunciation drills.',
+    provider: 'GOOGLE'
   },
   {
     id: 'en-US-Neural2-F',
-    name: 'en-US-Neural2-F (Studio Clarity - Female)',
+    name: 'en-US-Neural2-F (Google Studio Clarity)',
     languageCode: 'en-US',
     gender: 'FEMALE',
-    description: 'Broadcast-grade studio voice with balanced intonation.'
+    description: 'Broadcast-grade studio voice with balanced intonation.',
+    provider: 'GOOGLE'
   },
   {
     id: 'en-US-Neural2-D',
-    name: 'en-US-Neural2-D (Studio Deep - Male)',
+    name: 'en-US-Neural2-D (Google Studio Deep)',
     languageCode: 'en-US',
     gender: 'MALE',
-    description: 'Deep, crisp male studio articulation.'
+    description: 'Deep, crisp male studio articulation.',
+    provider: 'GOOGLE'
   },
   {
     id: 'vi-VN-Neural2-A',
-    name: 'vi-VN-Neural2-A (Vietnamese Standard - Female)',
+    name: 'vi-VN-Neural2-A (Vietnamese Neural2 Standard)',
     languageCode: 'vi-VN',
     gender: 'FEMALE',
-    description: 'Neural2 Vietnamese standard pronunciation voice.'
+    description: 'Neural2 Vietnamese standard pronunciation voice.',
+    provider: 'GOOGLE'
   },
   {
     id: 'vi-VN-Standard-A',
     name: 'vi-VN-Standard-A (Vietnamese Standard Northern)',
     languageCode: 'vi-VN',
     gender: 'FEMALE',
-    description: 'Standard Northern Vietnamese pronunciation.'
+    description: 'Standard Northern Vietnamese pronunciation.',
+    provider: 'GOOGLE'
   }
+];
+
+export const ALL_VOICES: VoiceOption[] = [
+  ...GOOGLE_TTS_VOICES,
+  ...DEEPGRAM_AURA_VOICES.map(v => ({
+    id: v.id,
+    name: `${v.name} (Deepgram)`,
+    languageCode: 'en-US',
+    gender: v.gender,
+    description: v.description,
+    provider: 'DEEPGRAM' as const
+  }))
 ];
 
 class AudioPlayService {
@@ -76,6 +100,7 @@ class AudioPlayService {
   private audioCache = new Map<string, string>(); // text -> base64 audio
   private gcsAvailabilityCache = new Map<string, boolean>();
   private lastSource: AudioSourceType = 'BROWSER_LOCAL';
+  private activeProvider: AudioProvider = 'GOOGLE_TTS';
   private sourceListeners: ((source: AudioSourceType) => void)[] = [];
   private loadingListeners: ((isLoading: boolean) => void)[] = [];
   private customApiKey: string = '';
@@ -85,8 +110,24 @@ class AudioPlayService {
       try {
         const saved = localStorage.getItem('chunks_custom_tts_api_key');
         if (saved) this.customApiKey = saved.trim();
+
+        const savedProvider = localStorage.getItem('chunks_active_audio_provider');
+        if (savedProvider === 'DEEPGRAM_AURA' || savedProvider === 'GOOGLE_TTS') {
+          this.activeProvider = savedProvider;
+        }
       } catch {}
     }
+  }
+
+  public setAudioProvider(provider: AudioProvider) {
+    this.activeProvider = provider;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chunks_active_audio_provider', provider);
+    }
+  }
+
+  public getAudioProvider(): AudioProvider {
+    return this.activeProvider;
   }
 
   public setCustomApiKey(key: string) {
@@ -100,150 +141,37 @@ class AudioPlayService {
         }
       } catch {}
     }
-    this.audioCache.clear();
   }
 
   public getCustomApiKey(): string {
     return this.customApiKey;
   }
 
-  public getLastSource(): AudioSourceType {
-    return this.lastSource;
-  }
-
-  public onSourceChange(listener: (source: AudioSourceType) => void) {
+  public onSourceChange(listener: (source: AudioSourceType) => void): () => void {
     this.sourceListeners.push(listener);
     return () => {
       this.sourceListeners = this.sourceListeners.filter(l => l !== listener);
     };
   }
 
-  public onLoadingChange(listener: (isLoading: boolean) => void) {
+  public onLoadingChange(listener: (isLoading: boolean) => void): () => void {
     this.loadingListeners.push(listener);
     return () => {
       this.loadingListeners = this.loadingListeners.filter(l => l !== listener);
     };
   }
 
-  private setAudioLoading(loading: boolean) {
-    this.loadingListeners.forEach(fn => {
-      try { fn(loading); } catch {}
-    });
-  }
-
   private setLastSource(source: AudioSourceType) {
     this.lastSource = source;
-    this.sourceListeners.forEach(fn => {
-      try { fn(source); } catch {}
-    });
+    this.sourceListeners.forEach(l => l(source));
   }
 
-  /**
-   * Check GCS audio resource availability
-   */
-  public async checkGcsResource(url?: string | null): Promise<boolean> {
-    if (!url || !url.startsWith('http')) return false;
-    if (this.gcsAvailabilityCache.has(url)) {
-      return this.gcsAvailabilityCache.get(url)!;
-    }
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
-      const res = await fetch(url, { method: 'HEAD', signal: controller.signal });
-      clearTimeout(timeoutId);
-      const ok = res.ok;
-      this.gcsAvailabilityCache.set(url, ok);
-      return ok;
-    } catch {
-      return new Promise((resolve) => {
-        const testAudio = new Audio();
-        let resolved = false;
-        const timer = setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            this.gcsAvailabilityCache.set(url, false);
-            resolve(false);
-          }
-        }, 2500);
-        testAudio.oncanplaythrough = () => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timer);
-            this.gcsAvailabilityCache.set(url, true);
-            resolve(true);
-          }
-        };
-        testAudio.onerror = () => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timer);
-            this.gcsAvailabilityCache.set(url, false);
-            resolve(false);
-          }
-        };
-        testAudio.src = url;
-      });
-    }
+  public getLastSource(): AudioSourceType {
+    return this.lastSource;
   }
 
-  /**
-   * Test Cloud TTS Connection and diagnose permissions
-   */
-  async testCloudTtsConnection(keyOverride?: string): Promise<{
-    success: boolean;
-    statusCode: number;
-    message: string;
-    isBlocked: boolean;
-  }> {
-    const key = keyOverride || this.customApiKey || import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4";
-    const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`;
-
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-User-Project': import.meta.env.VITE_FIREBASE_PROJECT_ID || 'chunks-voicecloning-genshai'
-        },
-        body: JSON.stringify({
-          input: { text: "Connection test." },
-          voice: { languageCode: "en-US", name: "en-US-Journey-F" },
-          audioConfig: { audioEncoding: "MP3" }
-        })
-      });
-
-      if (res.ok) {
-        return {
-          success: true,
-          statusCode: res.status,
-          message: "Google Cloud TTS API is fully CONNECTED and ACTIVE (Journey AI Voices ready).",
-          isBlocked: false
-        };
-      }
-
-      const errJson = await res.json().catch(() => ({}));
-      const reason = errJson?.error?.details?.[0]?.reason || errJson?.error?.status || '';
-      const errMsg = errJson?.error?.message || `HTTP ${res.status}`;
-
-      const isBlocked = res.status === 403 || reason === 'API_KEY_SERVICE_BLOCKED';
-
-      return {
-        success: false,
-        statusCode: res.status,
-        message: isBlocked
-          ? `API_KEY_SERVICE_BLOCKED (403): Dịch vụ Google Cloud Text-to-Speech đang bị khoá/chưa được bật trên API Key này trong Google Cloud Console. Ứng dụng sẽ tự động chuyển sang Model Máy (Browser Synthesis).`
-          : `Lỗi kết nối TTS (${res.status}): ${errMsg}`,
-        isBlocked
-      };
-    } catch (err: any) {
-      return {
-        success: false,
-        statusCode: 0,
-        message: `Network Error: Không thể kết nối tới texttospeech.googleapis.com (${err?.message || String(err)})`,
-        isBlocked: false
-      };
-    }
+  private setAudioLoading(loading: boolean) {
+    this.loadingListeners.forEach(l => l(loading));
   }
 
   /**
@@ -255,10 +183,76 @@ class AudioPlayService {
   }
 
   /**
+   * Fast GCS Resource Check with in-memory caching
+   */
+  async checkGcsResource(url: string): Promise<boolean> {
+    if (!url || !url.startsWith('http')) return false;
+    if (this.gcsAvailabilityCache.has(url)) {
+      return this.gcsAvailabilityCache.get(url)!;
+    }
+
+    try {
+      const resp = await fetch(url, { method: 'HEAD', cache: 'force-cache' });
+      const available = resp.ok;
+      this.gcsAvailabilityCache.set(url, available);
+      return available;
+    } catch {
+      this.gcsAvailabilityCache.set(url, false);
+      return false;
+    }
+  }
+
+  /**
+   * Test Live Google Cloud TTS API connectivity
+   */
+  async testCloudTtsConnection(overrideKey?: string): Promise<{ success: boolean; statusCode: number; message: string; isBlocked: boolean }> {
+    const apiKey = overrideKey || this.customApiKey || import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4";
+    const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-User-Project': import.meta.env.VITE_FIREBASE_PROJECT_ID || 'chunks-voicecloning-genshai'
+        },
+        body: JSON.stringify({
+          input: { text: "Connection verification" },
+          voice: { languageCode: 'en-US', name: 'en-US-Journey-F' },
+          audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0 }
+        })
+      });
+
+      if (response.ok) {
+        return { success: true, statusCode: response.status, message: "Google Cloud TTS Connected (Journey-F Online)", isBlocked: false };
+      } else {
+        const text = await response.text();
+        const isBlocked = response.status === 403 || text.includes('PERMISSION_DENIED') || text.includes('API_KEY_SERVICE_BLOCKED');
+        return { success: false, statusCode: response.status, message: text, isBlocked };
+      }
+    } catch (e: any) {
+      return { success: false, statusCode: 0, message: e?.message || "Network Error", isBlocked: false };
+    }
+  }
+
+  /**
+   * Test Deepgram Aura TTS API connectivity
+   */
+  async testDeepgramConnection(): Promise<{ ok: boolean; message: string }> {
+    try {
+      const base64 = await deepgramTts.synthesizeText("Deepgram Aura online test", "aura-asteria-en");
+      return { ok: !!base64, message: "Deepgram Aura Connected (Asteria Online)" };
+    } catch (e: any) {
+      return { ok: false, message: e?.message || "Deepgram Connection Failed" };
+    }
+  }
+
+  /**
    * Play Chunk Audio:
-   * 1. If permanent GCS URL is provided (e.g. from chunks-mirror-audio), stream directly.
-   * 2. Fallback to Google Cloud Text-to-Speech API (Journey / Studio / Neural2 models).
-   * 3. Fallback to Web Speech Synthesis if network API key is missing or blocked.
+   * 1. If permanent GCS URL is provided, stream directly.
+   * 2. If provider is DEEPGRAM_AURA or voice is aura-*, use Deepgram Speak API.
+   * 3. Fallback to Google Cloud Text-to-Speech API.
+   * 4. Fallback to Browser Speech if offline.
    */
   async playChunk(
     text: string,
@@ -268,36 +262,53 @@ class AudioPlayService {
     forceCloudTts: boolean = false
   ): Promise<void> {
     this.stop();
-
     if (!text || !text.trim()) return;
 
     this.setAudioLoading(true);
     try {
-      // 1. If permanent GCS URL is provided and not forced to dynamic TTS, stream directly
+      // 1. Permanent GCS Master URL
       if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
         try {
-          console.log(`[Audio] Streaming permanent GCS master audio: ${permanentAudioUrl}`);
           this.setLastSource('GCS_MASTER');
           await this.playUrl(permanentAudioUrl, speed);
           return;
         } catch (err) {
-          console.warn(`[Audio] Permanent GCS audio not reachable (${permanentAudioUrl}), synthesizing with Google Cloud TTS API...`, err);
+          console.warn(`[Audio] Permanent GCS URL unreachable (${permanentAudioUrl}), falling back to synthesis...`);
         }
       }
 
-      // 2. Synthesize via Google Cloud Text-to-Speech API
+      // Check if text is Vietnamese
+      const isVietnamese = voiceName.startsWith('vi') || /[\u00C0-\u1EF9]/.test(text);
+
+      // 2. Deepgram Aura Synthesis (for English)
+      if (!isVietnamese && (this.activeProvider === 'DEEPGRAM_AURA' || voiceName.startsWith('aura-'))) {
+        try {
+          const dgModel = voiceName.startsWith('aura-') ? voiceName : 'aura-asteria-en';
+          const base64 = await deepgramTts.synthesizeText(text, dgModel);
+          if (base64) {
+            this.setLastSource('DEEPGRAM_AURA');
+            await this.playBase64(base64, speed);
+            return;
+          }
+        } catch (dgErr: any) {
+          console.warn(`[Audio] Deepgram Aura synthesis failed (${dgErr?.message}), trying Google TTS...`);
+        }
+      }
+
+      // 3. Google Cloud Text-to-Speech Synthesis
       try {
-        const base64Audio = await this.synthesizeWithGoogleTTS(text, voiceName, speed);
+        const googleVoice = isVietnamese ? (voiceName.startsWith('vi') ? voiceName : 'vi-VN-Neural2-A') : voiceName;
+        const base64Audio = await this.synthesizeWithGoogleTTS(text, googleVoice, speed);
         if (base64Audio) {
           this.setLastSource('GOOGLE_CLOUD_AI');
-          await this.playBase64(base64Audio);
+          await this.playBase64(base64Audio, speed);
           return;
         }
       } catch (err: any) {
-        console.warn(`[Audio] Google Cloud TTS API unavailable (${err?.message}). Falling back to local Browser Speech ("Model Máy")...`);
+        console.warn(`[Audio] Google Cloud TTS synthesis notice (${err?.message}), trying local browser fallback...`);
       }
 
-      // 3. Fallback to browser Web Speech Synthesis if Google Cloud API is blocked or offline
+      // 4. Browser Local Speech
       this.setLastSource('BROWSER_LOCAL');
       await this.playBrowserTts(text, voiceName, speed);
     } finally {
@@ -306,7 +317,7 @@ class AudioPlayService {
   }
 
   /**
-   * Play sequential bilingual drill (English chunk, then Vietnamese translation or vice-versa)
+   * Play sequential bilingual drill: EN_ONLY, VI_ONLY, EN_THEN_VI, VI_THEN_EN
    */
   async playBilingualSequence(
     englishText: string,
@@ -350,6 +361,41 @@ class AudioPlayService {
     onStepChange?.('idle');
   }
 
+  /**
+   * Batch Pre-generate / Prepare All Audio for a list of Chunks
+   */
+  async prepareChunksAudio(
+    chunks: { english: string; audio_url?: string | null }[],
+    voiceEn: string = 'en-US-Journey-F',
+    provider: AudioProvider = 'GOOGLE_TTS',
+    onProgress?: (current: number, total: number, statusText: string) => void
+  ): Promise<{ prepared: number; failed: number }> {
+    let prepared = 0;
+    let failed = 0;
+    const total = chunks.length;
+
+    for (let i = 0; i < chunks.length; i++) {
+      const c = chunks[i];
+      onProgress?.(i + 1, total, `Synthesizing chunk #${i + 1}: "${c.english.slice(0, 30)}..."`);
+
+      try {
+        if (provider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-')) {
+          const dgModel = voiceEn.startsWith('aura-') ? voiceEn : 'aura-asteria-en';
+          await deepgramTts.synthesizeText(c.english, dgModel);
+        } else {
+          await this.synthesizeWithGoogleTTS(c.english, voiceEn, 1.0);
+        }
+        prepared++;
+      } catch (err) {
+        console.warn(`[Batch Audio] Failed chunk #${i + 1}:`, err);
+        failed++;
+      }
+    }
+
+    onProgress?.(total, total, `Completed! ${prepared} synthesized, ${failed} failed.`);
+    return { prepared, failed };
+  }
+
   private async synthesizeWithGoogleTTS(text: string, voiceName: string, speed: number): Promise<string> {
     const cacheKey = `${voiceName}_${speed}_${text}`;
     if (this.audioCache.has(cacheKey)) {
@@ -358,7 +404,6 @@ class AudioPlayService {
 
     const apiKey = this.customApiKey || import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4";
     const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
-
     const langCode = voiceName.startsWith('vi') ? 'vi-VN' : 'en-US';
 
     const response = await fetch(url, {
@@ -376,7 +421,7 @@ class AudioPlayService {
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Google TTS API Failed (${response.status}): ${errText}`);
+      throw new Error(`Google Cloud TTS API Error (${response.status}): ${errText}`);
     }
 
     const data = await response.json();
@@ -396,9 +441,11 @@ class AudioPlayService {
     });
   }
 
-  private playBase64(base64Audio: string): Promise<void> {
+  private playBase64(base64Audio: string, speed: number = 1.0): Promise<void> {
     return new Promise((resolve, reject) => {
-      const audio = new Audio(`data:audio/mp3;base64,${base64Audio}`);
+      const dataUri = base64Audio.startsWith('data:') ? base64Audio : `data:audio/mp3;base64,${base64Audio}`;
+      const audio = new Audio(dataUri);
+      audio.playbackRate = speed;
       this.currentAudio = audio;
       audio.onended = () => resolve();
       audio.onerror = (e) => reject(e);
@@ -406,54 +453,23 @@ class AudioPlayService {
     });
   }
 
-  private playBrowserTts(text: string, voiceNameHint: string, rate: number): Promise<void> {
+  private playBrowserTts(text: string, voiceName: string, speed: number): Promise<void> {
     return new Promise((resolve) => {
       if (typeof window === 'undefined' || !window.speechSynthesis) {
         resolve();
         return;
       }
+
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      const isVi = voiceNameHint.startsWith('vi');
+      utterance.rate = speed;
+
+      const isVi = voiceName.startsWith('vi') || /[\u00C0-\u1EF9]/.test(text);
       utterance.lang = isVi ? 'vi-VN' : 'en-US';
-      utterance.rate = rate;
-
-      // Adjust pitch based on chosen profile gender so different voice profiles produce distinct tones even on Model Máy
-      const isMale = voiceNameHint.includes('-M') || voiceNameHint.includes('-D');
-      utterance.pitch = isMale ? 0.85 : 1.05;
-
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        const langPrefix = isVi ? 'vi' : 'en';
-        const matchingLang = voices.filter(v => v.lang.toLowerCase().startsWith(langPrefix));
-        
-        if (matchingLang.length > 0) {
-          // If user picked male, try to find a male voice or alternate voice
-          if (isMale) {
-            const maleMatch = matchingLang.find(v => 
-              v.name.toLowerCase().includes('male') || 
-              v.name.toLowerCase().includes('david') || 
-              v.name.toLowerCase().includes('alex') ||
-              v.name.toLowerCase().includes('george')
-            );
-            if (maleMatch) utterance.voice = maleMatch;
-            else utterance.voice = matchingLang[0];
-          } else {
-            const femaleMatch = matchingLang.find(v => 
-              v.name.toLowerCase().includes('female') || 
-              v.name.toLowerCase().includes('samantha') || 
-              v.name.toLowerCase().includes('zira') ||
-              v.name.toLowerCase().includes('victoria') ||
-              v.name.toLowerCase().includes('karen')
-            );
-            if (femaleMatch) utterance.voice = femaleMatch;
-            else utterance.voice = matchingLang[0];
-          }
-        }
-      }
 
       utterance.onend = () => resolve();
       utterance.onerror = () => resolve();
+
       window.speechSynthesis.speak(utterance);
     });
   }
@@ -471,4 +487,3 @@ class AudioPlayService {
 }
 
 export const audioPlayer = new AudioPlayService();
-

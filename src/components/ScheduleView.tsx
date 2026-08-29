@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Cohort, ClassSession } from '../types';
-import { exportScheduleAsICS } from '../utils/scheduler';
+import { exportScheduleAsICS, calculate15Sessions } from '../utils/scheduler';
 import { CURRICULUM_CATALOG_LEVEL_B } from '../data/curriculumData';
 import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
 import { 
@@ -12,7 +12,11 @@ import {
   Sparkles,
   Layers,
   CheckCircle2,
-  CalendarCheck
+  CalendarCheck,
+  Settings,
+  Edit3,
+  X,
+  Check
 } from 'lucide-react';
 
 interface ScheduleViewProps {
@@ -30,6 +34,50 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 }) => {
   const [editingSessionNumber, setEditingSessionNumber] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
+  
+  // Cohort Settings Editor Modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [editTitle, setEditTitle] = useState<string>(cohort.title);
+  const [editStartDate, setEditStartDate] = useState<string>(cohort.start_date || '2026-09-01');
+  const [editDays, setEditDays] = useState<string[]>(cohort.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri']);
+  const [editStartTime, setEditStartTime] = useState<string>(cohort.schedule_pattern?.start_time || '19:30');
+  const [editEndTime, setEditEndTime] = useState<string>(cohort.schedule_pattern?.end_time || '21:00');
+
+  const toggleEditDay = (day: string) => {
+    if (editDays.includes(day)) {
+      if (editDays.length > 1) {
+        setEditDays(editDays.filter(d => d !== day));
+      }
+    } else {
+      setEditDays([...editDays, day]);
+    }
+  };
+
+  const handleSaveCohortSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newSessions = calculate15Sessions(
+      cohort.level_code,
+      editStartDate,
+      editDays,
+      editStartTime,
+      editEndTime
+    );
+    const updatedCohort: Cohort = {
+      ...cohort,
+      title: editTitle.trim() || cohort.title,
+      start_date: editStartDate,
+      schedule_pattern: {
+        days_of_week: editDays,
+        start_time: editStartTime,
+        end_time: editEndTime,
+        duration_minutes: 90
+      },
+      sessions: newSessions,
+      updated_at: new Date().toISOString()
+    };
+    onUpdateCohort(updatedCohort);
+    setIsEditModalOpen(false);
+  };
 
   const sessions = cohort?.sessions || [];
   const completedCount = sessions.filter(s => s.status === 'completed').length;
@@ -104,6 +152,22 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => {
+                setEditTitle(cohort.title);
+                setEditStartDate(cohort.start_date || '2026-09-01');
+                setEditDays(cohort.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri']);
+                setEditStartTime(cohort.schedule_pattern?.start_time || '19:30');
+                setEditEndTime(cohort.schedule_pattern?.end_time || '21:00');
+                setIsEditModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E8E8EC] bg-white text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all cursor-pointer shadow-xs"
+              title="Change start date, times, and recalculate 15 sessions"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-[#DC2626]" />
+              <span>Edit Schedule</span>
+            </button>
+
             <button
               onClick={handleExportICS}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E8E8EC] bg-white text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all cursor-pointer shadow-xs"
@@ -347,6 +411,136 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           );
         })}
       </div>
+
+      {/* 4. EDIT COHORT & SCHEDULE SETTINGS MODAL */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
+          <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-150">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-[#E8E8EC] flex items-center justify-between bg-[#FAFAFA]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#DC2626]/10 text-[#DC2626] flex items-center justify-center font-bold">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-[#0A0A0A] tracking-tight">Edit Cohort & Schedule</h3>
+                  <p className="text-xs text-zinc-500">Configure start date, recurring days, and recalculate 15 sessions</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-400 hover:text-zinc-700 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveCohortSettings} className="p-6 space-y-4">
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
+                  Cohort Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm focus:outline-hidden focus:border-[#DC2626]"
+                />
+              </div>
+
+              {/* Start Date */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
+                  Start Date (Khai Giảng)
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={editStartDate}
+                  onChange={(e) => setEditStartDate(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm font-mono focus:outline-hidden focus:border-[#DC2626]"
+                />
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  All 15 sessions will automatically skip to matching weekdays from this date.
+                </p>
+              </div>
+
+              {/* Recurring Days */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
+                  Schedule Days
+                </label>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
+                    const isSelected = editDays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleEditDay(day)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#DC2626] text-white shadow-xs'
+                            : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Times */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={editStartTime}
+                    onChange={(e) => setEditStartTime(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm font-mono focus:outline-hidden focus:border-[#DC2626]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    value={editEndTime}
+                    onChange={(e) => setEditEndTime(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm font-mono focus:outline-hidden focus:border-[#DC2626]"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-[#E8E8EC] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-[#E8E8EC] text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#DC2626] text-white text-xs font-bold hover:bg-[#B91C1C] shadow-sm transition-all cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Recalculate & Save 15 Sessions</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

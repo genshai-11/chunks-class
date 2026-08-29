@@ -3,7 +3,8 @@ import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart } f
 import { CURRICULUM_CATALOG_LEVEL_B } from '../data/curriculumData';
 import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
 import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
-import { audioPlayer, GOOGLE_TTS_VOICES, VoiceOption } from '../services/googleTtsService';
+import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption } from '../services/googleTtsService';
+import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
 import { PartsDrawer, groupChunksIntoParts } from './PartsDrawer';
 import { ChunkListPreviewDrawer } from './ChunkListPreviewDrawer';
@@ -38,7 +39,10 @@ import {
   Wifi,
   WifiOff,
   BookOpen,
-  TrendingUp
+  TrendingUp,
+  Zap,
+  CheckCircle2,
+  X
 } from 'lucide-react';
 
 interface ClassroomPresentationProps {
@@ -91,6 +95,36 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [showKeyboardGuide, setShowKeyboardGuide] = useState<boolean>(false);
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState<boolean>(false);
   const [activeAudioSource, setActiveAudioSource] = useState<AudioSourceType>(audioPlayer.getLastSource());
+  
+  // Audio Provider & Batch Pre-generation Engine
+  const [audioProvider, setAudioProvider] = useState<AudioProvider>(audioPlayer.getAudioProvider());
+  const [isPreparingAudio, setIsPreparingAudio] = useState<boolean>(false);
+  const [prepProgress, setPrepProgress] = useState<{ current: number; total: number; text: string } | null>(null);
+  const [isPrepModalOpen, setIsPrepModalOpen] = useState<boolean>(false);
+  const [prepSummary, setPrepSummary] = useState<{ prepared: number; failed: number } | null>(null);
+
+  const handleStartPrepareAudio = async () => {
+    if (chunks.length === 0) return;
+    setIsPreparingAudio(true);
+    setPrepSummary(null);
+    setPrepProgress({ current: 0, total: chunks.length, text: 'Starting synthesis...' });
+
+    try {
+      const result = await audioPlayer.prepareChunksAudio(
+        chunks,
+        selectedVoice,
+        audioProvider,
+        (curr, tot, text) => {
+          setPrepProgress({ current: curr, total: tot, text });
+        }
+      );
+      setPrepSummary(result);
+    } catch (e: any) {
+      console.error('Audio preparation failed:', e);
+    } finally {
+      setIsPreparingAudio(false);
+    }
+  };
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -564,19 +598,42 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             <Activity className="w-3 h-3 opacity-60 ml-0.5" />
           </button>
 
+          {/* Audio Engine Provider Selector (Google Cloud vs Deepgram Aura) */}
+          <select
+            value={audioProvider}
+            onChange={(e) => {
+              const newProv = e.target.value as AudioProvider;
+              setAudioProvider(newProv);
+              audioPlayer.setAudioProvider(newProv);
+              if (newProv === 'DEEPGRAM_AURA') {
+                setSelectedVoice('aura-asteria-en');
+              } else {
+                setSelectedVoice('en-US-Journey-F');
+              }
+            }}
+            className={`text-xs font-mono font-bold rounded-lg px-2.5 py-1.5 border transition-all cursor-pointer shadow-xs ${
+              highContrastDark 
+                ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
+                : 'bg-white text-[#0A0A0A] border-[#E8E8EC]'
+            }`}
+            title="Switch Audio Engine: Google Cloud TTS vs Deepgram Aura"
+          >
+            <option value="GOOGLE_TTS">Google Cloud TTS</option>
+            <option value="DEEPGRAM_AURA">Deepgram Aura AI</option>
+          </select>
+
           {/* Voice Model Selector */}
           <select
             value={selectedVoice}
             onChange={(e) => {
               const newVoice = e.target.value;
               setSelectedVoice(newVoice);
-              // Preview newly selected voice immediately
               audioPlayer.playChunk(
                 currentChunk?.english || "Chunking method",
                 null,
                 newVoice,
                 speed,
-                true // force dynamic synthesis test
+                true
               );
             }}
             className={`text-xs font-mono font-semibold rounded-lg px-2.5 py-1.5 border transition-all cursor-pointer shadow-xs ${
@@ -584,14 +641,32 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
                 : 'bg-white text-[#0A0A0A] border-[#E8E8EC]'
             }`}
-            title="Google Cloud Real Voice Model"
+            title="Real Voice Model"
           >
-            {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
-              <option key={v.id} value={v.id}>
-                {v.name}
-              </option>
-            ))}
+            {audioProvider === 'DEEPGRAM_AURA' ? (
+              DEEPGRAM_AURA_VOICES.map(v => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))
+            ) : (
+              GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))
+            )}
           </select>
+
+          {/* Prepare Lesson Audio Button */}
+          <button
+            onClick={() => setIsPrepModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 transition-all cursor-pointer shadow-xs"
+            title="Pre-generate & synthesize all audio in this lesson"
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+            <span className="font-mono">Prepare Audio</span>
+          </button>
 
           {/* Words List Drawer Toggle */}
           <button
@@ -888,6 +963,15 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               EN Only
             </button>
             <button
+              onClick={() => setLanguageMode('VI_ONLY')}
+              className={`px-2 py-1 rounded text-[11px] font-bold font-mono transition-colors cursor-pointer ${
+                languageMode === 'VI_ONLY' ? 'bg-[#DC2626] text-white' : 'text-zinc-600 hover:text-black'
+              }`}
+              title="Phát độc quyền âm thanh dịch tiếng Việt Neural2"
+            >
+              VI Only
+            </button>
+            <button
               onClick={() => setLanguageMode('EN_THEN_VI')}
               className={`px-2 py-1 rounded text-[11px] font-bold font-mono transition-colors cursor-pointer ${
                 languageMode === 'EN_THEN_VI' ? 'bg-[#DC2626] text-white' : 'text-zinc-600 hover:text-black'
@@ -989,7 +1073,121 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         }}
       />
 
-      {/* 10. AUDIO ENGINE DIAGNOSTICS MODAL */}
+      {/* 10. BATCH AUDIO PREPARATION MODAL */}
+      {isPrepModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
+          <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-150">
+            {/* Header */}
+            <div className="p-5 border-b border-[#E8E8EC] flex items-center justify-between bg-[#FAFAFA]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
+                  <Zap className="w-4 h-4 fill-amber-500" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-[#0A0A0A] tracking-tight">Prepare Lesson Audio</h3>
+                  <p className="text-xs text-zinc-500">Pre-synthesize & cache all chunks for 0ms in-class playback</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!isPreparingAudio) setIsPrepModalOpen(false);
+                }}
+                disabled={isPreparingAudio}
+                className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-400 hover:text-zinc-700 transition-colors disabled:opacity-30"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Lesson:</span>
+                  <span className="font-bold text-zinc-900">{activeLesson.lesson_title}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Total Chunks:</span>
+                  <span className="font-mono font-bold text-[#DC2626]">{chunks.length} chunks</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Audio Engine:</span>
+                  <span className="font-mono font-bold text-zinc-800">
+                    {audioProvider === 'DEEPGRAM_AURA' ? 'Deepgram Aura AI' : 'Google Cloud TTS'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Selected Voice:</span>
+                  <span className="font-mono font-bold text-zinc-800">{selectedVoice}</span>
+                </div>
+              </div>
+
+              {/* Progress State */}
+              {prepProgress && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-600 truncate max-w-[240px] font-mono">{prepProgress.text}</span>
+                    <span className="font-mono font-bold text-[#DC2626]">
+                      {prepProgress.current} / {prepProgress.total} ({Math.round((prepProgress.current / prepProgress.total) * 100)}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 bg-zinc-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#DC2626] rounded-full transition-all duration-150"
+                      style={{ width: `${(prepProgress.current / prepProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Completion Summary */}
+              {prepSummary && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2 text-xs text-emerald-800 font-medium">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    Successfully prepared <b>{prepSummary.prepared} chunks</b>. Ready for zero-delay offline playback!
+                  </span>
+                </div>
+              )}
+
+              {/* CTA Buttons */}
+              <div className="pt-3 border-t border-[#E8E8EC] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPrepModalOpen(false)}
+                  disabled={isPreparingAudio}
+                  className="px-4 py-2 rounded-xl border border-[#E8E8EC] text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition-colors disabled:opacity-30"
+                >
+                  {prepSummary ? 'Close' : 'Cancel'}
+                </button>
+
+                {!prepSummary && (
+                  <button
+                    type="button"
+                    onClick={handleStartPrepareAudio}
+                    disabled={isPreparingAudio}
+                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#DC2626] text-white text-xs font-bold hover:bg-[#B91C1C] shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isPreparingAudio ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Synthesizing ({prepProgress?.current || 0}/{chunks.length})...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3.5 h-3.5 fill-current" />
+                        <span>Start Batch Synthesis</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 11. AUDIO ENGINE DIAGNOSTICS MODAL */}
       <AudioDiagnosticModal
         isOpen={isDiagnosticOpen}
         onClose={() => setIsDiagnosticOpen(false)}

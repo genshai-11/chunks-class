@@ -54,12 +54,27 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
     return unsub;
   }, []);
 
+  const [activeVoiceEngine, setActiveVoiceEngine] = useState<'GOOGLE' | 'DEEPGRAM'>('GOOGLE');
+  const [deepgramKeyInput, setDeepgramKeyInput] = useState<string>(
+    localStorage.getItem('chunks_deepgram_api_key') || '51d7d8b230bf742178e681e7836a3dc1571b1c11'
+  );
+  const [deepgramSaved, setDeepgramSaved] = useState<boolean>(false);
+
   const voiceProfilesEn = [
     { id: 'en-US-Journey-F', name: 'Google Journey Female (en-US-Journey-F)', desc: 'Warm, natural American English prosody with conversational cadence', tag: 'RECOMMENDED', sample: "Good morning class! Let's practice our daily chunks together." },
     { id: 'en-US-Journey-M', name: 'Google Journey Male (en-US-Journey-M)', desc: 'Deep, crisp male conversational articulation for classroom projection', tag: 'MALE VOICE', sample: "Mastering chunks is the fastest way to natural spoken English." },
     { id: 'en-US-Studio-O', name: 'Google Studio Narrator (en-US-Studio-O)', desc: 'High-clarity studio master for phonetic pronunciation drills', tag: 'STUDIO MASTER', sample: "Focus closely on the stress and syllable rhythm of each phrase." },
     { id: 'en-US-Neural2-F', name: 'Google Neural2 Studio (en-US-Neural2-F)', desc: 'Broadcast-grade studio clarity with balanced intonation', tag: 'STUDIO', sample: "Repeat after me with confidence and correct cadence." },
     { id: 'en-US-Neural2-D', name: 'Google Neural2 Deep (en-US-Neural2-D)', desc: 'Deep male studio tone with precise pronunciation markers', tag: 'DEEP MALE', sample: "Hit the ground running with today's spoken phrases." }
+  ];
+
+  const voiceProfilesDeepgram = [
+    { id: 'aura-asteria-en', name: 'Deepgram Asteria (Female)', desc: 'Crisp, natural, and expressive American English conversational voice.', tag: 'AURA AI', sample: "Mastering chunks is the fastest way to natural spoken English fluency." },
+    { id: 'aura-luna-en', name: 'Deepgram Luna (Female)', desc: 'Warm, approachable, and engaging tone for daily conversation practice.', tag: 'WARM', sample: "Let's practice these daily spoken chunks together." },
+    { id: 'aura-stella-en', name: 'Deepgram Stella (Female)', desc: 'Clear, articulate, and professional female voice for pronunciation drills.', tag: 'POLISHED', sample: "Focus closely on the stress and natural rhythm of each phrase." },
+    { id: 'aura-orion-en', name: 'Deepgram Orion (Male)', desc: 'Deep, resonant, and natural American male voice for spoken dialogues.', tag: 'MALE VOICE', sample: "Consistent daily chunk practice unlocks effortless conversation." },
+    { id: 'aura-arcas-en', name: 'Deepgram Arcas (Male)', desc: 'Friendly, energetic, and engaging American male voice.', tag: 'DYNAMIC', sample: "Hit the ground running with today's spoken masterclass." },
+    { id: 'aura-helios-en', name: 'Deepgram Helios (Male)', desc: 'Polished British male voice for international English drills.', tag: 'BRITISH', sample: "Speaking English with proper chunk cadence makes all the difference." }
   ];
 
   const voiceProfilesVi = [
@@ -194,14 +209,67 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             <div className="flex items-center gap-2">
               <Headphones className="w-5 h-5 text-[#DC2626]" />
               <h2 className="font-display font-bold text-base text-[#0A0A0A]">
-                1. English Voice Profiles
+                1. English Voice Engine & Profiles
               </h2>
             </div>
             <span className="text-[11px] text-zinc-400 font-mono">Bấm ▶ để nghe thử</span>
           </div>
 
+          {/* Engine Selector Tabs */}
+          <div className="flex items-center p-1 bg-zinc-100 rounded-xl gap-1">
+            <button
+              onClick={() => setActiveVoiceEngine('GOOGLE')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold font-mono transition-all ${
+                activeVoiceEngine === 'GOOGLE'
+                  ? 'bg-white text-[#DC2626] shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+            >
+              Google Cloud TTS
+            </button>
+            <button
+              onClick={() => setActiveVoiceEngine('DEEPGRAM')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-bold font-mono transition-all ${
+                activeVoiceEngine === 'DEEPGRAM'
+                  ? 'bg-white text-[#DC2626] shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+            >
+              Deepgram Aura AI
+            </button>
+          </div>
+
+          {/* Deepgram API Key Config Panel (if in Deepgram Tab) */}
+          {activeVoiceEngine === 'DEEPGRAM' && (
+            <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-900">Deepgram API Key:</span>
+                {deepgramSaved && <span className="text-[11px] font-mono text-emerald-600 font-bold">✓ Saved</span>}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={deepgramKeyInput}
+                  onChange={(e) => setDeepgramKeyInput(e.target.value)}
+                  placeholder="51d7d8b230bf..."
+                  className="flex-1 px-3 py-1.5 bg-white rounded-lg border border-amber-300 text-xs font-mono"
+                />
+                <button
+                  onClick={() => {
+                    localStorage.setItem('chunks_deepgram_api_key', deepgramKeyInput.trim());
+                    setDeepgramSaved(true);
+                    setTimeout(() => setDeepgramSaved(false), 2000);
+                  }}
+                  className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2.5">
-            {voiceProfilesEn.map((v) => {
+            {(activeVoiceEngine === 'GOOGLE' ? voiceProfilesEn : voiceProfilesDeepgram).map((v) => {
               const isSelected = settings.voice_profile_en === v.id;
               const isPlayingThis = playingVoiceId === v.id;
               return (
