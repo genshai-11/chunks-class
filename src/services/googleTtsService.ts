@@ -99,8 +99,8 @@ class AudioPlayService {
   private currentAudio: HTMLAudioElement | null = null;
   private audioCache = new Map<string, string>(); // key -> audio url/dataUri
   private gcsAvailabilityCache = new Map<string, boolean>();
-  private lastSource: AudioSourceType = 'BROWSER_LOCAL';
-  private activeProvider: AudioProvider = 'GOOGLE_TTS';
+  private lastSource: AudioSourceType = 'DEEPGRAM_AURA';
+  private activeProvider: AudioProvider = 'DEEPGRAM_AURA';
   private sourceListeners: ((source: AudioSourceType) => void)[] = [];
   private loadingListeners: ((isLoading: boolean) => void)[] = [];
   private customApiKey: string = '';
@@ -114,6 +114,8 @@ class AudioPlayService {
         const savedProvider = localStorage.getItem('chunks_active_audio_provider');
         if (savedProvider === 'DEEPGRAM_AURA' || savedProvider === 'GOOGLE_TTS') {
           this.activeProvider = savedProvider;
+        } else {
+          this.activeProvider = 'DEEPGRAM_AURA';
         }
       } catch {}
     }
@@ -213,8 +215,7 @@ class AudioPlayService {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-User-Project': import.meta.env.VITE_FIREBASE_PROJECT_ID || 'chunks-voicecloning-genshai'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           input: { text: "Connection verification" },
@@ -437,8 +438,7 @@ class AudioPlayService {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-User-Project': import.meta.env.VITE_FIREBASE_PROJECT_ID || 'chunks-voicecloning-genshai'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         input: { text },

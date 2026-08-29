@@ -68,7 +68,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
     return unsub;
   }, []);
 
-  const [activeVoiceEngine, setActiveVoiceEngine] = useState<'GOOGLE' | 'DEEPGRAM'>('GOOGLE');
+  const [activeVoiceEngine, setActiveVoiceEngine] = useState<'GOOGLE' | 'DEEPGRAM'>('DEEPGRAM');
   const [deepgramKeyInput, setDeepgramKeyInput] = useState<string>(
     localStorage.getItem('chunks_deepgram_api_key') || '51d7d8b230bf742178e681e7836a3dc1571b1c11'
   );

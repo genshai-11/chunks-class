@@ -140,12 +140,52 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6 text-xs">
-          {/* 1. Live Connection Status Card */}
+          {/* 1. Deepgram Aura Test Card (Primary Engine) */}
+          <div className="p-4 rounded-xl border bg-purple-50/40 border-purple-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-purple-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-purple-600 fill-purple-500" />
+                1. Deepgram Aura TTS AI Engine (Khuyên dùng - Đang hoạt động)
+              </span>
+              <button
+                onClick={() => runDeepgramTest()}
+                disabled={testingDeepgram}
+                className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white border border-purple-300 text-purple-800 font-semibold hover:bg-purple-50 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3 h-3 ${testingDeepgram ? 'animate-spin' : ''}`} />
+                <span>{testingDeepgram ? 'Testing...' : 'Test Deepgram'}</span>
+              </button>
+            </div>
+
+            {deepgramTestResult && (
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${
+                deepgramTestResult.success
+                  ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                  : 'bg-rose-50 text-rose-900 border-rose-200'
+              }`}>
+                {deepgramTestResult.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                )}
+                <div className="space-y-0.5">
+                  <div className="font-bold text-xs">
+                    {deepgramTestResult.success ? 'ĐÃ KẾT NỐI THÀNH CÔNG (Deepgram Aura Ready)' : 'Lỗi kết nối Deepgram'}
+                  </div>
+                  <p className="text-[11px] opacity-90">
+                    {deepgramTestResult.message}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Google Cloud TTS Test Card */}
           <div className="p-4 rounded-xl border bg-zinc-50/50 space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-bold text-zinc-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                 <Cloud className="w-4 h-4 text-blue-600" />
-                Google Cloud TTS API Endpoint
+                2. Google Cloud TTS API Endpoint
               </span>
               <button
                 onClick={() => runTest()}
@@ -153,7 +193,7 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
                 className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white border border-zinc-300 text-zinc-700 font-semibold hover:bg-zinc-100 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3 h-3 ${testing ? 'animate-spin' : ''}`} />
-                <span>{testing ? 'Testing...' : 'Test Connection'}</span>
+                <span>{testing ? 'Testing...' : 'Test Google Cloud'}</span>
               </button>
             </div>
 
@@ -177,52 +217,20 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
                     {testResult.success 
                       ? 'ĐÃ KẾT NỐI THÀNH CÔNG (Google Cloud Journey AI Ready)'
                       : testResult.isBlocked 
-                        ? 'PHÁT HIỆN: Đang phát bằng "Model Máy" (Browser Synthesis Fallback)'
+                        ? 'Google Cloud API Key bị giới hạn dịch vụ TTS (403)'
                         : `Lỗi kết nối (Mã: ${testResult.statusCode})`
                     }
                   </div>
                   <p className="text-[11px] leading-relaxed opacity-90">
-                    {testResult.message}
+                    {testResult.isBlocked 
+                      ? 'Key Firebase mặc định chỉ mở quyền Auth/Firestore và bị chặn dịch vụ Google Text-to-Speech (403). Hãy sử dụng Deepgram Aura AI ở trên hoặc nhập Custom Google Cloud API Key đã bật Text-to-Speech API bên dưới.'
+                      : testResult.message
+                    }
                   </p>
                 </div>
               </div>
             )}
           </div>
-
-            {/* Deepgram Aura Test Card */}
-            <div className="p-4 rounded-xl border bg-purple-50/40 border-purple-200 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-purple-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-purple-600 fill-purple-500" />
-                  Deepgram Aura TTS AI Engine
-                </span>
-                <button
-                  onClick={() => runDeepgramTest()}
-                  disabled={testingDeepgram}
-                  className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white border border-purple-300 text-purple-800 font-semibold hover:bg-purple-50 transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3 h-3 ${testingDeepgram ? 'animate-spin' : ''}`} />
-                  <span>{testingDeepgram ? 'Testing...' : 'Test Deepgram'}</span>
-                </button>
-              </div>
-
-              {deepgramTestResult && (
-                <div className={`p-3 rounded-xl border flex items-start gap-2.5 ${
-                  deepgramTestResult.success
-                    ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                    : 'bg-rose-50 text-rose-900 border-rose-200'
-                }`}>
-                  {deepgramTestResult.success ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                  )}
-                  <div className="font-bold text-xs">
-                    {deepgramTestResult.message}
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* 2. Audio Source Indicator & Why sound didn't change */}
           <div className="p-4 rounded-xl border border-zinc-200 bg-white space-y-3">
