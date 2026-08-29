@@ -1,0 +1,6 @@
+{
+  "name": "CHUNKS Teacher Classroom Platform",
+  "description": "Editorial classroom drill and automated 15-session cohort scheduler with high-contrast projector mode and hardware clicker support for English teachers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

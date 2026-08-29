@@ -1,0 +1,621 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { ChunkCategory, ChunkItem, LessonDoc, CourseLevel } from '../types';
+import { 
+  getAllLessons, 
+  saveLesson, 
+  addOrUpdateChunk, 
+  deleteChunk, 
+  syncAllCurriculumToFirestore, 
+  checkFirestoreHealth,
+  DatabaseStatus
+} from '../services/firestoreService';
+import { audioPlayer } from '../services/googleTtsService';
+import { ChunkModal } from './ChunkModal';
+import { ChunkPreviewModal } from './ChunkPreviewModal';
+import { 
+  Search, 
+  Volume2, 
+  Play, 
+  Download, 
+  Music,
+  Plus,
+  Edit2,
+  Trash2,
+  Eye,
+  Database,
+  RefreshCw,
+  CheckCircle2,
+  AlertTriangle,
+  Upload,
+  Layers,
+  Sparkles,
+  ArrowUpDown,
+  FileSpreadsheet
+} from 'lucide-react';
+
+interface CurriculumExplorerProps {
+  onLaunchProjectorForLesson: (lessonId: string, sessionNumber: number) => void;
+  defaultCourseLevel?: CourseLevel;
+}
+
+export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
+  onLaunchProjectorForLesson,
+  defaultCourseLevel = 'LEVEL_B'
+}) => {
+  const [selectedLevel, setSelectedLevel] = useState<CourseLevel>(defaultCourseLevel);
+  const [lessons, setLessons] = useState<LessonDoc[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedDay, setSelectedDay] = useState<number | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<ChunkCategory | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [playingChunkId, setPlayingChunkId] = useState<string | null>(null);
+
+  // Database status & sync state
+  const [dbStatus, setDbStatus] = useState<DatabaseStatus | null>(null);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; message: string } | null>(null);
+  const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Chunk Modal (Add/Edit)
+  const [isChunkModalOpen, setIsChunkModalOpen] = useState<boolean>(false);
+  const [editingChunk, setEditingChunk] = useState<ChunkItem | null>(null);
+  const [targetLessonId, setTargetLessonId] = useState<string>('');
+  const [targetDayNumber, setTargetDayNumber] = useState<number>(1);
+
+  // Full Screen Preview Modal
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
+  const [previewChunksList, setPreviewChunksList] = useState<ChunkItem[]>([]);
+  const [previewInitialIndex, setPreviewInitialIndex] = useState<number>(0);
+  const [previewLessonTitle, setPreviewLessonTitle] = useState<string>('');
+  const [previewDayNumber, setPreviewDayNumber] = useState<number>(1);
+
+  // Bulk import state
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState<boolean>(false);
+  const [bulkImportText, setBulkImportText] = useState<string>('');
+
+  const categories: { id: ChunkCategory | 'all'; label: string }[] = [
+    { id: 'all', label: 'Tất Cả Thể Loại (All Categories)' },
+    { id: 'vocab', label: 'Vocabulary (Từ vựng cụm)' },
+    { id: 'phrase', label: 'Spoken Phrase (Cụm nói)' },
+    { id: 'sentence', label: 'Pattern Sentence (Mẫu câu)' },
+    { id: 'dialogue', label: 'Dialogue (Hội thoại)' },
+    { id: 'monologue', label: 'Monologue (Độc thoại)' },
+    { id: 'idiom', label: 'Idiom (Thành ngữ)' },
+    { id: 'slang', label: 'Slang (Tiếng lóng)' },
+    { id: 'grammar', label: 'Collocation (Ngữ pháp)' },
+    { id: 'word_family', label: 'Word Family (Họ từ)' },
+    { id: 'review', label: 'Review (Ôn tập)' }
+  ];
+
+  // Load lessons from Firestore / Local storage
+  const loadCurriculumData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getAllLessons(selectedLevel);
+      setLessons(data);
+      const health = await checkFirestoreHealth();
+      setDbStatus(health);
+    } catch (err) {
+      console.error("Error loading curriculum lessons:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCurriculumData();
+  }, [selectedLevel]);
+
+  // Handle Full Database Synchronization to Firestore
+  const handleSyncToFirestore = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    try {
+      const result = await syncAllCurriculumToFirestore((current, total, message) => {
+        setSyncProgress({ current, total, message });
+      });
+
+      if (result.success) {
+        setSyncResult({
+          success: true,
+          message: `Đã đồng bộ thành công ${result.totalLessons} bài học & ${result.totalChunks} chunks trực tiếp lên Firestore Database!`
+        });
+        await loadCurriculumData();
+      } else {
+        setSyncResult({
+          success: false,
+          message: `Lỗi đồng bộ: ${result.error || 'Vui lòng kiểm tra lại quyền truy cập Firestore.'}`
+        });
+      }
+    } catch (err: any) {
+      setSyncResult({
+        success: false,
+        message: `Lỗi: ${err?.message || String(err)}`
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Play audio preview
+  const handlePlayChunk = async (chunk: ChunkItem) => {
+    setPlayingChunkId(chunk.chunk_id);
+    try {
+      await audioPlayer.playChunk(
+        chunk.english,
+        chunk.audio_url,
+        'en-US-Journey-F',
+        1.0
+      );
+    } catch {
+      // ignore
+    } finally {
+      setPlayingChunkId(null);
+    }
+  };
+
+  // Filtered Chunks memo
+  const filteredChunks = useMemo(() => {
+    let list: { chunk: ChunkItem; lesson: LessonDoc }[] = [];
+
+    lessons.forEach(lesson => {
+      if (selectedDay === 'all' || lesson.day_number === selectedDay) {
+        (lesson.chunks || []).forEach(chunk => {
+          if (selectedCategory === 'all' || chunk.category === selectedCategory) {
+            const matchesSearch = 
+              !searchQuery ||
+              chunk.english.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              chunk.vietnamese.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              (chunk.beat_prosody && chunk.beat_prosody.toLowerCase().includes(searchQuery.toLowerCase())) ||
+              (chunk.ipa && chunk.ipa.toLowerCase().includes(searchQuery.toLowerCase()));
+
+            if (matchesSearch) {
+              list.push({ chunk, lesson });
+            }
+          }
+        });
+      }
+    });
+
+    return list;
+  }, [lessons, selectedDay, selectedCategory, searchQuery]);
+
+  // Total statistics
+  const totalChunksInLevel = useMemo(() => {
+    return lessons.reduce((acc, l) => acc + (l.chunks?.length || 0), 0);
+  }, [lessons]);
+
+  // Open modal to add chunk
+  const handleOpenAddChunk = () => {
+    const activeLesson = selectedDay === 'all' 
+      ? lessons[0] 
+      : lessons.find(l => l.day_number === selectedDay) || lessons[0];
+    
+    if (activeLesson) {
+      setTargetLessonId(activeLesson.id);
+      setTargetDayNumber(activeLesson.day_number);
+      setEditingChunk(null);
+      setIsChunkModalOpen(true);
+    }
+  };
+
+  // Open modal to edit chunk
+  const handleOpenEditChunk = (chunk: ChunkItem, lesson: LessonDoc) => {
+    setTargetLessonId(lesson.id);
+    setTargetDayNumber(lesson.day_number);
+    setEditingChunk(chunk);
+    setIsChunkModalOpen(true);
+  };
+
+  // Save chunk (Add or Edit)
+  const handleSaveChunk = async (chunkToSave: ChunkItem) => {
+    await addOrUpdateChunk(targetLessonId, chunkToSave);
+    await loadCurriculumData();
+  };
+
+  // Delete chunk
+  const handleDeleteChunk = async (chunk: ChunkItem, lesson: LessonDoc) => {
+    if (window.confirm(`Bạn có chắc muốn xóa cụm "${chunk.english}" khỏi Day ${lesson.day_number}?`)) {
+      await deleteChunk(lesson.id, chunk.chunk_id);
+      await loadCurriculumData();
+    }
+  };
+
+  // Open Full-Screen Presentation Preview
+  const handleOpenPreview = (chunkIndex: number, lesson: LessonDoc) => {
+    setPreviewChunksList(lesson.chunks);
+    setPreviewInitialIndex(chunkIndex);
+    setPreviewLessonTitle(lesson.lesson_title);
+    setPreviewDayNumber(lesson.day_number);
+    setIsPreviewModalOpen(true);
+  };
+
+  // Export CSV
+  const handleExportCSV = () => {
+    const headers = ["Level", "Chunk ID", "Day", "Category", "English", "Vietnamese", "Beat Prosody", "IPA", "Speaker"];
+    const rows = filteredChunks.map(({ chunk, lesson }) => [
+      selectedLevel,
+      chunk.chunk_id,
+      `Day ${lesson.day_number}`,
+      chunk.category,
+      `"${chunk.english.replace(/"/g, '""')}"`,
+      `"${chunk.vietnamese.replace(/"/g, '""')}"`,
+      `"${chunk.beat_prosody || ''}"`,
+      `"${chunk.ipa || ''}"`,
+      `"${chunk.speaker || ''}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `chunks_${selectedLevel.toLowerCase()}_export.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Export JSON
+  const handleExportJSON = () => {
+    const dataStr = JSON.stringify(lessons, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `curriculum_${selectedLevel.toLowerCase()}_database.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans">
+      {/* 1. Database Health & Sync Status Banner */}
+      <div className="bg-white rounded-2xl border border-[#E8E8EC] p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className={`p-2.5 rounded-xl ${dbStatus?.isConnected ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
+            <Database className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-bold text-sm text-[#0A0A0A]">
+                Firestore Database: <span className="font-mono text-xs text-zinc-600">chunks-voicecloning-genshai</span>
+              </h3>
+              <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                dbStatus?.isConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-100 text-zinc-700'
+              }`}>
+                {dbStatus?.isConnected ? '● Connected Live' : '○ Local Synced'}
+              </span>
+            </div>
+            <p className="text-xs text-[#6B6B6B] mt-0.5">
+              Đang tải trực tiếp: <strong className="text-[#0A0A0A]">{lessons.length} bài học</strong> ({totalChunksInLevel.toLocaleString()} chunks trong Level {selectedLevel.replace('_', ' ')})
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <button
+            onClick={loadCurriculumData}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E8EC] bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition-all cursor-pointer shadow-xs"
+            title="Làm mới dữ liệu từ server"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Làm Mới DB</span>
+          </button>
+
+          <button
+            onClick={handleSyncToFirestore}
+            disabled={isSyncing}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] disabled:bg-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? 'Đang Đồng Bộ Firestore...' : 'Đồng Bộ 7,851 Chunks Lên DB'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Sync progress notification */}
+      {syncProgress && isSyncing && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 animate-fade-in text-blue-900 text-xs">
+          <div className="flex items-center justify-between mb-1.5 font-bold">
+            <span>{syncProgress.message}</span>
+            <span className="font-mono">{syncProgress.current} / {syncProgress.total}</span>
+          </div>
+          <div className="w-full bg-blue-200 rounded-full h-1.5 overflow-hidden">
+            <div 
+              className="bg-[#DC2626] h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${Math.round((syncProgress.current / syncProgress.total) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {syncResult && (
+        <div className={`p-4 rounded-xl border flex items-center gap-3 text-xs ${
+          syncResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-red-50 border-red-200 text-red-900'
+        }`}>
+          {syncResult.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />}
+          <span>{syncResult.message}</span>
+        </div>
+      )}
+
+      {/* 2. Main Curriculum Hero & Action Toolbar */}
+      <div className="bg-white rounded-2xl border border-[#E8E8EC] p-6 shadow-xs space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626] uppercase">
+                Curriculum & Chunks Management
+              </span>
+              <span className="text-xs text-[#6B6B6B] font-mono">
+                • {selectedLevel === 'LEVEL_A' ? '150 Foundation Chunks' : '7,851 Masterclass Chunks'}
+              </span>
+            </div>
+            <h1 className="font-display font-bold text-2xl text-[#0A0A0A] tracking-tight">
+              {selectedLevel === 'LEVEL_A' ? 'Level A - Foundation English Chunks' : 'Level B - Spoken Chunks Masterclass'}
+            </h1>
+            <p className="text-sm text-[#6B6B6B] mt-1">
+              Quản lý toàn bộ kho giáo trình, thêm/sửa/xóa cụm câu phản xạ, kiểm tra ngữ điệu trọng âm, và xem trước chế độ lớp học.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+            {/* Level Toggle */}
+            <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+              <button
+                onClick={() => { setSelectedLevel('LEVEL_A'); setSelectedDay('all'); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  selectedLevel === 'LEVEL_A' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+              >
+                Level A (150 Chunks)
+              </button>
+              <button
+                onClick={() => { setSelectedLevel('LEVEL_B'); setSelectedDay('all'); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  selectedLevel === 'LEVEL_B' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+              >
+                Level B (7,851 Chunks)
+              </button>
+            </div>
+
+            {/* Add Chunk Action */}
+            <button
+              onClick={handleOpenAddChunk}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Thêm Chunk</span>
+            </button>
+
+            {/* Export Menu */}
+            <div className="flex items-center gap-1 bg-[#FAFAFA] border border-[#E8E8EC] p-1 rounded-xl">
+              <button
+                onClick={handleExportCSV}
+                className="p-1.5 text-zinc-600 hover:text-[#DC2626] hover:bg-white rounded-lg transition-all cursor-pointer"
+                title="Xuất CSV"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleExportJSON}
+                className="p-1.5 text-zinc-600 hover:text-[#DC2626] hover:bg-white rounded-lg transition-all cursor-pointer"
+                title="Xuất JSON Database"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Filter & Search Controls */}
+        <div className="pt-4 border-t border-[#E8E8EC] grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm tiếng Anh, tiếng Việt, IPA, trọng âm..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-medium text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626]"
+            />
+          </div>
+
+          {/* Day Selector */}
+          <select
+            value={selectedDay}
+            onChange={(e) => setSelectedDay(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+            className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
+          >
+            <option value="all">Tất Cả 15 Bài Học (Day 1 – 15)</option>
+            {lessons.map(l => (
+              <option key={l.id} value={l.day_number}>
+                Day {l.day_number}: {l.lesson_title} ({l.chunks?.length || 0} chunks)
+              </option>
+            ))}
+          </select>
+
+          {/* Category Selector */}
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value as any)}
+            className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
+          >
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* 4. Chunks List / Grid */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-xs text-[#6B6B6B] px-1 font-mono">
+          <span>
+            Tìm thấy <strong className="text-[#0A0A0A]">{filteredChunks.length}</strong> chunks phù hợp
+          </span>
+          <span className="text-[11px] hidden sm:inline">
+            Nhấn biểu tượng Loa để nghe TTS • Nhấn "Xem Trước" để chạy thử Projector
+          </span>
+        </div>
+
+        {filteredChunks.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-[#E8E8EC] p-12 text-center space-y-3">
+            <Layers className="w-8 h-8 text-zinc-300 mx-auto" />
+            <h3 className="font-display font-bold text-base text-[#0A0A0A]">
+              Không tìm thấy chunk nào phù hợp
+            </h3>
+            <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+              Thử xóa bớt bộ lọc tìm kiếm hoặc thêm cụm từ mới vào bài học này.
+            </p>
+            <button
+              onClick={handleOpenAddChunk}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#DC2626] text-white text-xs font-bold hover:bg-[#B91C1C] transition-all cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Thêm Chunk Mới Ngay</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {filteredChunks.map(({ chunk, lesson }, idx) => {
+              const isPlaying = playingChunkId === chunk.chunk_id;
+
+              return (
+                <div
+                  key={chunk.chunk_id || `chunk_${idx}`}
+                  className={`bg-white rounded-2xl border p-4.5 transition-all hover:border-[#DC2626]/40 hover:shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                    isPlaying ? 'border-[#DC2626] ring-1 ring-[#DC2626]/20 bg-red-50/20' : 'border-[#E8E8EC]'
+                  }`}
+                >
+                  <div className="space-y-2 flex-1 min-w-0">
+                    {/* Tags */}
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className="font-mono font-bold text-[10px] px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-700">
+                        Day {lesson.day_number}
+                      </span>
+                      <span className="font-mono font-bold text-[10px] px-2 py-0.5 rounded-md bg-[#DC2626]/10 text-[#DC2626] uppercase">
+                        {chunk.category}
+                      </span>
+                      {chunk.speaker && (
+                        <span className="text-[11px] text-zinc-500 font-mono">
+                          Speaker: <strong>{chunk.speaker}</strong>
+                        </span>
+                      )}
+                      {chunk.ipa && (
+                        <span className="text-[11px] text-zinc-400 font-mono">
+                          {chunk.ipa}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* English Chunk & Translation */}
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => handlePlayChunk(chunk)}
+                        className={`p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 mt-0.5 ${
+                          isPlaying 
+                            ? 'bg-[#DC2626] text-white border-[#DC2626]' 
+                            : 'bg-[#FAFAFA] hover:bg-[#DC2626] hover:text-white text-zinc-600 border-zinc-200'
+                        }`}
+                        title="Nghe phát âm chuẩn"
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </button>
+
+                      <div className="space-y-1">
+                        <h3 className="font-display font-bold text-base md:text-lg text-[#0A0A0A] leading-snug">
+                          {chunk.english}
+                        </h3>
+
+                        {chunk.beat_prosody && (
+                          <div className="text-xs font-mono font-semibold text-[#DC2626] flex items-center gap-1.5">
+                            <Music className="w-3.5 h-3.5 shrink-0" />
+                            <span>{chunk.beat_prosody}</span>
+                          </div>
+                        )}
+
+                        <p className="text-xs md:text-sm text-[#6B6B6B]">
+                          {chunk.vietnamese}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Toolbar */}
+                  <div className="flex items-center gap-2 shrink-0 md:self-center">
+                    {/* Preview in Projector modal */}
+                    <button
+                      onClick={() => {
+                        const chunkIndex = lesson.chunks.findIndex(c => c.chunk_id === chunk.chunk_id);
+                        handleOpenPreview(chunkIndex >= 0 ? chunkIndex : 0, lesson);
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold transition-all cursor-pointer"
+                      title="Xem trước chế độ lớp học"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Xem Trước</span>
+                    </button>
+
+                    {/* Edit Chunk */}
+                    <button
+                      onClick={() => handleOpenEditChunk(chunk, lesson)}
+                      className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-all cursor-pointer"
+                      title="Chỉnh sửa chunk"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Delete Chunk */}
+                    <button
+                      onClick={() => handleDeleteChunk(chunk, lesson)}
+                      className="p-1.5 rounded-lg text-zinc-400 hover:text-[#DC2626] hover:bg-red-50 transition-all cursor-pointer"
+                      title="Xóa chunk"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Launch lesson button */}
+                    <button
+                      onClick={() => onLaunchProjectorForLesson(lesson.id, lesson.day_number)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold transition-all cursor-pointer shadow-xs ml-1"
+                      title="Chiếu Day này lên lớp"
+                    >
+                      <Play className="w-3 h-3 fill-current" />
+                      <span>Day {lesson.day_number}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Add / Edit Chunk Modal */}
+      <ChunkModal
+        isOpen={isChunkModalOpen}
+        onClose={() => setIsChunkModalOpen(false)}
+        onSave={handleSaveChunk}
+        initialChunk={editingChunk}
+        dayNumber={targetDayNumber}
+      />
+
+      {/* Classroom Simulation Preview Modal */}
+      <ChunkPreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        chunks={previewChunksList}
+        initialIndex={previewInitialIndex}
+        dayNumber={previewDayNumber}
+        lessonTitle={previewLessonTitle}
+      />
+    </div>
+  );
+};
