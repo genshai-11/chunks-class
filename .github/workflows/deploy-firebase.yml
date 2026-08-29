@@ -7,17 +7,6 @@ on:
       - master
       - feat/dual-course-clicker-engine
   workflow_dispatch:
-    inputs:
-      channel:
-        description: 'Firebase Channel (live for production, or custom preview channel name)'
-        required: true
-        default: 'live'
-        type: string
-      hosting_target:
-        description: 'Hosting Target Name (chunks-classroom or default)'
-        required: false
-        default: 'chunks-classroom'
-        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -47,15 +36,15 @@ jobs:
       - name: 🏗️ Build Production Bundle
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4' }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN || 'chunks-voicecloning-genshai.firebaseapp.com' }}
-          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID || 'chunks-voicecloning-genshai' }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET || 'chunks-mirror-audio-284566312743' }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID || '284566312743' }}
-          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID || '1:284566312743:web:038f451f2fc5fa25d30cf8' }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'chunks-voicecloning-genshai.firebaseapp.com' }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'chunks-voicecloning-genshai' }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'chunks-mirror-audio-284566312743' }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '284566312743' }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID || '1:284566312743:web:038f451f2fc5fa25d30cf8' }}
           VITE_DEEPGRAM_API_KEY: ${{ secrets.VITE_DEEPGRAM_API_KEY || '51d7d8b230bf742178e681e7836a3dc1571b1c11' }}
-          VITE_ENABLE_GOOGLE_TTS: ${{ vars.VITE_ENABLE_GOOGLE_TTS || 'true' }}
-          VITE_GOOGLE_TTS_VOICE_NAME: ${{ vars.VITE_GOOGLE_TTS_VOICE_NAME || 'en-US-Journey-F' }}
-          VITE_GOOGLE_TTS_LANGUAGE_CODE: ${{ vars.VITE_GOOGLE_TTS_LANGUAGE_CODE || 'en-US' }}
+          VITE_ENABLE_GOOGLE_TTS: 'true'
+          VITE_GOOGLE_TTS_VOICE_NAME: 'en-US-Journey-F'
+          VITE_GOOGLE_TTS_LANGUAGE_CODE: 'en-US'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: bun run build
 
@@ -63,7 +52,6 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_CHUNKS_VOICECLONING_GENSHAI }}'
-          projectId: '${{ vars.FIREBASE_PROJECT_ID || 'chunks-voicecloning-genshai' }}'
-          target: '${{ inputs.hosting_target || vars.FIREBASE_HOSTING_TARGET || 'chunks-classroom' }}'
-          channelId: '${{ inputs.channel || 'live' }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CHUNKS_VOICECLONING_GENSHAI }}'
+          projectId: 'chunks-voicecloning-genshai'
+          channelId: 'live'
