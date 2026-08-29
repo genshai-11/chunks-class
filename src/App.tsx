@@ -9,12 +9,13 @@ import { AudioHubView } from './components/AudioHubView';
 import { SettingsView } from './components/SettingsView';
 import { LessonExcelUploader } from './components/LessonExcelUploader';
 import { getFirestoreCohorts, saveFirestoreCohort, deleteFirestoreCohort, DEFAULT_COURSES } from './services/firestoreService';
+import { useAppRouter } from './hooks/useAppRouter';
 
 export const App: React.FC = () => {
+  const { currentTab: activeTab, navigateToTab: setActiveTab } = useAppRouter();
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [activeCohortId, setActiveCohortId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<NavTab>('schedule');
   const [drillLessonId, setDrillLessonId] = useState<string>('level_b_day_1');
   const [drillSessionNumber, setDrillSessionNumber] = useState<number>(1);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState<boolean>(false);
