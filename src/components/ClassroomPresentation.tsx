@@ -367,7 +367,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     onTogglePartsDrawer: handleTogglePartsDrawer,
     onToggleChunkList: () => setIsChunkListOpen(prev => !prev),
     onToggleFullscreen: handleToggleFullscreen,
-    onSetLoop: handleSetLoop
+    onSetLoop: handleSetLoop,
+    isModalOpen: isPrepModalOpen || isDiagnosticOpen || showKeyboardGuide || isPartsDrawerOpen || isChunkListOpen
   }, true);
 
   // Play audio when lesson changes or first mounts
@@ -1048,19 +1049,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           <span>•</span>
           <span>R (Replay)</span>
         </div>
-        <span className="text-zinc-500">Google Cloud TTS (Journey / Studio Models)</span>
+        <span className="text-zinc-500">Deepgram Aura & Google Cloud TTS</span>
       </div>
-      {/* 8. PARTS NAVIGATION DRAWER */}
-      <PartsDrawer
-        isOpen={isPartsDrawerOpen}
-        onClose={() => setIsPartsDrawerOpen(false)}
-        parts={parts}
-        currentChunkIndex={currentChunkIndex}
-        onSelectPart={(startIndex) => {
-          setCurrentChunkIndex(startIndex);
-          playCurrentChunkAudio(chunks[startIndex]);
-        }}
-      />
 
       {/* 9. VOCABULARY & CHUNKS PREVIEW DRAWER */}
       <ChunkListPreviewDrawer
