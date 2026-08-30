@@ -1,6 +1,7 @@
 import { Course, LessonDoc, CourseLevel } from '../types';
 import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
-import { CURRICULUM_CATALOG_LEVEL_B } from '../data/curriculumData';
+import { CURRICULUM_CATALOG_LEVEL_B_EREL } from '../data/levelBErelData';
+import { CURRICULUM_CATALOG_LEVEL_B_ERES } from '../data/levelBEresData';
 
 /**
  * Dynamic In-Memory Curriculum Registry
@@ -30,19 +31,37 @@ class CurriculumRegistryService {
     };
     this.registerCourse(courseA, CURRICULUM_CATALOG_LEVEL_A);
 
-    // Seed Level B
-    const courseB: Course = {
-      id: "course_level_b",
-      level_code: "LEVEL_B",
-      title: "Level B - Spoken Chunks Masterclass",
-      description: "14 Days (Days 2..15) with 3,371 high-frequency native spoken chunks.",
-      total_days: 14,
-      total_chunks: 3371,
+    // Seed Level B - EREL
+    const courseErel: Course = {
+      id: "course_level_b_erel",
+      level_code: "LEVEL_B_EREL",
+      title: "Level B - EREL (English Reflexes Enhancement for Listening)",
+      description: "15 Days of Emotional & Movie Shadowing with 1,019 deep listening dialogues and reflex chunks.",
+      total_days: 15,
+      total_chunks: CURRICULUM_CATALOG_LEVEL_B_EREL.reduce((sum, l) => sum + (l.total_chunks || l.chunks.length), 0),
       default_sessions_count: 15,
-      source: "Genshai Masterclass Curriculum",
+      source: "Genshai EREL Listening Curriculum",
       is_active: true
     };
-    this.registerCourse(courseB, CURRICULUM_CATALOG_LEVEL_B);
+    this.registerCourse(courseErel, CURRICULUM_CATALOG_LEVEL_B_EREL);
+
+    // Seed Level B - ERES
+    const courseEres: Course = {
+      id: "course_level_b_eres",
+      level_code: "LEVEL_B_ERES",
+      title: "Level B - ERES (English Reflexes Enhancement for Speaking)",
+      description: "15 Days of Spoken Reflexes & Business English with 3,371 conversational and workplace chunks.",
+      total_days: 15,
+      total_chunks: CURRICULUM_CATALOG_LEVEL_B_ERES.reduce((sum, l) => sum + (l.total_chunks || l.chunks.length), 0),
+      default_sessions_count: 15,
+      source: "Genshai ERES Speaking Curriculum",
+      is_active: true
+    };
+    this.registerCourse(courseEres, CURRICULUM_CATALOG_LEVEL_B_ERES);
+
+    // Legacy fallback mapping for LEVEL_B -> LEVEL_B_ERES
+    this.coursesMap.set("LEVEL_B", courseEres);
+    this.lessonsMap.set("LEVEL_B", CURRICULUM_CATALOG_LEVEL_B_ERES);
   }
 
   /**

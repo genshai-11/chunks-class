@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Cohort, ClassSession } from '../types';
 import { exportScheduleAsICS, calculate15Sessions } from '../utils/scheduler';
-import { CURRICULUM_CATALOG_LEVEL_B } from '../data/curriculumData';
-import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
+import { curriculumRegistry } from '../services/curriculumRegistry';
 import { 
   Play, 
   Calendar, 
@@ -334,11 +333,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       {viewMode === 'GRID' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredSessions.map((session) => {
-            const lessonMeta = cohort.level_code === 'LEVEL_A'
-              ? CURRICULUM_CATALOG_LEVEL_A.find(l => l.id === session.lesson_id)
-              : CURRICULUM_CATALOG_LEVEL_B.find(l => l.id === session.lesson_id);
-
-            const chunkCount = lessonMeta?.chunks.length || 10;
+            const lessonMeta = curriculumRegistry.getLessonById(session.lesson_id);
+            const chunkCount = lessonMeta?.total_chunks || lessonMeta?.chunks?.length || 0;
             const isCompleted = session.status === 'completed';
             const isInProgress = session.status === 'in_progress';
 

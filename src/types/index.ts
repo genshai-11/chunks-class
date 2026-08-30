@@ -1,7 +1,7 @@
 // --------------------------------------------------------------------------
 // 1. Dynamic Course Level & Course Entity
 // --------------------------------------------------------------------------
-export type KnownCourseLevel = 'LEVEL_A' | 'LEVEL_B' | 'LEVEL_C' | 'IELTS_DRILL' | 'BUSINESS_CHUNK_PRO';
+export type KnownCourseLevel = 'LEVEL_A' | 'LEVEL_B' | 'LEVEL_B_EREL' | 'LEVEL_B_ERES' | 'LEVEL_C' | 'IELTS_DRILL' | 'BUSINESS_CHUNK_PRO';
 export type CourseLevel = KnownCourseLevel | (string & {});
 
 export interface Course {
@@ -67,7 +67,7 @@ export interface LessonDoc {
   categories: string[];
   chunks: ChunkItem[];
   source_files?: string[];
-  created_at: string;
+  created_at?: string;
   updated_at?: string;
   [key: string]: any;
 }

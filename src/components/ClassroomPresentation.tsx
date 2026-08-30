@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart } from '../types';
-import { CURRICULUM_CATALOG_LEVEL_B } from '../data/curriculumData';
-import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
 import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
+import { curriculumRegistry } from '../services/curriculumRegistry';
 import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
@@ -171,13 +170,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     return () => { isMounted = false; };
   }, [currentLessonId, providedLesson]);
 
-  const allAvailableLessons: LessonDoc[] = currentLessonId.startsWith('level_a') 
-    ? CURRICULUM_CATALOG_LEVEL_A 
-    : CURRICULUM_CATALOG_LEVEL_B;
-
   const activeLesson: LessonDoc = fetchedLessonDoc || 
-    allAvailableLessons.find(l => l.id === currentLessonId) || 
-    allAvailableLessons[0];
+    curriculumRegistry.getLessonById(currentLessonId) || 
+    curriculumRegistry.getAllLessons()[0];
 
   const chunks: ChunkItem[] = activeLesson?.chunks || [];
   const currentChunk: ChunkItem = chunks[currentChunkIndex] || chunks[0];
