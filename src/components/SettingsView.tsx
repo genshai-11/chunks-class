@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Cohort, CourseLevel, LanguageMode, CohortAudioSettings } from '../types';
 import { calculateSessions } from '../utils/scheduler';
+import { curriculumRegistry } from '../services/curriculumRegistry';
 import { 
   Cloud, 
   Keyboard, 
@@ -54,23 +55,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   const handleDayOfWeekToggle = (day: string) => {
-    const currentDays = formData.schedule?.days_of_week || ['Mon', 'Wed', 'Fri'];
+    const currentDays = formData.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri'];
     const newDays = currentDays.includes(day)
       ? currentDays.filter(d => d !== day)
       : [...currentDays, day];
     
     setFormData(prev => ({
       ...prev,
-      schedule: {
-        ...prev.schedule,
+      schedule_pattern: {
+        ...prev.schedule_pattern,
         days_of_week: newDays
       }
     }));
   };
 
   const handleRecalculateSchedule = async () => {
-    const days = formData.schedule?.days_of_week || ['Mon', 'Wed', 'Fri'];
-    const startDate = formData.schedule?.start_date || new Date().toISOString().split('T')[0];
+    const days = formData.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri'];
+    const startDate = formData.start_date || new Date().toISOString().split('T')[0];
     const totalSessions = formData.total_sessions || 15;
 
     const newSessions = await calculateSessions({
@@ -78,8 +79,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       startDateStr: startDate,
       daysOfWeek: days,
       totalSessions: totalSessions,
-      startTime: formData.schedule?.start_time || '19:30',
-      endTime: formData.schedule?.end_time || '21:00'
+      startTime: formData.schedule_pattern?.start_time || '19:30',
+      endTime: formData.schedule_pattern?.end_time || '21:00'
     });
 
     setFormData(prev => ({
@@ -162,11 +163,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </label>
             <select
               value={formData.level_code}
-              onChange={(e) => handleFieldChange('level_code', e.target.value as CourseLevel)}
+              onChange={(e) => {
+                const newLevel = e.target.value as CourseLevel;
+                const course = curriculumRegistry.getCourse(newLevel);
+                setFormData(prev => ({
+                  ...prev,
+                  level_code: newLevel,
+                  course_id: course?.id || prev.course_id
+                }));
+              }}
               className="w-full px-3.5 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-900 focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
             >
-              <option value="LEVEL_A">Level A (Foundation - 16 Buổi)</option>
-              <option value="LEVEL_B">Level B (Spoken Masterclass - 14 Buổi)</option>
+              {curriculumRegistry.getAllCourses().map(c => (
+                <option key={c.id} value={c.level_code}>
+                  {c.title} ({c.total_days} Buổi)
+                </option>
+              ))}
               <option value="CUSTOM">Khóa Học Tùy Chỉnh (Custom)</option>
             </select>
           </div>
@@ -212,14 +224,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </label>
               <input
                 type="date"
-                value={formData.schedule?.start_date || ''}
+                value={formData.start_date || ''}
                 onChange={(e) => {
                   setFormData(prev => ({
                     ...prev,
-                    schedule: {
-                      ...prev.schedule,
-                      start_date: e.target.value
-                    }
+                    start_date: e.target.value
                   }));
                 }}
                 className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:outline-none focus:border-[#DC2626]"
@@ -233,11 +242,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex items-center gap-2">
                 <input
                   type="time"
-                  value={formData.schedule?.start_time || '19:30'}
+                  value={formData.schedule_pattern?.start_time || '19:30'}
                   onChange={(e) => {
                     setFormData(prev => ({
                       ...prev,
-                      schedule: { ...prev.schedule, start_time: e.target.value }
+                      schedule_pattern: { ...(prev.schedule_pattern || { days_of_week: ['Mon', 'Wed', 'Fri'], end_time: '21:00' }), start_time: e.target.value }
                     }));
                   }}
                   className="w-full px-2 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-bold text-zinc-900"
@@ -245,11 +254,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span className="text-zinc-400 font-mono">-</span>
                 <input
                   type="time"
-                  value={formData.schedule?.end_time || '21:00'}
+                  value={formData.schedule_pattern?.end_time || '21:00'}
                   onChange={(e) => {
                     setFormData(prev => ({
                       ...prev,
-                      schedule: { ...prev.schedule, end_time: e.target.value }
+                      schedule_pattern: { ...(prev.schedule_pattern || { days_of_week: ['Mon', 'Wed', 'Fri'], start_time: '19:30' }), end_time: e.target.value }
                     }));
                   }}
                   className="w-full px-2 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-bold text-zinc-900"
@@ -279,7 +288,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </label>
             <div className="flex items-center gap-2 flex-wrap">
               {allWeekdays.map((day) => {
-                const isSelected = formData.schedule?.days_of_week?.includes(day);
+                const isSelected = formData.schedule_pattern?.days_of_week?.includes(day);
                 return (
                   <button
                     key={day}
@@ -368,7 +377,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             Khôi Phục Danh Sách Lớp Mặc Định
           </h3>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Đặt lại dữ liệu về 2 lớp học mẫu Level A K12 và Level B K24 tiêu chuẩn.
+            Đặt lại dữ liệu về 3 lớp học mẫu Level B ERES K24, Level B EREL K18 và Level A K12 tiêu chuẩn.
           </p>
         </div>
 

@@ -97,9 +97,15 @@ export async function getCohorts(filterIdentifier?: string): Promise<Cohort[]> {
 // --------------------------------------------------------------------------
 export async function getLessonById(lessonId: string): Promise<LessonDoc | null> {
   try {
-    const docRef = doc(db, 'lessons', lessonId);
-    const snapshot = await getDoc(docRef);
+    let docRef = doc(db, 'lessons', lessonId);
+    let snapshot = await getDoc(docRef);
     
+    if (!snapshot.exists() && lessonId.startsWith('level_b_day_')) {
+      const eresId = lessonId.replace('level_b_day_', 'level_b_eres_day_');
+      docRef = doc(db, 'lessons', eresId);
+      snapshot = await getDoc(docRef);
+    }
+
     if (snapshot.exists()) {
       const data = snapshot.data();
       const chunksArray: ChunkItem[] = Array.isArray(data.chunks) ? data.chunks : [];
@@ -131,12 +137,39 @@ export async function getLessonById(lessonId: string): Promise<LessonDoc | null>
 export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string): Promise<LessonDoc[]> {
   try {
     const lessonsRef = collection(db, 'lessons');
+    
+    // First query by level_code
     let q = query(lessonsRef, where('level_code', '==', courseIdOrLevel));
     let snapshot = await getDocs(q);
 
+    // If empty, query by course_id
     if (snapshot.empty) {
       q = query(lessonsRef, where('course_id', '==', courseIdOrLevel));
       snapshot = await getDocs(q);
+    }
+
+    // If still empty, try alias / canonical fallbacks in Firestore
+    if (snapshot.empty) {
+      if (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b') {
+        q = query(lessonsRef, where('level_code', '==', 'LEVEL_B_ERES'));
+        snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          q = query(lessonsRef, where('course_id', '==', 'course_level_b_eres'));
+          snapshot = await getDocs(q);
+        }
+      } else if (courseIdOrLevel === 'LEVEL_B_EREL' || courseIdOrLevel === 'course_level_b_erel') {
+        const alt = courseIdOrLevel === 'LEVEL_B_EREL' ? 'course_level_b_erel' : 'LEVEL_B_EREL';
+        q = query(lessonsRef, where(courseIdOrLevel === 'LEVEL_B_EREL' ? 'course_id' : 'level_code', '==', alt));
+        snapshot = await getDocs(q);
+      } else if (courseIdOrLevel === 'LEVEL_B_ERES' || courseIdOrLevel === 'course_level_b_eres') {
+        const alt = courseIdOrLevel === 'LEVEL_B_ERES' ? 'course_level_b_eres' : 'LEVEL_B_ERES';
+        q = query(lessonsRef, where(courseIdOrLevel === 'LEVEL_B_ERES' ? 'course_id' : 'level_code', '==', alt));
+        snapshot = await getDocs(q);
+      } else if (courseIdOrLevel === 'LEVEL_A' || courseIdOrLevel === 'course_level_a') {
+        const alt = courseIdOrLevel === 'LEVEL_A' ? 'course_level_a' : 'LEVEL_A';
+        q = query(lessonsRef, where(courseIdOrLevel === 'LEVEL_A' ? 'course_id' : 'level_code', '==', alt));
+        snapshot = await getDocs(q);
+      }
     }
     
     if (!snapshot.empty) {

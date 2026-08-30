@@ -16,7 +16,7 @@ export const App: React.FC = () => {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [activeCohortId, setActiveCohortId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [drillLessonId, setDrillLessonId] = useState<string>('level_b_day_1');
+  const [drillLessonId, setDrillLessonId] = useState<string>('level_b_eres_day_1');
   const [drillSessionNumber, setDrillSessionNumber] = useState<number>(1);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState<boolean>(false);
 
@@ -28,19 +28,31 @@ export const App: React.FC = () => {
         if (loadedCohorts.length > 0) {
           setCohorts(loadedCohorts);
           setActiveCohortId(loadedCohorts[0].id);
+          if (loadedCohorts[0].sessions?.[0]) {
+            setDrillLessonId(loadedCohorts[0].sessions[0].lesson_id);
+            setDrillSessionNumber(loadedCohorts[0].sessions[0].session_number);
+          }
         } else {
-          const defaultB = createDefaultCohort("Level B - Spoken Masterclass K24", "LEVEL_B");
+          const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
+          const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
           const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
-          setCohorts([defaultB, defaultA]);
-          setActiveCohortId(defaultB.id);
-          await saveFirestoreCohort(defaultB);
+          setCohorts([defaultEres, defaultErel, defaultA]);
+          setActiveCohortId(defaultEres.id);
+          if (defaultEres.sessions?.[0]) {
+            setDrillLessonId(defaultEres.sessions[0].lesson_id);
+            setDrillSessionNumber(defaultEres.sessions[0].session_number);
+          }
+          await saveFirestoreCohort(defaultEres);
+          await saveFirestoreCohort(defaultErel);
           await saveFirestoreCohort(defaultA);
         }
       } catch (e) {
         console.error('Error loading cohorts:', e);
-        const defaultB = createDefaultCohort("Level B - Spoken Masterclass K24", "LEVEL_B");
-        setCohorts([defaultB]);
-        setActiveCohortId(defaultB.id);
+        const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
+        const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+        const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
+        setCohorts([defaultEres, defaultErel, defaultA]);
+        setActiveCohortId(defaultEres.id);
       } finally {
         setIsLoading(false);
       }
@@ -64,11 +76,17 @@ export const App: React.FC = () => {
 
   const handleResetToDefault = async () => {
     if (window.confirm("Are you sure you want to reset and restore the default 15-session cohorts?")) {
-      const defaultB = createDefaultCohort("Level B - Spoken Masterclass K24", "LEVEL_B");
+      const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
+      const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
       const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
-      setCohorts([defaultB, defaultA]);
-      setActiveCohortId(defaultB.id);
-      await saveFirestoreCohort(defaultB);
+      setCohorts([defaultEres, defaultErel, defaultA]);
+      setActiveCohortId(defaultEres.id);
+      if (defaultEres.sessions?.[0]) {
+        setDrillLessonId(defaultEres.sessions[0].lesson_id);
+        setDrillSessionNumber(defaultEres.sessions[0].session_number);
+      }
+      await saveFirestoreCohort(defaultEres);
+      await saveFirestoreCohort(defaultErel);
       await saveFirestoreCohort(defaultA);
     }
   };
@@ -119,7 +137,7 @@ export const App: React.FC = () => {
       activeCohort={activeCohort}
       allCohorts={cohorts}
       courses={DEFAULT_COURSES}
-      selectedCourseId={activeCohort?.course_id || 'course_level_b'}
+      selectedCourseId={activeCohort?.course_id || 'course_level_b_eres'}
       onSelectCourse={handleSelectCourse}
       onSelectCohort={(c) => {
         setActiveCohortId(c.id);

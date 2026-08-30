@@ -460,7 +460,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${
               highContrastDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'
             }`}>
-              {courseLevel === 'LEVEL_A' ? 'Level A' : 'Level B'}
+              {courseLevel === 'LEVEL_A'
+                ? 'Level A'
+                : courseLevel === 'LEVEL_B_EREL'
+                ? 'Level B (EREL)'
+                : courseLevel === 'LEVEL_B_ERES'
+                ? 'Level B (ERES)'
+                : courseLevel?.replace(/_/g, ' ') || 'Level B'}
             </span>
           </div>
 

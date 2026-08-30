@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Cohort, ClassSession, CourseLevel } from '../types';
-import { calculate15Sessions } from '../utils/scheduler';
+import { Cohort, ClassSession, CourseLevel, Course } from '../types';
+import { calculate15Sessions, resolveCourseIdFromLevel } from '../utils/scheduler';
+import { curriculumRegistry } from '../services/curriculumRegistry';
 import { X, CheckCircle, Plus } from 'lucide-react';
 
 interface CohortModalProps {
@@ -10,23 +11,30 @@ interface CohortModalProps {
   initialLevelCode?: CourseLevel;
 }
 
+const getInitialTitle = (level: CourseLevel) => {
+  if (level === 'LEVEL_A') return 'Level A - Foundation Chunks K25 (Mon-Wed-Fri)';
+  if (level === 'LEVEL_B_EREL') return 'Level B - EREL Listening K25 (Mon-Wed-Fri)';
+  if (level === 'LEVEL_B_ERES' || level === 'LEVEL_B') return 'Level B - ERES Speaking K25 (Mon-Wed-Fri)';
+  return `${level} - Cohort K25 (Mon-Wed-Fri)`;
+};
+
 export const CohortModal: React.FC<CohortModalProps> = ({
   isOpen,
   onClose,
   onCreateCohort,
-  initialLevelCode = 'LEVEL_B'
+  initialLevelCode = 'LEVEL_B_ERES'
 }) => {
   const today = new Date().toISOString().split('T')[0];
   const [levelCode, setLevelCode] = useState<CourseLevel>(initialLevelCode);
-  const [title, setTitle] = useState(
-    initialLevelCode === 'LEVEL_A' 
-      ? 'Level A - Evening Cohort K25 (Mon-Wed-Fri)' 
-      : 'Level B - Spoken Masterclass K25 (Mon-Wed-Fri)'
-  );
+  const [title, setTitle] = useState(getInitialTitle(initialLevelCode));
   const [startDate, setStartDate] = useState(today);
   const [selectedDays, setSelectedDays] = useState<string[]>(['Mon', 'Wed', 'Fri']);
   const [startTime, setStartTime] = useState('19:30');
   const [endTime, setEndTime] = useState('21:00');
+
+  const availableCourses = useMemo<Course[]>(() => {
+    return curriculumRegistry.getAllCourses();
+  }, []);
 
   const weekdaysList = [
     { id: 'Mon', label: 'Mon' },
@@ -56,11 +64,13 @@ export const CohortModal: React.FC<CohortModalProps> = ({
     e.preventDefault();
     if (!title.trim() || selectedDays.length === 0) return;
 
+    const courseId = resolveCourseIdFromLevel(levelCode);
+
     const newCohort: Cohort = {
       id: 'cohort_' + Date.now(),
       title: title.trim(),
       level_code: levelCode,
-      course_id: levelCode === 'LEVEL_A' ? 'course_level_a' : 'course_level_b',
+      course_id: courseId,
       teacher_id: 'teacher_genshai',
       start_date: startDate,
       schedule_pattern: {
@@ -69,11 +79,13 @@ export const CohortModal: React.FC<CohortModalProps> = ({
         end_time: endTime,
         duration_minutes: 90
       },
-      total_sessions: 15,
+      total_sessions: previewSessions.length,
       sessions: previewSessions,
       audio_settings: {
-        voice_profile_en: 'en-US-Journey-F',
-        voice_profile_vi: 'vi-VN-Standard-A',
+        voice_profile_primary: 'aura-asteria-en',
+        voice_profile_secondary: 'vi-VN-Neural2-A',
+        voice_profile_en: 'aura-asteria-en',
+        voice_profile_vi: 'vi-VN-Neural2-A',
         language_mode: 'EN_THEN_VI',
         auto_advance_delay_sec: 0,
         default_speed: 1.0,
@@ -147,16 +159,25 @@ export const CohortModal: React.FC<CohortModalProps> = ({
                 onChange={(e) => {
                   const newLevel = e.target.value as CourseLevel;
                   setLevelCode(newLevel);
-                  if (title.includes('Level A') && newLevel === 'LEVEL_B') {
-                    setTitle(title.replace('Level A', 'Level B'));
-                  } else if (title.includes('Level B') && newLevel === 'LEVEL_A') {
-                    setTitle(title.replace('Level B', 'Level A'));
-                  }
+                  setTitle(getInitialTitle(newLevel));
                 }}
                 className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-lg text-xs font-semibold focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
               >
-                <option value="LEVEL_A">Level A (Foundation - 4,480 Chunks • 16 Lessons)</option>
-                <option value="LEVEL_B">Level B (Spoken Masterclass - 3,371 Chunks • 14 Lessons)</option>
+                {availableCourses.map((c) => {
+                  let optionLabel = `${c.title} (${c.total_chunks.toLocaleString()} Chunks • ${c.total_days} Lessons)`;
+                  if (c.level_code === 'LEVEL_A') {
+                    optionLabel = `Level A (Foundation - 4,480 Chunks • 16 Lessons)`;
+                  } else if (c.level_code === 'LEVEL_B_EREL') {
+                    optionLabel = `Level B - EREL (Listening & Shadowing - 1,019 Chunks • 15 Lessons)`;
+                  } else if (c.level_code === 'LEVEL_B_ERES') {
+                    optionLabel = `Level B - ERES (Speaking & Reflexes - 3,371 Chunks • 15 Lessons)`;
+                  }
+                  return (
+                    <option key={c.id} value={c.level_code}>
+                      {optionLabel}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

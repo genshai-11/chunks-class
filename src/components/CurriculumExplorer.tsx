@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChunkCategory, ChunkItem, LessonDoc, CourseLevel } from '../types';
+import { ChunkCategory, ChunkItem, LessonDoc, CourseLevel, Course } from '../types';
 import { 
   getAllLessons, 
   saveLesson, 
@@ -9,6 +9,7 @@ import {
   checkFirestoreHealth,
   DatabaseStatus
 } from '../services/firestoreService';
+import { curriculumRegistry } from '../services/curriculumRegistry';
 import { audioPlayer } from '../services/googleTtsService';
 import { ChunkModal } from './ChunkModal';
 import { ChunkPreviewModal } from './ChunkPreviewModal';
@@ -41,7 +42,7 @@ interface CurriculumExplorerProps {
 
 export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   onLaunchProjectorForLesson,
-  defaultCourseLevel = 'LEVEL_B'
+  defaultCourseLevel = 'LEVEL_B_ERES'
 }) => {
   const [selectedLevel, setSelectedLevel] = useState<CourseLevel>(defaultCourseLevel);
   const [lessons, setLessons] = useState<LessonDoc[]>([]);
@@ -50,6 +51,21 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<ChunkCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [playingChunkId, setPlayingChunkId] = useState<string | null>(null);
+
+  const availableCourses = useMemo<Course[]>(() => {
+    return curriculumRegistry.getAllCourses();
+  }, []);
+
+  const currentCourse = useMemo(() => {
+    return curriculumRegistry.getCourse(selectedLevel);
+  }, [selectedLevel]);
+
+  const getCourseTabLabel = (course: Course) => {
+    if (course.level_code === 'LEVEL_A') return 'Level A';
+    if (course.level_code === 'LEVEL_B_EREL') return 'Level B - EREL (Listening)';
+    if (course.level_code === 'LEVEL_B_ERES') return 'Level B - ERES (Speaking)';
+    return course.title;
+  };
 
   // Database status & sync state
   const [dbStatus, setDbStatus] = useState<DatabaseStatus | null>(null);
@@ -320,7 +336,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
               </span>
             </div>
             <p className="text-xs text-[#6B6B6B] mt-0.5">
-              Đang tải trực tiếp: <strong className="text-[#0A0A0A]">{lessons.length} bài học</strong> ({totalChunksInLevel.toLocaleString()} chunks trong Level {selectedLevel.replace('_', ' ')})
+              Đang tải trực tiếp: <strong className="text-[#0A0A0A]">{lessons.length} bài học</strong> ({totalChunksInLevel.toLocaleString()} chunks trong {currentCourse?.title || selectedLevel})
             </p>
           </div>
         </div>
@@ -342,7 +358,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] disabled:bg-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
           >
             <Sparkles className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>{isSyncing ? 'Đang Đồng Bộ Firestore...' : 'Đồng Bộ 7,851 Chunks Lên DB'}</span>
+            <span>{isSyncing ? 'Đang Đồng Bộ Firestore...' : 'Đồng Bộ Chunks Lên DB'}</span>
           </button>
         </div>
       </div>
@@ -381,14 +397,14 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                 Curriculum & Chunks Management
               </span>
               <span className="text-xs text-[#6B6B6B] font-mono">
-                • {selectedLevel === 'LEVEL_A' ? '4,480 Foundation Chunks • 16 Lessons' : '3,371 Masterclass Chunks • 14 Lessons'}
+                • {totalChunksInLevel.toLocaleString()} Chunks • {lessons.length} Lessons
               </span>
             </div>
             <h1 className="font-display font-bold text-2xl text-[#0A0A0A] tracking-tight">
-              {selectedLevel === 'LEVEL_A' ? 'Level A - Foundation English Chunks' : 'Level B - Spoken Chunks Masterclass'}
+              {currentCourse?.title || `Course ${selectedLevel}`}
             </h1>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Hệ thống 7,851 cụm câu phản xạ chia theo Day & Part chuẩn sư phạm.
+              {currentCourse?.description || 'Hệ thống cụm câu phản xạ chia theo Day & Part chuẩn sư phạm.'}
             </p>
           </div>
 
@@ -417,24 +433,23 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
               </button>
             </div>
 
-            {/* Level Toggle */}
-            <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
-              <button
-                onClick={() => { setSelectedLevel('LEVEL_A'); setSelectedDay('all'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  selectedLevel === 'LEVEL_A' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
-                }`}
-              >
-                Level A
-              </button>
-              <button
-                onClick={() => { setSelectedLevel('LEVEL_B'); setSelectedDay('all'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  selectedLevel === 'LEVEL_B' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
-                }`}
-              >
-                Level B
-              </button>
+            {/* Dynamic Course Pills / Tabs */}
+            <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200 gap-1 flex-wrap">
+              {availableCourses.map((course) => {
+                const isSelected = selectedLevel === course.level_code || selectedLevel === course.id;
+                return (
+                  <button
+                    key={course.id}
+                    type="button"
+                    onClick={() => { setSelectedLevel(course.level_code); setSelectedDay('all'); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isSelected ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    {getCourseTabLabel(course)}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Import Excel Action */}
@@ -495,7 +510,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
             onChange={(e) => setSelectedDay(e.target.value === 'all' ? 'all' : Number(e.target.value))}
             className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
           >
-            <option value="all">Tất Cả 15 Bài Học (Day 1 – 15)</option>
+            <option value="all">Tất Cả {lessons.length} Bài Học (Day 1 – {lessons.length > 0 ? Math.max(...lessons.map(l => l.day_number)) : 15})</option>
             {lessons.map(l => (
               <option key={l.id} value={l.day_number}>
                 Day {l.day_number}: {l.lesson_title} ({l.chunks?.length || 0} chunks)

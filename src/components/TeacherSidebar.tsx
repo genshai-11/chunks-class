@@ -102,7 +102,13 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
               >
                 {(courses || []).map(c => (
                   <option key={c.id} value={c.id}>
-                    {c.level_code === 'LEVEL_A' ? '📗 Level A (Foundation)' : '📕 Level B (Masterclass)'}
+                    {c.level_code === 'LEVEL_A'
+                      ? '📗 Level A (Foundation)'
+                      : c.level_code === 'LEVEL_B_EREL'
+                      ? '🎧 Level B (EREL Listening)'
+                      : c.level_code === 'LEVEL_B_ERES'
+                      ? '🗣️ Level B (ERES Speaking)'
+                      : `📕 ${c.title || c.level_code}`}
                   </option>
                 ))}
               </select>

@@ -31,6 +31,19 @@ export interface CalculateSessionParams {
   holidays?: string[];
 }
 
+export function resolveCourseIdFromLevel(levelCode: CourseLevel | string): string {
+  if (levelCode === 'LEVEL_B_EREL' || levelCode === 'course_level_b_erel') {
+    return 'course_level_b_erel';
+  }
+  if (levelCode === 'LEVEL_B_ERES' || levelCode === 'LEVEL_B' || levelCode === 'course_level_b_eres' || levelCode === 'course_level_b') {
+    return 'course_level_b_eres';
+  }
+  if (levelCode === 'LEVEL_A' || levelCode === 'course_level_a') {
+    return 'course_level_a';
+  }
+  return String(levelCode).toLowerCase();
+}
+
 /**
  * Universal, Timezone-Safe Dynamic Session Generator.
  * Handles ANY number of sessions (5, 10, 15, 20, 30+), ANY course ID, and arbitrary curriculum lengths.
@@ -50,11 +63,7 @@ export async function calculateSessions(params: CalculateSessionParams): Promise
     catalog = await getLessonsByLevel(courseIdOrLevel);
   }
 
-  // Filter out Day 0 (Word List) if day_number > 0 exists
-  const drillLessons = catalog.filter(l => l.day_number > 0);
-  const activeLessons = drillLessons.length > 0 ? drillLessons : catalog;
-
-  const targetSessionsCount = params.totalSessions || (activeLessons.length > 0 ? activeLessons.length : 15);
+  const targetSessionsCount = params.totalSessions || (catalog.length > 0 ? catalog.length : 15);
 
   let year: number, month: number, day: number;
   if (!startDateStr) {
@@ -86,7 +95,7 @@ export async function calculateSessions(params: CalculateSessionParams): Promise
     const dayOfWeek = current.getDay();
 
     if (targetDays.has(dayOfWeek) && !holidays.includes(isoDate)) {
-      const meta = activeLessons[count - 1] || {
+      const meta = catalog[count - 1] || {
         day_number: count,
         id: `${String(courseIdOrLevel).toLowerCase()}_day_${count}`,
         lesson_title: `Day ${count} - Interactive Chunk Drill`,
@@ -99,7 +108,7 @@ export async function calculateSessions(params: CalculateSessionParams): Promise
         day_of_week: INT_TO_DAY[dayOfWeek],
         start_time: startTime,
         end_time: endTime,
-        day_number: meta.day_number ?? count,
+        day_number: meta.day_number !== undefined ? meta.day_number : count,
         lesson_id: meta.id,
         lesson_title: meta.lesson_title,
         lesson_type: meta.lesson_type || 'Standard Lesson',
@@ -114,10 +123,13 @@ export async function calculateSessions(params: CalculateSessionParams): Promise
 }
 
 /**
- * Synchronous 15-session recurrence generator with dynamic registry lookup
+ * Synchronous session recurrence generator with dynamic registry lookup.
+ * - LEVEL_B_EREL -> pulls 15 lessons of EREL (level_b_erel_day_1 .. 15)
+ * - LEVEL_B_ERES (or legacy LEVEL_B) -> pulls 15 lessons of ERES (level_b_eres_day_1 .. 15)
+ * - LEVEL_A -> pulls 16 lessons of Level A (level_a_day_0 .. 15)
  */
 export function calculate15Sessions(
-  levelCode: CourseLevel = "LEVEL_B",
+  levelCode: CourseLevel = "LEVEL_B_ERES",
   startDateStr: string = "",
   daysOfWeek: string[] = ["Mon", "Wed", "Fri"],
   startTime: string = "19:30",
@@ -148,9 +160,10 @@ export function calculate15Sessions(
   let safetyLoop = 0;
   const maxSafetyLoop = 365;
 
-  const catalog = curriculumRegistry.getLessons(levelCode).filter(l => l.day_number > 0);
+  const catalog = curriculumRegistry.getLessons(levelCode);
+  const targetSessionsCount = catalog.length > 0 ? catalog.length : 15;
 
-  while (count <= 15 && safetyLoop < maxSafetyLoop) {
+  while (count <= targetSessionsCount && safetyLoop < maxSafetyLoop) {
     safetyLoop++;
     const y = current.getFullYear();
     const m = String(current.getMonth() + 1).padStart(2, '0');
@@ -172,10 +185,10 @@ export function calculate15Sessions(
         day_of_week: INT_TO_DAY[dayOfWeek],
         start_time: startTime,
         end_time: endTime,
-        day_number: meta.day_number,
+        day_number: meta.day_number !== undefined ? meta.day_number : count,
         lesson_id: meta.id,
         lesson_title: meta.lesson_title,
-        lesson_type: meta.lesson_type,
+        lesson_type: meta.lesson_type || 'Standard Lesson',
         status: count === 1 ? 'in_progress' : 'scheduled'
       });
       count++;
@@ -187,8 +200,8 @@ export function calculate15Sessions(
 }
 
 export function createDefaultCohort(
-  title: string = "Level B - Spoken Masterclass K24",
-  levelCode: CourseLevel = "LEVEL_B"
+  title: string = "Level B - ERES Speaking Masterclass K24",
+  levelCode: CourseLevel = "LEVEL_B_ERES"
 ): Cohort {
   const today = new Date();
   const y = today.getFullYear();
@@ -196,12 +209,14 @@ export function createDefaultCohort(
   const d = String(today.getDate()).padStart(2, '0');
   const startDate = `${y}-${m}-${d}`;
   const sessions = calculate15Sessions(levelCode, startDate, ["Mon", "Wed", "Fri"], "19:30", "21:00");
+  const course = curriculumRegistry.getCourse(levelCode);
+  const courseId = course?.id || (String(levelCode).toLowerCase().includes('a') ? 'course_level_a' : 'course_level_b_eres');
 
   return {
-    id: "cohort_" + Date.now(),
+    id: "cohort_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
     title,
     level_code: levelCode,
-    course_id: String(levelCode).toLowerCase().includes('a') ? 'course_level_a' : 'course_level_b',
+    course_id: courseId,
     teacher_id: "teacher_genshai",
     start_date: startDate,
     schedule_pattern: {

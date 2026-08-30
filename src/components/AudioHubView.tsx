@@ -9,6 +9,7 @@ import {
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { getAllLessons } from '../services/firestoreService';
+import { curriculumRegistry } from '../services/curriculumRegistry';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
 import { 
   Volume2, 
@@ -69,7 +70,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
   const [activeAudioSource, setActiveAudioSource] = useState<AudioSourceType>(audioPlayer.getLastSource());
   
   // 2. Batch Preparation Hub State
-  const [selectedCourseLevel, setSelectedCourseLevel] = useState<CourseLevel>('LEVEL_A');
+  const [selectedCourseLevel, setSelectedCourseLevel] = useState<CourseLevel>('LEVEL_B_ERES');
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
   const [batchTarget, setBatchTarget] = useState<AudioBatchTarget>('BOTH');
   const [isBatchPrepping, setIsBatchPrepping] = useState<boolean>(false);
@@ -478,8 +479,11 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                   onChange={(e) => setSelectedCourseLevel(e.target.value as CourseLevel)}
                   className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold cursor-pointer"
                 >
-                  <option value="LEVEL_A">Level A (Foundation - 16 Days)</option>
-                  <option value="LEVEL_B">Level B (Spoken Masterclass - 14 Days)</option>
+                  {curriculumRegistry.getAllCourses().map(c => (
+                    <option key={c.id} value={c.level_code}>
+                      {c.title} ({c.total_days} Days)
+                    </option>
+                  ))}
                 </select>
               </div>
 

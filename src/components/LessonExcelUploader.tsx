@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CourseLevel, ChunkItem, LessonDoc, Course } from '../types';
 import { downloadLessonExcelTemplate, parseExcelLessonFile } from '../utils/excelTemplate';
 import { saveLessonToFirestore, getCourses } from '../services/firestoreService';
+import { curriculumRegistry } from '../services/curriculumRegistry';
 import { audioPlayer } from '../services/googleTtsService';
 import { 
   FileSpreadsheet, 
@@ -147,12 +148,16 @@ export const LessonExcelUploader: React.FC<LessonExcelUploaderProps> = ({
       const docId = `${prefix}_day_${dayNumber}`;
       const categories: string[] = Array.from(new Set(parsedChunks.map(c => String(c.category))));
 
+      const courseMeta = curriculumRegistry.getCourse(levelCode);
+      const courseId = courseMeta?.id || (String(levelCode).toLowerCase().includes('a') ? 'course_level_a' : 'course_level_b_eres');
+      const courseTitle = courseMeta?.title || (levelCode === 'LEVEL_A' ? 'Level A - Foundation English' : 'Level B - Spoken Masterclass');
+
       const lessonDoc: LessonDoc = {
         id: docId,
         level_code: levelCode,
-        course_id: String(levelCode).toLowerCase().includes('a') ? 'course_level_a' : 'course_level_b',
+        course_id: courseId,
         day_number: dayNumber,
-        course_title: levelCode === 'LEVEL_A' ? 'Level A - Foundation English' : 'Level B - Spoken Masterclass',
+        course_title: courseTitle,
         lesson_title: lessonTitle || `Day ${dayNumber} Lesson`,
         lesson_type: lessonType,
         total_chunks: parsedChunks.length,
@@ -237,8 +242,11 @@ export const LessonExcelUploader: React.FC<LessonExcelUploaderProps> = ({
                 onChange={(e) => setLevelCode(e.target.value as CourseLevel)}
                 className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-900 focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
               >
-                <option value="LEVEL_A">Level A (Foundation - 4,480 Chunks)</option>
-                <option value="LEVEL_B">Level B (Spoken Masterclass - 3,371 Chunks)</option>
+                {curriculumRegistry.getAllCourses().map(c => (
+                  <option key={c.id} value={c.level_code}>
+                    {c.title} ({c.total_chunks.toLocaleString()} Chunks)
+                  </option>
+                ))}
                 <option value="IELTS_DRILL">IELTS Speaking Drill (Custom)</option>
                 <option value="CUSTOM">Khóa Học Tùy Chỉnh (Custom)</option>
               </select>

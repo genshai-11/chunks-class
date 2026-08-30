@@ -62,6 +62,8 @@ class CurriculumRegistryService {
     // Legacy fallback mapping for LEVEL_B -> LEVEL_B_ERES
     this.coursesMap.set("LEVEL_B", courseEres);
     this.lessonsMap.set("LEVEL_B", CURRICULUM_CATALOG_LEVEL_B_ERES);
+    this.coursesMap.set("course_level_b", courseEres);
+    this.lessonsMap.set("course_level_b", CURRICULUM_CATALOG_LEVEL_B_ERES);
   }
 
   /**
@@ -88,20 +90,50 @@ class CurriculumRegistryService {
 
   public getCourse(courseIdOrLevel: string): Course | null {
     if (!courseIdOrLevel) return null;
-    return this.coursesMap.get(courseIdOrLevel) || this.coursesMap.get(courseIdOrLevel.toUpperCase()) || null;
+    const direct = this.coursesMap.get(courseIdOrLevel) || this.coursesMap.get(courseIdOrLevel.toUpperCase());
+    if (direct) return direct;
+
+    if (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b') {
+      return this.coursesMap.get('course_level_b_eres') || this.coursesMap.get('LEVEL_B_ERES') || null;
+    }
+    return null;
   }
 
   public getLessons(courseIdOrLevel: string): LessonDoc[] {
     if (!courseIdOrLevel) return [];
-    return (
+    const direct = (
       this.lessonsMap.get(courseIdOrLevel) || 
-      this.lessonsMap.get(courseIdOrLevel.toUpperCase()) || 
-      []
+      this.lessonsMap.get(courseIdOrLevel.toUpperCase())
     );
+    if (direct && direct.length > 0) return direct;
+
+    if (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b') {
+      return this.lessonsMap.get('course_level_b_eres') || this.lessonsMap.get('LEVEL_B_ERES') || [];
+    }
+    if (courseIdOrLevel === 'LEVEL_A' || courseIdOrLevel === 'course_level_a') {
+      return this.lessonsMap.get('course_level_a') || this.lessonsMap.get('LEVEL_A') || [];
+    }
+    if (courseIdOrLevel === 'LEVEL_B_EREL' || courseIdOrLevel === 'course_level_b_erel') {
+      return this.lessonsMap.get('course_level_b_erel') || this.lessonsMap.get('LEVEL_B_EREL') || [];
+    }
+    if (courseIdOrLevel === 'LEVEL_B_ERES' || courseIdOrLevel === 'course_level_b_eres') {
+      return this.lessonsMap.get('course_level_b_eres') || this.lessonsMap.get('LEVEL_B_ERES') || [];
+    }
+
+    return [];
   }
 
   public getLessonById(lessonId: string): LessonDoc | null {
-    return this.individualLessonsMap.get(lessonId) || null;
+    if (!lessonId) return null;
+    const direct = this.individualLessonsMap.get(lessonId);
+    if (direct) return direct;
+
+    // Legacy alias: level_b_day_X -> level_b_eres_day_X
+    if (lessonId.startsWith('level_b_day_')) {
+      const eresId = lessonId.replace('level_b_day_', 'level_b_eres_day_');
+      return this.individualLessonsMap.get(eresId) || null;
+    }
+    return null;
   }
 
   public getAllLessons(): LessonDoc[] {
