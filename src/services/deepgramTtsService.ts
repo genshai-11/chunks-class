@@ -65,6 +65,41 @@ export const DEEPGRAM_AURA_VOICES: DeepgramVoiceOption[] = [
   }
 ];
 
+/**
+ * Natural Prosody & Speech Text Sanitizer:
+ * 1. Synonym Slashes (/): When English text contains multiple synonyms/options separated by '/', speaks ONLY the first option.
+ * 2. Sentence Pauses & Prosody (//, |): Converts beat markers and semicolons into natural respiratory pauses.
+ * 3. Normalization: Normalizes multiple commas and whitespace while preserving visual text integrity.
+ */
+export function sanitizeSpeechText(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  let sanitized = text.trim();
+
+  // 1. If beat markers (//, |) follow sentence-ending punctuation (. ! ?), preserve sentence pause
+  sanitized = sanitized.replace(/([.!?])\s*(?:\/{2,}|\|+)\s*/g, '$1 ');
+
+  // 2. Replace remaining beat markers (//, ///) and pipe markers (|) with comma pause
+  sanitized = sanitized.replace(/\s*(?:\/{2,}|\|+)\s*/g, ', ');
+
+  // 3. If text contains single synonym slashes (/), take ONLY the first option (e.g. "A / B / C" -> "A")
+  if (sanitized.includes('/')) {
+    sanitized = sanitized.split('/')[0].trim();
+  }
+
+  // 4. Normalize semicolons to comma pauses
+  sanitized = sanitized.replace(/\s*;\s*/g, ', ');
+
+  // 5. Clean up duplicate or misplaced commas and whitespace
+  sanitized = sanitized
+    .replace(/\s+,/g, ',')           // No space before comma
+    .replace(/,\s*,+/g, ', ')        // No consecutive double commas
+    .replace(/\s+/g, ' ')            // Normalize multiple spaces
+    .replace(/,\s*$/g, '')           // Trim trailing comma
+    .trim();
+
+  return sanitized;
+}
+
 class DeepgramTtsService {
   private cache = new Map<string, string>(); // text+model -> base64 mp3
   private defaultApiKey: string = import.meta.env.VITE_DEEPGRAM_API_KEY || '51d7d8b230bf742178e681e7836a3dc1571b1c11';
@@ -89,7 +124,7 @@ class DeepgramTtsService {
     text: string,
     modelName: string = 'aura-asteria-en'
   ): Promise<string> {
-    const cleanText = text.trim();
+    const cleanText = sanitizeSpeechText(text);
     if (!cleanText) throw new Error('Text to synthesize is empty');
 
     const cacheKey = `dg_${modelName}_${cleanText}`;

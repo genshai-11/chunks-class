@@ -1,5 +1,7 @@
-import { deepgramTts, DEEPGRAM_AURA_VOICES } from './deepgramTtsService';
+import { deepgramTts, DEEPGRAM_AURA_VOICES, sanitizeSpeechText } from './deepgramTtsService';
 import { LanguageMode } from '../types';
+
+export { sanitizeSpeechText };
 
 export interface VoiceOption {
   id: string;
@@ -21,15 +23,6 @@ export interface PrepareAudioOptions {
   target?: AudioBatchTarget;
   onProgress?: (current: number, total: number, statusText: string) => void;
   concurrency?: number;
-}
-
-export function sanitizeSpeechText(text: string): string {
-  if (!text) return '';
-  return text
-    .replace(/\/{2,}/g, ', ')
-    .replace(/\|+/g, ', ')
-    .replace(/\s+/g, ' ')
-    .trim();
 }
 
 export interface AudioConnectionStatus {
@@ -605,7 +598,10 @@ class AudioPlayService {
   }
 
   private async synthesizeWithGoogleTTS(text: string, voiceName: string, speed: number): Promise<string> {
-    const cacheKey = this.getCacheKey(voiceName, text);
+    const cleanText = sanitizeSpeechText(text);
+    if (!cleanText) return '';
+
+    const cacheKey = this.getCacheKey(voiceName, cleanText);
     if (this.audioCache.has(cacheKey)) {
       return this.audioCache.get(cacheKey)!;
     }
@@ -620,7 +616,7 @@ class AudioPlayService {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        input: { text },
+        input: { text: cleanText },
         voice: { languageCode: langCode, name: voiceName },
         audioConfig: { audioEncoding: 'MP3', speakingRate: speed }
       })
@@ -638,7 +634,10 @@ class AudioPlayService {
   }
 
   private async fetchPublicGoogleVietnameseTts(text: string): Promise<string> {
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(text)}`;
+    const cleanText = sanitizeSpeechText(text);
+    if (!cleanText) return '';
+
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Public Google TTS Error: ${response.status}`);
@@ -676,6 +675,7 @@ class AudioPlayService {
   }
 
   private playBrowserTts(text: string, voiceName: string, speed: number): Promise<void> {
+    const cleanText = sanitizeSpeechText(text);
     return new Promise((resolve) => {
       if (typeof window === 'undefined' || !window.speechSynthesis) {
         resolve();
@@ -687,10 +687,10 @@ class AudioPlayService {
         window.speechSynthesis.resume();
       }
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.rate = speed;
 
-      const isVi = voiceName.startsWith('vi') || /[\u00C0-\u1EF9]/.test(text);
+      const isVi = voiceName.startsWith('vi') || /[\u00C0-\u1EF9]/.test(cleanText);
       utterance.lang = isVi ? 'vi-VN' : 'en-US';
 
       if (isVi) {

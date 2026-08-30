@@ -123,6 +123,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     setEditingSessionNumber(null);
   };
 
+  const handleLaunchSession = (lessonId: string, sessionNumber: number) => {
+    let cleanId = lessonId;
+    if (cleanId?.startsWith('level_b_day_')) {
+      cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
+    }
+    onLaunchProjectorForLesson(cleanId, sessionNumber);
+  };
+
   const handleExportICS = () => {
     const icsData = exportScheduleAsICS(cohort);
     const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
@@ -194,7 +202,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
             {inProgressSession && (
               <button
-                onClick={() => onLaunchProjectorForLesson(inProgressSession.lesson_id, inProgressSession.session_number)}
+                onClick={() => handleLaunchSession(inProgressSession.lesson_id, inProgressSession.session_number)}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold rounded-lg shadow-sm hover:shadow transition-all cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
@@ -254,7 +262,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </div>
 
           <button
-            onClick={() => onLaunchProjectorForLesson(inProgressSession.lesson_id, inProgressSession.session_number)}
+            onClick={() => handleLaunchSession(inProgressSession.lesson_id, inProgressSession.session_number)}
             className="w-full md:w-auto px-5 py-2.5 bg-[#0A0A0A] hover:bg-[#262626] text-white text-xs font-bold rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer group"
           >
             <span>Launch Presenter Drill</span>
@@ -435,7 +443,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   </span>
 
                   <button
-                    onClick={() => onLaunchProjectorForLesson(session.lesson_id, session.session_number)}
+                    onClick={() => handleLaunchSession(session.lesson_id, session.session_number)}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       isInProgress
                         ? 'bg-[#DC2626] text-white hover:bg-[#B91C1C] shadow-xs'
@@ -521,7 +529,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       </td>
                       <td className="p-3 text-center">
                         <button
-                          onClick={() => onLaunchProjectorForLesson(session.lesson_id, session.session_number)}
+                          onClick={() => handleLaunchSession(session.lesson_id, session.session_number)}
                           className={`inline-flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                             isInProgress ? 'bg-[#DC2626] text-white hover:bg-[#B91C1C] shadow-xs' : 'bg-zinc-100 hover:bg-[#DC2626] hover:text-white text-zinc-800'
                           }`}

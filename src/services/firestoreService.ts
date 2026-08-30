@@ -106,6 +106,11 @@ export async function getLessonById(lessonId: string): Promise<LessonDoc | null>
       snapshot = await getDoc(docRef);
     }
 
+    if (!snapshot.exists() && (lessonId === 'level_a_day_0' || lessonId === 'level_a_0')) {
+      docRef = doc(db, 'lessons', 'level_a_word_list');
+      snapshot = await getDoc(docRef);
+    }
+
     if (snapshot.exists()) {
       const data = snapshot.data();
       const chunksArray: ChunkItem[] = Array.isArray(data.chunks) ? data.chunks : [];

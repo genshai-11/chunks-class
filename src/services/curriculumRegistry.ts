@@ -125,14 +125,29 @@ class CurriculumRegistryService {
 
   public getLessonById(lessonId: string): LessonDoc | null {
     if (!lessonId) return null;
-    const direct = this.individualLessonsMap.get(lessonId);
+    const cleanId = lessonId.trim();
+    const direct = this.individualLessonsMap.get(cleanId);
     if (direct) return direct;
 
     // Legacy alias: level_b_day_X -> level_b_eres_day_X
-    if (lessonId.startsWith('level_b_day_')) {
-      const eresId = lessonId.replace('level_b_day_', 'level_b_eres_day_');
-      return this.individualLessonsMap.get(eresId) || null;
+    if (cleanId.startsWith('level_b_day_')) {
+      const eresId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
+      const eresDoc = this.individualLessonsMap.get(eresId);
+      if (eresDoc) return eresDoc;
     }
+
+    // Alias for Level A Day 0 / Word list
+    if (cleanId === 'level_a_day_0' || cleanId === 'level_a_0' || cleanId === 'level_a_wordlist') {
+      const wordListDoc = this.individualLessonsMap.get('level_a_word_list');
+      if (wordListDoc) return wordListDoc;
+    }
+
+    // Case-insensitive lookup fallback
+    const lower = cleanId.toLowerCase();
+    for (const [key, doc] of this.individualLessonsMap.entries()) {
+      if (key.toLowerCase() === lower) return doc;
+    }
+
     return null;
   }
 
@@ -140,6 +155,24 @@ class CurriculumRegistryService {
     const unique = new Map<string, LessonDoc>();
     this.individualLessonsMap.forEach(l => unique.set(l.id, l));
     return Array.from(unique.values());
+  }
+
+  public getGroupedCoursesWithLessons(): { course: Course; lessons: LessonDoc[] }[] {
+    const courses = [
+      this.getCourse('course_level_b_eres'),
+      this.getCourse('course_level_b_erel'),
+      this.getCourse('course_level_a')
+    ].filter((c): c is Course => Boolean(c));
+
+    // Also include any custom registered courses
+    const standardIds = new Set(['course_level_b_eres', 'course_level_b_erel', 'course_level_a', 'LEVEL_B_ERES', 'LEVEL_B_EREL', 'LEVEL_A', 'LEVEL_B', 'course_level_b']);
+    const allCourses = this.getAllCourses();
+    const customCourses = allCourses.filter(c => !standardIds.has(c.id));
+
+    return [...courses, ...customCourses].map(course => ({
+      course,
+      lessons: this.getLessons(course.id)
+    }));
   }
 }
 

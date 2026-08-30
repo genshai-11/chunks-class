@@ -51,19 +51,26 @@ interface ClassroomPresentationProps {
   onExit?: () => void;
   audioSettings?: CohortAudioSettings;
   courseLevel?: string;
+  onSelectLesson?: (lessonId: string, sessionNumber?: number) => void;
 }
 
 export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   lesson: providedLesson,
-  initialLessonId = "level_b_day_1",
+  initialLessonId = "level_b_eres_day_1",
   sessionNumber = 1,
   onExit,
   audioSettings,
-  courseLevel = 'LEVEL_B'
+  courseLevel = 'LEVEL_B_ERES',
+  onSelectLesson
 }) => {
-  const [currentLessonId, setCurrentLessonId] = useState<string>(
-    providedLesson ? providedLesson.id : initialLessonId
-  );
+  const [currentLessonId, setCurrentLessonId] = useState<string>(() => {
+    if (providedLesson?.id) return providedLesson.id;
+    let initial = initialLessonId || 'level_b_eres_day_1';
+    if (initial.startsWith('level_b_day_')) {
+      initial = initial.replace('level_b_day_', 'level_b_eres_day_');
+    }
+    return initial;
+  });
   const [fetchedLessonDoc, setFetchedLessonDoc] = useState<LessonDoc | null>(providedLesson || null);
   const [currentChunkIndex, setCurrentChunkIndex] = useState<number>(0);
   const [showSubtitle, setShowSubtitle] = useState<boolean>(true);
@@ -101,6 +108,29 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [prepProgress, setPrepProgress] = useState<{ current: number; total: number; text: string } | null>(null);
   const [isPrepModalOpen, setIsPrepModalOpen] = useState<boolean>(false);
   const [prepSummary, setPrepSummary] = useState<{ prepared: number; failed: number } | null>(null);
+
+  // Synchronize when initialLessonId changes
+  useEffect(() => {
+    if (initialLessonId) {
+      let cleanId = initialLessonId;
+      if (cleanId.startsWith('level_b_day_')) {
+        cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
+      }
+      if (cleanId !== currentLessonId) {
+        setCurrentLessonId(cleanId);
+        setCurrentChunkIndex(0);
+      }
+    }
+  }, [initialLessonId]);
+
+  // Synchronize when providedLesson changes
+  useEffect(() => {
+    if (providedLesson) {
+      setFetchedLessonDoc(providedLesson);
+      setCurrentLessonId(providedLesson.id);
+      setCurrentChunkIndex(0);
+    }
+  }, [providedLesson]);
 
   const handleStartPrepareAudio = async () => {
     if (chunks.length === 0) return;
@@ -157,28 +187,71 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     }
 
     let isMounted = true;
-    getFirestoreLessonById(currentLessonId)
+    let targetId = currentLessonId;
+    if (targetId.startsWith('level_b_day_')) {
+      targetId = targetId.replace('level_b_day_', 'level_b_eres_day_');
+    }
+
+    getFirestoreLessonById(targetId)
       .then(doc => {
-        if (isMounted && doc) {
-          setFetchedLessonDoc(doc);
+        if (isMounted) {
+          if (doc) {
+            setFetchedLessonDoc(doc);
+          } else {
+            const fallbackDoc = curriculumRegistry.getLessonById(targetId);
+            if (fallbackDoc) setFetchedLessonDoc(fallbackDoc);
+          }
         }
       })
       .catch(err => {
         console.warn("[Presenter] Fallback to local catalog:", err);
+        if (isMounted) {
+          const fallbackDoc = curriculumRegistry.getLessonById(targetId);
+          if (fallbackDoc) setFetchedLessonDoc(fallbackDoc);
+        }
       });
 
     return () => { isMounted = false; };
   }, [currentLessonId, providedLesson]);
 
+  const normalizedId = currentLessonId.startsWith('level_b_day_') 
+    ? currentLessonId.replace('level_b_day_', 'level_b_eres_day_') 
+    : currentLessonId;
+
   const activeLesson: LessonDoc = fetchedLessonDoc || 
+    curriculumRegistry.getLessonById(normalizedId) || 
     curriculumRegistry.getLessonById(currentLessonId) || 
     curriculumRegistry.getAllLessons()[0];
 
-  const chunks: ChunkItem[] = activeLesson?.chunks || [];
+  const rawChunks: ChunkItem[] = activeLesson?.chunks || [];
+  const chunks: ChunkItem[] = rawChunks.length > 0 
+    ? rawChunks 
+    : (curriculumRegistry.getAllLessons()[0]?.chunks || []);
+
   const currentChunk: ChunkItem = chunks[currentChunkIndex] || chunks[0];
 
   const parts: LessonPart[] = groupChunksIntoParts(chunks);
   const currentPart = parts.find(p => currentChunkIndex >= p.start_index && currentChunkIndex <= p.end_index) || parts[0] || null;
+
+  // Grouped courses for the quick lesson switcher
+  const groupedCourses = React.useMemo(() => {
+    return curriculumRegistry.getGroupedCoursesWithLessons();
+  }, []);
+
+  const handleSwitchLesson = (newLessonId: string) => {
+    let cleanId = newLessonId;
+    if (cleanId.startsWith('level_b_day_')) {
+      cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
+    }
+    audioPlayer.stop();
+    setCurrentLessonId(cleanId);
+    setCurrentChunkIndex(0);
+    const localDoc = curriculumRegistry.getLessonById(cleanId);
+    if (localDoc) {
+      setFetchedLessonDoc(localDoc);
+    }
+    onSelectLesson?.(cleanId);
+  };
 
   // Dual Progress % Computations
   const partChunkTotal = currentPart ? currentPart.chunk_count : 0;
@@ -376,16 +449,38 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
   if (!chunks || chunks.length === 0) {
     return (
-      <div className="h-[500px] flex items-center justify-center bg-white rounded-2xl border border-[#E8E8EC]">
-        <div className="text-center p-8 space-y-3">
-          <div className="text-lg font-bold text-[#DC2626]">No Chunks Loaded in this Session</div>
-          <p className="text-xs text-[#6B6B6B]">Please select an active lesson or verify Firestore database connectivity.</p>
+      <div className="h-[500px] flex flex-col items-center justify-center bg-white rounded-2xl border border-[#E8E8EC] p-8 text-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-red-50 text-[#DC2626] flex items-center justify-center mx-auto">
+          <BookOpen className="w-6 h-6" />
+        </div>
+        <div className="text-lg font-bold text-[#DC2626]">Không tìm thấy Chunks cho bài học này</div>
+        <p className="text-xs text-[#6B6B6B] max-w-md">
+          Bài học hiện tại chưa có dữ liệu chunk. Vui lòng chọn bài học khác từ danh mục bên dưới:
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <select
+            onChange={(e) => {
+              if (e.target.value) handleSwitchLesson(e.target.value);
+            }}
+            className="text-xs font-bold px-3 py-2 rounded-xl border border-zinc-300 bg-zinc-50 hover:bg-white cursor-pointer"
+          >
+            <option value="">-- Chọn bài học khác --</option>
+            {groupedCourses.map(({ course, lessons }) => (
+              <optgroup key={course.id} label={course.title}>
+                {lessons.map(l => (
+                  <option key={l.id} value={l.id}>
+                    Day {l.day_number}: {l.lesson_title} ({l.total_chunks || l.chunks?.length || 0} chunks)
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
           {onExit && (
             <button
               onClick={onExit}
               className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-800 transition-all cursor-pointer"
             >
-              Back to Schedule
+              Về Lịch Học
             </button>
           )}
         </div>
@@ -451,13 +546,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       <div className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-4 transition-colors z-20 ${
         highContrastDark ? 'border-zinc-800 bg-[#0F0F12]' : 'border-[#E8E8EC] bg-white/95 backdrop-blur-xs'
       }`}>
-        {/* Left: Lesson Context & Dynamic Progress */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-[#DC2626] text-white">
-              Day {activeLesson.day_number}
+        {/* Left: Lesson Context, Quick Switcher & Dynamic Progress */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-[#DC2626] text-white shrink-0">
+              Day {activeLesson?.day_number ?? 1}
             </span>
-            <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${
+            <span className={`text-xs font-mono font-bold px-2 py-1 rounded-lg border shrink-0 ${
               highContrastDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'
             }`}>
               {courseLevel === 'LEVEL_A'
@@ -470,14 +565,41 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             </span>
           </div>
 
-          <div className="hidden sm:block truncate">
-            <h2 className="font-display font-bold text-sm tracking-tight truncate">
-              {activeLesson.lesson_title}
-            </h2>
+          {/* Quick Lesson Switcher Dropdown */}
+          <div className="relative flex items-center min-w-0">
+            <BookOpen className="w-3.5 h-3.5 text-[#DC2626] absolute left-2.5 pointer-events-none shrink-0" />
+            <select
+              value={normalizedId}
+              onChange={(e) => handleSwitchLesson(e.target.value)}
+              className={`text-xs font-bold pl-8 pr-3 py-1 rounded-lg border transition-all cursor-pointer max-w-[180px] sm:max-w-[260px] md:max-w-[320px] truncate shadow-2xs ${
+                highContrastDark 
+                  ? 'bg-zinc-900 text-zinc-100 border-zinc-700 hover:border-zinc-500' 
+                  : 'bg-zinc-50 text-zinc-900 border-zinc-200 hover:bg-white hover:border-zinc-300'
+              }`}
+              title="Đổi Bài Học / Quick Lesson Switcher"
+            >
+              {groupedCourses.map(({ course, lessons }) => (
+                <optgroup 
+                  key={course.id} 
+                  label={`${
+                    course.level_code === 'LEVEL_A' ? '📗 Level A - Foundation' :
+                    course.level_code === 'LEVEL_B_EREL' ? '🎧 Level B - EREL (Listening)' :
+                    course.level_code === 'LEVEL_B_ERES' ? '🗣️ Level B - ERES (Speaking)' :
+                    course.title
+                  } (${lessons.length} bài)`}
+                >
+                  {lessons.map(l => (
+                    <option key={l.id} value={l.id}>
+                      {l.day_number === 0 ? 'Day 0: Word List' : `Day ${l.day_number}`}: {l.lesson_title} ({l.total_chunks || l.chunks?.length || 0} chunks)
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
 
           {/* Part & Class Progress Pills */}
-          <div className="hidden md:flex items-center gap-1.5 ml-2">
+          <div className="hidden md:flex items-center gap-1.5 ml-1 shrink-0">
             {currentPart && (
               <button
                 onClick={() => setIsPartsDrawerOpen(true)}

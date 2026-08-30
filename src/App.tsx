@@ -11,6 +11,38 @@ import { LessonExcelUploader } from './components/LessonExcelUploader';
 import { getFirestoreCohorts, saveFirestoreCohort, deleteFirestoreCohort, DEFAULT_COURSES } from './services/firestoreService';
 import { useAppRouter } from './hooks/useAppRouter';
 
+function sanitizeCohort(cohort: Cohort): Cohort {
+  let levelCode = cohort.level_code;
+  if ((levelCode as string) === 'LEVEL_B') {
+    levelCode = 'LEVEL_B_ERES';
+  }
+  let courseId = cohort.course_id;
+  if (!courseId || (courseId as string) === 'course_level_b') {
+    courseId = levelCode === 'LEVEL_A' ? 'course_level_a' : levelCode === 'LEVEL_B_EREL' ? 'course_level_b_erel' : 'course_level_b_eres';
+  }
+
+  const cleanedSessions = (cohort.sessions || []).map(s => {
+    let cleanLessonId = s.lesson_id || '';
+    if (cleanLessonId.startsWith('level_b_day_')) {
+      cleanLessonId = cleanLessonId.replace('level_b_day_', 'level_b_eres_day_');
+    }
+    if (!cleanLessonId) {
+      cleanLessonId = `${String(levelCode).toLowerCase()}_day_${s.session_number}`;
+    }
+    return {
+      ...s,
+      lesson_id: cleanLessonId
+    };
+  });
+
+  return {
+    ...cohort,
+    level_code: levelCode,
+    course_id: courseId,
+    sessions: cleanedSessions
+  };
+}
+
 export const App: React.FC = () => {
   const { currentTab: activeTab, navigateToTab: setActiveTab } = useAppRouter();
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
@@ -26,11 +58,12 @@ export const App: React.FC = () => {
       try {
         const loadedCohorts = await getFirestoreCohorts();
         if (loadedCohorts.length > 0) {
-          setCohorts(loadedCohorts);
-          setActiveCohortId(loadedCohorts[0].id);
-          if (loadedCohorts[0].sessions?.[0]) {
-            setDrillLessonId(loadedCohorts[0].sessions[0].lesson_id);
-            setDrillSessionNumber(loadedCohorts[0].sessions[0].session_number);
+          const sanitized = loadedCohorts.map(sanitizeCohort);
+          setCohorts(sanitized);
+          setActiveCohortId(sanitized[0].id);
+          if (sanitized[0].sessions?.[0]) {
+            setDrillLessonId(sanitized[0].sessions[0].lesson_id);
+            setDrillSessionNumber(sanitized[0].sessions[0].session_number);
           }
         } else {
           const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
@@ -63,15 +96,17 @@ export const App: React.FC = () => {
   const activeCohort = cohorts.find(c => c.id === activeCohortId) || cohorts[0] || createDefaultCohort();
 
   const handleUpdateCohort = async (updated: Cohort) => {
-    setCohorts(prev => prev.map(c => c.id === updated.id ? updated : c));
-    await saveFirestoreCohort(updated);
+    const sanitized = sanitizeCohort(updated);
+    setCohorts(prev => prev.map(c => c.id === sanitized.id ? sanitized : c));
+    await saveFirestoreCohort(sanitized);
   };
 
   const handleCreateCohort = async (newCohort: Cohort) => {
-    setCohorts(prev => [newCohort, ...prev]);
-    setActiveCohortId(newCohort.id);
+    const sanitized = sanitizeCohort(newCohort);
+    setCohorts(prev => [sanitized, ...prev]);
+    setActiveCohortId(sanitized.id);
     setActiveTab('schedule');
-    await saveFirestoreCohort(newCohort);
+    await saveFirestoreCohort(sanitized);
   };
 
   const handleResetToDefault = async () => {
@@ -100,11 +135,22 @@ export const App: React.FC = () => {
         setDrillLessonId(firstSession.lesson_id);
         setDrillSessionNumber(firstSession.session_number);
       }
+    } else {
+      const course = DEFAULT_COURSES.find(c => c.id === courseId);
+      const level = (course?.level_code || 'LEVEL_B_ERES') as any;
+      const title = course?.title || `Cohort - ${courseId}`;
+      const newCohort = createDefaultCohort(title, level);
+      newCohort.course_id = courseId;
+      handleCreateCohort(newCohort);
     }
   };
 
   const handleLaunchProjectorForLesson = (lessonId: string, sessionNumber: number) => {
-    setDrillLessonId(lessonId);
+    let cleanId = lessonId;
+    if (cleanId?.startsWith('level_b_day_')) {
+      cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
+    }
+    setDrillLessonId(cleanId);
     setDrillSessionNumber(sessionNumber);
     setActiveTab('projector');
   };
@@ -165,6 +211,17 @@ export const App: React.FC = () => {
           sessionNumber={drillSessionNumber}
           onExit={() => setActiveTab('schedule')}
           audioSettings={activeCohort.audio_settings}
+          courseLevel={activeCohort.level_code}
+          onSelectLesson={(newLessonId, sessionNumber) => {
+            let cleanId = newLessonId;
+            if (cleanId?.startsWith('level_b_day_')) {
+              cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
+            }
+            setDrillLessonId(cleanId);
+            if (sessionNumber !== undefined) {
+              setDrillSessionNumber(sessionNumber);
+            }
+          }}
         />
       )}
 
