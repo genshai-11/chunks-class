@@ -34,6 +34,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 }) => {
   const [editingSessionNumber, setEditingSessionNumber] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
+  const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID');
   
   // Cohort Settings Editor Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
@@ -263,9 +264,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         </div>
       )}
 
-      {/* 3. Filter Bar */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-1.5 p-1 bg-white border border-[#E8E8EC] rounded-lg shadow-2xs">
+      {/* 3. Filter Bar & View Toggle */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Status Filter */}
+        <div className="flex items-center gap-1.5 p-1 bg-white border border-[#E8E8EC] rounded-lg shadow-2xs overflow-x-auto shrink-0">
           <button
             onClick={() => setFilterStatus('all')}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
@@ -298,134 +300,248 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </button>
         </div>
 
-        <div className="text-xs text-[#6B6B6B] font-mono">
-          * Direct clicker integration enabled for all sessions
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          <div className="text-[11px] text-[#6B6B6B] font-mono hidden md:block">
+            * Direct clicker integration enabled
+          </div>
+          {/* View Mode Toggle */}
+          <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+            <button
+              type="button"
+              onClick={() => setViewMode('GRID')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'GRID' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+              title="Lưới bài học hiện tại"
+            >
+              Lưới Thẻ
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('LIST')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'LIST' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+              title="Danh sách tối giản"
+            >
+              Danh Sách
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 4. 15-Sessions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredSessions.map((session) => {
-          const lessonMeta = cohort.level_code === 'LEVEL_A'
-            ? CURRICULUM_CATALOG_LEVEL_A.find(l => l.id === session.lesson_id)
-            : CURRICULUM_CATALOG_LEVEL_B.find(l => l.id === session.lesson_id);
+      {/* 4. 15-Sessions Content */}
+      {viewMode === 'GRID' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredSessions.map((session) => {
+            const lessonMeta = cohort.level_code === 'LEVEL_A'
+              ? CURRICULUM_CATALOG_LEVEL_A.find(l => l.id === session.lesson_id)
+              : CURRICULUM_CATALOG_LEVEL_B.find(l => l.id === session.lesson_id);
 
-          const chunkCount = lessonMeta?.chunks.length || 10;
-          const isCompleted = session.status === 'completed';
-          const isInProgress = session.status === 'in_progress';
+            const chunkCount = lessonMeta?.chunks.length || 10;
+            const isCompleted = session.status === 'completed';
+            const isInProgress = session.status === 'in_progress';
 
-          return (
-            <div
-              key={session.session_number}
-              className={`bg-white rounded-xl border p-4.5 flex flex-col justify-between transition-all hover:shadow-sm ${
-                isInProgress 
-                  ? 'border-[#DC2626] ring-2 ring-[#DC2626]/10' 
-                  : isCompleted 
-                    ? 'border-[#16A34A]/40 bg-[#FAFAFA]/70' 
-                    : 'border-[#E8E8EC]'
-              }`}
-            >
-              <div>
-                {/* Card Header */}
-                <div className="flex items-center justify-between gap-2 mb-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs ${
-                      isInProgress 
-                        ? 'bg-[#DC2626] text-white' 
-                        : isCompleted 
-                          ? 'bg-[#16A34A] text-white' 
-                          : 'bg-[#F1F1F4] text-[#0A0A0A]'
-                    }`}>
-                      {session.session_number}
-                    </span>
-                    <span className="font-mono text-xs font-semibold text-[#0A0A0A]">
-                      Session {session.session_number}/15
-                    </span>
+            return (
+              <div
+                key={session.session_number}
+                className={`bg-white rounded-xl border p-4.5 flex flex-col justify-between transition-all hover:shadow-sm ${
+                  isInProgress 
+                    ? 'border-[#DC2626] ring-2 ring-[#DC2626]/10' 
+                    : isCompleted 
+                      ? 'border-[#16A34A]/40 bg-[#FAFAFA]/70' 
+                      : 'border-[#E8E8EC]'
+                }`}
+              >
+                <div>
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs ${
+                        isInProgress 
+                          ? 'bg-[#DC2626] text-white' 
+                          : isCompleted 
+                            ? 'bg-[#16A34A] text-white' 
+                            : 'bg-[#F1F1F4] text-[#0A0A0A]'
+                      }`}>
+                        {session.session_number}
+                      </span>
+                      <span className="font-mono text-xs font-semibold text-[#0A0A0A]">
+                        Session {session.session_number}/15
+                      </span>
+                    </div>
+
+                    <select
+                      value={session.status}
+                      onChange={(e) => handleStatusChange(session.session_number, e.target.value as any)}
+                      className={`text-[11px] font-semibold font-mono rounded-md px-2 py-1 border transition-colors cursor-pointer ${
+                        isCompleted 
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                          : isInProgress 
+                            ? 'bg-red-50 text-[#DC2626] border-red-200 font-bold' 
+                            : 'bg-zinc-50 text-zinc-600 border-zinc-200'
+                      }`}
+                    >
+                      <option value="scheduled">⏳ Scheduled</option>
+                      <option value="in_progress">🔴 In Progress</option>
+                      <option value="completed">✅ Completed</option>
+                      <option value="cancelled">🚫 Postponed</option>
+                    </select>
                   </div>
 
-                  <select
-                    value={session.status}
-                    onChange={(e) => handleStatusChange(session.session_number, e.target.value as any)}
-                    className={`text-[11px] font-semibold font-mono rounded-md px-2 py-1 border transition-colors cursor-pointer ${
-                      isCompleted 
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                        : isInProgress 
-                          ? 'bg-red-50 text-[#DC2626] border-red-200 font-bold' 
-                          : 'bg-zinc-50 text-zinc-600 border-zinc-200'
+                  {/* Lesson Title */}
+                  <h3 className="font-display font-bold text-sm text-[#0A0A0A] leading-snug line-clamp-2 min-h-[2.5rem]">
+                    {session.lesson_title}
+                  </h3>
+
+                  {/* Metadata Details */}
+                  <div className="mt-3 space-y-1.5 text-xs text-[#6B6B6B]">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1 font-mono">
+                        <Calendar className="w-3.5 h-3.5 text-[#6B6B6B]" />
+                        {session.day_of_week}, {session.scheduled_date}
+                      </span>
+                      {editingSessionNumber === session.session_number ? (
+                        <input
+                          type="date"
+                          defaultValue={session.scheduled_date}
+                          onBlur={(e) => handleDateChange(session.session_number, e.target.value)}
+                          className="text-[11px] border rounded px-1 py-0.5 font-mono"
+                          autoFocus
+                        />
+                      ) : (
+                        <button
+                          onClick={() => setEditingSessionNumber(session.session_number)}
+                          className="text-[11px] text-zinc-400 hover:text-zinc-700 underline cursor-pointer"
+                          title="Reschedule Date"
+                        >
+                          Reschedule
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1 font-mono text-[11px]">
+                        <Clock className="w-3 h-3 text-[#6B6B6B]" />
+                        {session.start_time} – {session.end_time}
+                      </span>
+                      <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-700">
+                        {chunkCount} Chunks
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Footer: Drill Launch CTA */}
+                <div className="mt-4 pt-3 border-t border-[#E8E8EC] flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate">
+                    {session.lesson_type}
+                  </span>
+
+                  <button
+                    onClick={() => onLaunchProjectorForLesson(session.lesson_id, session.session_number)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isInProgress
+                        ? 'bg-[#DC2626] text-white hover:bg-[#B91C1C] shadow-xs'
+                        : 'bg-zinc-100 hover:bg-[#DC2626] hover:text-white text-zinc-800'
                     }`}
                   >
-                    <option value="scheduled">⏳ Scheduled</option>
-                    <option value="in_progress">🔴 In Progress</option>
-                    <option value="completed">✅ Completed</option>
-                    <option value="cancelled">🚫 Postponed</option>
-                  </select>
-                </div>
-
-                {/* Lesson Title */}
-                <h3 className="font-display font-bold text-sm text-[#0A0A0A] leading-snug line-clamp-2 min-h-[2.5rem]">
-                  {session.lesson_title}
-                </h3>
-
-                {/* Metadata Details */}
-                <div className="mt-3 space-y-1.5 text-xs text-[#6B6B6B]">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 font-mono">
-                      <Calendar className="w-3.5 h-3.5 text-[#6B6B6B]" />
-                      {session.day_of_week}, {session.scheduled_date}
-                    </span>
-                    {editingSessionNumber === session.session_number ? (
-                      <input
-                        type="date"
-                        defaultValue={session.scheduled_date}
-                        onBlur={(e) => handleDateChange(session.session_number, e.target.value)}
-                        className="text-[11px] border rounded px-1 py-0.5 font-mono"
-                        autoFocus
-                      />
-                    ) : (
-                      <button
-                        onClick={() => setEditingSessionNumber(session.session_number)}
-                        className="text-[11px] text-zinc-400 hover:text-zinc-700 underline cursor-pointer"
-                        title="Reschedule Date"
-                      >
-                        Reschedule
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 font-mono text-[11px]">
-                      <Clock className="w-3 h-3 text-[#6B6B6B]" />
-                      {session.start_time} – {session.end_time}
-                    </span>
-                    <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-700">
-                      {chunkCount} Chunks
-                    </span>
-                  </div>
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>Launch Drill</span>
+                  </button>
                 </div>
               </div>
-
-              {/* Card Footer: Drill Launch CTA */}
-              <div className="mt-4 pt-3 border-t border-[#E8E8EC] flex items-center justify-between gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 truncate">
-                  {session.lesson_type}
-                </span>
-
-                <button
-                  onClick={() => onLaunchProjectorForLesson(session.lesson_id, session.session_number)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    isInProgress
-                      ? 'bg-[#DC2626] text-white hover:bg-[#B91C1C] shadow-xs'
-                      : 'bg-zinc-100 hover:bg-[#DC2626] hover:text-white text-zinc-800'
-                  }`}
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>Launch Drill</span>
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-zinc-100 text-zinc-700 font-bold border-b border-zinc-200">
+                <tr>
+                  <th className="p-3 w-16 text-center">Session</th>
+                  <th className="p-3 w-40">Lịch Học</th>
+                  <th className="p-3">Bài Học</th>
+                  <th className="p-3 w-32">Trạng Thái</th>
+                  <th className="p-3 w-28 text-center">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {filteredSessions.map((session) => {
+                  const isCompleted = session.status === 'completed';
+                  const isInProgress = session.status === 'in_progress';
+                  return (
+                    <tr key={session.session_number} className={`hover:bg-zinc-50 transition-colors ${isInProgress ? 'bg-red-50/20' : ''}`}>
+                      <td className="p-3 text-center">
+                        <span className={`w-7 h-7 mx-auto rounded-lg flex items-center justify-center font-mono font-bold text-xs ${
+                          isInProgress ? 'bg-[#DC2626] text-white' : isCompleted ? 'bg-[#16A34A] text-white' : 'bg-[#F1F1F4] text-[#0A0A0A]'
+                        }`}>
+                          {session.session_number}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-mono text-zinc-900 font-bold">{session.scheduled_date}</div>
+                            <div className="font-mono text-[10px] text-zinc-500 mt-0.5">{session.day_of_week} • {session.start_time} - {session.end_time}</div>
+                          </div>
+                          {editingSessionNumber === session.session_number ? (
+                            <input
+                              type="date"
+                              defaultValue={session.scheduled_date}
+                              onBlur={(e) => handleDateChange(session.session_number, e.target.value)}
+                              className="text-[11px] border rounded px-1 py-0.5 font-mono ml-2"
+                              autoFocus
+                            />
+                          ) : (
+                            <button
+                              onClick={() => setEditingSessionNumber(session.session_number)}
+                              className="text-[11px] text-zinc-400 hover:text-zinc-700 cursor-pointer p-1"
+                              title="Reschedule Date"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="font-display font-bold text-sm text-zinc-900 line-clamp-1">{session.lesson_title}</div>
+                        <div className="text-[10px] font-mono text-zinc-500 uppercase mt-0.5">{session.lesson_type}</div>
+                      </td>
+                      <td className="p-3">
+                        <select
+                          value={session.status}
+                          onChange={(e) => handleStatusChange(session.session_number, e.target.value as any)}
+                          className={`text-[11px] font-semibold font-mono rounded-md px-2 py-1 border transition-colors cursor-pointer w-full ${
+                            isCompleted ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : isInProgress ? 'bg-red-50 text-[#DC2626] border-red-200 font-bold' : 'bg-zinc-50 text-zinc-600 border-zinc-200'
+                          }`}
+                        >
+                          <option value="scheduled">⏳ Scheduled</option>
+                          <option value="in_progress">🔴 In Progress</option>
+                          <option value="completed">✅ Completed</option>
+                          <option value="cancelled">🚫 Postponed</option>
+                        </select>
+                      </td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => onLaunchProjectorForLesson(session.lesson_id, session.session_number)}
+                          className={`inline-flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            isInProgress ? 'bg-[#DC2626] text-white hover:bg-[#B91C1C] shadow-xs' : 'bg-zinc-100 hover:bg-[#DC2626] hover:text-white text-zinc-800'
+                          }`}
+                        >
+                          <Play className="w-3 h-3 fill-current" />
+                          <span>Vào Lớp</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* 4. EDIT COHORT & SCHEDULE SETTINGS MODAL */}
       {isEditModalOpen && (

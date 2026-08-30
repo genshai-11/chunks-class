@@ -520,15 +520,6 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
 
       {/* 4. Chunks List / Grid */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs text-[#6B6B6B] px-1 font-mono">
-          <span>
-            Tìm thấy <strong className="text-[#0A0A0A]">{filteredChunks.length}</strong> chunks phù hợp
-          </span>
-          <span className="text-[11px] hidden sm:inline">
-            Nhấn Loa để nghe TTS • Nhấn "Xem Trước" để chạy thử Presentation
-          </span>
-        </div>
-
         {filteredChunks.length === 0 ? (
           <div className="bg-white rounded-2xl border border-[#E8E8EC] p-12 text-center space-y-3">
             <Layers className="w-8 h-8 text-zinc-300 mx-auto" />
@@ -757,49 +748,58 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
           </div>
         )}
 
-        {/* Pagination Controls Bar */}
-        {filteredChunks.length > PAGE_SIZE && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-white rounded-2xl border border-[#E8E8EC] shadow-xs">
-            <span className="text-xs text-zinc-600 font-mono">
-              Hiển thị <strong>{(currentPage - 1) * PAGE_SIZE + 1} – {Math.min(currentPage * PAGE_SIZE, filteredChunks.length)}</strong> trên tổng số <strong>{filteredChunks.length}</strong> chunks (Trang {currentPage}/{totalPages})
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-xs font-bold text-zinc-700 disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
-              >
-                ← Trang Trước
-              </button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum = i + 1;
-                  if (totalPages > 5 && currentPage > 3) {
-                    pageNum = Math.min(totalPages - 4 + i, Math.max(1, currentPage - 2 + i));
-                  }
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                        currentPage === pageNum
-                          ? 'bg-[#DC2626] text-white shadow-xs'
-                          : 'border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-xs font-bold text-zinc-700 disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
-              >
-                Trang Sau →
-              </button>
+        {/* Footer Bar (Count & Pagination) */}
+        {filteredChunks.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-white rounded-2xl border border-[#E8E8EC] shadow-xs mt-4">
+            <div className="flex flex-col text-xs font-mono">
+              <span className="text-[#6B6B6B]">
+                Tìm thấy <strong className="text-[#0A0A0A]">{filteredChunks.length}</strong> chunks phù hợp
+              </span>
+              {filteredChunks.length > PAGE_SIZE && (
+                <span className="text-zinc-500 mt-1">
+                  Hiển thị <strong>{(currentPage - 1) * PAGE_SIZE + 1} – {Math.min(currentPage * PAGE_SIZE, filteredChunks.length)}</strong> trên tổng số <strong>{filteredChunks.length}</strong> chunks (Trang {currentPage}/{totalPages})
+                </span>
+              )}
             </div>
+            {filteredChunks.length > PAGE_SIZE && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-xs font-bold text-zinc-700 disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                >
+                  ← Trang Trước
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum = i + 1;
+                    if (totalPages > 5 && currentPage > 3) {
+                      pageNum = Math.min(totalPages - 4 + i, Math.max(1, currentPage - 2 + i));
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                          currentPage === pageNum
+                            ? 'bg-[#DC2626] text-white shadow-xs'
+                            : 'border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-xs font-bold text-zinc-700 disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Trang Sau →
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
