@@ -389,7 +389,28 @@ class AudioPlayService {
           return;
         }
       } catch (err: any) {
-        console.warn(`[Audio] Google Cloud TTS unavailable (${err?.message}), falling back to local Browser Model...`);
+        console.warn(`[Audio] Google Cloud TTS unavailable (${err?.message}).`);
+        if (isVietnamese) {
+          try {
+            const base64Audio = await this.fetchPublicGoogleVietnameseTts(cleanText);
+            if (base64Audio) {
+               this.audioCache.set(cacheKey, base64Audio);
+               this.setLastSource('GOOGLE_CLOUD_AI');
+               await this.playBase64(base64Audio, speed);
+               return;
+            }
+          } catch (pubErr: any) {
+             console.warn(`[Audio] Fetch failed (${pubErr?.message}), streaming directly via HTML5 Audio...`);
+             try {
+               const directUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+               this.setLastSource('GOOGLE_CLOUD_AI');
+               await this.playUrl(directUrl, speed);
+               return;
+             } catch (streamErr: any) {
+               console.warn(`[Audio] Direct stream unavailable (${streamErr?.message}), falling back to local Browser Model...`);
+             }
+          }
+        }
       }
 
       // 4. BROWSER LOCAL SPEECH SYNTHESIS FALLBACK
@@ -549,7 +570,15 @@ class AudioPlayService {
                 prepared++;
               }
             } catch {
-              failed++;
+              try {
+                const base64 = await this.fetchPublicGoogleVietnameseTts(cleanVi);
+                if (base64) {
+                  this.audioCache.set(cacheKeyVi, base64);
+                  prepared++;
+                }
+              } catch {
+                failed++;
+              }
             }
           } else {
             prepared++;
@@ -608,6 +637,21 @@ class AudioPlayService {
     return audioContent;
   }
 
+  private async fetchPublicGoogleVietnameseTts(text: string): Promise<string> {
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(text)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Public Google TTS Error: ${response.status}`);
+    }
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
   private playUrl(url: string, speed: number): Promise<void> {
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
@@ -639,11 +683,23 @@ class AudioPlayService {
       }
 
       window.speechSynthesis.cancel();
+      if (window.speechSynthesis.resume) {
+        window.speechSynthesis.resume();
+      }
+
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = speed;
 
       const isVi = voiceName.startsWith('vi') || /[\u00C0-\u1EF9]/.test(text);
       utterance.lang = isVi ? 'vi-VN' : 'en-US';
+
+      if (isVi) {
+        const voices = window.speechSynthesis.getVoices();
+        const viVoice = voices.find(v => v.lang.startsWith('vi'));
+        if (viVoice) {
+          utterance.voice = viVoice;
+        }
+      }
 
       utterance.onend = () => resolve();
       utterance.onerror = () => resolve();

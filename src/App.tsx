@@ -102,7 +102,8 @@ export const App: React.FC = () => {
 
   if (isLoading && cohorts.length === 0) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-[#FBFBFC] text-zinc-600 font-mono text-xs">
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#FBFBFC] text-zinc-600 font-mono text-xs gap-3">
+        <img src="/logo.png" alt="CHUNKS" className="h-9 w-auto object-contain rounded-md animate-pulse shadow-sm" />
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-ping" />
           <span>Loading CHUNKS Teacher Studio...</span>

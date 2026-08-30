@@ -61,19 +61,17 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
     >
       <div>
         {/* Brand Header */}
-        <div className="h-16 flex items-center px-4 border-b border-[#E8E8EC] justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#DC2626] flex items-center justify-center text-white font-extrabold text-base shadow-sm shrink-0">
-              C
-            </div>
+        <div className={`h-16 flex items-center border-b border-[#E8E8EC] justify-between ${isCollapsed ? 'px-2' : 'px-4'}`}>
+          <div className="truncate min-w-0 flex flex-col justify-center">
+            <img
+              src="/logo.png"
+              alt="CHUNKS"
+              className={`${isCollapsed ? 'w-9' : 'w-[100px]'} h-auto object-contain rounded-[3px] shadow-2xs`}
+            />
             {!isCollapsed && (
-              <div className="truncate">
-                <div className="font-display font-bold text-base tracking-tight text-[#0A0A0A] leading-tight">
-                  CHUNKS
-                </div>
-                <div className="text-[10px] font-mono font-bold text-[#DC2626] uppercase tracking-wider">
-                  Teacher Studio
-                </div>
+              <div className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest mt-1 flex items-center gap-1.5 leading-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></span>
+                <span>Teacher Studio</span>
               </div>
             )}
           </div>
@@ -81,7 +79,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="p-1 rounded-md text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 active:scale-95 transition-all cursor-pointer shrink-0"
               title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             >
               {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
