@@ -12,6 +12,25 @@ export interface VoiceOption {
 
 export type AudioProvider = 'GOOGLE_TTS' | 'DEEPGRAM_AURA';
 export type AudioSourceType = 'GCS_MASTER' | 'GOOGLE_CLOUD_AI' | 'DEEPGRAM_AURA' | 'BROWSER_LOCAL';
+export type AudioBatchTarget = 'ENGLISH' | 'VIETNAMESE' | 'BOTH';
+
+export interface PrepareAudioOptions {
+  voiceEn?: string;
+  voiceVi?: string;
+  provider?: AudioProvider;
+  target?: AudioBatchTarget;
+  onProgress?: (current: number, total: number, statusText: string) => void;
+  concurrency?: number;
+}
+
+export function sanitizeSpeechText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\/{2,}/g, ', ')
+    .replace(/\|+/g, ', ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 export interface AudioConnectionStatus {
   cloudTtsStatus: 'CONNECTED' | 'BLOCKED' | 'ERROR' | 'UNTESTED';
@@ -264,6 +283,46 @@ class AudioPlayService {
    *    Else synthesize via Google Cloud Text-to-Speech API.
    * 4. Fallback to Browser Speech if network/API fails.
    */
+  /**
+   * Get in-memory audio preparation status for a lesson's chunks
+   */
+  getLessonAudioStatus(
+    chunks: { english: string; vietnamese?: string }[],
+    voiceEn: string = 'aura-asteria-en',
+    voiceVi: string = 'vi-VN-Neural2-A'
+  ): { total: number; enCached: number; viCached: number; isFullyCached: boolean } {
+    let enCached = 0;
+    let viCached = 0;
+    for (const c of chunks) {
+      const cleanEn = sanitizeSpeechText(c.english);
+      if (this.audioCache.has(this.getCacheKey(voiceEn, cleanEn)) || this.audioCache.has(this.getCacheKey(voiceEn, c.english))) {
+        enCached++;
+      }
+      if (c.vietnamese) {
+        const cleanVi = sanitizeSpeechText(c.vietnamese);
+        if (this.audioCache.has(this.getCacheKey(voiceVi, cleanVi)) || this.audioCache.has(this.getCacheKey(voiceVi, c.vietnamese))) {
+          viCached++;
+        }
+      }
+    }
+    return {
+      total: chunks.length,
+      enCached,
+      viCached,
+      isFullyCached: chunks.length > 0 && enCached === chunks.length && viCached === chunks.length
+    };
+  }
+
+  /**
+   * Play Chunk Audio with clean Engine Prioritization:
+   * 1. Check in-memory preparation cache (Instant 0ms).
+   * 2. If provider is DEEPGRAM_AURA or voice is aura-*:
+   *    Synthesize and play via Deepgram Aura API.
+   * 3. If provider is GOOGLE_TTS:
+   *    If permanent GCS URL is provided & available, stream directly.
+   *    Else synthesize via Google Cloud Text-to-Speech API.
+   * 4. Fallback to Browser Speech if network/API fails.
+   */
   async playChunk(
     text: string,
     permanentAudioUrl?: string | null,
@@ -274,6 +333,7 @@ class AudioPlayService {
     this.stop();
     if (!text || !text.trim()) return;
 
+    const cleanText = sanitizeSpeechText(text);
     this.setAudioLoading(true);
     try {
       const isVietnamese = voiceName.startsWith('vi') || /[\u00C0-\u1EF9]/.test(text);
@@ -281,19 +341,21 @@ class AudioPlayService {
       const effectiveVoice = isVietnamese ? (voiceName.startsWith('vi') ? voiceName : 'vi-VN-Neural2-A') : voiceName;
 
       // Check Cache First (Speed is applied via playbackRate, not cache key)
-      const cacheKey = this.getCacheKey(effectiveVoice, text);
-      if (this.audioCache.has(cacheKey)) {
-        const cached = this.audioCache.get(cacheKey)!;
+      const cacheKey = this.getCacheKey(effectiveVoice, cleanText);
+      const rawCacheKey = this.getCacheKey(effectiveVoice, text);
+      const cached = this.audioCache.get(cacheKey) || this.audioCache.get(rawCacheKey);
+
+      if (cached) {
         this.setLastSource(isDeepgram ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI');
         await this.playBase64(cached, speed);
         return;
       }
 
-      // 1. DEEPGRAM AURA ENGINE (If selected by teacher)
+      // 1. DEEPGRAM AURA ENGINE (If selected by teacher and English text)
       if (isDeepgram) {
         try {
           const dgModel = voiceName.startsWith('aura-') ? voiceName : 'aura-asteria-en';
-          const base64 = await deepgramTts.synthesizeText(text, dgModel);
+          const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
           if (base64) {
             this.audioCache.set(cacheKey, base64);
             this.setLastSource('DEEPGRAM_AURA');
@@ -316,10 +378,10 @@ class AudioPlayService {
         }
       }
 
-      // 3. GOOGLE CLOUD TEXT-TO-SPEECH
+      // 3. GOOGLE CLOUD TEXT-TO-SPEECH (Supports both English and Vietnamese)
       try {
         const googleVoice = isVietnamese ? effectiveVoice : voiceName;
-        const base64Audio = await this.synthesizeWithGoogleTTS(text, googleVoice, 1.0);
+        const base64Audio = await this.synthesizeWithGoogleTTS(cleanText, googleVoice, 1.0);
         if (base64Audio) {
           this.audioCache.set(cacheKey, base64Audio);
           this.setLastSource('GOOGLE_CLOUD_AI');
@@ -332,7 +394,7 @@ class AudioPlayService {
 
       // 4. BROWSER LOCAL SPEECH SYNTHESIS FALLBACK
       this.setLastSource('BROWSER_LOCAL');
-      await this.playBrowserTts(text, voiceName, speed);
+      await this.playBrowserTts(cleanText, effectiveVoice, speed);
     } finally {
       this.setAudioLoading(false);
     }
@@ -374,7 +436,8 @@ class AudioPlayService {
         await this.playChunk(englishText, isDeepgram ? null : englishAudioUrl, effectiveVoiceEn, speed);
         
         if (this.activeSequenceId !== seqId) return;
-        await new Promise(res => setTimeout(res, 250));
+        // Natural 500ms cadence pause between English and Vietnamese
+        await new Promise(res => setTimeout(res, 500));
         if (this.activeSequenceId !== seqId) return;
 
         onStepChange?.('vi');
@@ -384,7 +447,8 @@ class AudioPlayService {
         await this.playChunk(vietnameseText, null, voiceVi, speed);
         
         if (this.activeSequenceId !== seqId) return;
-        await new Promise(res => setTimeout(res, 350));
+        // Natural 500ms cadence pause between Vietnamese and English
+        await new Promise(res => setTimeout(res, 500));
         if (this.activeSequenceId !== seqId) return;
 
         onStepChange?.('en');
@@ -393,7 +457,7 @@ class AudioPlayService {
 
       if (r < repeatCount - 1) {
         if (this.activeSequenceId !== seqId) return;
-        await new Promise(res => setTimeout(res, 400));
+        await new Promise(res => setTimeout(res, 600));
       }
     }
 
@@ -403,61 +467,111 @@ class AudioPlayService {
   }
 
   /**
-   * Fast Concurrent Batch Pre-generator (4 workers pool + AbortSignal)
+   * Fast Concurrent Batch Pre-generator (4 workers pool + English / Vietnamese / Both)
    */
   async prepareChunksAudio(
-    chunks: { english: string; audio_url?: string | null }[],
-    voiceEn: string = 'aura-asteria-en',
-    provider: AudioProvider = 'DEEPGRAM_AURA',
-    onProgress?: (current: number, total: number, statusText: string) => void,
-    concurrency: number = 4
+    chunks: { english: string; vietnamese?: string; audio_url?: string | null }[],
+    optionsOrVoiceEn?: PrepareAudioOptions | string,
+    providerLegacy: AudioProvider = 'DEEPGRAM_AURA',
+    onProgressLegacy?: (current: number, total: number, statusText: string) => void,
+    concurrencyLegacy: number = 4
   ): Promise<{ prepared: number; failed: number }> {
+    let opts: PrepareAudioOptions;
+    if (typeof optionsOrVoiceEn === 'object') {
+      opts = optionsOrVoiceEn;
+    } else {
+      opts = {
+        voiceEn: optionsOrVoiceEn || 'aura-asteria-en',
+        voiceVi: 'vi-VN-Neural2-A',
+        provider: providerLegacy,
+        target: 'BOTH',
+        onProgress: onProgressLegacy,
+        concurrency: concurrencyLegacy
+      };
+    }
+
+    const voiceEn = opts.voiceEn || 'aura-asteria-en';
+    const voiceVi = opts.voiceVi || 'vi-VN-Neural2-A';
+    const target: AudioBatchTarget = opts.target || 'BOTH';
+    const provider = opts.provider || this.activeProvider;
+    const onProgress = opts.onProgress;
+    const concurrency = opts.concurrency || 4;
+
     let prepared = 0;
     let failed = 0;
     let cursor = 0;
     const total = chunks.length;
 
     const isDeepgram = provider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-');
-    const model = isDeepgram ? (voiceEn.startsWith('aura-') ? voiceEn : 'aura-asteria-en') : voiceEn;
+    const modelEn = isDeepgram ? (voiceEn.startsWith('aura-') ? voiceEn : 'aura-asteria-en') : voiceEn;
 
     const worker = async () => {
       while (cursor < total) {
         const index = cursor++;
         const c = chunks[index];
-        const cacheKey = this.getCacheKey(model, c.english);
+        const cleanEn = sanitizeSpeechText(c.english);
+        const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
 
-        if (this.audioCache.has(cacheKey)) {
-          prepared++;
-          onProgress?.(prepared + failed, total, `Cached: "${c.english.slice(0, 25)}..."`);
-          continue;
-        }
-
-        try {
-          if (isDeepgram) {
-            const base64 = await deepgramTts.synthesizeText(c.english, model);
-            if (base64) {
-              this.audioCache.set(cacheKey, base64);
-              prepared++;
+        // 1. Synthesize English if requested
+        if (target === 'ENGLISH' || target === 'BOTH') {
+          const cacheKeyEn = this.getCacheKey(modelEn, cleanEn);
+          if (!this.audioCache.has(cacheKeyEn)) {
+            try {
+              if (isDeepgram) {
+                const base64 = await deepgramTts.synthesizeText(cleanEn, modelEn);
+                if (base64) {
+                  this.audioCache.set(cacheKeyEn, base64);
+                  prepared++;
+                }
+              } else {
+                const base64 = await this.synthesizeWithGoogleTTS(cleanEn, modelEn, 1.0);
+                if (base64) {
+                  this.audioCache.set(cacheKeyEn, base64);
+                  prepared++;
+                }
+              }
+            } catch {
+              failed++;
             }
           } else {
-            const base64 = await this.synthesizeWithGoogleTTS(c.english, model, 1.0);
-            if (base64) {
-              this.audioCache.set(cacheKey, base64);
-              prepared++;
-            }
+            prepared++;
           }
-        } catch (err) {
-          failed++;
         }
 
-        onProgress?.(prepared + failed, total, `Prepared #${index + 1}: "${c.english.slice(0, 25)}..."`);
+        // 2. Synthesize Vietnamese if requested and present
+        if ((target === 'VIETNAMESE' || target === 'BOTH') && cleanVi) {
+          const cacheKeyVi = this.getCacheKey(voiceVi, cleanVi);
+          if (!this.audioCache.has(cacheKeyVi)) {
+            try {
+              const base64 = await this.synthesizeWithGoogleTTS(cleanVi, voiceVi, 1.0);
+              if (base64) {
+                this.audioCache.set(cacheKeyVi, base64);
+                prepared++;
+              }
+            } catch {
+              failed++;
+            }
+          } else {
+            prepared++;
+          }
+        }
+
+        onProgress?.(
+          Math.min(prepared + failed, total * (target === 'BOTH' ? 2 : 1)),
+          total * (target === 'BOTH' ? 2 : 1),
+          `Đã xử lý #${index + 1}: "${cleanEn.slice(0, 20)}..."`
+        );
       }
     };
 
     const pool = Array.from({ length: Math.min(concurrency, total) }, () => worker());
     await Promise.all(pool);
 
-    onProgress?.(total, total, `Hoàn tất! ${prepared} chuẩn bị thành công, ${failed} lỗi.`);
+    onProgress?.(
+      total * (target === 'BOTH' ? 2 : 1),
+      total * (target === 'BOTH' ? 2 : 1),
+      `Hoàn tất chuẩn bị audio! (${prepared} thành công, ${failed} lỗi)`
+    );
     return { prepared, failed };
   }
 

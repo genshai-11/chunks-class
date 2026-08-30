@@ -5,8 +5,20 @@ on:
     branches:
       - main
       - master
-      - feat/dual-course-clicker-engine
+  pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Deploy Target Channel (preview for testing, live for production)'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - live
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -54,4 +66,4 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CHUNKS_VOICECLONING_GENSHAI }}'
           projectId: 'chunks-voicecloning-genshai'
-          channelId: 'live'
+          channelId: ${{ github.event.inputs.channel || (github.event_name == 'push' && 'live') || 'preview' }}

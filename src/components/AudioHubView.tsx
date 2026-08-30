@@ -1,6 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { CohortAudioSettings, LanguageMode, CourseLevel } from '../types';
-import { audioPlayer, AudioSourceType, AudioProvider } from '../services/googleTtsService';
+import React, { useState, useEffect, useCallback } from 'react';
+import { CohortAudioSettings, LanguageMode, CourseLevel, LessonDoc } from '../types';
+import { 
+  audioPlayer, 
+  AudioSourceType, 
+  AudioProvider, 
+  AudioBatchTarget,
+  sanitizeSpeechText 
+} from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { getAllLessons } from '../services/firestoreService';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
@@ -20,7 +26,9 @@ import {
   Key,
   Save,
   RotateCcw,
-  Loader2
+  Loader2,
+  Check,
+  AlertCircle
 } from 'lucide-react';
 
 interface AudioHubViewProps {
@@ -46,14 +54,16 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
     ...(settings || {})
   };
 
-  // 1. Audio Presets & Testing State
+  // 1. Audio Presets & Audition State
   const [testEnglishText, setTestEnglishText] = useState<string>(
-    "Once you master these chunks, speaking English becomes effortless."
+    "Once you master these chunks, // speaking English becomes effortless."
   );
   const [testVietnameseText, setTestVietnameseText] = useState<string>(
-    "Một khi bạn làm chủ các cụm từ này, nói tiếng Anh sẽ trở nên vô cùng tự nhiên."
+    "Một khi bạn làm chủ các cụm từ này, // nói tiếng Anh sẽ trở nên vô cùng tự nhiên."
   );
-  const [isPlayingTest, setIsPlayingTest] = useState<boolean>(false);
+  const [isPlayingEn, setIsPlayingEn] = useState<boolean>(false);
+  const [isPlayingVi, setIsPlayingVi] = useState<boolean>(false);
+  const [isPlayingSequence, setIsPlayingSequence] = useState<boolean>(false);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState<boolean>(false);
   const [activeAudioSource, setActiveAudioSource] = useState<AudioSourceType>(audioPlayer.getLastSource());
@@ -61,16 +71,45 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
   // 2. Batch Preparation Hub State
   const [selectedCourseLevel, setSelectedCourseLevel] = useState<CourseLevel>('LEVEL_A');
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
+  const [batchTarget, setBatchTarget] = useState<AudioBatchTarget>('BOTH');
   const [isBatchPrepping, setIsBatchPrepping] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; message: string } | null>(null);
   const [batchSummary, setBatchSummary] = useState<string | null>(null);
 
-  // 3. API Key & Provider State
+  // 3. Lessons & Cache Readiness Matrix
+  const [courseLessons, setCourseLessons] = useState<LessonDoc[]>([]);
+  const [cacheStatusMap, setCacheStatusMap] = useState<Record<string, { en: number; vi: number; total: number }>>({});
+
+  // 4. API Key & Provider State
   const [audioProvider, setAudioProvider] = useState<AudioProvider>(audioPlayer.getAudioProvider());
   const [deepgramKeyInput, setDeepgramKeyInput] = useState<string>(
     localStorage.getItem('chunks_deepgram_api_key') || '51d7d8b230bf742178e681e7836a3dc1571b1c11'
   );
   const [isKeySaved, setIsKeySaved] = useState<boolean>(false);
+
+  const loadLessonsAndCacheStatus = useCallback(async () => {
+    try {
+      const lessons = await getAllLessons(selectedCourseLevel);
+      setCourseLessons(lessons);
+
+      const statusMap: Record<string, { en: number; vi: number; total: number }> = {};
+      for (const l of lessons) {
+        const status = audioPlayer.getLessonAudioStatus(
+          l.chunks,
+          currentSettings.voice_profile_en,
+          currentSettings.voice_profile_vi
+        );
+        statusMap[l.id] = { en: status.enCached, vi: status.viCached, total: status.total };
+      }
+      setCacheStatusMap(statusMap);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [selectedCourseLevel, currentSettings.voice_profile_en, currentSettings.voice_profile_vi]);
+
+  useEffect(() => {
+    loadLessonsAndCacheStatus();
+  }, [loadLessonsAndCacheStatus]);
 
   useEffect(() => {
     const unsub = audioPlayer.onSourceChange((source) => {
@@ -99,8 +138,8 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
     { id: 'vi-VN-Standard-A', name: 'Google Vietnamese Standard (Nữ)', desc: 'Rõ ràng, rành mạch từng từ' }
   ];
 
-  const handleTestPlay = async () => {
-    setIsPlayingTest(true);
+  const handleTestPlaySequence = async () => {
+    setIsPlayingSequence(true);
     try {
       await audioPlayer.playBilingualSequence(
         testEnglishText,
@@ -116,14 +155,41 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
     } catch (e) {
       console.error(e);
     } finally {
-      setIsPlayingTest(false);
+      setIsPlayingSequence(false);
+    }
+  };
+
+  const handleTestPlayEn = async () => {
+    setIsPlayingEn(true);
+    try {
+      await audioPlayer.playChunk(testEnglishText, null, currentSettings.voice_profile_en, currentSettings.default_speed);
+      setActiveAudioSource(audioPlayer.getLastSource());
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsPlayingEn(false);
+    }
+  };
+
+  const handleTestPlayVi = async () => {
+    setIsPlayingVi(true);
+    try {
+      await audioPlayer.playChunk(testVietnameseText, null, currentSettings.voice_profile_vi, currentSettings.default_speed);
+      setActiveAudioSource(audioPlayer.getLastSource());
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsPlayingVi(false);
     }
   };
 
   const handlePreviewVoice = async (voiceId: string) => {
     setPlayingVoiceId(voiceId);
     try {
-      const sample = "Mastering chunks is the fastest way to natural spoken English fluency.";
+      const isVi = voiceId.startsWith('vi');
+      const sample = isVi 
+        ? "Chào mừng bạn đến với khóa học luyện phản xạ cụm câu tiếng Anh."
+        : "Mastering chunks is the fastest way to natural spoken English fluency.";
       await audioPlayer.playChunk(sample, null, voiceId, 1.0);
     } catch (e) {
       console.error(e);
@@ -138,30 +204,35 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
     setTimeout(() => setIsKeySaved(false), 2000);
   };
 
-  const handleBatchPrepDay = async () => {
+  const handleBatchPrepDay = async (targetDay: number = selectedDayNumber) => {
     setIsBatchPrepping(true);
-    setBatchProgress({ current: 0, total: 1, message: 'Đang tải dữ liệu bài học...' });
+    setBatchProgress({ current: 0, total: 1, message: `Đang nạp dữ liệu Day ${targetDay}...` });
     setBatchSummary(null);
 
     try {
       const lessons = await getAllLessons(selectedCourseLevel);
-      const targetLesson = lessons.find(l => l.day_number === selectedDayNumber);
+      const targetLesson = lessons.find(l => l.day_number === targetDay);
       
       if (!targetLesson || targetLesson.chunks.length === 0) {
-        setBatchSummary(`Không tìm thấy chunks cho Day ${selectedDayNumber} thuộc ${selectedCourseLevel}.`);
+        setBatchSummary(`Không tìm thấy chunks cho Day ${targetDay} thuộc ${selectedCourseLevel}.`);
         return;
       }
 
-      await audioPlayer.prepareChunksAudio(
+      const res = await audioPlayer.prepareChunksAudio(
         targetLesson.chunks,
-        currentSettings.voice_profile_en,
-        audioProvider,
-        (current, total, message) => {
-          setBatchProgress({ current, total, message });
+        {
+          voiceEn: currentSettings.voice_profile_en,
+          voiceVi: currentSettings.voice_profile_vi,
+          provider: audioProvider,
+          target: batchTarget,
+          onProgress: (current, total, message) => {
+            setBatchProgress({ current, total, message });
+          }
         }
       );
 
-      setBatchSummary(`🎉 Chuẩn bị thành công 100% (${targetLesson.chunks.length} chunks) cho Day ${selectedDayNumber}! Sẵn sàng phát offline 0ms.`);
+      setBatchSummary(`🎉 Hoàn tất chuẩn bị audio cho Day ${targetDay}: ${res.prepared} thành công, ${res.failed} lỗi.`);
+      await loadLessonsAndCacheStatus();
     } catch (err: any) {
       setBatchSummary(`Lỗi: ${err?.message || String(err)}`);
     } finally {
@@ -183,7 +254,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             </h1>
           </div>
           <p className="text-xs text-zinc-500">
-            Quản lý chất lượng âm thanh phát trên lớp, kiểm tra giọng AI song ngữ, và tạo sẵn audio hàng loạt cho từng buổi dạy.
+            Cấu hình cặp giọng đọc chuẩn, thử giọng song ngữ EN/VI, và tạo sẵn bộ nhớ đệm audio cho từng buổi dạy.
           </p>
         </div>
 
@@ -194,7 +265,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-xs font-mono font-bold text-zinc-800 transition-all cursor-pointer shadow-xs"
           >
             <Activity className="w-3.5 h-3.5 text-[#DC2626]" />
-            <span>Nguồn Hiện Tại: {activeAudioSource}</span>
+            <span>Audio Source: {activeAudioSource}</span>
           </button>
         </div>
       </div>
@@ -209,7 +280,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-[#DC2626]" />
                 <h2 className="font-display font-bold text-base text-zinc-900">
-                  1. Cấu Hình Giọng Đọc Lớp Học (Active Voice Presets)
+                  1. Cấu Hình Cặp Giọng Đọc Lớp Học
                 </h2>
               </div>
 
@@ -225,7 +296,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                     audioProvider === 'DEEPGRAM_AURA' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                   }`}
                 >
-                  Deepgram Aura (0ms MP3)
+                  Deepgram Aura (0ms)
                 </button>
                 <button
                   onClick={() => {
@@ -245,7 +316,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             {/* Voice Profile List */}
             <div className="space-y-2.5">
               <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider">
-                Chọn Giọng Tiếng Anh Mặc Định ({audioProvider === 'DEEPGRAM_AURA' ? 'Deepgram Aura AI' : 'Google Cloud AI'})
+                Giọng Tiếng Anh ({audioProvider === 'DEEPGRAM_AURA' ? 'Deepgram Aura AI' : 'Google Cloud AI'})
               </label>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -298,7 +369,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             {/* Vietnamese Translation Voice */}
             <div className="space-y-2 pt-2 border-t border-zinc-100">
               <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider">
-                Giọng Đọc Bản Dịch Tiếng Việt
+                Giọng Đọc Tiếng Việt (Google Cloud Neural2 / Standard)
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {voiceProfilesVi.map((voice) => {
@@ -317,7 +388,20 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                         <div className="font-bold text-xs text-zinc-900">{voice.name}</div>
                         <div className="text-[11px] text-zinc-500">{voice.desc}</div>
                       </div>
-                      {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 ml-2" />}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePreviewVoice(voice.id);
+                          }}
+                          className="text-xs font-bold text-emerald-700 hover:underline p-1"
+                          title="Nghe thử giọng Việt"
+                        >
+                          {playingVoiceId === voice.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Volume2 className="w-3.5 h-3.5" />}
+                        </button>
+                        {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                      </div>
                     </div>
                   );
                 })}
@@ -328,17 +412,17 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-zinc-100">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
-                  Chế Độ Phát Song Ngữ
+                  Chế Độ Phát Mặc Định
                 </label>
                 <select
                   value={currentSettings.language_mode}
                   onChange={(e) => onUpdateSettings({ ...currentSettings, language_mode: e.target.value as LanguageMode })}
                   className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-900 cursor-pointer"
                 >
-                  <option value="EN_THEN_VI">Tiếng Anh ➔ Tiếng Việt (Khuyên dùng)</option>
-                  <option value="EN_ONLY">Chỉ Tiếng Anh (English Only)</option>
-                  <option value="VI_ONLY">Chỉ Tiếng Việt (Vietnamese Only)</option>
-                  <option value="VI_THEN_EN">Tiếng Việt ➔ Tiếng Anh (Phản xạ ngược)</option>
+                  <option value="EN_THEN_VI">Tiếng Anh ➔ Tiếng Việt (EN ➔ VI)</option>
+                  <option value="EN_ONLY">Chỉ Tiếng Anh (EN Only)</option>
+                  <option value="VI_ONLY">Chỉ Tiếng Việt (VI Only)</option>
+                  <option value="VI_THEN_EN">Tiếng Việt ➔ Tiếng Anh (VI ➔ EN)</option>
                 </select>
               </div>
 
@@ -354,7 +438,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                   <option value="0.8">0.8x (Chậm, rõ âm)</option>
                   <option value="0.9">0.9x (Vừa phải)</option>
                   <option value="1.0">1.0x (Tốc độ tự nhiên chuẩn)</option>
-                  <option value="1.2">1.2x (Nhanh, thử thách)</option>
+                  <option value="1.2">1.2x (Nhanh)</option>
                 </select>
               </div>
 
@@ -375,17 +459,16 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             </div>
           </div>
 
-          {/* Card: Bulk Audio Pre-Generation Engine */}
-          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
-              <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-              <h2 className="font-display font-bold text-base text-zinc-900">
-                2. Chuẩn Bị Sẵn Audio Toàn Bộ Buổi Học (0ms In-Class Cache)
-              </h2>
+          {/* Card: Bulk Audio Pre-Generation Engine & Readiness Matrix */}
+          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-5">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <h2 className="font-display font-bold text-base text-zinc-900">
+                  2. Chuẩn Bị Sẵn Audio Buổi Học (0ms In-Class Cache)
+                </h2>
+              </div>
             </div>
-            <p className="text-xs text-zinc-500">
-              Tổng hợp và nạp sẵn 100% âm thanh của bài học vào bộ nhớ đệm trước giờ vào lớp để tránh gián đoạn mạng hoặc trễ thời gian.
-            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
@@ -395,39 +478,51 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                   onChange={(e) => setSelectedCourseLevel(e.target.value as CourseLevel)}
                   className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold cursor-pointer"
                 >
-                  <option value="LEVEL_A">Level A (Foundation)</option>
-                  <option value="LEVEL_B">Level B (Spoken Masterclass)</option>
+                  <option value="LEVEL_A">Level A (Foundation - 16 Days)</option>
+                  <option value="LEVEL_B">Level B (Spoken Masterclass - 14 Days)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-700 mb-1">Buổi / Day</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="30"
-                  value={selectedDayNumber}
-                  onChange={(e) => setSelectedDayNumber(parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-bold"
-                />
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Mục Tiêu Tạo Audio</label>
+                <select
+                  value={batchTarget}
+                  onChange={(e) => setBatchTarget(e.target.value as AudioBatchTarget)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  <option value="BOTH">Cả Tiếng Anh & Tiếng Việt (Both)</option>
+                  <option value="ENGLISH">Chỉ Tiếng Anh (English Only)</option>
+                  <option value="VIETNAMESE">Chỉ Tiếng Việt (Vietnamese Only)</option>
+                </select>
               </div>
 
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  disabled={isBatchPrepping}
-                  onClick={handleBatchPrepDay}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
-                >
-                  {isBatchPrepping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-amber-400 fill-current" />}
-                  <span>Tạo Audio Day {selectedDayNumber}</span>
-                </button>
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">Buổi Học / Day</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={selectedDayNumber}
+                    onChange={(e) => setSelectedDayNumber(parseInt(e.target.value) || 1)}
+                    className="w-20 px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-bold"
+                  />
+                  <button
+                    type="button"
+                    disabled={isBatchPrepping}
+                    onClick={() => handleBatchPrepDay(selectedDayNumber)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                  >
+                    {isBatchPrepping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-amber-400 fill-current" />}
+                    <span>Tạo Day {selectedDayNumber}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Progress / Summary */}
+            {/* Progress Notification */}
             {batchProgress && (
-              <div className="p-3 bg-zinc-900 text-white rounded-xl space-y-1.5 text-xs font-mono">
+              <div className="p-3.5 bg-zinc-900 text-white rounded-xl space-y-1.5 text-xs font-mono animate-fade-in">
                 <div className="flex justify-between">
                   <span>{batchProgress.message}</span>
                   <span className="text-[#DC2626] font-bold">
@@ -448,6 +543,77 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                 {batchSummary}
               </div>
             )}
+
+            {/* Cache Readiness Matrix Table */}
+            <div className="space-y-2 pt-2 border-t border-zinc-100">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-zinc-800">
+                  Bảng Trạng Thái Audio Sẵn Sàng ({courseLessons.length} Days)
+                </span>
+                <span className="text-[11px] text-zinc-500 font-mono">
+                  Xanh: Sẵn sàng 0ms • Xám: Chưa nạp
+                </span>
+              </div>
+
+              <div className="border border-zinc-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-zinc-100 text-zinc-700 font-bold sticky top-0">
+                    <tr>
+                      <th className="p-2 w-16 text-center">Buổi</th>
+                      <th className="p-2">Tiêu Đề Bài Học</th>
+                      <th className="p-2 w-24 text-center">Tiếng Anh</th>
+                      <th className="p-2 w-24 text-center">Tiếng Việt</th>
+                      <th className="p-2 w-28 text-center">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 bg-white">
+                    {courseLessons.map((lesson) => {
+                      const stat = cacheStatusMap[lesson.id] || { en: 0, vi: 0, total: lesson.chunks.length };
+                      const isEnReady = stat.en >= lesson.chunks.length && lesson.chunks.length > 0;
+                      const isViReady = stat.vi >= lesson.chunks.length && lesson.chunks.length > 0;
+
+                      return (
+                        <tr key={lesson.id} className="hover:bg-zinc-50/80">
+                          <td className="p-2 text-center font-mono font-bold text-zinc-900">
+                            Day {lesson.day_number}
+                          </td>
+                          <td className="p-2 truncate max-w-xs font-medium text-zinc-800">
+                            {lesson.lesson_title}
+                          </td>
+                          <td className="p-2 text-center">
+                            <span className={`px-2 py-0.5 rounded-md font-mono text-[11px] font-bold ${
+                              isEnReady ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-100 text-zinc-500'
+                            }`}>
+                              {stat.en}/{lesson.chunks.length} {isEnReady && '✓'}
+                            </span>
+                          </td>
+                          <td className="p-2 text-center">
+                            <span className={`px-2 py-0.5 rounded-md font-mono text-[11px] font-bold ${
+                              isViReady ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-100 text-zinc-500'
+                            }`}>
+                              {stat.vi}/{lesson.chunks.length} {isViReady && '✓'}
+                            </span>
+                          </td>
+                          <td className="p-2 text-center">
+                            <button
+                              type="button"
+                              disabled={isBatchPrepping}
+                              onClick={() => {
+                                setSelectedDayNumber(lesson.day_number);
+                                handleBatchPrepDay(lesson.day_number);
+                              }}
+                              className="px-2 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[11px] font-bold cursor-pointer"
+                            >
+                              Nạp Audio
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -458,14 +624,14 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
               <Sparkles className="w-4 h-4 text-[#DC2626]" />
               <h2 className="font-display font-bold text-base text-zinc-900">
-                3. Nghe Thử Cụm Từ (Audition)
+                3. Phòng Thử Giọng Trực Tiếp (Audition)
               </h2>
             </div>
 
             <div className="space-y-3">
               <div>
                 <label className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1">
-                  Câu Tiếng Anh
+                  Câu Tiếng Anh (Ngắt nhịp bằng dấu //)
                 </label>
                 <textarea
                   rows={3}
@@ -477,7 +643,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
 
               <div>
                 <label className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1">
-                  Bản Dịch Tiếng Việt
+                  Bản Dịch Tiếng Việt (Ngắt nhịp bằng dấu //)
                 </label>
                 <textarea
                   rows={2}
@@ -487,13 +653,36 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                 />
               </div>
 
+              {/* Multi-Button Audition Action Row */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={isPlayingEn}
+                  onClick={handleTestPlayEn}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 text-xs font-bold transition-all cursor-pointer"
+                >
+                  {isPlayingEn ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Volume2 className="w-3.5 h-3.5 text-[#DC2626]" />}
+                  <span>Nghe Tiếng Anh</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isPlayingVi}
+                  onClick={handleTestPlayVi}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition-all cursor-pointer"
+                >
+                  {isPlayingVi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-600" />}
+                  <span>Nghe Tiếng Việt</span>
+                </button>
+              </div>
+
               <button
                 type="button"
-                disabled={isPlayingTest}
-                onClick={handleTestPlay}
+                disabled={isPlayingSequence}
+                onClick={handleTestPlaySequence}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] disabled:bg-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
               >
-                {isPlayingTest ? (
+                {isPlayingSequence ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Đang phát chuỗi song ngữ...</span>
@@ -501,7 +690,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                 ) : (
                   <>
                     <Play className="w-4 h-4 fill-current" />
-                    <span>Nghe Thử Chuỗi Song Ngữ</span>
+                    <span>Nghe Chuỗi Song Ngữ (EN ➔ VI)</span>
                   </>
                 )}
               </button>
@@ -513,11 +702,11 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             <div className="flex items-center gap-2">
               <Key className="w-4 h-4 text-zinc-600" />
               <h3 className="font-bold text-xs text-zinc-900">
-                Deepgram Aura API Key
+                Deepgram Aura API Token
               </h3>
             </div>
             <p className="text-[11px] text-zinc-500">
-              Key được mã hóa an toàn và lưu trực tiếp trong trình duyệt để gọi giọng đọc 0ms độ trễ.
+              Lưu trực tiếp trong trình duyệt để gọi giọng đọc 0ms không cần phụ thuộc backend.
             </p>
 
             <div className="space-y-2">
@@ -535,7 +724,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                 className="w-full inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-colors cursor-pointer"
               >
                 {isKeySaved ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Save className="w-3.5 h-3.5" />}
-                <span>{isKeySaved ? 'Đã Lưu Key!' : 'Lưu Token Mới'}</span>
+                <span>{isKeySaved ? 'Đã Lưu Token!' : 'Lưu Token Mới'}</span>
               </button>
             </div>
           </div>

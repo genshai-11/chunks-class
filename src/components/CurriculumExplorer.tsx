@@ -57,6 +57,9 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; message: string } | null>(null);
   const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  // View Mode toggle: CARDS vs COMPACT_TABLE
+  const [viewMode, setViewMode] = useState<'CARDS' | 'COMPACT_TABLE'>('CARDS');
+
   // Chunk Modal (Add/Edit)
   const [isChunkModalOpen, setIsChunkModalOpen] = useState<boolean>(false);
   const [editingChunk, setEditingChunk] = useState<ChunkItem | null>(null);
@@ -384,12 +387,36 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
             <h1 className="font-display font-bold text-2xl text-[#0A0A0A] tracking-tight">
               {selectedLevel === 'LEVEL_A' ? 'Level A - Foundation English Chunks' : 'Level B - Spoken Chunks Masterclass'}
             </h1>
-            <p className="text-sm text-[#6B6B6B] mt-1">
-              Quản lý toàn bộ kho 7,851 cụm câu giáo trình, thêm/sửa/xóa cụm câu phản xạ, kiểm tra ngữ điệu trọng âm, và xem trước chế độ lớp học.
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Hệ thống 7,851 cụm câu phản xạ chia theo Day & Part chuẩn sư phạm.
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0 flex-wrap">
+            {/* View Mode Toggle */}
+            <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+              <button
+                type="button"
+                onClick={() => setViewMode('CARDS')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'CARDS' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+                title="Chế độ thẻ chi tiết"
+              >
+                Thẻ Chi Tiết
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('COMPACT_TABLE')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'COMPACT_TABLE' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+                title="Chế độ bảng rút gọn"
+              >
+                Bảng Gọn
+              </button>
+            </div>
+
             {/* Level Toggle */}
             <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
               <button
@@ -398,7 +425,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                   selectedLevel === 'LEVEL_A' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                 }`}
               >
-                Level A (4,480 Chunks)
+                Level A
               </button>
               <button
                 onClick={() => { setSelectedLevel('LEVEL_B'); setSelectedDay('all'); }}
@@ -406,7 +433,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                   selectedLevel === 'LEVEL_B' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                 }`}
               >
-                Level B (3,371 Chunks)
+                Level B
               </button>
             </div>
 
@@ -498,7 +525,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
             Tìm thấy <strong className="text-[#0A0A0A]">{filteredChunks.length}</strong> chunks phù hợp
           </span>
           <span className="text-[11px] hidden sm:inline">
-            Nhấn biểu tượng Loa để nghe TTS • Nhấn "Xem Trước" để chạy thử Projector
+            Nhấn Loa để nghe TTS • Nhấn "Xem Trước" để chạy thử Presentation
           </span>
         </div>
 
@@ -519,7 +546,103 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
               <span>Thêm Chunk Mới Ngay</span>
             </button>
           </div>
+        ) : viewMode === 'COMPACT_TABLE' ? (
+          /* COMPACT MINIMAL TABLE VIEW */
+          <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-zinc-100 text-zinc-700 font-bold border-b border-zinc-200">
+                  <tr>
+                    <th className="p-3 w-12 text-center">#</th>
+                    <th className="p-3 w-20 text-center">Day</th>
+                    <th className="p-3 w-24">Thể Loại</th>
+                    <th className="p-3">Cụm Tiếng Anh & Ngắt Nhịp</th>
+                    <th className="p-3">Bản Dịch Tiếng Việt</th>
+                    <th className="p-3 w-40 text-center">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {paginatedChunks.map(({ chunk, lesson }, idx) => {
+                    const isPlaying = playingChunkId === chunk.chunk_id;
+                    const itemNum = (currentPage - 1) * PAGE_SIZE + idx + 1;
+                    return (
+                      <tr 
+                        key={chunk.chunk_id || `chunk_row_${idx}`}
+                        className={`hover:bg-zinc-50 transition-colors ${isPlaying ? 'bg-red-50/40' : ''}`}
+                      >
+                        <td className="p-3 text-center font-mono text-zinc-400 font-medium">
+                          {itemNum}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-zinc-100 text-zinc-700">
+                            Day {lesson.day_number}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-red-50 text-[#DC2626] uppercase">
+                            {chunk.category}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="font-bold text-zinc-900 text-sm">
+                            {chunk.english}
+                          </div>
+                          {chunk.beat_prosody && (
+                            <div className="text-[11px] font-mono text-[#DC2626] mt-0.5">
+                              {chunk.beat_prosody}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3 text-zinc-600 font-medium">
+                          {chunk.vietnamese}
+                        </td>
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handlePlayChunk(chunk)}
+                              className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                                isPlaying ? 'bg-[#DC2626] text-white border-[#DC2626]' : 'bg-zinc-50 text-zinc-600 hover:bg-[#DC2626] hover:text-white border-zinc-200'
+                              }`}
+                              title="Nghe phát âm"
+                            >
+                              <Volume2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditChunk(chunk, lesson)}
+                              className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-all cursor-pointer"
+                              title="Chỉnh sửa"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteChunk(chunk, lesson)}
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-[#DC2626] hover:bg-red-50 transition-all cursor-pointer"
+                              title="Xóa"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onLaunchProjectorForLesson(lesson.id, lesson.day_number)}
+                              className="px-2 py-1 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-[10px] font-bold transition-all cursor-pointer shadow-xs ml-1"
+                              title="Chiếu Day này"
+                            >
+                              Day {lesson.day_number}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         ) : (
+          /* DETAILED CARDS VIEW */
           <div className="grid grid-cols-1 gap-3">
             {paginatedChunks.map(({ chunk, lesson }, idx) => {
               const isPlaying = playingChunkId === chunk.chunk_id;
