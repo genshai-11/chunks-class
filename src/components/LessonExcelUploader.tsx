@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { CourseLevel, ChunkItem, LessonDoc } from '../types';
+import { CourseLevel, ChunkItem, LessonDoc, Course } from '../types';
 import { downloadLessonExcelTemplate, parseExcelLessonFile } from '../utils/excelTemplate';
-import { saveLessonToFirestore } from '../services/firestoreService';
+import { saveLessonToFirestore, getCourses } from '../services/firestoreService';
+import { audioPlayer } from '../services/googleTtsService';
 import { 
   FileSpreadsheet, 
   Download, 
@@ -10,36 +11,48 @@ import {
   AlertCircle, 
   X, 
   Layers, 
-  ArrowRight,
-  Sparkles
+  Play,
+  Volume2,
+  Trash2,
+  Plus,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 
 interface LessonExcelUploaderProps {
   isOpen: boolean;
   onClose: () => void;
   onUploadSuccess: (lessonId: string) => void;
+  onStartDrillNow?: (lessonId: string, dayNumber: number) => void;
+  availableCourses?: Course[];
 }
 
 export const LessonExcelUploader: React.FC<LessonExcelUploaderProps> = ({
   isOpen,
   onClose,
-  onUploadSuccess
+  onUploadSuccess,
+  onStartDrillNow,
+  availableCourses = []
 }) => {
   const [levelCode, setLevelCode] = useState<CourseLevel>('LEVEL_A');
   const [dayNumber, setDayNumber] = useState<number>(1);
   const [lessonTitle, setLessonTitle] = useState<string>('');
-  const [lessonType, setLessonType] = useState<string>('Standard Lesson');
+  const [lessonType, setLessonType] = useState<string>('Standard Drill Session');
   const [parsedChunks, setParsedChunks] = useState<ChunkItem[]>([]);
   const [fileName, setFileName] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isSynthesizing, setIsSynthesizing] = useState<boolean>(false);
+  const [prepProgress, setPrepProgress] = useState<{ current: number; total: number; message: string } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
+  const [playingChunkId, setPlayingChunkId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg('');
     setSuccessMsg('');
+    setPrepProgress(null);
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -51,14 +64,77 @@ export const LessonExcelUploader: React.FC<LessonExcelUploaderProps> = ({
         setLessonTitle(`Day ${dayNumber} - ${file.name.replace(/\.[^/.]+$/, "")}`);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to parse Excel file. Please ensure it follows the CHUNKS template format.');
+      setErrorMsg(err.message || 'Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng template chuẩn.');
       setParsedChunks([]);
     }
   };
 
-  const handleSaveToFirestore = async () => {
+  const handleChunkChange = (index: number, field: keyof ChunkItem, value: any) => {
+    const updated = [...parsedChunks];
+    updated[index] = { ...updated[index], [field]: value };
+    setParsedChunks(updated);
+  };
+
+  const handleDeleteChunk = (index: number) => {
+    const updated = parsedChunks.filter((_, i) => i !== index);
+    setParsedChunks(updated);
+  };
+
+  const handleAddChunk = () => {
+    const newChunk: ChunkItem = {
+      chunk_id: `chunk_${levelCode.toLowerCase()}_d${dayNumber}_${String(parsedChunks.length + 1).padStart(4, '0')}`,
+      item_number: parsedChunks.length + 1,
+      category: 'phrase',
+      english: '',
+      vietnamese: '',
+      speaker: null
+    };
+    setParsedChunks([...parsedChunks, newChunk]);
+  };
+
+  const handleBatchSynthesizeAudio = async () => {
+    if (parsedChunks.length === 0) return;
+    setIsSynthesizing(true);
+    setPrepProgress({ current: 0, total: parsedChunks.length, message: 'Bắt đầu tổng hợp âm thanh đa luồng...' });
+
+    try {
+      await audioPlayer.prepareChunksAudio(
+        parsedChunks,
+        'aura-asteria-en',
+        'DEEPGRAM_AURA',
+        (current, total, message) => {
+          setPrepProgress({ current, total, message });
+        }
+      );
+      setSuccessMsg(`Đã chuẩn bị sẵn âm thanh cho ${parsedChunks.length} câu phản xạ!`);
+    } catch (err: any) {
+      setErrorMsg(`Lỗi khi tổng hợp audio: ${err?.message || String(err)}`);
+    } finally {
+      setIsSynthesizing(false);
+    }
+  };
+
+  const handlePlayPreview = async (chunk: ChunkItem) => {
+    if (!chunk.english.trim()) return;
+    setPlayingChunkId(chunk.chunk_id);
+    try {
+      await audioPlayer.playChunk(chunk.english, chunk.audio_url, 'aura-asteria-en', 1.0);
+    } catch {
+      // ignore
+    } finally {
+      setPlayingChunkId(null);
+    }
+  };
+
+  const handleSaveToFirestore = async (launchDrill: boolean = false) => {
     if (parsedChunks.length === 0) {
-      setErrorMsg('No chunks to upload. Please select a valid Excel file.');
+      setErrorMsg('Chưa có chunk nào để lưu. Vui lòng chọn file Excel hoặc thêm cụm từ.');
+      return;
+    }
+
+    const invalid = parsedChunks.some(c => !c.english.trim());
+    if (invalid) {
+      setErrorMsg('Vui lòng điền nội dung tiếng Anh cho tất cả các chunk.');
       return;
     }
 
@@ -67,15 +143,16 @@ export const LessonExcelUploader: React.FC<LessonExcelUploaderProps> = ({
     setSuccessMsg('');
 
     try {
-      const prefix = levelCode === 'LEVEL_A' ? 'level_a' : 'level_b';
+      const prefix = String(levelCode).toLowerCase();
       const docId = `${prefix}_day_${dayNumber}`;
       const categories: string[] = Array.from(new Set(parsedChunks.map(c => String(c.category))));
 
       const lessonDoc: LessonDoc = {
         id: docId,
         level_code: levelCode,
+        course_id: String(levelCode).toLowerCase().includes('a') ? 'course_level_a' : 'course_level_b',
         day_number: dayNumber,
-        course_title: levelCode === 'LEVEL_A' ? 'Level A - Foundation & Core Vocabulary' : 'Level B - Advanced Spoken Masterclass',
+        course_title: levelCode === 'LEVEL_A' ? 'Level A - Foundation English' : 'Level B - Spoken Masterclass',
         lesson_title: lessonTitle || `Day ${dayNumber} Lesson`,
         lesson_type: lessonType,
         total_chunks: parsedChunks.length,
@@ -85,193 +162,311 @@ export const LessonExcelUploader: React.FC<LessonExcelUploaderProps> = ({
       };
 
       await saveLessonToFirestore(lessonDoc);
-      setSuccessMsg(`Uploaded ${parsedChunks.length} chunks to Firestore document '${docId}'!`);
+      setSuccessMsg(`Đã lưu thành công ${parsedChunks.length} chunks vào bài học '${docId}'!`);
       
-      setTimeout(() => {
-        onUploadSuccess(docId);
-        onClose();
-      }, 1200);
+      onUploadSuccess(docId);
+
+      if (launchDrill && onStartDrillNow) {
+        setTimeout(() => {
+          onStartDrillNow(docId, dayNumber);
+          onClose();
+        }, 500);
+      } else {
+        setTimeout(() => {
+          onClose();
+        }, 1200);
+      }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to save lesson to Firestore.');
+      setErrorMsg(err.message || 'Lỗi khi lưu bài học vào database.');
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 font-sans"
-      onClick={onClose}
-    >
-      <div 
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] flex flex-col justify-between overflow-hidden"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#E8E8EC]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans animate-fade-in">
+      <div className="bg-white w-full max-w-4xl rounded-2xl border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-zinc-50/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#DC2626]/10 text-[#DC2626] flex items-center justify-center font-bold">
+            <div className="p-2 rounded-xl bg-[#DC2626]/10 text-[#DC2626]">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-[#0A0A0A] tracking-tight">
-                Upload Lesson via Excel (.xlsx)
+              <h2 className="font-display font-bold text-lg text-zinc-900">
+                Import Giáo Trình & Chuẩn Bị Drill Lớp Học
               </h2>
-              <p className="text-xs text-[#6B6B6B]">
-                Ingest curriculum chunks directly into Live Google Cloud Firestore
+              <p className="text-xs text-zinc-500">
+                Nhập file Excel (.xlsx) danh sách câu, xem trước chỉnh sửa, tạo âm thanh hàng loạt và chiếu lên lớp.
               </p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={downloadLessonExcelTemplate}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#DC2626]/[0.08] hover:bg-[#DC2626]/[0.15] text-[#DC2626] text-xs font-bold rounded-lg transition-all cursor-pointer"
-              title="Download standardized Excel template with sample chunks"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download Template</span>
-            </button>
-            <button 
-              onClick={onClose} 
-              className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 font-bold transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-xl transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Form Body */}
-        <div className="py-4 space-y-4 overflow-y-auto flex-1 text-xs">
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto space-y-5 flex-1">
+          {/* Alerts */}
           {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <div className="flex items-center gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-bold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{successMsg}</span>
             </div>
           )}
 
-          {/* Level & Day Grid */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Form Meta Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-bold text-[#0A0A0A] block mb-1">Course Level</label>
+              <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
+                Khóa Học / Cấp Độ
+              </label>
               <select
                 value={levelCode}
                 onChange={(e) => setLevelCode(e.target.value as CourseLevel)}
-                className="w-full bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl p-2.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626]"
+                className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-900 focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
               >
-                <option value="LEVEL_A">📗 Level A (Foundation English)</option>
-                <option value="LEVEL_B">📕 Level B (Spoken Masterclass)</option>
+                <option value="LEVEL_A">Level A (Foundation - 4,480 Chunks)</option>
+                <option value="LEVEL_B">Level B (Spoken Masterclass - 3,371 Chunks)</option>
+                <option value="IELTS_DRILL">IELTS Speaking Drill (Custom)</option>
+                <option value="CUSTOM">Khóa Học Tùy Chỉnh (Custom)</option>
               </select>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#0A0A0A] block mb-1">Day Number (1 to 15)</label>
+              <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
+                Buổi / Day Number
+              </label>
               <input
                 type="number"
-                min={1}
-                max={15}
+                min="0"
+                max="100"
                 value={dayNumber}
                 onChange={(e) => setDayNumber(parseInt(e.target.value) || 1)}
-                className="w-full bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl p-2.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626]"
+                className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:outline-none focus:border-[#DC2626]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
+                Tiêu Đề Bài Học
+              </label>
+              <input
+                type="text"
+                placeholder="VD: Day 3 - Daily Commute & Travel"
+                value={lessonTitle}
+                onChange={(e) => setLessonTitle(e.target.value)}
+                className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium text-zinc-900 focus:bg-white focus:outline-none focus:border-[#DC2626]"
               />
             </div>
           </div>
 
-          {/* Lesson Title */}
-          <div>
-            <label className="text-xs font-bold text-[#0A0A0A] block mb-1">Lesson Title</label>
-            <input
-              type="text"
-              placeholder="e.g. Day 3 - Tell Me About Yourself"
-              value={lessonTitle}
-              onChange={(e) => setLessonTitle(e.target.value)}
-              className="w-full bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl p-2.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626]"
-            />
-          </div>
-
-          {/* File Upload Box */}
-          <div className="border-2 border-dashed border-[#E8E8EC] hover:border-[#DC2626] rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#FAFAFA] group">
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleFileChange}
-              className="hidden"
-              id="excel-file-input"
-            />
-            <label htmlFor="excel-file-input" className="cursor-pointer block">
-              <div className="w-12 h-12 rounded-2xl bg-white border border-[#E8E8EC] group-hover:border-[#DC2626] shadow-xs flex items-center justify-center mx-auto mb-2 text-[#DC2626]">
-                <UploadCloud className="w-6 h-6" />
-              </div>
-              <div className="text-xs font-bold text-[#0A0A0A]">
-                {fileName ? fileName : 'Click to select or drag & drop Excel file (.xlsx)'}
-              </div>
-              <p className="text-[11px] text-[#6B6B6B] mt-1">
-                Standard columns: Item Number, Category, Speaker, English, Vietnamese, Beat Prosody
+          {/* Upload Dropzone & Template Download */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Dropzone */}
+            <div className="border-2 border-dashed border-zinc-200 hover:border-[#DC2626] rounded-2xl p-5 text-center transition-all bg-zinc-50/50 flex flex-col items-center justify-center relative group">
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                onChange={handleFileChange}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              />
+              <UploadCloud className="w-8 h-8 text-zinc-400 group-hover:text-[#DC2626] transition-colors mb-2" />
+              <p className="text-xs font-bold text-zinc-800">
+                {fileName ? `Đã chọn: ${fileName}` : 'Kéo thả file Excel (.xlsx) vào đây hoặc bấm để duyệt'}
               </p>
-            </label>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                Hỗ trợ cột: Item, English, Vietnamese, Category, Speaker
+              </p>
+            </div>
+
+            {/* Template Card */}
+            <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1 text-zinc-900 font-bold text-xs">
+                  <Download className="w-4 h-4 text-[#DC2626]" />
+                  <span>Tải Template Excel Mẫu Chuẩn</span>
+                </div>
+                <p className="text-xs text-zinc-500">
+                  File mẫu có cấu trúc chuẩn hóa, tự động nhận diện danh mục từ vựng, cụm câu, mẫu câu và người nói.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => downloadLessonExcelTemplate(levelCode, dayNumber)}
+                className="mt-3 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-zinc-200 hover:border-[#DC2626] text-xs font-bold text-zinc-700 hover:text-[#DC2626] transition-all cursor-pointer shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Tải File Mẫu (Day {dayNumber} Template.xlsx)</span>
+              </button>
+            </div>
           </div>
 
-          {/* Parsed Preview */}
-          {parsedChunks.length > 0 && (
-            <div className="p-3.5 bg-[#FAFAFA] border border-[#E8E8EC] rounded-2xl space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-[#0A0A0A]">
-                <span className="flex items-center gap-1 text-emerald-700">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Successfully parsed {parsedChunks.length} chunks
+          {/* Batch Synthesis Progress Notification */}
+          {prepProgress && (
+            <div className="p-4 bg-zinc-900 text-white rounded-2xl space-y-2 shadow-lg animate-fade-in">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#DC2626] animate-spin" />
+                  <span>{prepProgress.message}</span>
                 </span>
-                <span className="text-[11px] font-mono text-[#DC2626] font-bold">
-                  Document ID: {levelCode.toLowerCase()}_day_{dayNumber}
+                <span className="font-bold text-[#DC2626]">
+                  {Math.round((prepProgress.current / prepProgress.total) * 100)}%
                 </span>
               </div>
-              
-              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
-                {parsedChunks.slice(0, 5).map((c, i) => (
-                  <div key={i} className="p-2 bg-white border border-[#E8E8EC] rounded-lg flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-700 uppercase shrink-0">
-                        {c.category}
-                      </span>
-                      <span className="font-semibold truncate text-[#0A0A0A]">"{c.english}"</span>
-                    </div>
-                    <span className="text-[#6B6B6B] truncate max-w-[200px] text-[11px] shrink-0 text-right">{c.vietnamese}</span>
-                  </div>
-                ))}
-                {parsedChunks.length > 5 && (
-                  <div className="text-[11px] text-center text-[#6B6B6B] italic py-1">
-                    + {parsedChunks.length - 5} more chunks in this lesson file
-                  </div>
-                )}
+              <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-[#DC2626] h-full transition-all duration-200"
+                  style={{ width: `${(prepProgress.current / prepProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Parsed Chunks Live CRUD Preview Table */}
+          {parsedChunks.length > 0 && (
+            <div className="space-y-3 pt-2 border-t border-zinc-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-xs text-zinc-900">
+                    Danh Sách Cụm Câu ({parsedChunks.length} chunks)
+                  </span>
+                  <span className="text-[11px] text-zinc-500">
+                    • Có thể chỉnh sửa trực tiếp bên dưới
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAddChunk}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 cursor-pointer shadow-xs"
+                  >
+                    <Plus className="w-3 h-3 text-[#DC2626]" />
+                    <span>Thêm Hàng</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSynthesizing}
+                    onClick={handleBatchSynthesizeAudio}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                  >
+                    {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Volume2 className="w-3.5 h-3.5 text-[#DC2626]" />}
+                    <span>Chuẩn Bị Sẵn Audio</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Table Container */}
+              <div className="border border-zinc-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-zinc-100 text-zinc-700 font-bold sticky top-0 z-10">
+                    <tr>
+                      <th className="p-2.5 w-12 text-center">#</th>
+                      <th className="p-2.5 w-32">Thể Loại</th>
+                      <th className="p-2.5">Câu Tiếng Anh (English)</th>
+                      <th className="p-2.5">Bản Dịch Tiếng Việt</th>
+                      <th className="p-2.5 w-24 text-center">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 bg-white">
+                    {parsedChunks.map((chunk, idx) => (
+                      <tr key={idx} className="hover:bg-zinc-50/80 transition-colors">
+                        <td className="p-2 text-center font-mono text-zinc-400 font-semibold">
+                          {idx + 1}
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={chunk.category}
+                            onChange={(e) => handleChunkChange(idx, 'category', e.target.value)}
+                            className="w-full px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-md text-[11px] font-mono uppercase focus:bg-white focus:outline-none focus:border-[#DC2626]"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={chunk.english}
+                            onChange={(e) => handleChunkChange(idx, 'english', e.target.value)}
+                            className="w-full px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-md text-xs font-semibold text-zinc-900 focus:bg-white focus:outline-none focus:border-[#DC2626]"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={chunk.vietnamese}
+                            onChange={(e) => handleChunkChange(idx, 'vietnamese', e.target.value)}
+                            className="w-full px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-md text-xs text-zinc-700 focus:bg-white focus:outline-none focus:border-[#DC2626]"
+                          />
+                        </td>
+                        <td className="p-2 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handlePlayPreview(chunk)}
+                              className="p-1 text-zinc-500 hover:text-[#DC2626] rounded-md transition-colors cursor-pointer"
+                              title="Nghe thử"
+                            >
+                              <Volume2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteChunk(idx)}
+                              className="p-1 text-zinc-400 hover:text-red-600 rounded-md transition-colors cursor-pointer"
+                              title="Xóa hàng"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer CTAs */}
-        <div className="flex items-center justify-between pt-4 border-t border-[#E8E8EC]">
-          <span className="text-[11px] text-zinc-400 font-mono">
-            {parsedChunks.length > 0 ? `${parsedChunks.length} chunks ready for ingestion` : 'Awaiting Excel file'}
-          </span>
+        {/* Modal Footer Actions */}
+        <div className="px-6 py-4 bg-zinc-50/50 border-t border-zinc-100 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl border border-zinc-200 text-xs font-bold text-zinc-600 hover:bg-zinc-100 transition-colors cursor-pointer"
+          >
+            Đóng
+          </button>
+
           <div className="flex items-center gap-2">
             <button
-              onClick={onClose}
-              className="px-4 py-2 bg-white border border-[#E8E8EC] text-xs font-bold rounded-xl text-[#6B6B6B] hover:bg-zinc-100 transition-colors cursor-pointer"
+              type="button"
+              disabled={isUploading || parsedChunks.length === 0}
+              onClick={() => handleSaveToFirestore(false)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-50 disabled:opacity-50 text-xs font-bold text-zinc-800 transition-all cursor-pointer shadow-xs"
             >
-              Cancel
+              {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+              <span>Lưu Vào Kho Giáo Trình</span>
             </button>
+
             <button
-              onClick={handleSaveToFirestore}
-              disabled={parsedChunks.length === 0 || isUploading}
-              className="flex items-center gap-2 px-5 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold rounded-xl shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+              type="button"
+              disabled={isUploading || parsedChunks.length === 0}
+              onClick={() => handleSaveToFirestore(true)}
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] disabled:bg-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
             >
-              <UploadCloud className={`w-3.5 h-3.5 ${isUploading ? 'animate-bounce' : ''}`} />
-              <span>{isUploading ? 'Uploading to Firestore...' : `Upload ${parsedChunks.length} Chunks to Firestore`}</span>
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Lưu & Bắt Đầu Chiếu Lớp Ngay</span>
             </button>
           </div>
         </div>

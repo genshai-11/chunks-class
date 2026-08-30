@@ -12,6 +12,7 @@ import {
 import { audioPlayer } from '../services/googleTtsService';
 import { ChunkModal } from './ChunkModal';
 import { ChunkPreviewModal } from './ChunkPreviewModal';
+import { LessonExcelUploader } from './LessonExcelUploader';
 import { 
   Search, 
   Volume2, 
@@ -69,9 +70,10 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const [previewLessonTitle, setPreviewLessonTitle] = useState<string>('');
   const [previewDayNumber, setPreviewDayNumber] = useState<number>(1);
 
-  // Bulk import state
+  // Bulk import & Excel state
   const [isBulkImportOpen, setIsBulkImportOpen] = useState<boolean>(false);
   const [bulkImportText, setBulkImportText] = useState<string>('');
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState<boolean>(false);
 
   const categories: { id: ChunkCategory | 'all'; label: string }[] = [
     { id: 'all', label: 'Tất Cả Thể Loại (All Categories)' },
@@ -408,6 +410,15 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
               </button>
             </div>
 
+            {/* Import Excel Action */}
+            <button
+              onClick={() => setIsExcelModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-zinc-200 hover:border-[#DC2626] text-zinc-800 hover:text-[#DC2626] text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <Upload className="w-3.5 h-3.5 text-[#DC2626]" />
+              <span>Import Excel</span>
+            </button>
+
             {/* Add Chunk Action */}
             <button
               onClick={handleOpenAddChunk}
@@ -687,6 +698,18 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
         initialIndex={previewInitialIndex}
         dayNumber={previewDayNumber}
         lessonTitle={previewLessonTitle}
+      />
+
+      {/* Excel & Data Ingest Modal */}
+      <LessonExcelUploader
+        isOpen={isExcelModalOpen}
+        onClose={() => setIsExcelModalOpen(false)}
+        onUploadSuccess={() => {
+          loadCurriculumData();
+        }}
+        onStartDrillNow={(newLessonId, day) => {
+          onLaunchProjectorForLesson(newLessonId, day);
+        }}
       />
     </div>
   );

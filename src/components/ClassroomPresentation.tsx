@@ -452,161 +452,63 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
       )}
 
-      {/* 2. TOP PRESENTATION TOOLBAR */}
-      <div className={`px-6 py-4 border-b flex items-center justify-between gap-4 flex-wrap ${
-        highContrastDark ? 'border-zinc-800 bg-[#0F0F12]' : 'border-[#E8E8EC] bg-[#FAFAFA]'
+      {/* 2. SLIM HIGH-SIGNAL TOP BAR */}
+      <div className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-4 transition-colors z-20 ${
+        highContrastDark ? 'border-zinc-800 bg-[#0F0F12]' : 'border-[#E8E8EC] bg-white/95 backdrop-blur-xs'
       }`}>
-        <div className="flex items-center gap-3">
-          {onExit && (
-            <button
-              onClick={onExit}
-              className="p-1.5 rounded-lg border border-[#E8E8EC] hover:bg-white text-xs font-semibold text-[#0A0A0A] transition-colors cursor-pointer"
-              title="Exit Presenter Mode"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          )}
+        {/* Left: Lesson Context & Dynamic Progress */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-[#DC2626] text-white">
+              Day {activeLesson.day_number}
+            </span>
+            <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${
+              highContrastDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'
+            }`}>
+              {courseLevel === 'LEVEL_A' ? 'Level A' : 'Level B'}
+            </span>
+          </div>
 
-          {/* Lesson Selector */}
-          <select
-            value={currentLessonId}
-            onChange={(e) => {
-              setCurrentLessonId(e.target.value);
-              setCurrentChunkIndex(0);
-            }}
-            className={`text-xs font-bold font-display rounded-lg px-3 py-1.5 border transition-all cursor-pointer shadow-xs ${
-              highContrastDark 
-                ? 'bg-zinc-800 text-white border-zinc-700' 
-                : 'bg-white text-[#0A0A0A] border-[#E8E8EC]'
-            }`}
-          >
-            {allAvailableLessons.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.id.startsWith('level_a') ? 'Level A' : 'Level B'} • Day {l.day_number}: {l.lesson_title}
-              </option>
-            ))}
-          </select>
+          <div className="hidden sm:block truncate">
+            <h2 className="font-display font-bold text-sm tracking-tight truncate">
+              {activeLesson.lesson_title}
+            </h2>
+          </div>
 
-          {/* Dual Progress % Metrics Badges */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Part & Class Progress Pills */}
+          <div className="hidden md:flex items-center gap-1.5 ml-2">
             {currentPart && (
               <button
                 onClick={() => setIsPartsDrawerOpen(true)}
-                className={`text-xs font-mono font-bold px-2.5 py-1 rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
+                className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
                   highContrastDark
-                    ? 'bg-[#DC2626]/20 text-[#DC2626] border-[#DC2626]/40'
-                    : 'bg-[#DC2626]/[0.08] text-[#DC2626] border-[#DC2626]/20 hover:bg-[#DC2626]/[0.15]'
+                    ? 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                    : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                 }`}
                 title={`Part ${currentPart.part_index}: ${currentPart.category.toUpperCase()} (${partChunkCurrent}/${partChunkTotal} chunks)`}
               >
-                <Layers className="w-3 h-3" />
+                <Layers className="w-3 h-3 text-[#DC2626]" />
                 <span>Part {currentPart.part_index}: {partProgressPercent}%</span>
               </button>
             )}
 
             <button
               onClick={() => setIsChunkListOpen(true)}
-              className={`text-xs font-mono font-bold px-2.5 py-1 rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
+              className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
                 highContrastDark
                   ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800'
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
               }`}
               title={`Class Total: ${currentChunkIndex + 1}/${chunks.length} chunks`}
             >
-              <TrendingUp className="w-3 h-3" />
-              <span>Class: {currentChunkIndex + 1}/{chunks.length} ({classProgressPercent}%)</span>
+              <span>{currentChunkIndex + 1}/{chunks.length}</span>
             </button>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Visual GCS Audio Connection Indicator (Signal Strength) */}
-          <button
-            onClick={() => {
-              verifyGcsAvailability();
-              setIsDiagnosticOpen(true);
-            }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all cursor-pointer shadow-xs ${
-              gcsConnectionStatus === 'Connected' && !isAudioLoading && !isCheckingGcs
-                ? highContrastDark
-                  ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800 hover:bg-emerald-900/60'
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                : highContrastDark
-                  ? 'bg-amber-950/50 text-amber-300 border-amber-800 hover:bg-amber-900/60'
-                  : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
-            }`}
-            title={`GCS Audio Stream Status: ${isAudioLoading || isCheckingGcs ? 'Reconnecting (Loading audio buffer)' : gcsConnectionStatus}. Click to test & diagnose.`}
-          >
-            {isAudioLoading || isCheckingGcs ? (
-              <RefreshCw className="w-3.5 h-3.5 text-amber-500 animate-spin" />
-            ) : gcsConnectionStatus === 'Connected' ? (
-              <SignalHigh className="w-3.5 h-3.5 text-emerald-600" />
-            ) : (
-              <SignalLow className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-            )}
-
-            <span className="tracking-tight">
-              {isAudioLoading || isCheckingGcs
-                ? 'Reconnecting'
-                : gcsConnectionStatus}
-            </span>
-
-            {/* Micro signal status dot */}
-            <span className="relative flex h-2 w-2 ml-0.5">
-              {gcsConnectionStatus === 'Connected' && !isAudioLoading && !isCheckingGcs ? (
-                <>
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </>
-              ) : (
-                <>
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                </>
-              )}
-            </span>
-          </button>
-
-          {/* Audio Source Diagnostics Trigger Badge */}
-          <button
-            onClick={() => setIsDiagnosticOpen(true)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold border transition-all cursor-pointer shadow-xs ${
-              activeAudioSource === 'GCS_MASTER'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
-                : activeAudioSource === 'DEEPGRAM_AURA'
-                  ? 'bg-purple-50 text-purple-900 border-purple-300 hover:bg-purple-100'
-                  : activeAudioSource === 'GOOGLE_CLOUD_AI'
-                    ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100'
-                    : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
-            }`}
-            title="Kiểm tra kết nối âm thanh & chẩn đoán Audio Engine"
-          >
-            {activeAudioSource === 'GCS_MASTER' ? (
-              <>
-                <Radio className="w-3 h-3 text-emerald-600" />
-                <span>GCS MP3</span>
-              </>
-            ) : activeAudioSource === 'DEEPGRAM_AURA' ? (
-              <>
-                <Zap className="w-3 h-3 text-purple-600 fill-purple-500" />
-                <span>Deepgram Aura</span>
-              </>
-            ) : activeAudioSource === 'GOOGLE_CLOUD_AI' ? (
-              <>
-                <Cloud className="w-3 h-3 text-blue-600" />
-                <span>Journey AI</span>
-              </>
-            ) : (
-              <>
-                <Laptop className="w-3 h-3 text-amber-600" />
-                <span>Model Máy</span>
-              </>
-            )}
-            <Activity className="w-3 h-3 opacity-60 ml-0.5" />
-          </button>
-
-          {/* Audio Engine Provider Selector (Google Cloud vs Deepgram Aura) */}
+        {/* Right: Minimal Smart Action Cluster */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Quick Voice & Audio Provider Switcher */}
           <select
             value={audioProvider}
             onChange={(e) => {
@@ -619,15 +521,14 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 setSelectedVoice('en-US-Journey-F');
               }
             }}
-            className={`text-xs font-mono font-bold rounded-lg px-2.5 py-1.5 border transition-all cursor-pointer shadow-xs ${
+            className={`text-xs font-mono font-bold rounded-lg px-2 py-1 border transition-all cursor-pointer ${
               highContrastDark 
                 ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
-                : 'bg-white text-[#0A0A0A] border-[#E8E8EC]'
+                : 'bg-zinc-50 text-zinc-800 border-zinc-200 hover:bg-white'
             }`}
-            title="Switch Audio Engine: Google Cloud TTS vs Deepgram Aura"
           >
+            <option value="DEEPGRAM_AURA">Deepgram Aura</option>
             <option value="GOOGLE_TTS">Google Cloud TTS</option>
-            <option value="DEEPGRAM_AURA">Deepgram Aura AI</option>
           </select>
 
           {/* Voice Model Selector */}
@@ -644,12 +545,11 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 true
               );
             }}
-            className={`text-xs font-mono font-semibold rounded-lg px-2.5 py-1.5 border transition-all cursor-pointer shadow-xs ${
+            className={`hidden sm:block text-xs font-mono font-medium rounded-lg px-2 py-1 border transition-all cursor-pointer ${
               highContrastDark 
                 ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
-                : 'bg-white text-[#0A0A0A] border-[#E8E8EC]'
+                : 'bg-zinc-50 text-zinc-800 border-zinc-200 hover:bg-white'
             }`}
-            title="Real Voice Model"
           >
             {audioProvider === 'DEEPGRAM_AURA' ? (
               DEEPGRAM_AURA_VOICES.map(v => (
@@ -666,94 +566,48 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             )}
           </select>
 
-          {/* Prepare Lesson Audio Button */}
+          {/* Prepare Audio Button */}
           <button
             onClick={() => setIsPrepModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 transition-all cursor-pointer shadow-xs"
-            title="Pre-generate & synthesize all audio in this lesson"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 transition-all cursor-pointer"
+            title="Pre-generate & cache all audio for this lesson"
           >
             <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
-            <span className="font-mono">Prepare Audio</span>
+            <span className="hidden md:inline font-mono">Prepare</span>
           </button>
 
-          {/* Words List Drawer Toggle */}
-          <button
-            onClick={() => setIsChunkListOpen(prev => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-              isChunkListOpen
-                ? 'bg-[#DC2626] text-white border-[#DC2626]'
-                : 'bg-white text-[#0A0A0A] border-[#E8E8EC] hover:bg-zinc-50'
-            }`}
-            title="Vocabulary & Chunks Preview Drawer (Key: L)"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span className="font-mono">Words List (L)</span>
-          </button>
-
-          {/* Parts Drawer Toggle */}
-          <button
-            onClick={() => setIsPartsDrawerOpen(prev => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-              isPartsDrawerOpen
-                ? 'bg-[#DC2626] text-white border-[#DC2626]'
-                : 'bg-white text-[#0A0A0A] border-[#E8E8EC] hover:bg-zinc-50'
-            }`}
-            title="Parts Navigation (Key: P)"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span className="font-mono">Parts (P)</span>
-          </button>
-
-          {/* Subtitle Toggle */}
-          <button
-            onClick={handleToggleSubtitle}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-              showSubtitle
-                ? 'bg-[#DC2626]/10 text-[#DC2626] border-[#DC2626]/30'
-                : 'bg-zinc-100 text-zinc-500 border-zinc-200'
-            }`}
-            title="Toggle Subtitle (Key: V)"
-          >
-            {showSubtitle ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            <span className="font-mono">{showSubtitle ? 'VI: ON (V)' : 'VI: OFF (V)'}</span>
-          </button>
-
-          {/* Blackout Button */}
-          <button
-            onClick={handleToggleBlackout}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-300 hover:bg-zinc-100 transition-all cursor-pointer font-mono"
-            title="Blackout Screen (Key: B)"
-          >
-            <Moon className="w-3.5 h-3.5" />
-            <span>Blackout (B)</span>
-          </button>
-
-          {/* Contrast Theme Toggle */}
+          {/* Dark / Light Toggle */}
           <button
             onClick={() => setHighContrastDark(prev => !prev)}
-            className="p-1.5 rounded-lg border border-zinc-300 hover:bg-zinc-100 transition-all cursor-pointer"
-            title="Toggle High-Contrast Dark Mode"
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+              highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'
+            }`}
+            title="Toggle Contrast"
           >
             {highContrastDark ? <SunMedium className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
-          </button>
-
-          {/* Keyboard Guide */}
-          <button
-            onClick={() => setShowKeyboardGuide(prev => !prev)}
-            className="p-1.5 rounded-lg border border-zinc-300 hover:bg-zinc-100 transition-all cursor-pointer"
-            title="Clicker Remote & Keymap Guide"
-          >
-            <Keyboard className="w-4 h-4 text-zinc-600" />
           </button>
 
           {/* Fullscreen */}
           <button
             onClick={handleToggleFullscreen}
-            className="p-1.5 rounded-lg border border-zinc-300 hover:bg-zinc-100 transition-all cursor-pointer"
-            title="Fullscreen Mode (F5 / Key F)"
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+              highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'
+            }`}
+            title="Fullscreen Mode (F / F5)"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
+
+          {/* Exit Presentation */}
+          {onExit && (
+            <button
+              onClick={onExit}
+              className="p-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer"
+              title="Thoát chế độ lớp học"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -923,88 +777,66 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
       )}
 
-      {/* 6. BOTTOM NAVIGATION CONTROLS */}
-      <div className={`p-4 md:px-8 border-t flex flex-col md:flex-row items-center justify-between gap-4 ${
-        highContrastDark ? 'border-zinc-800 bg-[#0F0F12]' : 'border-[#E8E8EC] bg-[#FAFAFA]'
+      {/* 6. MINIMAL HIGH-CONTRAST FLOATING CLASSROOM DOCK */}
+      <div className={`p-3 px-4 sm:px-6 border-t flex flex-wrap items-center justify-between gap-3 z-20 ${
+        highContrastDark ? 'border-zinc-800 bg-[#0F0F12]' : 'border-zinc-200 bg-white/95 backdrop-blur-xs'
       }`}>
         {/* Navigation Step Buttons */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-start">
+        <div className="flex items-center gap-2">
           <button
             onClick={handlePrev}
             disabled={currentChunkIndex === 0}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl bg-white border border-[#E8E8EC] text-xs font-bold text-[#0A0A0A] hover:bg-zinc-50 disabled:opacity-30 transition-all cursor-pointer shadow-xs"
-            title="Previous (PageUp / Arrow Left)"
+            className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-white text-xs font-bold text-zinc-900 disabled:opacity-30 transition-all cursor-pointer shadow-xs"
+            title="Previous Chunk (PageUp / Left)"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span>Previous (PageUp)</span>
+            <span className="hidden sm:inline">Prev</span>
           </button>
 
           <button
             onClick={handleReplay}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#DC2626] text-white text-xs font-bold hover:bg-[#B91C1C] transition-all cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#DC2626] text-white text-xs font-bold hover:bg-[#B91C1C] transition-all cursor-pointer shadow-xs"
             title="Replay Audio (Key R)"
           >
             <Volume2 className="w-4 h-4" />
-            <span>Replay (R)</span>
+            <span>Phát Lại (R)</span>
           </button>
 
           <button
             onClick={handleNext}
-            className="flex items-center gap-1 px-5 py-2 rounded-xl bg-[#0A0A0A] text-white text-xs font-bold hover:bg-zinc-800 transition-all cursor-pointer shadow-xs"
-            title="Next (PageDown / Arrow Right / Space)"
+            className="inline-flex items-center gap-1 px-4 py-1.5 rounded-xl bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-800 transition-all cursor-pointer shadow-xs"
+            title="Next Chunk (PageDown / Right / Space)"
           >
-            <span>{currentChunkIndex === chunks.length - 1 ? 'Lesson Complete 🎉' : 'Next (PageDown)'}</span>
+            <span>{currentChunkIndex === chunks.length - 1 ? 'Hoàn Tất 🎉' : 'Tiếp (Next)'}</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Audio sequence & Speed Configuration */}
-        <div className="flex items-center gap-3 flex-wrap justify-center text-xs">
+        {/* Center: Language Mode & Drill Speed */}
+        <div className="hidden lg:flex items-center gap-2">
           {/* Sequence mode */}
-          <div className="flex items-center gap-1 bg-white border border-[#E8E8EC] p-1 rounded-lg">
-            <button
-              onClick={() => setLanguageMode('EN_ONLY')}
-              className={`px-2 py-1 rounded text-[11px] font-bold font-mono transition-colors cursor-pointer ${
-                languageMode === 'EN_ONLY' ? 'bg-[#DC2626] text-white' : 'text-zinc-600 hover:text-black'
-              }`}
-            >
-              EN Only
-            </button>
-            <button
-              onClick={() => setLanguageMode('VI_ONLY')}
-              className={`px-2 py-1 rounded text-[11px] font-bold font-mono transition-colors cursor-pointer ${
-                languageMode === 'VI_ONLY' ? 'bg-[#DC2626] text-white' : 'text-zinc-600 hover:text-black'
-              }`}
-              title="Phát độc quyền âm thanh dịch tiếng Việt Neural2"
-            >
-              VI Only
-            </button>
-            <button
-              onClick={() => setLanguageMode('EN_THEN_VI')}
-              className={`px-2 py-1 rounded text-[11px] font-bold font-mono transition-colors cursor-pointer ${
-                languageMode === 'EN_THEN_VI' ? 'bg-[#DC2626] text-white' : 'text-zinc-600 hover:text-black'
-              }`}
-            >
-              EN ➔ VI
-            </button>
-            <button
-              onClick={() => setLanguageMode('VI_THEN_EN')}
-              className={`px-2 py-1 rounded text-[11px] font-bold font-mono transition-colors cursor-pointer ${
-                languageMode === 'VI_THEN_EN' ? 'bg-[#DC2626] text-white' : 'text-zinc-600 hover:text-black'
-              }`}
-            >
-              VI ➔ EN Drill
-            </button>
+          <div className="flex items-center gap-0.5 bg-zinc-100 border border-zinc-200 p-0.5 rounded-lg text-xs font-mono font-bold">
+            {(['EN_THEN_VI', 'EN_ONLY', 'VI_ONLY', 'VI_THEN_EN'] as LanguageMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setLanguageMode(mode)}
+                className={`px-2 py-1 rounded-md transition-colors cursor-pointer text-[11px] ${
+                  languageMode === mode ? 'bg-[#DC2626] text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+              >
+                {mode === 'EN_THEN_VI' ? 'EN ➔ VI' : mode === 'EN_ONLY' ? 'EN' : mode === 'VI_ONLY' ? 'VI' : 'VI ➔ EN'}
+              </button>
+            ))}
           </div>
 
-          {/* Speed presets */}
-          <div className="flex items-center gap-1 bg-white border border-[#E8E8EC] p-1 rounded-lg">
-            {[0.75, 0.9, 1.0, 1.2].map((s) => (
+          {/* Speed */}
+          <div className="flex items-center gap-0.5 bg-zinc-100 border border-zinc-200 p-0.5 rounded-lg text-xs font-mono font-bold">
+            {[0.8, 1.0, 1.2].map((s) => (
               <button
                 key={s}
                 onClick={() => setSpeed(s)}
-                className={`px-2 py-1 rounded text-[11px] font-bold font-mono transition-colors cursor-pointer ${
-                  speed === s ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:text-black'
+                className={`px-2 py-1 rounded-md transition-colors cursor-pointer text-[11px] ${
+                  speed === s ? 'bg-zinc-900 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                 }`}
               >
                 {s}x
@@ -1012,44 +844,76 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             ))}
           </div>
 
-          {/* Repeat loops */}
-          <div className="flex items-center gap-1 bg-white border border-[#E8E8EC] p-1 rounded-lg">
+          {/* Loop Count */}
+          <div className="flex items-center gap-0.5 bg-zinc-100 border border-zinc-200 p-0.5 rounded-lg text-xs font-mono font-bold">
             {[1, 2, 3].map((r) => (
               <button
                 key={r}
                 onClick={() => setRepeatCount(r)}
-                className={`px-2 py-1 rounded text-[11px] font-bold font-mono transition-colors cursor-pointer ${
-                  repeatCount === r ? 'bg-amber-500 text-white' : 'text-zinc-600 hover:text-black'
+                className={`px-2 py-1 rounded-md transition-colors cursor-pointer text-[11px] ${
+                  repeatCount === r ? 'bg-amber-500 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                 }`}
-                title={`Loop ${r} time(s)`}
               >
-                Loop {r}x
+                {r}x
               </button>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* 7. CLICKER ACTIVE STATUS STRIP */}
-      <div className="bg-[#0A0A0A] text-zinc-400 py-1.5 px-4 text-[11px] font-mono flex items-center justify-between overflow-x-auto whitespace-nowrap">
-        <div className="flex items-center gap-3">
-          <span className="text-[#DC2626] font-bold flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse"></span>
-            Hardware Clicker Active
-          </span>
-          <span>PageDown (Next)</span>
-          <span>•</span>
-          <span>PageUp (Back)</span>
-          <span>•</span>
-          <span>P (Parts)</span>
-          <span>•</span>
-          <span>B (Blackout)</span>
-          <span>•</span>
-          <span>V (Translation)</span>
-          <span>•</span>
-          <span>R (Replay)</span>
+        {/* Right: Quick Stage Feature Toggles */}
+        <div className="flex items-center gap-1.5">
+          {/* Subtitle Toggle */}
+          <button
+            onClick={handleToggleSubtitle}
+            className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer ${
+              showSubtitle
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                : 'bg-zinc-100 text-zinc-500 border-zinc-200'
+            }`}
+            title="Toggle Vietnamese Subtitle (Key: V)"
+          >
+            {showSubtitle ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">Phụ Đề (V)</span>
+          </button>
+
+          {/* Words List Drawer */}
+          <button
+            onClick={() => setIsChunkListOpen(prev => !prev)}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-white text-xs font-mono font-bold text-zinc-800 transition-all cursor-pointer"
+            title="Vocabulary & Chunks List (Key: L)"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-[#DC2626]" />
+            <span className="hidden sm:inline">List (L)</span>
+          </button>
+
+          {/* Parts Drawer */}
+          <button
+            onClick={() => setIsPartsDrawerOpen(prev => !prev)}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-white text-xs font-mono font-bold text-zinc-800 transition-all cursor-pointer"
+            title="Parts Drawer (Key: P)"
+          >
+            <Layers className="w-3.5 h-3.5 text-[#DC2626]" />
+            <span className="hidden sm:inline">Parts (P)</span>
+          </button>
+
+          {/* Blackout */}
+          <button
+            onClick={handleToggleBlackout}
+            className="p-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 transition-all cursor-pointer"
+            title="Blackout Screen (Key: B)"
+          >
+            <Moon className="w-4 h-4" />
+          </button>
+
+          {/* Keyboard Guide */}
+          <button
+            onClick={() => setShowKeyboardGuide(true)}
+            className="p-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 transition-all cursor-pointer"
+            title="Remote Clicker Keymap (Key: ?)"
+          >
+            <Keyboard className="w-4 h-4" />
+          </button>
         </div>
-        <span className="text-zinc-500">Deepgram Aura & Google Cloud TTS</span>
       </div>
 
       {/* 9. VOCABULARY & CHUNKS PREVIEW DRAWER */}

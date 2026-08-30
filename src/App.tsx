@@ -176,7 +176,10 @@ export const App: React.FC = () => {
         isOpen={isExcelModalOpen}
         onClose={() => setIsExcelModalOpen(false)}
         onUploadSuccess={(newLessonId) => {
-          handleLaunchProjectorForLesson(newLessonId, 1);
+          console.log("Uploaded lesson:", newLessonId);
+        }}
+        onStartDrillNow={(newLessonId, day) => {
+          handleLaunchProjectorForLesson(newLessonId, day);
         }}
       />
     </AppLayout>

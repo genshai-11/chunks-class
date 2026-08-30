@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import { ChunkItem, CourseLevel } from '../types';
 
-export function downloadLessonExcelTemplate() {
+export function downloadLessonExcelTemplate(levelCode?: string, dayNumber?: number) {
   const sampleData = [
     {
       "Item Number": 1,
@@ -48,7 +48,8 @@ export function downloadLessonExcelTemplate() {
   const ws = XLSX.utils.json_to_sheet(sampleData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Lesson_Chunks");
-  XLSX.writeFile(wb, "CHUNKS_Lesson_Upload_Template.xlsx");
+  const filename = dayNumber ? `CHUNKS_${levelCode || 'Lesson'}_Day_${dayNumber}_Template.xlsx` : "CHUNKS_Lesson_Upload_Template.xlsx";
+  XLSX.writeFile(wb, filename);
 }
 
 export async function parseExcelLessonFile(
