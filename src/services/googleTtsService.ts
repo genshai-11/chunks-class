@@ -461,7 +461,7 @@ class AudioPlayService {
           return;
         }
 
-        // Tier 1: Google Cloud TTS REST API (vi-VN)
+        // Tier 1: Google Cloud TTS REST API (vi-VN: Neural2-A / Standard-A)
         try {
           const base64Audio = await this.synthesizeWithGoogleTTS(cleanText, effectiveViVoice, 1.0);
           if (base64Audio) {
@@ -471,31 +471,10 @@ class AudioPlayService {
             return;
           }
         } catch (cloudErr: any) {
-          console.warn(`[Audio] Google Cloud TTS (VI) failed (${cloudErr?.message}), trying Public Google Vietnamese TTS...`);
+          console.warn(`[Audio] Google Cloud TTS (VI) failed (${cloudErr?.message}), falling back to local Browser Speech Synthesis...`);
         }
 
-        // Tier 2: Public Google Vietnamese TTS (translate_tts?tl=vi)
-        try {
-          const base64Audio = await this.fetchPublicGoogleVietnameseTts(cleanText);
-          if (base64Audio) {
-            this.audioCache.set(cacheKey, base64Audio);
-            this.setLastSource('GOOGLE_CLOUD_AI');
-            await this.playBase64(base64Audio, speed);
-            return;
-          }
-        } catch (pubErr: any) {
-          console.warn(`[Audio] Public Google Vietnamese TTS fetch failed (${pubErr?.message}), trying direct HTML5 audio stream...`);
-          try {
-            const directUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
-            this.setLastSource('GOOGLE_CLOUD_AI');
-            await this.playUrl(directUrl, speed);
-            return;
-          } catch (streamErr: any) {
-            console.warn(`[Audio] Direct audio stream failed (${streamErr?.message}), falling back to local Browser Speech Synthesis...`);
-          }
-        }
-
-        // Tier 3: Browser Speech Synthesis Fallback (lang: 'vi-VN')
+        // Tier 2: Local Browser Speech Synthesis Fallback (lang: 'vi-VN')
         this.setLastSource('BROWSER_LOCAL');
         await this.playBrowserTts(cleanText, 'vi-VN', speed);
         return;
@@ -662,7 +641,7 @@ class AudioPlayService {
         return { base64: this.audioCache.get(cacheKey)!, source: 'GOOGLE_CLOUD_AI', voice: voiceVi, language: 'vi' };
       }
 
-      // 1. Google Cloud TTS (vi-VN)
+      // 1. Google Cloud TTS (vi-VN: Neural2-A / Standard-A)
       try {
         const base64 = await this.synthesizeWithGoogleTTS(cleanText, voiceVi, speed, forceRegenerate);
         if (base64) {
@@ -670,21 +649,10 @@ class AudioPlayService {
           return { base64, source: 'GOOGLE_CLOUD_AI', voice: voiceVi, language: 'vi' };
         }
       } catch (err: any) {
-        console.warn(`[Audio] Google Cloud TTS (VI) failed: ${err?.message}, trying public Google TTS...`);
+        throw new Error(`Google Cloud TTS (VI) synthesis failed: ${err?.message}`);
       }
 
-      // 2. Public Google Vietnamese TTS
-      try {
-        const base64 = await this.fetchPublicGoogleVietnameseTts(cleanText, forceRegenerate);
-        if (base64) {
-          this.audioCache.set(cacheKey, base64);
-          return { base64, source: 'GOOGLE_CLOUD_AI', voice: 'vi-VN-Public', language: 'vi' };
-        }
-      } catch (pubErr: any) {
-        throw new Error(`Vietnamese TTS synthesis failed: ${pubErr?.message}`);
-      }
-
-      throw new Error('Vietnamese TTS synthesis failed on all online engines.');
+      throw new Error('Vietnamese TTS synthesis failed.');
     } else {
       // English
       const activeProvider = params.provider || this.activeProvider;
@@ -813,17 +781,7 @@ class AudioPlayService {
                 success = true;
               }
             } catch (cloudErr) {
-              // Fallback to Public Google Vietnamese TTS
-              try {
-                const base64 = await this.fetchPublicGoogleVietnameseTts(cleanVi, forceRegenerate);
-                if (base64) {
-                  this.audioCache.set(cacheKeyVi, base64);
-                  prepared++;
-                  success = true;
-                }
-              } catch (pubErr) {
-                console.warn(`[Audio Batch] VI synthesis failed for chunk #${index + 1}:`, pubErr);
-              }
+              console.warn(`[Audio Batch] VI synthesis failed for chunk #${index + 1}:`, cloudErr);
             }
             if (!success) {
               failed++;
@@ -908,38 +866,6 @@ class AudioPlayService {
       this.audioCache.set(cacheKey, audioContent);
     }
     return audioContent || '';
-  }
-
-  /**
-   * Public Google Vietnamese TTS Fallback via translate_tts
-   */
-  private async fetchPublicGoogleVietnameseTts(text: string, forceRefresh: boolean = false): Promise<string> {
-    const cleanText = sanitizeSpeechText(text);
-    if (!cleanText) return '';
-
-    const cacheKey = this.getCacheKey('vi-VN-Public', cleanText);
-    if (!forceRefresh && this.audioCache.has(cacheKey)) {
-      return this.audioCache.get(cacheKey)!;
-    }
-
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Public Google TTS Error: ${response.status}`);
-    }
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        if (result) {
-          this.audioCache.set(cacheKey, result);
-        }
-        resolve(result);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
   }
 
   private playUrl(url: string, speed: number): Promise<void> {
