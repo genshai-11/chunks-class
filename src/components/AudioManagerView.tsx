@@ -326,8 +326,14 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   };
 
   // Start Batch Generation Engine
-  const handleStartBatchGeneration = async () => {
+  const handleStartBatchGeneration = async (
+    overrideScope?: 'current_lesson' | 'entire_course',
+    overrideLessonId?: string
+  ) => {
     if (isBatchRunning) return;
+
+    const effectiveScope = overrideScope || batchScope;
+    const effectiveLessonId = overrideLessonId || batchTargetLessonId;
 
     cancelBatchRef.current = false;
     setIsBatchRunning(true);
@@ -336,14 +342,14 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     let targetChunks: ChunkItem[] = [];
     let scopeDesc = '';
 
-    if (batchScope === 'current_lesson') {
-      const lesson = lessons.find(l => l.id === batchTargetLessonId) || lessons[0];
+    if (effectiveScope === 'current_lesson') {
+      const lesson = lessons.find(l => l.id === effectiveLessonId || String(l.day_number) === String(effectiveLessonId)) || lessons[0];
       if (!lesson || !lesson.chunks || lesson.chunks.length === 0) {
         addLog('Không tìm thấy chunk nào trong bài học được chọn.', 'error');
         setIsBatchRunning(false);
         return;
       }
-      targetChunks = lesson.chunks;
+      targetChunks = [...lesson.chunks];
       scopeDesc = `Day ${lesson.day_number} (${lesson.lesson_title}) - ${targetChunks.length} chunks`;
     } else {
       targetChunks = lessons.flatMap(l => l.chunks || []);
@@ -380,11 +386,17 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         const cleanEn = sanitizeSpeechText(chunk.english);
         const cleanVi = chunk.vietnamese ? sanitizeSpeechText(chunk.vietnamese) : '';
 
-        // Synthesize EN
+        // Synthesize EN (Background synthesis directly into persistent IndexedDB cache)
         if (batchTarget === 'ENGLISH' || batchTarget === 'BOTH') {
           if (cancelBatchRef.current) break;
           try {
-            await audioPlayer.playChunk(cleanEn, null, voiceProfileEn, 1.0, true);
+            await audioPlayer.synthesizeSingleChunk({
+              text: cleanEn,
+              language: 'en',
+              voiceName: voiceProfileEn,
+              provider: activeProvider,
+              forceRegenerate: true
+            });
             successCount++;
           } catch (e: any) {
             failCount++;
@@ -402,11 +414,17 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           }));
         }
 
-        // Synthesize VI
+        // Synthesize VI (Background synthesis directly into persistent IndexedDB cache)
         if ((batchTarget === 'VIETNAMESE' || batchTarget === 'BOTH') && cleanVi) {
           if (cancelBatchRef.current) break;
           try {
-            await audioPlayer.playChunk(cleanVi, null, voiceProfileVi, 1.0, true);
+            await audioPlayer.synthesizeSingleChunk({
+              text: cleanVi,
+              language: 'vi',
+              voiceName: voiceProfileVi,
+              provider: 'GOOGLE_TTS',
+              forceRegenerate: true
+            });
             successCount++;
           } catch (e: any) {
             failCount++;
@@ -425,7 +443,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         }
 
         // Periodic UI update
-        if (index % 5 === 0) {
+        if (index % 3 === 0 || cursor >= targetChunks.length) {
           calculateReadinessStatus();
         }
       }
@@ -438,10 +456,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       );
       await Promise.all(workers);
 
+      calculateReadinessStatus();
+
       if (cancelBatchRef.current) {
         addLog(`Đã dừng Batch Generator theo yêu cầu của người dùng. (Đã xử lý: ${processedCount}/${totalOperations})`, 'warning');
       } else {
-        addLog(`🎉 Hoàn tất toàn bộ quy trình Batch Audio! Thành công: ${successCount}, Lỗi: ${failCount}`, 'success');
+        addLog(`🎉 Hoàn tất Batch Audio cho ${scopeDesc}! Thành công: ${successCount}, Lỗi: ${failCount}`, 'success');
       }
     } catch (err: any) {
       addLog(`Lỗi xử lý batch: ${err?.message || String(err)}`, 'error');
@@ -1137,7 +1157,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                             onClick={() => {
                               setBatchScope('current_lesson');
                               setBatchTargetLessonId(item.lessonId);
-                              handleStartBatchGeneration();
+                              handleStartBatchGeneration('current_lesson', item.lessonId);
                             }}
                             className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
                             title="Tạo lại toàn bộ audio cho bài này"
@@ -1177,7 +1197,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="p-5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
+            <div className="p-5 border-b border-zinc-200 flex items-center justify-between bg-zinc-50 flex-wrap gap-3">
               <div className="flex items-center gap-3">
                 <span className="px-2.5 py-1 rounded-lg bg-[#DC2626] text-white font-mono font-bold text-xs">
                   Day {inspectingLesson.day_number}
@@ -1193,6 +1213,19 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isBatchRunning}
+                  onClick={() => {
+                    handleStartBatchGeneration('current_lesson', inspectingLesson.id);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                  title="Tạo lại audio cho riêng bài học này"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Tạo Lại Audio (Day {inspectingLesson.day_number})</span>
+                </button>
+
                 {onLaunchProjectorForLesson && (
                   <button
                     onClick={() => {
