@@ -949,7 +949,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] ${
                 languageMode === 'VI_ONLY' ? 'bg-[#DC2626] text-white shadow-xs font-extrabold' : 'text-zinc-600 hover:text-zinc-900'
               }`}
-              title="Phát Tiếng Việt (VI Only - Google TTS vi-VN-Neural2-A)"
+              title="Phát Tiếng Việt (VI Only - Google Cloud TTS)"
             >
               VI
             </button>

@@ -106,16 +106,40 @@ export const GOOGLE_TTS_VOICES: VoiceOption[] = [
     provider: 'GOOGLE'
   },
   {
-    id: 'vi-VN-Neural2-A',
-    name: 'vi-VN-Neural2-A (Vietnamese Neural2 Standard)',
+    id: 'vi-VN-Chirp3-HD-Vindemiatrix',
+    name: 'vi-VN-Chirp3-HD-Vindemiatrix (Google Chirp3-HD Studio Nữ)',
     languageCode: 'vi-VN',
     gender: 'FEMALE',
-    description: 'Neural2 Vietnamese standard pronunciation voice.',
+    description: 'Next-generation ultra-realistic Studio Chirp3-HD Vietnamese female voice.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Orus',
+    name: 'vi-VN-Chirp3-HD-Orus (Google Chirp3-HD Studio Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-generation ultra-realistic Studio Chirp3-HD Vietnamese male voice.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Neural2-A',
+    name: 'vi-VN-Neural2-A (Vietnamese Neural2 Standard Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Neural2 Vietnamese standard female voice.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Neural2-D',
+    name: 'vi-VN-Neural2-D (Vietnamese Neural2 Standard Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Neural2 Vietnamese standard male voice.',
     provider: 'GOOGLE'
   },
   {
     id: 'vi-VN-Standard-A',
-    name: 'vi-VN-Standard-A (Vietnamese Standard Northern)',
+    name: 'vi-VN-Standard-A (Vietnamese Standard Nữ Bắc)',
     languageCode: 'vi-VN',
     gender: 'FEMALE',
     description: 'Standard Northern Vietnamese pronunciation.',

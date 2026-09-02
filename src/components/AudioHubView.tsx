@@ -135,7 +135,10 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
   ];
 
   const voiceProfilesVi = [
+    { id: 'vi-VN-Chirp3-HD-Vindemiatrix', name: 'Google Chirp3-HD Studio (Nữ)', desc: 'Next-gen Ultra-HD, tự nhiên, sống động nhất hiện nay' },
+    { id: 'vi-VN-Chirp3-HD-Orus', name: 'Google Chirp3-HD Studio (Nam)', desc: 'Next-gen Ultra-HD, trầm ấm, chuẩn mực phát thanh' },
     { id: 'vi-VN-Neural2-A', name: 'Google Vietnamese Neural2 (Nữ)', desc: 'Mượt mà, tự nhiên, giọng Bắc chuẩn' },
+    { id: 'vi-VN-Neural2-D', name: 'Google Vietnamese Neural2 (Nam)', desc: 'Rõ ràng, dứt khoát, giọng Nam chuẩn' },
     { id: 'vi-VN-Standard-A', name: 'Google Vietnamese Standard (Nữ)', desc: 'Rõ ràng, rành mạch từng từ' }
   ];
 
