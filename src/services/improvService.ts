@@ -27,68 +27,66 @@ import { DEFAULT_IMPROV_PACKAGES } from '../data/defaultImprovPackages';
 
 export const DEFAULT_IMPROV_MASTER_PROMPT = `You are the Lead English Pedagogy & Speech Chunking Architect for the CHUNKS Improv Reflex Platform.
 
-CHUNKS Improv is an interactive, hint-based English reflex training system. Learners deduce, shadow, and master spoken English chunks through progressive deduction clues (hints) for each target item.
+CHUNKS Improv is an interactive, hint-based English reflex training system. Learners deduce, shadow, and master spoken English chunks through rapid-fire clue words/phrases (1-2 words each) before producing the full communicative sentence.
 
-### INSTRUCTIONS:
-1. You will be given a target package title, difficulty level, relevance level, session configuration (number of sessions, items count per session, hcTotal per item, hintTypes), and a pool of seed vocabulary chunks from the CHUNKS curriculum.
-2. For each Session, create the specified number of items.
-3. For each Item, Hint 1 MUST be the target core vocabulary/chunk (or seed chunk). Subsequent hints (Hint 2, Hint 3, Hint 4, etc.) must follow the progressive hint types specified in the session config:
-   - Core Meaning / Seed Chunk: Target English chunk with accurate Vietnamese translation.
-   - Collocation / Syntactic Slot: Natural word partner or phrase extension.
-   - Contextual Example / Situation: Real-world everyday or workplace context sentence.
-   - Contrast / Antonym / Trap: Distinguishing nuances or common learner pitfalls.
-   - Reflex Dialogue / Reaction: Rapid-fire conversational turn or question-and-answer reflex.
-4. Vietnamese translations must be 100% natural, colloquial Vietnamese (Latin Extended, Be Vietnam Pro typography safe).
-5. Adjust difficulty and relevance according to the requested settings:
-   - Difficulty:
-     * EASY: High-frequency conversational chunks, straightforward hints, direct clues.
-     * MEDIUM: Workplace & social nuances, collocations, idiomatic phrasing.
-     * HARD: Deep emotional reflexes, abstract collocations, subtle contrast traps.
-   - Relevance:
-     * LOW: Creative, diverse general life situations.
-     * MEDIUM: Practical daily conversation & travel scenarios.
-     * HIGH: High-priority workplace, professional, and core communication situations.
+### PEDAGOGICAL STRUCTURE BASED ON SESSIONS:
+Each Improv Package contains multiple Sessions. In each Session, each Item is an independent reflex challenge with N compact hints (1–2 words per clue):
+
+1. **For 2-Hint Sessions (hcTotal = 2)**:
+   - Hint 1: **Keyword / Core Vocab** (Danh từ / Động từ / Tính từ / Trạng từ / Cụm chêm). Drawn from the provided seed vocabularies.
+   - Hint 2: **Ending** (Động từ / Tính từ / Trạng từ / Danh từ). A natural, high-frequency collocated word.
+   - *Example Item 1*: Hint 1: "cơm tối" (Trans: "dinner", Type: "Danh từ · Keyword") | Hint 2: "nấu" (Trans: "cook", Type: "Động từ · Ending")
+   - *Example Item 2*: Hint 1: "Contract" (Trans: "Hợp đồng", Type: "Danh từ · Keyword") | Hint 2: "long-term" (Trans: "dài hạn", Type: "Tính từ · Ending")
+   - *Rule*: EVERY single item in the session MUST have completely different, creative, distinct word pairs!
+
+2. **For 3-Hint Sessions (hcTotal = 3)**:
+   - Hint 1: **Keyword / Core Vocab** (1–2 words: Danh từ / Động từ / Tính từ / Trạng từ / Cụm phản hồi).
+   - Hint 2: **Logic word / Từ nối** (1–2 words: transition & connective words).
+     *CRITICAL RULE*: Every item MUST use a DIFFERENT logic connector! Pick from: "nói cách khác" (in other words), "sau cùng" (eventually), "trước đó" (before that), "hơn nữa" (in addition), "tiếp theo" (next), "dù vậy" (nevertheless), "nếu" (if), "đồng thời" (meanwhile), "tuy nhiên" (however), "do đó" (therefore), "ví dụ" (for example), "miễn là" (as long as), "nếu không" (otherwise), "sau đó" (then), "ngoài ra" (besides).
+   - Hint 3: **Ending** (Tính từ / Trạng từ / Động từ - 1–2 words).
+   - *Example Item 1*: Hint 1: "Cải thiện" (Trans: "Work on / improve", Type: "Động từ · Keyword") | Hint 2: "trước đó" (Trans: "before that", Type: "Từ nối · Logic word") | Hint 3: "tốt hơn" (Trans: "better", Type: "Tính từ · Ending")
+   - *Example Item 2*: Hint 1: "Sometimes" (Trans: "Nhiều khi", Type: "Trạng từ · Keyword") | Hint 2: "meanwhile" (Trans: "đồng thời", Type: "Từ nối · Logic word") | Hint 3: "unpredictable" (Trans: "khó đoán", Type: "Tính từ · Ending")
+
+3. **For 4-Hint Sessions (hcTotal = 4)**:
+   - Hint 1: **Keyword / WH-question** (1–2 words: Danh từ, Cụm khuyên nhủ, WH word like "Why", "When", "How long", "Which").
+   - Hint 2: **Logic word / Từ nối** (1–2 words: "while", "in contrast", "as long as", "but", "however", "therefore", "if", "otherwise", "then", "finally", etc. - MUST be different across all rows!).
+   - Hint 3: **Fancy word / Ẩn dụ / Cụm gợi hình / Tục ngữ / Từ tượng thanh** (1–2 words colorful image: "smart choice", "lifeline", "empty shelves", "shock wave", "watchful eye", "dead stop", "red flag", "Better safe than sorry", "burning", "resistant").
+   - Hint 4: **Ending** (1–2 words: Danh từ, Tính từ, Trạng từ: "careful", "globally", "urgently", "worldwide", "discreetly", "immediately", "promptly", "Heartburn", "Acid reflux", "Blood sugar").
+
+### STRICT ANTI-REPETITION CONSTRAINTS:
+- DO NOT repeat fixed sentence patterns (e.g., NEVER make all items "Why don't you..." or any repeated template).
+- Every single Item in the output must be completely UNIQUE, colorful, diverse, and natural.
+- Compact Clues: Fancy words and hints must be limited to 1–2 words (except proverbs).
+- Translations must be 100% natural, colloquial Vietnamese (Latin Extended, Be Vietnam Pro typography safe).
 
 ### OUTPUT FORMAT:
-You MUST output ONLY a valid JSON object matching the following structure without any surrounding text or explanation:
+You MUST output ONLY a valid JSON object matching the following structure without any surrounding markdown or explanation:
 {
   "title": "Package Title",
   "description": "Package Description",
   "sessions": [
     {
       "sessionNumber": 1,
-      "title": "Session 1: Workplace Reflexes",
-      "hcTotal": 4,
-      "hintTypes": ["Core Meaning", "Collocation", "Context Example", "Reflex Dialogue"],
+      "title": "Session 1: Two-Word Reflex Pairs",
+      "hcTotal": 2,
+      "hintTypes": ["Danh từ · Keyword", "Động từ · Ending"],
       "items": [
         {
           "itemNumber": 1,
           "sessionNumber": 1,
-          "hcTotal": 4,
+          "hcTotal": 2,
           "hints": [
             {
               "itemIndex": 1,
-              "text": "give it a shot",
-              "translation": "thử làm xem sao / thử một phen",
-              "typeFunction": "Core Meaning"
+              "text": "cơm tối",
+              "translation": "dinner",
+              "typeFunction": "Danh từ · Keyword"
             },
             {
               "itemIndex": 2,
-              "text": "why don't you give it a shot",
-              "translation": "sao bạn không thử làm một phen xem",
-              "typeFunction": "Collocation"
-            },
-            {
-              "itemIndex": 3,
-              "text": "If you're not sure about the new project, just give it a shot.",
-              "translation": "Nếu bạn chưa chắc về dự án mới, cứ thử làm một phen xem sao.",
-              "typeFunction": "Context Example"
-            },
-            {
-              "itemIndex": 4,
-              "text": "Should I apply for the position? - Definitely, give it a shot!",
-              "translation": "Tôi có nên nộp đơn ứng tuyển không? - Chắc chắn rồi, cứ thử đi!",
-              "typeFunction": "Reflex Dialogue"
+              "text": "nấu",
+              "translation": "cook",
+              "typeFunction": "Động từ · Ending"
             }
           ]
         }
@@ -223,6 +221,97 @@ export async function deleteImprovPackage(id: string): Promise<void> {
       );
     }
   } catch {}
+}
+
+/**
+ * Adds or updates a single ImprovItem within an existing ImprovPackage and Session.
+ */
+export async function addOrUpdateImprovItem(
+  packageId: string,
+  sessionNumber: number,
+  item: ImprovItem
+): Promise<ImprovPackage | null> {
+  const pkg = await getImprovPackageById(packageId);
+  if (!pkg) return null;
+
+  const sessions = [...pkg.sessions];
+  let sessionIndex = sessions.findIndex(s => s.sessionNumber === sessionNumber);
+
+  if (sessionIndex < 0) {
+    // Create new session if missing
+    const newSession: ImprovSession = {
+      sessionNumber,
+      title: `Session ${sessionNumber}`,
+      hcTotal: item.hcTotal || item.hints.length,
+      hintTypes: Array.from(new Set(item.hints.map(h => h.typeFunction))),
+      items: [item]
+    };
+    sessions.push(newSession);
+    sessions.sort((a, b) => a.sessionNumber - b.sessionNumber);
+  } else {
+    const session = { ...sessions[sessionIndex] };
+    const items = [...session.items];
+    const itemIndex = items.findIndex(it => it.id === item.id || it.itemNumber === item.itemNumber);
+
+    if (itemIndex >= 0) {
+      items[itemIndex] = item;
+    } else {
+      items.push(item);
+    }
+
+    items.sort((a, b) => a.itemNumber - b.itemNumber);
+    session.items = items;
+    session.hcTotal = items[0]?.hcTotal || item.hints.length;
+    session.hintTypes = Array.from(new Set(items.flatMap(it => it.hints.map(h => h.typeFunction))));
+    sessions[sessionIndex] = session;
+  }
+
+  const totalItems = sessions.reduce((acc, s) => acc + s.items.length, 0);
+  const updatedPkg: ImprovPackage = {
+    ...pkg,
+    sessions,
+    sessionsCount: sessions.length,
+    totalItems,
+    updatedAt: new Date().toISOString()
+  };
+
+  await saveImprovPackage(updatedPkg);
+  return updatedPkg;
+}
+
+/**
+ * Deletes a single ImprovItem from a package session.
+ */
+export async function deleteImprovItem(
+  packageId: string,
+  sessionNumber: number,
+  itemId: string
+): Promise<ImprovPackage | null> {
+  const pkg = await getImprovPackageById(packageId);
+  if (!pkg) return null;
+
+  const sessions = pkg.sessions.map(session => {
+    if (session.sessionNumber !== sessionNumber) return session;
+    const remainingItems = session.items.filter(it => it.id !== itemId);
+    // Re-index remaining item numbers
+    const reindexed = remainingItems.map((it, idx) => ({ ...it, itemNumber: idx + 1 }));
+    return {
+      ...session,
+      items: reindexed
+    };
+  }).filter(s => s.items.length > 0);
+
+  const totalItems = sessions.reduce((acc, s) => acc + s.items.length, 0);
+  const updatedPkg: ImprovPackage = {
+    ...pkg,
+    sessions,
+    sessionsCount: sessions.length,
+    totalItems,
+    updatedAt: new Date().toISOString()
+  };
+
+  await saveImprovPackage(updatedPkg);
+  return updatedPkg;
 }
 
 // --------------------------------------------------------------------------

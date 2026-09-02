@@ -4,7 +4,8 @@ import {
   ImprovSession, 
   ImprovItem, 
   ImprovHint, 
-  CohortAudioSettings 
+  CohortAudioSettings,
+  LanguageMode
 } from '../types';
 import { getAllImprovPackages } from '../services/improvService';
 import { 
@@ -13,6 +14,7 @@ import {
   AudioProvider 
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
+import { getHintTextByLanguage } from '../services/improvTtsService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
 import { 
   Volume2, 
@@ -36,7 +38,12 @@ import {
   Sliders, 
   RotateCcw,
   Search,
-  BookOpen
+  BookOpen,
+  ListOrdered,
+  ListFilter,
+  CheckCircle2,
+  Flame,
+  Globe
 } from 'lucide-react';
 
 interface ImprovPresentationProps {
@@ -152,8 +159,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [highContrastDark, setHighContrastDark] = useState<boolean>(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState<boolean>(false);
+  const [isListDrawerOpen, setIsListDrawerOpen] = useState<boolean>(false);
 
   // Audio Engine & Synthesis State
+  const [languageMode, setLanguageMode] = useState<LanguageMode>('EN_ONLY');
   const [selectedVoice, setSelectedVoice] = useState<string>(
     audioSettings?.voice_profile_en || 'aura-asteria-en'
   );
@@ -276,12 +285,27 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         setActivePlayingHintIndex(i);
         const hint = hintsToPlay[i];
         
-        await audioPlayer.playChunk(
-          hint.text, 
-          null, 
-          selectedVoice, 
-          speed
-        );
+        const enText = getHintTextByLanguage(hint, 'en');
+        const viText = getHintTextByLanguage(hint, 'vi');
+
+        if (languageMode === 'EN_ONLY' || languageMode === 'PRIMARY_ONLY') {
+          if (enText) {
+            await audioPlayer.playChunk(enText, null, selectedVoice, speed);
+          }
+        } else if (languageMode === 'VI_ONLY' || languageMode === 'SECONDARY_ONLY') {
+          if (viText) {
+            await audioPlayer.playChunk(viText, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
+          }
+        } else if (languageMode === 'EN_THEN_VI') {
+          if (enText) {
+            await audioPlayer.playChunk(enText, null, selectedVoice, speed);
+            await new Promise(res => setTimeout(res, 400));
+          }
+          if (activeSequenceRef.current !== seqId) return;
+          if (viText) {
+            await audioPlayer.playChunk(viText, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
+          }
+        }
 
         if (activeSequenceRef.current !== seqId) return;
         if (i < hintsToPlay.length - 1) {
@@ -307,7 +331,27 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     setActivePlayingHintIndex(index);
 
     try {
-      await audioPlayer.playChunk(hint.text, null, selectedVoice, speed);
+      const enText = getHintTextByLanguage(hint, 'en');
+      const viText = getHintTextByLanguage(hint, 'vi');
+
+      if (languageMode === 'VI_ONLY' || languageMode === 'SECONDARY_ONLY') {
+        if (viText) {
+          await audioPlayer.playChunk(viText, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
+        }
+      } else if (languageMode === 'EN_THEN_VI') {
+        if (enText) {
+          await audioPlayer.playChunk(enText, null, selectedVoice, speed);
+          await new Promise(res => setTimeout(res, 400));
+        }
+        if (activeSequenceRef.current !== seqId) return;
+        if (viText) {
+          await audioPlayer.playChunk(viText, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
+        }
+      } else {
+        if (enText) {
+          await audioPlayer.playChunk(enText, null, selectedVoice, speed);
+        }
+      }
     } catch (err) {
       console.warn('[ImprovPresentation] Single hint playback notice:', err);
     } finally {
@@ -351,7 +395,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       if (currentItemIndex < items.length - 1) {
         const nextIndex = currentItemIndex + 1;
         setCurrentItemIndex(nextIndex);
-        setCurrentRevealStep(hints.length);
+        setCurrentRevealStep(items[nextIndex]?.hints?.length || 1);
         const nextItem = items[nextIndex];
         if (nextItem && nextItem.hints) {
           playRevealedHintsAudio(nextItem.hints);
@@ -413,8 +457,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     onToggleBlackout: () => setIsBlackout(prev => !prev),
     onToggleSubtitle: () => setShowSubtitle(prev => !prev),
     onReplayAudio: handleReplay,
+    onTogglePartsDrawer: () => setIsListDrawerOpen(prev => !prev),
+    onToggleChunkList: () => setIsListDrawerOpen(prev => !prev),
     onToggleFullscreen: handleToggleFullscreen,
-    isModalOpen: showShortcutsModal || isPackagePopoverOpen || isAudioSettingsOpen || isSessionPopoverOpen
+    isModalOpen: showShortcutsModal || isPackagePopoverOpen || isAudioSettingsOpen || isSessionPopoverOpen || isListDrawerOpen
   });
 
   // Audition voice test
@@ -643,6 +689,22 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               </div>
             )}
           </div>
+          {/* List Drawer Toggle Button */}
+          <button
+            onClick={() => setIsListDrawerOpen(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+              highContrastDark
+                ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-200'
+                : 'bg-zinc-50 border-zinc-200 hover:border-zinc-300 text-zinc-900'
+            }`}
+            title="Xem danh sách câu trong Package [Phím L / P]"
+          >
+            <ListOrdered className="w-3.5 h-3.5 text-[#DC2626]" />
+            <span className="hidden sm:inline">Danh Sách Câu</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold">
+              {currentItemIndex + 1}/{totalItemsCount}
+            </span>
+          </button>
         </div>
 
         {/* Center: Item Progress Counter & Bar */}
@@ -663,8 +725,45 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           </div>
         </div>
 
-        {/* Right Side: Voice Settings, Theme, Fullscreen, Exit */}
+        {/* Right Side: Language Mode, Voice Settings, Theme, Fullscreen, Exit */}
         <div className="flex items-center gap-2">
+          {/* Top Bar Language Mode Pill */}
+          <div className="hidden sm:flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
+            <button
+              onClick={() => setLanguageMode('EN_ONLY')}
+              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all ${
+                languageMode === 'EN_ONLY' || languageMode === 'PRIMARY_ONLY'
+                  ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+              }`}
+              title="Chỉ đọc tiếng Anh"
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLanguageMode('VI_ONLY')}
+              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all ${
+                languageMode === 'VI_ONLY' || languageMode === 'SECONDARY_ONLY'
+                  ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+              }`}
+              title="Chỉ đọc tiếng Việt (Google Cloud TTS)"
+            >
+              VI
+            </button>
+            <button
+              onClick={() => setLanguageMode('EN_THEN_VI')}
+              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all ${
+                languageMode === 'EN_THEN_VI'
+                  ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+              }`}
+              title="Song ngữ EN rồi VI"
+            >
+              EN ➔ VI
+            </button>
+          </div>
+
           {/* Audio Setup Popover Button */}
           <div className="relative" ref={audioSettingsRef}>
             <button
@@ -760,20 +859,20 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         </option>
                       ))}
                     </optgroup>
-                    <optgroup label="Google Cloud TTS (Studio / Journey)">
-                      {GOOGLE_TTS_VOICES.map((v) => (
+                    <optgroup label="Google Cloud TTS (Journey / Studio)">
+                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode.startsWith('en')).map((v) => (
                         <option key={v.id} value={v.id}>
-                          {v.name}
+                          {v.name} ({v.gender})
                         </option>
                       ))}
                     </optgroup>
                   </select>
                 </div>
 
-                {/* Vietnamese Subtitle Voice Selector */}
-                <div className="mb-3">
+                {/* Vietnamese Voice Selector */}
+                <div className="mb-4">
                   <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
-                    Vietnamese Voice (Chirp3-HD / Neural2)
+                    Vietnamese Voice Model (Google Cloud)
                   </label>
                   <select
                     value={selectedVoiceVi}
@@ -784,11 +883,14 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         : 'bg-white border-zinc-200 text-zinc-900'
                     }`}
                   >
-                    <option value="vi-VN-Neural2-A">vi-VN-Neural2-A (Female Natural)</option>
-                    <option value="vi-VN-Neural2-D">vi-VN-Neural2-D (Male Clear)</option>
-                    <option value="vi-VN-Chirp3-HD-Vindemiatrix">vi-VN-Chirp3-HD-Vindemiatrix (Deep Female)</option>
-                    <option value="vi-VN-Chirp3-HD-Orus">vi-VN-Chirp3-HD-Orus (Studio Male)</option>
-                    <option value="vi-VN-Standard-A">vi-VN-Standard-A (Standard)</option>
+                    <optgroup label="Google Chirp3-HD (Studio Studio Quality)">
+                      <option value="vi-VN-Chirp3-HD-Vindemiatrix">vi-VN-Chirp3-HD-Vindemiatrix (Nữ)</option>
+                      <option value="vi-VN-Chirp3-HD-Orus">vi-VN-Chirp3-HD-Orus (Nam)</option>
+                    </optgroup>
+                    <optgroup label="Google Neural2 (Chuẩn Tự Nhiên)">
+                      <option value="vi-VN-Neural2-A">vi-VN-Neural2-A (Nữ Chuẩn)</option>
+                      <option value="vi-VN-Neural2-D">vi-VN-Neural2-D (Nam Chuẩn)</option>
+                    </optgroup>
                   </select>
                 </div>
 
@@ -1046,6 +1148,23 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               V
             </span>
           </button>
+
+          {/* List Drawer Toggle (Key L / Key P) */}
+          <button
+            onClick={() => setIsListDrawerOpen(!isListDrawerOpen)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+              isListDrawerOpen
+                ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 border-zinc-400'
+                : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100'
+            }`}
+            title="Xem danh sách câu trong Package (Phím L / P)"
+          >
+            <ListOrdered className="w-3.5 h-3.5 text-[#DC2626]" />
+            <span className="hidden sm:inline">Danh sách</span>
+            <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+              L
+            </span>
+          </button>
         </div>
 
         {/* Center: Replay Button & Hardware Clicker Navigation */}
@@ -1180,6 +1299,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500">Mở danh sách câu trong bài</span>
+                <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
+                  Key L / Key P
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="text-zinc-500">Bật / tắt dịch nghĩa tiếng Việt</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
                   Key V
@@ -1202,10 +1327,143 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             <div className="mt-5">
               <button
                 onClick={() => setShowShortcutsModal(false)}
-                className="w-full py-2 bg-[#DC2626] text-white font-bold text-xs rounded-xl shadow-xs"
+                className="w-full py-2 bg-[#DC2626] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
               >
                 Đã hiểu
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 6. PACKAGE ITEM LIST DRAWER (Key L / Key P) */}
+      {/* ==================================================================== */}
+      {isListDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-fade-in">
+          {/* Click outside to close */}
+          <div className="flex-1" onClick={() => setIsListDrawerOpen(false)} />
+
+          <div
+            className={`w-full max-w-md md:max-w-lg h-full flex flex-col shadow-2xl border-l z-10 animate-slide-left ${
+              highContrastDark
+                ? 'bg-[#18181B] border-zinc-700 text-white'
+                : 'bg-white border-zinc-200 text-zinc-900'
+            }`}
+          >
+            {/* Drawer Header */}
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ListOrdered className="w-5 h-5 text-[#DC2626]" />
+                <div>
+                  <h3 className="font-bold text-sm">Danh Sách Câu Improv</h3>
+                  <p className="text-[10px] text-zinc-400 font-mono">
+                    {activePackage?.title} • Session {selectedSessionNum}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsListDrawerOpen(false)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Session Switcher inside Drawer */}
+            <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-1.5 overflow-x-auto">
+              {(activePackage?.sessions || []).map((s) => {
+                const isSelected = s.sessionNumber === selectedSessionNum;
+                return (
+                  <button
+                    key={s.sessionNumber}
+                    onClick={() => {
+                      setSelectedSessionNum(s.sessionNumber);
+                      setCurrentItemIndex(0);
+                      setCurrentRevealStep(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#DC2626] text-white shadow-xs'
+                        : highContrastDark
+                        ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+                        : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                    }`}
+                  >
+                    Session {s.sessionNumber} ({s.items.length})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Items List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+              {items.map((item, idx) => {
+                const isCurrent = idx === currentItemIndex;
+                const isCompleted = idx < currentItemIndex;
+
+                return (
+                  <div
+                    key={item.id || idx}
+                    onClick={() => {
+                      setCurrentItemIndex(idx);
+                      setCurrentRevealStep(1);
+                      setIsListDrawerOpen(false);
+                    }}
+                    className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                      isCurrent
+                        ? 'border-[#DC2626] bg-[#DC2626]/10 ring-2 ring-[#DC2626]/30'
+                        : isCompleted
+                        ? highContrastDark
+                          ? 'border-emerald-900/50 bg-emerald-950/20 hover:bg-emerald-950/40'
+                          : 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50'
+                        : highContrastDark
+                        ? 'border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/80'
+                        : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs">
+                          Câu {item.itemNumber || idx + 1}
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                          {item.hints.length} hints
+                        </span>
+                      </div>
+                      <div>
+                        {isCurrent ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-red-600 bg-red-100 dark:bg-red-950/60 dark:text-red-400 px-2 py-0.5 rounded-full animate-pulse">
+                            <Flame className="w-3 h-3" /> Đang Học
+                          </span>
+                        ) : isCompleted ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="w-3 h-3" /> Đã Xong
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-zinc-400">
+                            Chưa học
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Hints Preview */}
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {item.hints.map((h, hIdx) => (
+                        <React.Fragment key={h.id || hIdx}>
+                          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                            {h.text}
+                          </span>
+                          {hIdx < item.hints.length - 1 && (
+                            <span className="text-zinc-300 dark:text-zinc-700 text-xs font-bold">➔</span>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

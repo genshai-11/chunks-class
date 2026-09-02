@@ -14,6 +14,8 @@ import {
   getAllImprovPackages, 
   saveImprovPackage, 
   deleteImprovPackage, 
+  addOrUpdateImprovItem,
+  deleteImprovItem,
   parseImprovExcelFile, 
   exportImprovPackageToExcel,
   DEFAULT_IMPROV_MASTER_PROMPT,
@@ -23,7 +25,8 @@ import {
   improvTts, 
   synthesizeItemCombinedAudio, 
   playItemAudio, 
-  stopImprovAudio 
+  stopImprovAudio,
+  getHintTextByLanguage
 } from '../services/improvTtsService';
 import { audioPlayer, sanitizeSpeechText } from '../services/googleTtsService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
@@ -68,7 +71,13 @@ import {
   HelpCircle,
   BarChart3,
   Copy,
-  FolderOpen
+  FolderOpen,
+  LayoutGrid,
+  Table as TableIcon,
+  List,
+  Flame,
+  CheckSquare,
+  Minus
 } from 'lucide-react';
 
 // --------------------------------------------------------------------------
@@ -340,26 +349,32 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [audioFilter, setAudioFilter] = useState<'all' | 'ready' | 'missing'>('all');
   const [showVietnamese, setShowVietnamese] = useState<boolean>(true);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // --------------------------------------------------------------------------
-  // B. Modal Visibility States
+  // B. Modal Visibility & Item CRUD States
   // --------------------------------------------------------------------------
   const [isGeneratorOpen, setIsGeneratorOpen] = useState<boolean>(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isBatchAudioModalOpen, setIsBatchAudioModalOpen] = useState<boolean>(false);
+  const [isAddItemModalOpen, setIsAddItemModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<ImprovItem | null>(null);
+  const [newItem, setNewItem] = useState<ImprovItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ sessionNumber: number; itemId: string; itemNumber: number } | null>(null);
 
   // --------------------------------------------------------------------------
   // C. Audio Playback & Synthesis State
   // --------------------------------------------------------------------------
   const [playingItemId, setPlayingItemId] = useState<string | null>(null);
   const [playingHintIndex, setPlayingHintIndex] = useState<number | null>(null);
+  const [playingLang, setPlayingLang] = useState<'en' | 'vi'>('en');
   const [synthesizingItemIds, setSynthesizingItemIds] = useState<Record<string, boolean>>({});
   const playAbortRef = useRef<boolean>(false);
 
   // Batch Audio Worker State
   const [batchWorkersCount, setBatchWorkersCount] = useState<number>(4);
+  const [batchTargetLang, setBatchTargetLang] = useState<'en' | 'vi' | 'both'>('both');
   const [isBatchRunning, setIsBatchRunning] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
@@ -373,23 +388,30 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const cancelBatchAudioRef = useRef<boolean>(false);
 
   // --------------------------------------------------------------------------
-  // D. AI Generator Form State
+  // D. AI Generator Form State (3-Layer Filter)
   // --------------------------------------------------------------------------
   const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv Mastery - Level B Reflexes');
-  const [genDescription, setGenDescription] = useState<string>('Bộ bài tập ngẫu hứng 4 sessions rèn luyện phản xạ nhanh kết hợp từ vựng cốt lõi...');
+  const [genDescription, setGenDescription] = useState<string>('Bộ bài tập ngẫu hứng đa tầng rèn luyện phản xạ nhanh kết hợp từ vựng cốt lõi...');
   const [genTotalItems, setGenTotalItems] = useState<number>(50);
   const [genSessionsCount, setGenSessionsCount] = useState<number>(4);
   const [genSessionConfigs, setGenSessionConfigs] = useState<ImprovSessionConfig[]>([
     { sessionNumber: 1, hcTotal: 2, hintTypes: ['Keyword', 'Ending'], itemsCount: 12 },
     { sessionNumber: 2, hcTotal: 3, hintTypes: ['Keyword', 'Logic word', 'Ending'], itemsCount: 12 },
     { sessionNumber: 3, hcTotal: 4, hintTypes: ['Keyword', 'Logic word', 'Fancy word', 'Ending'], itemsCount: 13 },
-    { sessionNumber: 4, hcTotal: 5, hintTypes: ['Keyword', 'Logic word', 'Fancy word', 'Logic word', 'Ending'], itemsCount: 13 }
+    { sessionNumber: 4, hcTotal: 4, hintTypes: ['Keyword', 'Logic word', 'Fancy word', 'Ending'], itemsCount: 13 }
   ]);
 
-  // Vocab & Pedagogy Controls
+  // Layer 1: Khóa học
   const [genSourceLevel, setGenSourceLevel] = useState<CourseLevel | 'ALL'>('LEVEL_B_ERES');
+  // Layer 2: Bài học (Days)
   const [genAvailableLessons, setGenAvailableLessons] = useState<LessonDoc[]>([]);
   const [genSelectedLessonIds, setGenSelectedLessonIds] = useState<string[]>([]);
+  // Layer 3: Thể loại & Từ vựng cụ thể
+  const [genCategoryFilter, setGenCategoryFilter] = useState<string>('all');
+  const [genVocabSearch, setGenVocabSearch] = useState<string>('');
+  const [genSelectedVocabIds, setGenSelectedVocabIds] = useState<string[]>([]);
+
+  // Pedagogy controls
   const [genDifficulty, setGenDifficulty] = useState<'Easy (A1-A2)' | 'Medium (B1)' | 'Hard (B2-C1)'>('Medium (B1)');
   const [genRelevance, setGenRelevance] = useState<'Thấp (Brainstorming ngẫu nhiên)' | 'Vừa (Tương quan ngữ cảnh)' | 'Cao (Gắn kết câu chuyện logic)'>('Cao (Gắn kết câu chuyện logic)');
 
@@ -466,6 +488,43 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     setGenSelectedLessonIds(lessons.map(l => l.id));
   }, [genSourceLevel]);
 
+  // Layer 3: Extract all seed chunks from selected lessons
+  const allAvailableSeedChunks: ChunkItem[] = useMemo(() => {
+    const chunks: ChunkItem[] = [];
+    genSelectedLessonIds.forEach(lId => {
+      const lesson = curriculumRegistry.getLessonById(lId);
+      if (lesson && lesson.chunks) {
+        chunks.push(...lesson.chunks);
+      }
+    });
+    return chunks;
+  }, [genSelectedLessonIds]);
+
+  // Available categories in the extracted chunks
+  const availableCategories = useMemo(() => {
+    const set = new Set<string>();
+    allAvailableSeedChunks.forEach(c => {
+      if (c.category) set.add(c.category);
+    });
+    return Array.from(set);
+  }, [allAvailableSeedChunks]);
+
+  // Filtered seed chunks based on Category filter & Search query
+  const filteredSeedChunks = useMemo(() => {
+    return allAvailableSeedChunks.filter(c => {
+      const matchCat = genCategoryFilter === 'all' || c.category === genCategoryFilter;
+      const matchSearch = !genVocabSearch.trim() || 
+        c.english.toLowerCase().includes(genVocabSearch.toLowerCase()) || 
+        c.vietnamese.toLowerCase().includes(genVocabSearch.toLowerCase());
+      return matchCat && matchSearch;
+    });
+  }, [allAvailableSeedChunks, genCategoryFilter, genVocabSearch]);
+
+  // Auto-select all seed chunks when lessons or category changes
+  useEffect(() => {
+    setGenSelectedVocabIds(filteredSeedChunks.map(c => c.id));
+  }, [filteredSeedChunks.length, genCategoryFilter]);
+
   // Update session configs when total sessions count changes
   useEffect(() => {
     setGenSessionConfigs(prev => {
@@ -475,12 +534,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
       for (let s = 1; s <= genSessionsCount; s++) {
         const existing = prev.find(c => c.sessionNumber === s);
-        const defaultHc = Math.min(6, s + 1); // e.g. S1: 2 hints, S2: 3 hints, S3: 4 hints, S4: 5 hints
+        const defaultHc = Math.min(4, s + 1); // e.g. S1: 2 hints, S2: 3 hints, S3: 4 hints, S4: 4 hints
         let defaultTypes: string[] = ['Keyword'];
-        if (defaultHc >= 2) defaultTypes.push('Ending');
-        if (defaultHc >= 3) defaultTypes = ['Keyword', 'Logic word', 'Ending'];
-        if (defaultHc >= 4) defaultTypes = ['Keyword', 'Logic word', 'Fancy word', 'Ending'];
-        if (defaultHc >= 5) defaultTypes = ['Keyword', 'Logic word', 'Fancy word', 'Logic word', 'Ending'];
+        if (defaultHc === 2) defaultTypes = ['Danh từ · Keyword', 'Động từ · Ending'];
+        if (defaultHc === 3) defaultTypes = ['Keyword', 'Từ nối · Logic word', 'Ending'];
+        if (defaultHc >= 4) defaultTypes = ['Keyword', 'Từ nối · Logic word', 'Fancy word / Ẩn dụ', 'Ending'];
 
         result.push({
           sessionNumber: s,
@@ -537,8 +595,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       s.items.forEach(it => {
         totalItems++;
         totalHints += it.hints.length;
-        const cacheKey = `improv_item_${it.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
-        if (audioPlayer.getCachedAudio(cacheKey, 'aura-asteria-en')) {
+        const cacheKeyEn = `improv_item_${it.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
+        if (audioPlayer.getCachedAudio(cacheKeyEn, 'aura-asteria-en')) {
           audioPreparedCount++;
         }
       });
@@ -555,25 +613,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     };
   }, [activePackage, synthesizingItemIds]);
 
-  // Extracted Core Vocab count for Generator
-  const extractedSeedVocabCount = useMemo(() => {
-    let count = 0;
-    genSelectedLessonIds.forEach(lId => {
-      const lesson = curriculumRegistry.getLessonById(lId);
-      if (lesson && lesson.chunks) {
-        count += lesson.chunks.filter(c => c.category === 'vocab' || c.category === 'phrase').length;
-      }
-    });
-    return count;
-  }, [genSelectedLessonIds]);
-
   // --------------------------------------------------------------------------
-  // 2. Audio Playback with 1-Second Pause Sequence
+  // 2. Audio Playback with 1-Second Pause Sequence (EN / VI)
   // --------------------------------------------------------------------------
 
-  const handlePlayItemWithPause = async (item: ImprovItem) => {
-    // If already playing this item, stop immediately
-    if (playingItemId === item.id) {
+  const handlePlayItemWithPause = async (item: ImprovItem, lang: 'en' | 'vi' = 'en') => {
+    // If already playing this item and same language, stop immediately
+    if (playingItemId === item.id && playingLang === lang) {
       playAbortRef.current = true;
       audioPlayer.stop();
       stopImprovAudio();
@@ -587,6 +633,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     stopImprovAudio();
     playAbortRef.current = false;
     setPlayingItemId(item.id);
+    setPlayingLang(lang);
 
     const hints = [...item.hints].sort((a, b) => a.itemIndex - b.itemIndex);
 
@@ -597,8 +644,9 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setPlayingHintIndex(hint.itemIndex);
 
       try {
-        // Play hint speech
-        await audioPlayer.playChunk(hint.text, null, 'aura-asteria-en', 1.0, false);
+        const textToSpeak = getHintTextByLanguage(hint, lang);
+        const voice = lang === 'vi' ? 'vi-VN-Neural2-A' : 'aura-asteria-en';
+        await audioPlayer.playChunk(textToSpeak, null, voice, 1.0, false);
       } catch (err) {
         console.warn(`[Audio] Playback error on hint #${hint.itemIndex}:`, err);
       }
@@ -617,11 +665,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     }
   };
 
-  // Synthesize audio for single item
-  const handleSynthesizeSingleItem = async (item: ImprovItem) => {
+  // Synthesize audio for single item (EN, VI, or BOTH)
+  const handleSynthesizeSingleItem = async (item: ImprovItem, target: 'en' | 'vi' | 'both' = 'both') => {
     setSynthesizingItemIds(prev => ({ ...prev, [item.id]: true }));
     try {
-      await synthesizeItemCombinedAudio(item, 'aura-asteria-en', 'vi-VN-Neural2-A', 'EN_ONLY');
+      if (target === 'en' || target === 'both') {
+        await synthesizeItemCombinedAudio(item, 'aura-asteria-en', 'vi-VN-Neural2-A', 'EN_ONLY', true);
+      }
+      if (target === 'vi' || target === 'both') {
+        await synthesizeItemCombinedAudio(item, 'aura-asteria-en', 'vi-VN-Neural2-A', 'VI_ONLY', true);
+      }
       // Trigger small confetti
       confetti({ particleCount: 20, spread: 40, origin: { y: 0.8 } });
     } catch (err: any) {
@@ -632,7 +685,104 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   // --------------------------------------------------------------------------
-  // 3. Package-Wide Batch Audio Generator (4 Workers)
+  // 3. Item Management CRUD Helpers (Thêm, Xóa, Sửa)
+  // --------------------------------------------------------------------------
+
+  const handleOpenAddItemModal = (sessionNum?: number) => {
+    const targetSessionNum = sessionNum || (activeSessionTab === 'all' ? 1 : activeSessionTab);
+    const targetSession = activePackage?.sessions.find(s => s.sessionNumber === targetSessionNum);
+    const defaultHc = targetSession?.hcTotal || 2;
+    const defaultTypes = targetSession?.hintTypes || ['Danh từ · Keyword', 'Động từ · Ending'];
+
+    const initialHints: ImprovHint[] = Array.from({ length: defaultHc }, (_, idx) => ({
+      id: `new_h_${Date.now()}_${idx + 1}`,
+      text: '',
+      translation: '',
+      typeFunction: defaultTypes[idx] || (idx === 0 ? 'Danh từ · Keyword' : idx === defaultHc - 1 ? 'Động từ · Ending' : 'Từ nối · Logic word'),
+      itemIndex: idx + 1
+    }));
+
+    const nextItemNumber = (targetSession?.items.length || 0) + 1;
+
+    setNewItem({
+      id: `item_s${targetSessionNum}_i${nextItemNumber}_${Date.now()}`,
+      itemNumber: nextItemNumber,
+      sessionNumber: targetSessionNum,
+      hcTotal: defaultHc,
+      hints: initialHints,
+      createdAt: new Date().toISOString()
+    });
+    setIsAddItemModalOpen(true);
+  };
+
+  const handleSaveNewItem = async (alsoSynthesize: boolean = false) => {
+    if (!newItem || !activePackage) return;
+    const hasEmptyText = newItem.hints.some(h => !h.text.trim());
+    if (hasEmptyText) {
+      alert('Vui lòng điền nội dung gợi ý (text) cho tất cả các hint.');
+      return;
+    }
+
+    try {
+      const updatedPkg = await addOrUpdateImprovItem(activePackage.id, newItem.sessionNumber, newItem);
+      if (updatedPkg) {
+        setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
+      }
+      const createdItem = newItem;
+      setIsAddItemModalOpen(false);
+      setNewItem(null);
+
+      if (alsoSynthesize) {
+        handleSynthesizeSingleItem(createdItem, 'both');
+      } else {
+        confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
+      }
+    } catch (err: any) {
+      alert(`Lỗi khi thêm câu mới: ${err?.message || 'Không thể lưu câu'}`);
+    }
+  };
+
+  const handleConfirmDeleteItem = async () => {
+    if (!itemToDelete || !activePackage) return;
+    try {
+      const updatedPkg = await deleteImprovItem(activePackage.id, itemToDelete.sessionNumber, itemToDelete.itemId);
+      if (updatedPkg) {
+        setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
+      }
+      setItemToDelete(null);
+    } catch (err: any) {
+      alert(`Lỗi khi xóa câu: ${err?.message || 'Không thể xóa câu'}`);
+    }
+  };
+
+  const handleSaveEditedItem = async (alsoSynthesize: boolean = false) => {
+    if (!editingItem || !activePackage) return;
+    const hasEmptyText = editingItem.hints.some(h => !h.text.trim());
+    if (hasEmptyText) {
+      alert('Vui lòng không để trống nội dung hint.');
+      return;
+    }
+
+    try {
+      const updatedPkg = await addOrUpdateImprovItem(activePackage.id, editingItem.sessionNumber, editingItem);
+      if (updatedPkg) {
+        setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
+      }
+      const itemToSynthesize = editingItem;
+      setEditingItem(null);
+
+      if (alsoSynthesize) {
+        handleSynthesizeSingleItem(itemToSynthesize, 'both');
+      } else {
+        confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
+      }
+    } catch (err: any) {
+      alert(`Lỗi khi lưu câu đã sửa: ${err?.message || 'Không thể lưu'}`);
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // 4. Package-Wide Batch Audio Generator (EN, VI, or BOTH)
   // --------------------------------------------------------------------------
 
   const handleStartBatchAudioGeneration = async () => {
@@ -646,14 +796,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setBatchLogs(prev => [`[${time}] ${msg}`, ...prev.slice(0, 100)]);
     };
 
-    addLog(`Khởi động bộ tổng hợp âm thanh đa luồng (${batchWorkersCount} workers)...`);
+    addLog(`Khởi động bộ tổng hợp âm thanh (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()})...`);
 
     try {
+      const langModeToUse = batchTargetLang === 'vi' ? 'VI_ONLY' : batchTargetLang === 'both' ? 'EN_THEN_VI' : 'EN_ONLY';
       await improvTts.preparePackageAudio(
         activePackage,
         {
           voiceEn: 'aura-asteria-en',
           voiceVi: 'vi-VN-Neural2-A',
+          langMode: langModeToUse,
           concurrency: batchWorkersCount,
           forceRegenerate: false
         },
@@ -680,7 +832,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   // --------------------------------------------------------------------------
-  // 4. AI Package Generator Trigger & LLM Integration
+  // 5. AI Package Generator Trigger & LLM Integration
   // --------------------------------------------------------------------------
 
   const addGenLog = (type: 'info' | 'success' | 'warning' | 'error', message: string) => {
@@ -989,39 +1141,6 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   }
 
   // --------------------------------------------------------------------------
-  // 5. Inline Quick Editor Save & Update
-  // --------------------------------------------------------------------------
-
-  const handleSaveEditedItem = async (andSynthesizeAudio: boolean = false) => {
-    if (!editingItem || !activePackage) return;
-
-    const updatedSessions = activePackage.sessions.map(s => {
-      if (s.sessionNumber === editingItem.sessionNumber) {
-        return {
-          ...s,
-          items: s.items.map(it => it.id === editingItem.id ? editingItem : it)
-        };
-      }
-      return s;
-    });
-
-    const updatedPackage: ImprovPackage = {
-      ...activePackage,
-      sessions: updatedSessions,
-      updatedAt: new Date().toISOString()
-    };
-
-    await saveImprovPackage(updatedPackage);
-    setPackages(prev => prev.map(p => p.id === updatedPackage.id ? updatedPackage : p));
-
-    if (andSynthesizeAudio) {
-      await handleSynthesizeSingleItem(editingItem);
-    }
-
-    setEditingItem(null);
-  };
-
-  // --------------------------------------------------------------------------
   // 6. Excel Import & Export Operations
   // --------------------------------------------------------------------------
 
@@ -1311,8 +1430,49 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               ))}
             </div>
 
-            {/* Quick Controls: Subtitle Toggle & Batch Audio Trigger */}
-            <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Controls: View Switcher, Add Item, Subtitle Toggle & Batch Audio Trigger */}
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {/* View Mode Toggle */}
+              <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('table')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'table'
+                      ? 'bg-white text-[#DC2626] shadow-xs'
+                      : 'text-zinc-600 hover:text-zinc-900'
+                  }`}
+                  title="Chế độ xem bảng danh sách chi tiết"
+                >
+                  <TableIcon className="w-3.5 h-3.5" />
+                  <span>Dạng Bảng</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('cards')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'cards'
+                      ? 'bg-white text-[#DC2626] shadow-xs'
+                      : 'text-zinc-600 hover:text-zinc-900'
+                  }`}
+                  title="Chế độ xem dạng thẻ dòng chảy"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>Dạng Thẻ</span>
+                </button>
+              </div>
+
+              {/* Add Item Button */}
+              <button
+                onClick={() => handleOpenAddItemModal()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold shadow-2xs transition-all cursor-pointer"
+                title="Thêm câu hỏi/bài tập mới vào session"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Thêm Câu</span>
+              </button>
+
+              {/* Subtitle Toggle */}
               <button
                 onClick={() => setShowVietnamese(!showVietnamese)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
@@ -1326,12 +1486,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 <span>{showVietnamese ? 'Hiện Tiếng Việt' : 'Ẩn Tiếng Việt'}</span>
               </button>
 
+              {/* Batch Audio Trigger */}
               <button
                 onClick={() => setIsBatchAudioModalOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-300" />
-                <span>Tạo Toàn Bộ Audio Package (4 Workers)</span>
+                <span>Tạo Batch Audio Package</span>
               </button>
             </div>
           </div>
@@ -1366,25 +1527,226 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         </div>
 
         {/* ================================================================== */}
-        {/* 3. ITEMS REVIEW & AUDITION STREAM */}
+        {/* 3. ITEMS REVIEW & AUDITION (TABLE MODE VS CARDS MODE) */}
         {/* ================================================================== */}
-        <div className="space-y-3">
-          {filteredItems.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-[#E8E8EC] p-12 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto">
-                <Search className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-zinc-700">Không tìm thấy Item nào</h3>
-              <p className="text-xs text-zinc-500 max-w-md mx-auto">
-                Không có gợi ý nào khớp với bộ lọc tìm kiếm. Hãy thử đổi từ khóa hoặc chọn Session khác.
-              </p>
+        {filteredItems.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-[#E8E8EC] p-12 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto">
+              <Search className="w-6 h-6" />
             </div>
-          ) : (
-            filteredItems.map((item) => {
+            <h3 className="font-bold text-zinc-700">Không tìm thấy Item nào</h3>
+            <p className="text-xs text-zinc-500 max-w-md mx-auto">
+              Không có gợi ý nào khớp với bộ lọc tìm kiếm. Hãy thử đổi từ khóa hoặc chọn Session khác.
+            </p>
+            <button
+              onClick={() => handleOpenAddItemModal()}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#DC2626] text-white rounded-xl text-xs font-bold shadow-xs hover:bg-[#B91C1C] cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Thêm Câu Mới Vào Session</span>
+            </button>
+          </div>
+        ) : viewMode === 'table' ? (
+          /* ================================================================ */
+          /* TABLE VIEW MODE (Condensed, High-Density, Clear Columns) */
+          /* ================================================================ */
+          <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-zinc-100/80 text-zinc-600 font-mono text-[10px] uppercase border-b border-zinc-200">
+                  <tr>
+                    <th className="p-3.5 w-16 text-center">STT</th>
+                    <th className="p-3.5 w-28">Session</th>
+                    <th className="p-3.5 min-w-[320px]">Các Gợi Ý & Từ Loại (Clues Stream)</th>
+                    <th className="p-3.5 w-40 text-center">Trạng Thái Audio</th>
+                    <th className="p-3.5 w-64 text-right">Thao Tác Quản Lý</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {filteredItems.map((item) => {
+                    const isPlayingThis = playingItemId === item.id;
+                    const isSynthesizing = synthesizingItemIds[item.id] || false;
+                    const cacheKeyEn = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
+                    const cacheKeyVi = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_VI_ONLY`;
+                    const isAudioEnReady = Boolean(audioPlayer.getCachedAudio(cacheKeyEn, 'aura-asteria-en'));
+                    const isAudioViReady = Boolean(audioPlayer.getCachedAudio(cacheKeyVi, 'aura-asteria-en'));
+
+                    return (
+                      <tr 
+                        key={item.id}
+                        className={`hover:bg-zinc-50/80 transition-colors ${
+                          isPlayingThis ? 'bg-red-50/40' : ''
+                        }`}
+                      >
+                        {/* STT Column */}
+                        <td className="p-3.5 text-center font-mono font-bold text-zinc-700">
+                          <span className="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-zinc-100 border border-zinc-200 text-xs">
+                            #{item.itemNumber}
+                          </span>
+                        </td>
+
+                        {/* Session Badge */}
+                        <td className="p-3.5">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-xs font-bold text-zinc-900">
+                              Session {item.sessionNumber}
+                            </span>
+                            <span className="text-[10px] font-mono text-zinc-400">
+                              {item.hints.length} hints
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Hints Stream Column */}
+                        <td className="p-3.5">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {item.hints.map((hint, hIdx) => {
+                              const badge = getHintTypeBadgeClasses(hint.typeFunction);
+                              const isHintActive = isPlayingThis && playingHintIndex === hint.itemIndex;
+
+                              return (
+                                <React.Fragment key={hint.id || hIdx}>
+                                  <div
+                                    className={`p-2 rounded-xl border transition-all ${
+                                      isHintActive
+                                        ? 'bg-red-50 border-[#DC2626] ring-2 ring-red-500/20'
+                                        : 'bg-zinc-50/80 border-zinc-200/80'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-1 mb-0.5">
+                                      <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${badge.bg} ${badge.text} ${badge.border}`}>
+                                        {badge.label}
+                                      </span>
+                                    </div>
+                                    <div className="font-bold text-zinc-900 text-xs">
+                                      {hint.text}
+                                    </div>
+                                    {showVietnamese && hint.translation && (
+                                      <div className="text-[10px] text-zinc-500 italic mt-0.5">
+                                        {hint.translation}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {hIdx < item.hints.length - 1 && (
+                                    <span className="text-zinc-300 font-bold text-xs">➔</span>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </div>
+                        </td>
+
+                        {/* Audio Status Column */}
+                        <td className="p-3.5 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                              isAudioEnReady
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-zinc-100 text-zinc-400 border-zinc-200'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${isAudioEnReady ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+                              <span>EN {isAudioEnReady ? '✓' : '—'}</span>
+                            </span>
+
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                              isAudioViReady
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-zinc-100 text-zinc-400 border-zinc-200'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${isAudioViReady ? 'bg-blue-500' : 'bg-zinc-400'}`} />
+                              <span>VI {isAudioViReady ? '✓' : '—'}</span>
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Actions Column */}
+                        <td className="p-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            {/* Nghe EN */}
+                            <button
+                              onClick={() => handlePlayItemWithPause(item, 'en')}
+                              className={`p-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                isPlayingThis && playingLang === 'en'
+                                  ? 'bg-zinc-900 text-white border-zinc-900'
+                                  : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
+                              }`}
+                              title="Nghe tiếng Anh kèm khoảng nghỉ 1s"
+                            >
+                              <Play className="w-3 h-3 text-[#DC2626] fill-current" />
+                              <span>EN</span>
+                            </button>
+
+                            {/* Nghe VI */}
+                            <button
+                              onClick={() => handlePlayItemWithPause(item, 'vi')}
+                              className={`p-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                isPlayingThis && playingLang === 'vi'
+                                  ? 'bg-zinc-900 text-white border-zinc-900'
+                                  : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
+                              }`}
+                              title="Nghe tiếng Việt chuẩn Google TTS kèm khoảng nghỉ 1s"
+                            >
+                              <Play className="w-3 h-3 text-blue-600 fill-current" />
+                              <span>VI</span>
+                            </button>
+
+                            {/* Tạo Audio Dropdown / Direct */}
+                            <button
+                              onClick={() => handleSynthesizeSingleItem(item, 'both')}
+                              disabled={isSynthesizing}
+                              className="p-1.5 px-2 rounded-lg bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold cursor-pointer transition-all disabled:opacity-50"
+                              title="Tạo cả âm thanh EN và VI cho item này"
+                            >
+                              {isSynthesizing ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Volume2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+
+                            {/* Sửa Text */}
+                            <button
+                              onClick={() => setEditingItem(JSON.parse(JSON.stringify(item)))}
+                              className="p-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-100 text-zinc-600 hover:text-zinc-900 cursor-pointer transition-all"
+                              title="Chỉnh sửa câu"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Xóa Câu */}
+                            <button
+                              onClick={() => setItemToDelete({
+                                sessionNumber: item.sessionNumber,
+                                itemId: item.id,
+                                itemNumber: item.itemNumber
+                              })}
+                              className="p-1.5 rounded-lg border border-zinc-200 hover:bg-red-50 text-zinc-400 hover:text-[#DC2626] hover:border-red-200 cursor-pointer transition-all"
+                              title="Xóa câu này khỏi session"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          /* ================================================================ */
+          /* CARDS VIEW MODE (Stream Cards Preview) */
+          /* ================================================================ */
+          <div className="space-y-3">
+            {filteredItems.map((item) => {
               const isPlayingThis = playingItemId === item.id;
               const isSynthesizing = synthesizingItemIds[item.id] || false;
-              const cacheKey = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
-              const isAudioReady = Boolean(audioPlayer.getCachedAudio(cacheKey, 'aura-asteria-en'));
+              const cacheKeyEn = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
+              const cacheKeyVi = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_VI_ONLY`;
+              const isAudioEnReady = Boolean(audioPlayer.getCachedAudio(cacheKeyEn, 'aura-asteria-en'));
+              const isAudioViReady = Boolean(audioPlayer.getCachedAudio(cacheKeyVi, 'aura-asteria-en'));
 
               return (
                 <div
@@ -1412,10 +1774,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                             {item.hints.length} Hints
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className={`w-2 h-2 rounded-full ${isAudioReady ? 'bg-emerald-500' : 'bg-amber-400'}`} />
-                          <span className="text-[10px] font-mono text-zinc-500">
-                            {isAudioReady ? 'Audio Ready' : 'No Cache'}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className={`text-[10px] font-mono font-semibold ${isAudioEnReady ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                            EN {isAudioEnReady ? '✓' : '—'}
+                          </span>
+                          <span className="text-zinc-300">•</span>
+                          <span className={`text-[10px] font-mono font-semibold ${isAudioViReady ? 'text-blue-600' : 'text-zinc-400'}`}>
+                            VI {isAudioViReady ? '✓' : '—'}
                           </span>
                         </div>
                       </div>
@@ -1465,37 +1830,42 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Right: Actions (Play with 1s pause, Synthesize, Edit) */}
+                    {/* Right: Actions */}
                     <div className="flex items-center gap-2 shrink-0 self-end xl:self-center">
-                      {/* Play Combined Audio with 1s Pause */}
+                      {/* Play EN */}
                       <button
-                        onClick={() => handlePlayItemWithPause(item)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 ${
-                          isPlayingThis
+                        onClick={() => handlePlayItemWithPause(item, 'en')}
+                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                          isPlayingThis && playingLang === 'en'
                             ? 'bg-zinc-900 text-white'
                             : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800'
                         }`}
-                        title="Nghe lần lượt từng hint với 1 giây ngừng nghỉ"
+                        title="Nghe tiếng Anh kèm khoảng nghỉ 1s"
                       >
-                        {isPlayingThis ? (
-                          <>
-                            <Square className="w-3.5 h-3.5 text-red-400 fill-current animate-pulse" />
-                            <span>Dừng</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-3.5 h-3.5 text-[#DC2626] fill-current" />
-                            <span>Nghe Thử (1s Pause)</span>
-                          </>
-                        )}
+                        <Play className="w-3.5 h-3.5 text-[#DC2626] fill-current" />
+                        <span>Nghe EN</span>
                       </button>
 
-                      {/* Single Item TTS Synthesizer */}
+                      {/* Play VI */}
                       <button
-                        onClick={() => handleSynthesizeSingleItem(item)}
+                        onClick={() => handlePlayItemWithPause(item, 'vi')}
+                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                          isPlayingThis && playingLang === 'vi'
+                            ? 'bg-zinc-900 text-white'
+                            : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800'
+                        }`}
+                        title="Nghe tiếng Việt kèm khoảng nghỉ 1s"
+                      >
+                        <Play className="w-3.5 h-3.5 text-blue-600 fill-current" />
+                        <span>Nghe VI</span>
+                      </button>
+
+                      {/* Synthesize Audio */}
+                      <button
+                        onClick={() => handleSynthesizeSingleItem(item, 'both')}
                         disabled={isSynthesizing}
                         className="p-2 rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-100 text-zinc-600 disabled:opacity-50 cursor-pointer transition-all"
-                        title="Tổng hợp âm thanh mới cho item này"
+                        title="Tổng hợp audio EN & VI mới cho item này"
                       >
                         {isSynthesizing ? (
                           <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
@@ -1512,13 +1882,26 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <Edit3 className="w-3.5 h-3.5 text-zinc-500" />
                         <span>Sửa Text</span>
                       </button>
+
+                      {/* Delete Item */}
+                      <button
+                        onClick={() => setItemToDelete({
+                          sessionNumber: item.sessionNumber,
+                          itemId: item.id,
+                          itemNumber: item.itemNumber
+                        })}
+                        className="p-2 rounded-xl border border-zinc-200 hover:bg-red-50 text-zinc-400 hover:text-[#DC2626] hover:border-red-200 cursor-pointer transition-all"
+                        title="Xóa câu này"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
 
       {/* ==================================================================== */}
@@ -1712,66 +2095,219 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
               </div>
 
-              {/* 4. Source Vocab & Pedagogy Matrix */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-zinc-50/80 rounded-2xl border border-zinc-200/60">
-                {/* Source Course Level & Lessons */}
-                <div>
-                  <label className="font-bold text-zinc-700 block mb-1 uppercase font-mono tracking-wider text-[10px]">
-                    Nguồn Từ Vựng Giáo Trình
+              {/* 4. Source Vocab & Pedagogy Matrix (3-Layer Filter) */}
+              <div className="space-y-4 p-4.5 bg-zinc-50/90 rounded-2xl border border-zinc-200/80">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-zinc-800 uppercase font-mono tracking-wider text-[10px] flex items-center gap-2">
+                    <BookOpen className="w-3.5 h-3.5 text-[#DC2626]" />
+                    <span>Nguồn Từ Vựng Giáo Trình (3-Layer Curriculum Filter)</span>
                   </label>
-                  <select
-                    value={genSourceLevel}
-                    onChange={(e) => setGenSourceLevel(e.target.value as any)}
-                    className="w-full p-2 bg-white border border-zinc-200 rounded-xl font-medium focus:ring-2 focus:ring-[#DC2626]/20 text-xs mb-2"
-                  >
-                    <option value="LEVEL_A">Level A - Foundation (Days 1..15)</option>
-                    <option value="LEVEL_B_EREL">Level B - EREL Listening (Days 1..15)</option>
-                    <option value="LEVEL_B_ERES">Level B - ERES Speaking (Days 1..15)</option>
-                    <option value="ALL">Tất cả giáo trình (All Levels)</option>
-                  </select>
+                  <span className="text-[10px] text-zinc-500 font-mono">
+                    Đã chọn <strong className="text-[#DC2626]">{genSelectedVocabIds.length}</strong> / {allAvailableSeedChunks.length} từ vựng hạt giống
+                  </span>
+                </div>
 
-                  <div className="text-[10px] text-zinc-500 font-mono flex items-center justify-between">
-                    <span>Đã chọn {genSelectedLessonIds.length} bài</span>
-                    <span className="text-[#DC2626] font-bold">~{extractedSeedVocabCount} core chunks</span>
+                {/* Layer 1: Khóa học (Course Level) & Pedagogy */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Layer 1: Khóa học */}
+                  <div>
+                    <label className="font-bold text-zinc-700 block mb-1 uppercase font-mono tracking-wider text-[10px]">
+                      Layer 1: Khóa Học (Course Level)
+                    </label>
+                    <select
+                      value={genSourceLevel}
+                      onChange={(e) => setGenSourceLevel(e.target.value as any)}
+                      className="w-full p-2 bg-white border border-zinc-200 rounded-xl font-medium focus:ring-2 focus:ring-[#DC2626]/20 text-xs"
+                    >
+                      <option value="LEVEL_A">Level A - Foundation (Days 1..15)</option>
+                      <option value="LEVEL_B_EREL">Level B - EREL Listening (Days 1..15)</option>
+                      <option value="LEVEL_B_ERES">Level B - ERES Speaking (Days 1..15)</option>
+                      <option value="ALL">Tất Cả Giáo Trình (All Levels)</option>
+                    </select>
+                  </div>
+
+                  {/* Difficulty Selector */}
+                  <div>
+                    <label className="font-bold text-zinc-700 block mb-1 uppercase font-mono tracking-wider text-[10px]">
+                      Độ Khó (Pedagogy Difficulty)
+                    </label>
+                    <select
+                      value={genDifficulty}
+                      onChange={(e) => setGenDifficulty(e.target.value as any)}
+                      className="w-full p-2 bg-white border border-zinc-200 rounded-xl font-medium focus:ring-2 focus:ring-[#DC2626]/20 text-xs"
+                    >
+                      <option value="Easy (A1-A2)">Easy (A1-A2) - Đơn giản, trực diện</option>
+                      <option value="Medium (B1)">Medium (B1) - Đàm thoại thực tế & Collocations</option>
+                      <option value="Hard (B2-C1)">Hard (B2-C1) - Idioms & Cấu trúc nâng cao</option>
+                    </select>
+                  </div>
+
+                  {/* Relevance Selector */}
+                  <div>
+                    <label className="font-bold text-zinc-700 block mb-1 uppercase font-mono tracking-wider text-[10px]">
+                      Mức Độ Liên Tưởng (Relevance)
+                    </label>
+                    <select
+                      value={genRelevance}
+                      onChange={(e) => setGenRelevance(e.target.value as any)}
+                      className="w-full p-2 bg-white border border-zinc-200 rounded-xl font-medium focus:ring-2 focus:ring-[#DC2626]/20 text-xs"
+                    >
+                      <option value="Thấp (Brainstorming ngẫu nhiên)">Thấp (Brainstorming ngẫu nhiên)</option>
+                      <option value="Vừa (Tương quan ngữ cảnh)">Vừa (Tương quan ngữ cảnh)</option>
+                      <option value="Cao (Gắn kết câu chuyện logic)">Cao (Gắn kết câu chuyện logic)</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Difficulty Selector */}
-                <div>
-                  <label className="font-bold text-zinc-700 block mb-1 uppercase font-mono tracking-wider text-[10px]">
-                    Độ Khó (Pedagogy Difficulty)
-                  </label>
-                  <select
-                    value={genDifficulty}
-                    onChange={(e) => setGenDifficulty(e.target.value as any)}
-                    className="w-full p-2 bg-white border border-zinc-200 rounded-xl font-medium focus:ring-2 focus:ring-[#DC2626]/20 text-xs"
-                  >
-                    <option value="Easy (A1-A2)">Easy (A1-A2) - Đơn giản, trực diện</option>
-                    <option value="Medium (B1)">Medium (B1) - Đàm thoại thực tế & Collocations</option>
-                    <option value="Hard (B2-C1)">Hard (B2-C1) - Idioms & Cấu trúc nâng cao</option>
-                  </select>
-                  <span className="text-[10px] text-zinc-400 mt-1 block font-mono">
-                    Điều chỉnh ngữ nghĩa gợi ý và độ phức tạp câu.
-                  </span>
+                {/* Layer 2: Lesson Days Multi-Select */}
+                <div className="space-y-1.5 pt-2 border-t border-zinc-200/60">
+                  <div className="flex items-center justify-between text-[10px] font-mono">
+                    <span className="font-bold text-zinc-600 uppercase">Layer 2: Chọn Bài Học Cụ Thể (Lesson Days)</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setGenSelectedLessonIds(genAvailableLessons.map(l => l.id))}
+                        className="text-[#DC2626] hover:underline cursor-pointer font-bold"
+                      >
+                        Chọn Tất Cả Bài ({genAvailableLessons.length})
+                      </button>
+                      <span>•</span>
+                      <button
+                        type="button"
+                        onClick={() => setGenSelectedLessonIds([])}
+                        className="text-zinc-500 hover:underline cursor-pointer"
+                      >
+                        Bỏ Chọn Hết
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-white rounded-xl border border-zinc-200">
+                    {genAvailableLessons.map(lesson => {
+                      const isSelected = genSelectedLessonIds.includes(lesson.id);
+                      return (
+                        <button
+                          key={lesson.id}
+                          type="button"
+                          onClick={() => {
+                            setGenSelectedLessonIds(prev => 
+                              isSelected ? prev.filter(id => id !== lesson.id) : [...prev, lesson.id]
+                            );
+                          }}
+                          className={`px-2 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border ${
+                            isSelected
+                              ? 'bg-zinc-900 text-white border-zinc-900 shadow-2xs'
+                              : 'bg-zinc-50 text-zinc-500 border-zinc-200 hover:bg-zinc-100'
+                          }`}
+                        >
+                          {lesson.title.replace(/Lesson\s*/i, 'Day ')}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Relevance Selector */}
-                <div>
-                  <label className="font-bold text-zinc-700 block mb-1 uppercase font-mono tracking-wider text-[10px]">
-                    Mức Độ Liên Tưởng (Relevance)
-                  </label>
-                  <select
-                    value={genRelevance}
-                    onChange={(e) => setGenRelevance(e.target.value as any)}
-                    className="w-full p-2 bg-white border border-zinc-200 rounded-xl font-medium focus:ring-2 focus:ring-[#DC2626]/20 text-xs"
-                  >
-                    <option value="Thấp (Brainstorming ngẫu nhiên)">Thấp (Brainstorming ngẫu nhiên)</option>
-                    <option value="Vừa (Tương quan ngữ cảnh)">Vừa (Tương quan ngữ cảnh)</option>
-                    <option value="Cao (Gắn kết câu chuyện logic)">Cao (Gắn kết câu chuyện logic)</option>
-                  </select>
-                  <span className="text-[10px] text-zinc-400 mt-1 block font-mono">
-                    Mức độ mạch lạc giữa các gợi ý trong cùng 1 item.
-                  </span>
+                {/* Layer 3: Category Filter & Vocab Selection List */}
+                <div className="space-y-2 pt-2 border-t border-zinc-200/60">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="font-bold text-zinc-600 uppercase text-[10px] font-mono">
+                      Layer 3: Chọn Từ Vựng Làm Gợi Ý Hạt Giống (Hint 1)
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {/* Category Dropdown */}
+                      <select
+                        value={genCategoryFilter}
+                        onChange={(e) => setGenCategoryFilter(e.target.value)}
+                        className="p-1 px-2 bg-white border border-zinc-200 rounded-lg text-[11px] font-bold text-zinc-700"
+                      >
+                        <option value="all">Tất Cả Thể Loại ({allAvailableSeedChunks.length})</option>
+                        {availableCategories.map(cat => (
+                          <option key={cat} value={cat}>
+                            {cat.toUpperCase()} ({allAvailableSeedChunks.filter(c => c.category === cat).length})
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Quick Select / Deselect All Filtered Words */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentFilteredIds = filteredSeedChunks.map(c => c.id);
+                          setGenSelectedVocabIds(prev => Array.from(new Set([...prev, ...currentFilteredIds])));
+                        }}
+                        className="p-1 px-2 rounded-lg bg-red-50 text-[#DC2626] border border-red-200 text-[10px] font-bold hover:bg-red-100 cursor-pointer"
+                      >
+                        Chọn Tất Cả ({filteredSeedChunks.length})
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentFilteredIds = new Set(filteredSeedChunks.map(c => c.id));
+                          setGenSelectedVocabIds(prev => prev.filter(id => !currentFilteredIds.has(id)));
+                        }}
+                        className="p-1 px-2 rounded-lg bg-zinc-100 text-zinc-600 border border-zinc-200 text-[10px] font-bold hover:bg-zinc-200 cursor-pointer"
+                      >
+                        Bỏ Chọn
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Vocab Search */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Tìm từ vựng hoặc nghĩa tiếng Việt để chọn..."
+                      value={genVocabSearch}
+                      onChange={(e) => setGenVocabSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20"
+                    />
+                  </div>
+
+                  {/* Words Chips Grid */}
+                  <div className="p-2 bg-white rounded-xl border border-zinc-200 max-h-40 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
+                    {filteredSeedChunks.length === 0 ? (
+                      <div className="col-span-full p-4 text-center text-xs text-zinc-400">
+                        Không có từ vựng nào khớp với bộ lọc.
+                      </div>
+                    ) : (
+                      filteredSeedChunks.map(chunk => {
+                        const isSelected = genSelectedVocabIds.includes(chunk.id);
+                        return (
+                          <div
+                            key={chunk.id}
+                            onClick={() => {
+                              setGenSelectedVocabIds(prev => 
+                                isSelected ? prev.filter(id => id !== chunk.id) : [...prev, chunk.id]
+                              );
+                            }}
+                            className={`p-1.5 px-2 rounded-lg border text-left transition-all cursor-pointer flex items-center justify-between gap-1.5 ${
+                              isSelected
+                                ? 'bg-red-50/80 border-[#DC2626] text-zinc-900 shadow-2xs'
+                                : 'bg-zinc-50/60 border-zinc-200 text-zinc-400 hover:bg-zinc-100/80'
+                            }`}
+                          >
+                            <div className="truncate flex-1">
+                              <div className="font-bold text-xs truncate text-zinc-900">
+                                {chunk.english}
+                              </div>
+                              <div className="text-[10px] text-zinc-500 italic truncate">
+                                {chunk.vietnamese}
+                              </div>
+                            </div>
+
+                            <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
+                              isSelected ? 'bg-[#DC2626] border-[#DC2626] text-white' : 'border-zinc-300 bg-white'
+                            }`}>
+                              {isSelected && <Check className="w-2.5 h-2.5" />}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1835,48 +2371,30 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       </div>
                     </div>
 
+                    {/* Master System Prompt Editor */}
                     <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="font-bold text-zinc-600 font-mono text-[10px]">
-                          Master System Prompt Editor
-                        </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="font-bold text-zinc-600 font-mono text-[10px]">Master System Prompt</label>
                         <button
                           type="button"
                           onClick={() => setGenMasterPrompt(DEFAULT_IMPROV_MASTER_PROMPT)}
-                          className="text-[10px] text-[#DC2626] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                          className="text-[10px] text-[#DC2626] hover:underline font-mono"
                         >
-                          <RotateCcw className="w-3 h-3" />
-                          <span>Khôi phục Prompt mặc định</span>
+                          Khôi phục mặc định
                         </button>
                       </div>
-
-                      {/* Variables chips */}
-                      <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                        <span className="text-[10px] text-zinc-400 font-mono">Biến có sẵn:</span>
-                        {['{{difficulty}}', '{{relevance}}', '{{vocabList}}', '{{itemCount}}'].map(tag => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => setGenMasterPrompt(prev => prev + ' ' + tag)}
-                            className="text-[10px] font-mono bg-white border border-zinc-200 hover:border-zinc-400 px-1.5 py-0.5 rounded text-zinc-600 cursor-pointer"
-                          >
-                            {tag}
-                          </button>
-                        ))}
-                      </div>
-
                       <textarea
-                        rows={6}
                         value={genMasterPrompt}
                         onChange={(e) => setGenMasterPrompt(e.target.value)}
-                        className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl font-mono text-[11px] leading-relaxed text-zinc-800 focus:ring-2 focus:ring-[#DC2626]/20"
+                        rows={6}
+                        className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl font-mono text-[11px] leading-relaxed text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20"
                       />
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* 6. Live Generation Progress Console */}
+              {/* Progress & Live Logs (when generating) */}
               {isGenerating && (
                 <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-3 font-mono">
                   <div className="flex items-center justify-between text-xs">
@@ -2088,7 +2606,202 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       )}
 
       {/* ==================================================================== */}
-      {/* 5. MODAL: PACKAGE BATCH AUDIO GENERATOR */}
+      {/* 5. MODAL: + THÊM CÂU HỎI MỚI (ADD ITEM MODAL) */}
+      {/* ==================================================================== */}
+      {isAddItemModalOpen && newItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-[#E8E8EC] shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-[#E8E8EC] flex items-center justify-between bg-zinc-50/80">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-red-50 text-[#DC2626] border border-red-100">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-base text-zinc-900">
+                    Thêm Câu Hỏi / Bài Tập Mới (Add Item)
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Tùy chỉnh số lượng gợi ý và vai trò ngữ nghĩa cho câu trong Session.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => { setIsAddItemModalOpen(false); setNewItem(null); }}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/50 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Configuration Strip: Select Session & Add/Remove Hints */}
+            <div className="p-4 bg-zinc-50 border-b border-zinc-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <label className="font-bold text-zinc-700 font-mono text-[10px] uppercase">
+                  Session Đích:
+                </label>
+                <select
+                  value={newItem.sessionNumber}
+                  onChange={(e) => {
+                    const sNum = parseInt(e.target.value) || 1;
+                    handleOpenAddItemModal(sNum);
+                  }}
+                  className="p-1.5 px-3 bg-white border border-zinc-200 rounded-xl font-bold font-mono text-zinc-800"
+                >
+                  {activePackage?.sessions.map(s => (
+                    <option key={s.sessionNumber} value={s.sessionNumber}>
+                      Session {s.sessionNumber} ({s.hcTotal} Hints)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewItem(prev => {
+                      if (!prev || prev.hints.length <= 1) return prev;
+                      const nextHints = prev.hints.slice(0, -1);
+                      return { ...prev, hints: nextHints, hcTotal: nextHints.length };
+                    });
+                  }}
+                  disabled={newItem.hints.length <= 1}
+                  className="p-1.5 px-3 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-zinc-600 disabled:opacity-40 cursor-pointer font-bold flex items-center gap-1"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                  <span>Bớt Gợi Ý</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewItem(prev => {
+                      if (!prev || prev.hints.length >= 8) return prev;
+                      const nextIdx = prev.hints.length + 1;
+                      const newHint: ImprovHint = {
+                        id: `h_new_${Date.now()}_${nextIdx}`,
+                        text: '',
+                        translation: '',
+                        typeFunction: 'Động từ · Ending',
+                        itemIndex: nextIdx
+                      };
+                      return { ...prev, hints: [...prev.hints, newHint], hcTotal: nextIdx };
+                    });
+                  }}
+                  disabled={newItem.hints.length >= 8}
+                  className="p-1.5 px-3 rounded-xl bg-zinc-900 hover:bg-black text-white cursor-pointer font-bold flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm Gợi Ý</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Editable Hint Cards */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              {newItem.hints.map((hint, idx) => (
+                <div key={hint.id || idx} className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-zinc-600">
+                      GỢI Ý #{hint.itemIndex} {idx === 0 ? '(Keyword / Từ vựng cốt lõi)' : idx === newItem.hints.length - 1 ? '(Ending / Vị ngữ kết thúc)' : '(Logic Connector / Ẩn dụ)'}
+                    </span>
+
+                    <select
+                      value={hint.typeFunction}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        setNewItem(prev => {
+                          if (!prev) return null;
+                          const nextHints = prev.hints.map((h, hIdx) => hIdx === idx ? { ...h, typeFunction: newType } : h);
+                          return { ...prev, hints: nextHints };
+                        });
+                      }}
+                      className="text-xs font-bold p-1 px-2.5 bg-white border border-zinc-200 rounded-lg focus:ring-2 focus:ring-[#DC2626]/20"
+                    >
+                      {HINT_TYPE_OPTIONS.map(ht => (
+                        <option key={ht} value={ht}>{ht}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
+                      English Hint Text (1-2 từ hoặc cụm ngắn)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: loose change / in other words / wrap up..."
+                      value={hint.text}
+                      onChange={(e) => {
+                        const newText = e.target.value;
+                        setNewItem(prev => {
+                          if (!prev) return null;
+                          const nextHints = prev.hints.map((h, hIdx) => hIdx === idx ? { ...h, text: newText } : h);
+                          return { ...prev, hints: nextHints };
+                        });
+                      }}
+                      className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold text-zinc-900 focus:ring-2 focus:ring-[#DC2626]/20"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
+                      Vietnamese Translation
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: tiền lẻ / nói cách khác / chốt lại..."
+                      value={hint.translation}
+                      onChange={(e) => {
+                        const newVi = e.target.value;
+                        setNewItem(prev => {
+                          if (!prev) return null;
+                          const nextHints = prev.hints.map((h, hIdx) => hIdx === idx ? { ...h, translation: newVi } : h);
+                          return { ...prev, hints: nextHints };
+                        });
+                      }}
+                      className="w-full p-2 bg-white border border-zinc-200 rounded-xl text-xs text-zinc-700 italic focus:ring-2 focus:ring-[#DC2626]/20"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="px-6 py-4 border-t border-[#E8E8EC] bg-zinc-50/80 flex items-center justify-between">
+              <button
+                onClick={() => { setIsAddItemModalOpen(false); setNewItem(null); }}
+                className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer"
+              >
+                Hủy Bỏ
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleSaveNewItem(false)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-zinc-300 hover:bg-zinc-100 text-xs font-bold text-zinc-800 transition-all cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Lưu Câu Mới</span>
+                </button>
+
+                <button
+                  onClick={() => handleSaveNewItem(true)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                >
+                  <Volume2 className="w-4 h-4" />
+                  <span>Lưu & Tạo Audio</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 6. MODAL: PACKAGE BATCH AUDIO GENERATOR */}
       {/* ==================================================================== */}
       {isBatchAudioModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
@@ -2118,6 +2831,51 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             </div>
 
             <div className="p-6 space-y-4">
+              {/* Target Language Selection: EN, VI, or BOTH */}
+              <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60 space-y-2">
+                <div className="font-bold text-zinc-800 text-xs">Mục Tiêu Ngôn Ngữ Audio (Audio Target)</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    disabled={isBatchRunning}
+                    onClick={() => setBatchTargetLang('en')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      batchTargetLang === 'en'
+                        ? 'bg-zinc-900 text-white border-zinc-900'
+                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <span>Tiếng Anh (EN)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isBatchRunning}
+                    onClick={() => setBatchTargetLang('vi')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      batchTargetLang === 'vi'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <span>Tiếng Việt (VI)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isBatchRunning}
+                    onClick={() => setBatchTargetLang('both')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      batchTargetLang === 'both'
+                        ? 'bg-[#DC2626] text-white border-[#DC2626]'
+                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <span>Cả 2 (EN & VI)</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Workers count selector */}
               <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
                 <div>
@@ -2197,7 +2955,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       )}
 
       {/* ==================================================================== */}
-      {/* 6. MODAL: IMPORT EXCEL SPREADSHEET */}
+      {/* 7. MODAL: IMPORT EXCEL SPREADSHEET */}
       {/* ==================================================================== */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
@@ -2344,7 +3102,44 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       )}
 
       {/* ==================================================================== */}
-      {/* 7. MODAL: DELETE PACKAGE CONFIRMATION */}
+      {/* 8. MODAL: DELETE ITEM CONFIRMATION */}
+      {/* ==================================================================== */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl border border-[#E8E8EC] shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#DC2626] border border-red-100 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h3 className="font-display font-bold text-base text-zinc-900">
+                Xác Nhận Xóa Câu #{itemToDelete.itemNumber}?
+              </h3>
+              <p className="text-xs text-zinc-500">
+                Bạn có chắc chắn muốn xóa câu này khỏi Session {itemToDelete.sessionNumber}? Các câu sau sẽ tự động được đánh số lại.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={() => setItemToDelete(null)}
+                className="py-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                onClick={handleConfirmDeleteItem}
+                className="py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+              >
+                Xác Nhận Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 9. MODAL: DELETE PACKAGE CONFIRMATION */}
       {/* ==================================================================== */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">

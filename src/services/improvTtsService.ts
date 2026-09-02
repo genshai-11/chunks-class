@@ -7,6 +7,7 @@ import {
 } from './googleTtsService';
 import { 
   ImprovItem, 
+  ImprovHint,
   ImprovPackage, 
   LanguageMode 
 } from '../types';
@@ -166,6 +167,22 @@ function blobToBase64(blob: Blob): Promise<string> {
 // 2. Improv TTS Engine Implementation
 // --------------------------------------------------------------------------
 
+/**
+ * Helper to determine English vs Vietnamese text for a given hint.
+ */
+export function getHintTextByLanguage(hint: ImprovHint, lang: 'en' | 'vi'): string {
+  const isTextVi = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(hint.text);
+  if (lang === 'vi') {
+    if (isTextVi) return hint.text;
+    if (hint.translation && hint.translation.trim()) return hint.translation;
+    return hint.text;
+  } else {
+    if (!isTextVi) return hint.text;
+    if (hint.translation && hint.translation.trim()) return hint.translation;
+    return hint.text;
+  }
+}
+
 class ImprovTtsEngine {
   private currentAudio: HTMLAudioElement | null = null;
   private activeSequenceId: number = 0;
@@ -201,13 +218,13 @@ class ImprovTtsEngine {
 
     for (let i = 0; i < hints.length; i++) {
       const hint = hints[i];
-      const cleanEn = sanitizeSpeechText(hint.text);
-      const cleanVi = hint.translation ? sanitizeSpeechText(hint.translation) : '';
+      const enText = sanitizeSpeechText(getHintTextByLanguage(hint, 'en'));
+      const viText = sanitizeSpeechText(getHintTextByLanguage(hint, 'vi'));
 
       if (normalizedMode === 'EN_ONLY') {
-        if (cleanEn) {
+        if (enText) {
           const res = await audioPlayer.synthesizeSingleChunk({
-            text: cleanEn,
+            text: enText,
             language: 'en',
             voiceName: voiceEn,
             forceRegenerate
@@ -218,9 +235,9 @@ class ImprovTtsEngine {
           }
         }
       } else if (normalizedMode === 'VI_ONLY') {
-        if (cleanVi) {
+        if (viText) {
           const res = await audioPlayer.synthesizeSingleChunk({
-            text: cleanVi,
+            text: viText,
             language: 'vi',
             voiceName: voiceVi,
             forceRegenerate
@@ -232,9 +249,9 @@ class ImprovTtsEngine {
         }
       } else if (normalizedMode === 'EN_THEN_VI') {
         // Synthesize EN then VI for each hint
-        if (cleanEn) {
+        if (enText) {
           const resEn = await audioPlayer.synthesizeSingleChunk({
-            text: cleanEn,
+            text: enText,
             language: 'en',
             voiceName: voiceEn,
             forceRegenerate
@@ -244,9 +261,9 @@ class ImprovTtsEngine {
             hintBuffers.push(bufEn);
           }
         }
-        if (cleanVi) {
+        if (viText) {
           const resVi = await audioPlayer.synthesizeSingleChunk({
-            text: cleanVi,
+            text: viText,
             language: 'vi',
             voiceName: voiceVi,
             forceRegenerate
@@ -258,9 +275,9 @@ class ImprovTtsEngine {
         }
       } else if (normalizedMode === 'VI_THEN_EN') {
         // Synthesize VI then EN for each hint
-        if (cleanVi) {
+        if (viText) {
           const resVi = await audioPlayer.synthesizeSingleChunk({
-            text: cleanVi,
+            text: viText,
             language: 'vi',
             voiceName: voiceVi,
             forceRegenerate
@@ -270,9 +287,9 @@ class ImprovTtsEngine {
             hintBuffers.push(bufVi);
           }
         }
-        if (cleanEn) {
+        if (enText) {
           const resEn = await audioPlayer.synthesizeSingleChunk({
-            text: cleanEn,
+            text: enText,
             language: 'en',
             voiceName: voiceEn,
             forceRegenerate
@@ -441,8 +458,9 @@ export const synthesizeItemCombinedAudio = (
   item: ImprovItem,
   voiceEn?: string,
   voiceVi?: string,
-  langMode?: LanguageMode
-) => improvTts.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, langMode);
+  langMode?: LanguageMode,
+  forceRegenerate?: boolean
+) => improvTts.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, langMode, forceRegenerate);
 
 export const preparePackageAudio = (
   pkg: ImprovPackage,

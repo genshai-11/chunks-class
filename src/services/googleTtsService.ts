@@ -21,6 +21,7 @@ export interface PrepareAudioOptions {
   voiceVi?: string;
   provider?: AudioProvider;
   target?: AudioBatchTarget;
+  langMode?: LanguageMode;
   forceRegenerate?: boolean;
   onProgress?: (current: number, total: number, statusText: string) => void;
   concurrency?: number;
