@@ -2185,6 +2185,12 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-white rounded-xl border border-zinc-200">
                     {genAvailableLessons.map(lesson => {
                       const isSelected = genSelectedLessonIds.includes(lesson.id);
+                      const label = lesson.day_number === 0 
+                        ? 'Word List' 
+                        : lesson.day_number !== undefined 
+                          ? `Day ${lesson.day_number}` 
+                          : String(lesson.lesson_title || lesson.title || 'Day').replace(/Lesson\s*/i, 'Day ');
+
                       return (
                         <button
                           key={lesson.id}
@@ -2200,7 +2206,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                               : 'bg-zinc-50 text-zinc-500 border-zinc-200 hover:bg-zinc-100'
                           }`}
                         >
-                          {lesson.title.replace(/Lesson\s*/i, 'Day ')}
+                          {label}
                         </button>
                       );
                     })}
