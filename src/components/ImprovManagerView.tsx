@@ -23,7 +23,8 @@ import {
   DEFAULT_IMPROV_LLM_CONFIG,
   DEEPSEEK_DEFAULT_CONFIG,
   GOOGLE_GENAI_DEFAULT_CONFIG,
-  executeLlmGeneration
+  executeLlmGeneration,
+  testLlmConnection
 } from '../services/improvService';
 import { 
   improvTts, 
@@ -430,6 +431,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
   const handleProviderChange = (newProvider: ImprovLlmProvider) => {
     setGenProvider(newProvider);
+    setTestResult(null);
     if (newProvider === 'DEEPSEEK') {
       setGenEndpoint(DEEPSEEK_DEFAULT_CONFIG.endpoint);
       setGenApiKey(DEEPSEEK_DEFAULT_CONFIG.apiKey);
@@ -444,6 +446,36 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setGenModel('gpt-4o-mini');
     }
   };
+
+  // Connection test state
+  const [isTestingConnection, setIsTestingConnection] = useState<boolean>(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; latencyMs: number; message: string; model?: string } | null>(null);
+
+  const handleTestConnection = async () => {
+    setIsTestingConnection(true);
+    setTestResult(null);
+    try {
+      const res = await testLlmConnection({
+        provider: genProvider,
+        endpoint: genEndpoint,
+        apiKey: genApiKey,
+        model: genModel,
+        masterPrompt: genMasterPrompt,
+        temperature: 0.7,
+        maxTokens: 50
+      });
+      setTestResult(res);
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        latencyMs: 0,
+        message: err?.message || 'Lỗi kết nối tới mô hình AI'
+      });
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
+
 
   // Generator Live Execution
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -507,7 +539,12 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   useEffect(() => {
     const lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
     setGenAvailableLessons(lessons);
-    setGenSelectedLessonIds(lessons.map(l => l.id));
+    // Default genSelectedLessonIds MUST be single lesson (e.g. Day 1) or empty to prevent initial lag
+    if (lessons.length > 0) {
+      setGenSelectedLessonIds([lessons[0].id]);
+    } else {
+      setGenSelectedLessonIds([]);
+    }
   }, [genSourceLevel]);
 
   // Layer 3: Extract all seed chunks from selected lessons
@@ -537,15 +574,24 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       const matchCat = genCategoryFilter === 'all' || c.category === genCategoryFilter;
       const matchSearch = !genVocabSearch.trim() || 
         c.english.toLowerCase().includes(genVocabSearch.toLowerCase()) || 
-        c.vietnamese.toLowerCase().includes(genVocabSearch.toLowerCase());
+        (c.vietnamese && c.vietnamese.toLowerCase().includes(genVocabSearch.toLowerCase()));
       return matchCat && matchSearch;
     });
   }, [allAvailableSeedChunks, genCategoryFilter, genVocabSearch]);
 
-  // Auto-select all seed chunks when lessons or category changes
+  // Slice visible chunks to maximum 80 items to prevent DOM freezing/lag
+  const visibleSeedChunks = useMemo(() => {
+    return filteredSeedChunks.slice(0, 80);
+  }, [filteredSeedChunks]);
+
+  // Fast O(1) set lookup for selected vocabularies
+  const selectedVocabSet = useMemo(() => new Set(genSelectedVocabIds), [genSelectedVocabIds]);
+
+  // Auto-select seed chunks when selected lessons change
   useEffect(() => {
-    setGenSelectedVocabIds(filteredSeedChunks.map(c => c.id));
-  }, [filteredSeedChunks.length, genCategoryFilter]);
+    setGenSelectedVocabIds(allAvailableSeedChunks.map(c => c.id));
+  }, [allAvailableSeedChunks]);
+
 
   // Update session configs when total sessions count changes
   useEffect(() => {
@@ -1046,15 +1092,17 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setPackages(prev => [createdPkg, ...prev]);
       setActivePackageId(createdPkg.id);
       setActiveSessionTab('all');
+      setViewMode('table');
 
       setGenProgress({ percent: 100, current: totalItemsCount, total: totalItemsCount, message: 'Hoàn tất sinh Package thành công!' });
       addGenLog('success', `Đã lưu Package "${createdPkg.title}" với ${totalItemsCount} items!`);
 
-      confetti({ particleCount: 80, spread: 80, origin: { y: 0.5 } });
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
 
       setTimeout(() => {
         setIsGeneratorOpen(false);
-      }, 1500);
+      }, 600);
+
 
     } catch (err: any) {
       addGenLog('error', `Thất bại: ${err?.message || 'Lỗi không xác định trong quá trình sinh AI'}`);
@@ -2283,46 +2331,62 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   </div>
 
                   {/* Words Chips Grid */}
-                  <div className="p-2 bg-white rounded-xl border border-zinc-200 max-h-40 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
-                    {filteredSeedChunks.length === 0 ? (
-                      <div className="col-span-full p-4 text-center text-xs text-zinc-400">
-                        Không có từ vựng nào khớp với bộ lọc.
+                  <div className="space-y-1.5">
+                    {filteredSeedChunks.length > 80 && (
+                      <div className="text-[11px] font-mono text-zinc-600 bg-amber-50/90 border border-amber-200/80 px-3 py-1.5 rounded-xl flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span>
+                            Hiển thị <strong>80</strong> / <strong>{filteredSeedChunks.length}</strong> từ vựng (dùng thanh tìm kiếm để lọc nhanh)
+                          </span>
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-800">
+                          {genSelectedVocabIds.length} từ đã chọn làm seed
+                        </span>
                       </div>
-                    ) : (
-                      filteredSeedChunks.map(chunk => {
-                        const isSelected = genSelectedVocabIds.includes(chunk.id);
-                        return (
-                          <div
-                            key={chunk.id}
-                            onClick={() => {
-                              setGenSelectedVocabIds(prev => 
-                                isSelected ? prev.filter(id => id !== chunk.id) : [...prev, chunk.id]
-                              );
-                            }}
-                            className={`p-1.5 px-2 rounded-lg border text-left transition-all cursor-pointer flex items-center justify-between gap-1.5 ${
-                              isSelected
-                                ? 'bg-red-50/80 border-[#DC2626] text-zinc-900 shadow-2xs'
-                                : 'bg-zinc-50/60 border-zinc-200 text-zinc-400 hover:bg-zinc-100/80'
-                            }`}
-                          >
-                            <div className="truncate flex-1">
-                              <div className="font-bold text-xs truncate text-zinc-900">
-                                {chunk.english}
-                              </div>
-                              <div className="text-[10px] text-zinc-500 italic truncate">
-                                {chunk.vietnamese}
-                              </div>
-                            </div>
-
-                            <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                              isSelected ? 'bg-[#DC2626] border-[#DC2626] text-white' : 'border-zinc-300 bg-white'
-                            }`}>
-                              {isSelected && <Check className="w-2.5 h-2.5" />}
-                            </span>
-                          </div>
-                        );
-                      })
                     )}
+
+                    <div className="p-2 bg-white rounded-xl border border-zinc-200 max-h-44 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
+                      {filteredSeedChunks.length === 0 ? (
+                        <div className="col-span-full p-4 text-center text-xs text-zinc-400">
+                          Không có từ vựng nào khớp với bộ lọc.
+                        </div>
+                      ) : (
+                        visibleSeedChunks.map(chunk => {
+                          const isSelected = selectedVocabSet.has(chunk.id);
+                          return (
+                            <div
+                              key={chunk.id}
+                              onClick={() => {
+                                setGenSelectedVocabIds(prev => 
+                                  isSelected ? prev.filter(id => id !== chunk.id) : [...prev, chunk.id]
+                                );
+                              }}
+                              className={`p-1.5 px-2 rounded-lg border text-left transition-all cursor-pointer flex items-center justify-between gap-1.5 ${
+                                isSelected
+                                  ? 'bg-red-50/80 border-[#DC2626] text-zinc-900 shadow-2xs'
+                                  : 'bg-zinc-50/60 border-zinc-200 text-zinc-400 hover:bg-zinc-100/80'
+                              }`}
+                            >
+                              <div className="truncate flex-1">
+                                <div className="font-bold text-xs truncate text-zinc-900">
+                                  {chunk.english}
+                                </div>
+                                <div className="text-[10px] text-zinc-500 italic truncate">
+                                  {chunk.vietnamese}
+                                </div>
+                              </div>
+
+                              <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
+                                isSelected ? 'bg-[#DC2626] border-[#DC2626] text-white' : 'border-zinc-300 bg-white'
+                              }`}>
+                                {isSelected && <Check className="w-2.5 h-2.5" />}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2420,7 +2484,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         {genProvider === 'DEEPSEEK' ? (
                           <select
                             value={genModel}
-                            onChange={(e) => setGenModel(e.target.value)}
+                            onChange={(e) => {
+                              setGenModel(e.target.value);
+                              setTestResult(null);
+                            }}
                             className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800 focus:outline-none focus:border-blue-500"
                           >
                             <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 • Khuyên Dùng)</option>
@@ -2429,7 +2496,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         ) : genProvider === 'GOOGLE_GENAI' ? (
                           <select
                             value={genModel}
-                            onChange={(e) => setGenModel(e.target.value)}
+                            onChange={(e) => {
+                              setGenModel(e.target.value);
+                              setTestResult(null);
+                            }}
                             className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800 focus:outline-none focus:border-purple-500"
                           >
                             <option value="gemini-2.5-flash">gemini-2.5-flash (Gemini 2.5 Flash • Cực Nhanh & Mới Nhất)</option>
@@ -2441,7 +2511,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                           <input
                             type="text"
                             value={genModel}
-                            onChange={(e) => setGenModel(e.target.value)}
+                            onChange={(e) => {
+                              setGenModel(e.target.value);
+                              setTestResult(null);
+                            }}
                             placeholder="e.g. gpt-4o-mini"
                             className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800"
                           />
@@ -2462,6 +2535,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                             value={genApiKey}
                             onChange={(e) => {
                               setGenApiKey(e.target.value);
+                              setTestResult(null);
                               if (genProvider === 'GOOGLE_GENAI') {
                                 localStorage.setItem('chunks_gemini_api_key', e.target.value);
                               }
@@ -2484,7 +2558,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <input
                           type="text"
                           value={genEndpoint}
-                          onChange={(e) => setGenEndpoint(e.target.value)}
+                          onChange={(e) => {
+                            setGenEndpoint(e.target.value);
+                            setTestResult(null);
+                          }}
                           disabled={genProvider !== 'CUSTOM_OPENAI'}
                           className={`w-full p-2 rounded-lg font-mono text-xs border ${
                             genProvider !== 'CUSTOM_OPENAI' ? 'bg-zinc-100 text-zinc-500 border-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
@@ -2492,6 +2569,50 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         />
                       </div>
                     </div>
+
+                    {/* Model Connection Test Button & High-Contrast Result Badge */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-zinc-200/60">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          disabled={isTestingConnection || isGenerating}
+                          onClick={handleTestConnection}
+                          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                            isTestingConnection
+                              ? 'bg-zinc-100 text-zinc-400 border-zinc-200 cursor-not-allowed'
+                              : 'bg-white hover:bg-zinc-50 text-zinc-800 border-zinc-300 hover:border-zinc-400 shadow-2xs active:scale-95'
+                          }`}
+                        >
+                          {isTestingConnection ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#DC2626]" />
+                          ) : (
+                            <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                          )}
+                          <span>{isTestingConnection ? 'Đang Kiểm Tra Kết Nối...' : '⚡ Kiểm Tra Kết Nối (Test Model)'}</span>
+                        </button>
+
+                        {/* Result Badge */}
+                        {testResult && (
+                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border shadow-2xs animate-in fade-in duration-200 ${
+                            testResult.success
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              : 'bg-red-50 text-red-800 border-red-300'
+                          }`}>
+                            <span>{testResult.success ? '🟢' : '🔴'}</span>
+                            <span>
+                              {testResult.success
+                                ? `Kết nối thành công (${testResult.latencyMs}ms) - Model: ${testResult.model || genModel}`
+                                : `Lỗi: ${testResult.message}`}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <span className="text-[10px] text-zinc-400 font-mono">
+                        Provider: <strong>{genProvider}</strong> • Model: <strong>{genModel}</strong>
+                      </span>
+                    </div>
+
 
                     {/* Master System Prompt Editor */}
                     <div>
