@@ -417,7 +417,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
   // LLM Config
   const [isLlmAccordionOpen, setIsLlmAccordionOpen] = useState<boolean>(false);
-  const [genEndpoint, setGenEndpoint] = useState<string>('http://34.56.142.97:20128/v1');
+  const [genEndpoint, setGenEndpoint] = useState<string>('https://rbkqhml.abc-tunnel.us/v1');
   const [genApiKey, setGenApiKey] = useState<string>('sk-ba04304581f3081e-z78xn9-2f401106');
   const [genShowApiKey, setGenShowApiKey] = useState<boolean>(false);
   const [genModel, setGenModel] = useState<string>('ds/deepseek-v4-flash');

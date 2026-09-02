@@ -96,7 +96,7 @@ You MUST output ONLY a valid JSON object matching the following structure withou
 }`;
 
 export const DEFAULT_IMPROV_LLM_CONFIG: ImprovLLMConfig = {
-  endpoint: 'http://34.56.142.97:20128/v1',
+  endpoint: 'https://rbkqhml.abc-tunnel.us/v1',
   apiKey: 'sk-ba04304581f3081e-z78xn9-2f401106',
   model: 'ds/deepseek-v4-flash',
   masterPrompt: DEFAULT_IMPROV_MASTER_PROMPT,
