@@ -100,3 +100,17 @@ When executing tasks across this repository, agents MUST operate within their de
    - Cloud TTS / Deepgram: Controlled caching and batch worker pool.
    - Firebase Hosting: ≤ 10 GB storage, 360 MB/day egress.
 4. **Continuous Verification**: Prior to merge, execute `bun x tsc --noEmit` and `bun run build`.
+
+---
+
+## 🛡️ 6. Strict Multi-Agent Orchestration & Subagent Delegation (IMMUTABLE GUARDRAIL)
+
+1. **Zero Monolithic Execution in Parent Context**:
+   - The Lead Orchestrator (Parent Agent) is **STRICTLY PROHIBITED** from using write tools (`replace_file_content`, `write_to_file`) to implement features or write production code directly.
+2. **Mandatory Subagent Dispatching (`invoke_subagent`)**:
+   - ALL code generation, UI component development, service modifications, and bug fixes MUST be decomposed into clear domain tasks and dispatched to specialized subagents via `invoke_subagent`.
+3. **Parent Lead Orchestrator Responsibilities**:
+   - Understand requirements and compile architectural contracts & domain prompts for subagents.
+   - Dispatch subagents and monitor their background execution.
+   - Coordinate cross-component handoffs.
+   - Execute QA verification gates (`bun x tsc --noEmit`, `bun run build`, and `git push`).
