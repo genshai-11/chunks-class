@@ -454,56 +454,80 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
 
       {/* 2. Main Curriculum Hero & Action Toolbar */}
       <div className="bg-white rounded-2xl border border-[#E8E8EC] p-5 md:p-6 shadow-xs space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Header Title & Info */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626] uppercase tracking-wider">
+        {/* Row 1: Full-Width Title & Metadata */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#E8E8EC] pb-5">
+          <div className="space-y-1.5 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#DC2626]/10 text-[#DC2626] uppercase tracking-wider">
                 Curriculum Explorer
               </span>
               <span className="text-xs text-zinc-500 font-mono">
                 • {totalChunksInLevel.toLocaleString()} Chunks • {lessons.length} Bài học
               </span>
+              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-700">
+                {selectedLevel.replace(/_/g, ' ')}
+              </span>
             </div>
-            <h1 className="font-display font-bold text-xl lg:text-2xl text-[#0A0A0A] tracking-tight">
+            <h1 className="font-display font-bold text-2xl md:text-3xl text-[#0A0A0A] tracking-tight">
               {currentCourse?.title || `Course ${selectedLevel}`}
             </h1>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-500 max-w-3xl leading-relaxed">
               {currentCourse?.description || 'Hệ thống cụm câu phản xạ chia theo Day & Part chuẩn sư phạm.'}
             </p>
           </div>
 
-          {/* Action Toolbar */}
+          {/* Action buttons on top right */}
           <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            {/* Course Level Selector Tabs */}
-            <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200/80 gap-1 flex-wrap">
-              {availableCourses.map((course) => {
-                const isSelected = selectedLevel === course.level_code || selectedLevel === course.id;
-                return (
-                  <button
-                    key={course.id}
-                    type="button"
-                    onClick={() => { 
-                      setSelectedLevel(course.level_code); 
-                      setSelectedDay('all');
-                      setSelectedCategory('all');
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      isSelected ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
-                    }`}
-                  >
-                    {getCourseTabLabel(course)}
-                  </button>
-                );
-              })}
-            </div>
+            <button
+              onClick={() => setIsExcelModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#E8E8EC] hover:border-[#DC2626] text-zinc-800 hover:text-[#DC2626] text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <Upload className="w-4 h-4 text-[#DC2626]" />
+              <span>Import Excel</span>
+            </button>
+            <button
+              onClick={handleOpenAddChunk}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm Chunk</span>
+            </button>
+          </div>
+        </div>
 
+        {/* Row 2: Course Level Tabs + View Mode + Export Cluster */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Course Level Selector Tabs */}
+          <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200/80 gap-1 flex-wrap">
+            {availableCourses.map((course) => {
+              const isSelected = selectedLevel === course.level_code || selectedLevel === course.id;
+              return (
+                <button
+                  key={course.id}
+                  type="button"
+                  onClick={() => { 
+                    setSelectedLevel(course.level_code); 
+                    setSelectedDay('all');
+                    setSelectedCategory('all');
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    isSelected ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                  }`}
+                >
+                  {getCourseTabLabel(course)}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Action cluster: View Mode + Export */}
+          <div className="flex items-center gap-2 flex-wrap">
             {/* View Mode Toggle */}
             <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200/80">
               <button
                 type="button"
                 onClick={() => setViewMode('CARDS')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewMode === 'CARDS' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                 }`}
                 title="Chế độ thẻ chi tiết"
@@ -513,7 +537,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode('COMPACT_TABLE')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewMode === 'COMPACT_TABLE' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                 }`}
                 title="Chế độ bảng rút gọn"
@@ -521,24 +545,6 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                 Bảng Gọn
               </button>
             </div>
-
-            {/* Import Excel Action */}
-            <button
-              onClick={() => setIsExcelModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-zinc-200 hover:border-[#DC2626] text-zinc-800 hover:text-[#DC2626] text-xs font-bold transition-all cursor-pointer shadow-xs"
-            >
-              <Upload className="w-3.5 h-3.5 text-[#DC2626]" />
-              <span>Import Excel</span>
-            </button>
-
-            {/* Add Chunk Action */}
-            <button
-              onClick={handleOpenAddChunk}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Thêm Chunk</span>
-            </button>
 
             {/* Export Menu */}
             <div className="flex items-center gap-1 bg-[#FAFAFA] border border-[#E8E8EC] p-1 rounded-xl">
@@ -560,8 +566,8 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
           </div>
         </div>
 
-        {/* 3. Filter & Search Controls */}
-        <div className="pt-4 border-t border-[#E8E8EC] grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Row 3: Filter & Search Controls */}
+        <div className="pt-3 border-t border-[#E8E8EC] grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Search Box */}
           <div className="relative">
             <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />

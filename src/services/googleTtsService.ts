@@ -181,6 +181,86 @@ export function normalizeLanguageMode(mode?: LanguageMode): 'EN_ONLY' | 'VI_ONLY
   return 'EN_THEN_VI';
 }
 
+const DB_NAME = 'chunks_audio_db';
+const DB_VERSION = 1;
+const STORE_NAME = 'audio_blobs';
+
+function openIndexedDB(): Promise<IDBDatabase | null> {
+  if (typeof window === 'undefined' || !window.indexedDB) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (e: any) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+        }
+      };
+      request.onsuccess = (e: any) => resolve(e.target.result);
+      request.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+async function saveAudioBlobToDB(key: string, base64: string): Promise<void> {
+  const db = await openIndexedDB();
+  if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.put({ key, base64, timestamp: Date.now() });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+async function loadAllAudioBlobsFromDB(): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const db = await openIndexedDB();
+  if (!db) return map;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.getAll();
+      request.onsuccess = (e: any) => {
+        const records = e.target.result || [];
+        for (const r of records) {
+          if (r && r.key && r.base64) {
+            map.set(r.key, r.base64);
+          }
+        }
+        resolve(map);
+      };
+      request.onerror = () => resolve(map);
+    } catch {
+      resolve(map);
+    }
+  });
+}
+
+async function clearAudioBlobsFromDB(): Promise<void> {
+  const db = await openIndexedDB();
+  if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
 class AudioPlayService {
   private currentAudio: HTMLAudioElement | null = null;
   private audioCache = new Map<string, string>(); // key (model::text) -> base64 dataUri or blobUrl
@@ -191,6 +271,7 @@ class AudioPlayService {
   private loadingListeners: ((isLoading: boolean) => void)[] = [];
   private customApiKey: string = '';
   private activeSequenceId: number = 0;
+  private isDBLoaded: boolean = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -205,7 +286,27 @@ class AudioPlayService {
           this.activeProvider = 'DEEPGRAM_AURA';
         }
       } catch {}
+
+      // Asynchronously restore persistent audio cache from IndexedDB
+      loadAllAudioBlobsFromDB().then((map) => {
+        for (const [k, v] of map) {
+          this.audioCache.set(k, v);
+        }
+        this.isDBLoaded = true;
+      }).catch((e) => {
+        console.warn('[AudioService] Could not load persisted audio cache from IndexedDB:', e);
+      });
     }
+  }
+
+  public setCache(key: string, base64: string) {
+    this.audioCache.set(key, base64);
+    saveAudioBlobToDB(key, base64).catch(() => {});
+  }
+
+  public clearAllCache() {
+    this.audioCache.clear();
+    clearAudioBlobsFromDB().catch(() => {});
   }
 
   public setAudioProvider(provider: AudioProvider) {
@@ -489,7 +590,7 @@ class AudioPlayService {
         try {
           const base64Audio = await this.synthesizeWithGoogleTTS(cleanText, effectiveViVoice, 1.0);
           if (base64Audio) {
-            this.audioCache.set(cacheKey, base64Audio);
+            this.setCache(cacheKey, base64Audio);
             this.setLastSource('GOOGLE_CLOUD_AI');
             await this.playBase64(base64Audio, speed);
             return;
@@ -526,7 +627,7 @@ class AudioPlayService {
           const dgModel = voiceName.startsWith('aura-') ? voiceName : 'aura-asteria-en';
           const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
           if (base64) {
-            this.audioCache.set(cacheKey, base64);
+            this.setCache(cacheKey, base64);
             this.setLastSource('DEEPGRAM_AURA');
             await this.playBase64(base64, speed);
             return;
@@ -669,7 +770,7 @@ class AudioPlayService {
       try {
         const base64 = await this.synthesizeWithGoogleTTS(cleanText, voiceVi, speed, forceRegenerate);
         if (base64) {
-          this.audioCache.set(cacheKey, base64);
+          this.setCache(cacheKey, base64);
           return { base64, source: 'GOOGLE_CLOUD_AI', voice: voiceVi, language: 'vi' };
         }
       } catch (err: any) {
@@ -695,13 +796,13 @@ class AudioPlayService {
         }
         const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
         if (base64) {
-          this.audioCache.set(cacheKey, base64);
+          this.setCache(cacheKey, base64);
           return { base64, source: 'DEEPGRAM_AURA', voice: dgModel, language: 'en' };
         }
       } else {
         const base64 = await this.synthesizeWithGoogleTTS(cleanText, voiceEn, speed, forceRegenerate);
         if (base64) {
-          this.audioCache.set(cacheKey, base64);
+          this.setCache(cacheKey, base64);
           return { base64, source: 'GOOGLE_CLOUD_AI', voice: voiceEn, language: 'en' };
         }
       }
@@ -717,44 +818,47 @@ class AudioPlayService {
     chunks: { english: string; vietnamese?: string; audio_url?: string | null; chunk_id?: string }[],
     optionsOrVoiceEn?: PrepareAudioOptions | string,
     providerLegacy: AudioProvider = 'DEEPGRAM_AURA',
-    onProgressLegacy?: (current: number, total: number, statusText: string) => void,
-    concurrencyLegacy: number = 4
+    onProgressLegacy?: (current: number, total: number, statusText: string) => void
   ): Promise<{ prepared: number; failed: number; total: number; skipped: number }> {
-    let opts: PrepareAudioOptions;
-    if (typeof optionsOrVoiceEn === 'object') {
-      opts = optionsOrVoiceEn;
-    } else {
+    let opts: PrepareAudioOptions = {};
+
+    if (typeof optionsOrVoiceEn === 'string') {
       opts = {
-        voiceEn: optionsOrVoiceEn || 'aura-asteria-en',
+        voiceEn: optionsOrVoiceEn,
         voiceVi: 'vi-VN-Neural2-A',
         provider: providerLegacy,
         target: 'BOTH',
+        forceRegenerate: false,
         onProgress: onProgressLegacy,
-        concurrency: concurrencyLegacy
+        concurrency: 4
       };
+    } else if (optionsOrVoiceEn) {
+      opts = optionsOrVoiceEn;
     }
 
-    const voiceEn = opts.voiceEn || 'aura-asteria-en';
-    const voiceVi = opts.voiceVi || 'vi-VN-Neural2-A';
-    const target: AudioBatchTarget = opts.target || 'BOTH';
     const provider = opts.provider || this.activeProvider;
+    const voiceEn = opts.voiceEn || (provider === 'DEEPGRAM_AURA' ? 'aura-asteria-en' : 'en-US-Journey-F');
+    const voiceVi = opts.voiceVi || 'vi-VN-Neural2-A';
+    const target = opts.target || 'BOTH';
     const forceRegenerate = opts.forceRegenerate || false;
     const onProgress = opts.onProgress;
-    const concurrency = opts.concurrency || 4;
+    const concurrency = Math.max(1, Math.min(8, opts.concurrency || 4));
+
+    const total = chunks.length;
+    if (total === 0) return { prepared: 0, failed: 0, total: 0, skipped: 0 };
+
+    const isDeepgram = provider === 'DEEPGRAM_AURA';
+    const modelEn = isDeepgram && !voiceEn.startsWith('aura-') ? 'aura-asteria-en' : voiceEn;
+    const modelVi = (voiceVi && voiceVi.startsWith('vi-')) ? voiceVi : 'vi-VN-Neural2-A';
 
     let prepared = 0;
     let failed = 0;
     let skipped = 0;
-    let cursor = 0;
-    const total = chunks.length;
-
-    const isDeepgram = provider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-');
-    const modelEn = isDeepgram ? (voiceEn.startsWith('aura-') ? voiceEn : 'aura-asteria-en') : (voiceEn && !voiceEn.startsWith('vi-') ? voiceEn : 'en-US-Journey-F');
-    const modelVi = (voiceVi && voiceVi.startsWith('vi-')) ? voiceVi : 'vi-VN-Neural2-A';
+    let chunkIndex = 0;
 
     const worker = async () => {
-      while (cursor < total) {
-        const index = cursor++;
+      while (chunkIndex < total) {
+        const index = chunkIndex++;
         const c = chunks[index];
         const cleanEn = sanitizeSpeechText(c.english);
         const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
@@ -768,7 +872,7 @@ class AudioPlayService {
                 if (isDeepgram) {
                   const base64 = await deepgramTts.synthesizeText(cleanEn, modelEn);
                   if (base64) {
-                    this.audioCache.set(cacheKeyEn, base64);
+                    this.setCache(cacheKeyEn, base64);
                     prepared++;
                   } else {
                     failed++;
@@ -776,7 +880,7 @@ class AudioPlayService {
                 } else {
                   const base64 = await this.synthesizeWithGoogleTTS(cleanEn, modelEn, 1.0, forceRegenerate);
                   if (base64) {
-                    this.audioCache.set(cacheKeyEn, base64);
+                    this.setCache(cacheKeyEn, base64);
                     prepared++;
                   } else {
                     failed++;
@@ -800,7 +904,7 @@ class AudioPlayService {
             try {
               const base64 = await this.synthesizeWithGoogleTTS(cleanVi, modelVi, 1.0, forceRegenerate);
               if (base64) {
-                this.audioCache.set(cacheKeyVi, base64);
+                this.setCache(cacheKeyVi, base64);
                 prepared++;
                 success = true;
               }
@@ -887,7 +991,7 @@ class AudioPlayService {
     const data = await response.json();
     const audioContent = data.audioContent;
     if (audioContent) {
-      this.audioCache.set(cacheKey, audioContent);
+      this.setCache(cacheKey, audioContent);
     }
     return audioContent || '';
   }
