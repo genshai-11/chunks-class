@@ -49,7 +49,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
     { id: 'schedule', label: '15-Session Schedule', icon: <Calendar className="w-4 h-4" /> },
     { id: 'projector', label: 'In-Class Presentation', icon: <Mic2 className="w-4 h-4" />, badge: 'LIVE' },
     { id: 'curriculum', label: 'Curriculum & Chunks', icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'audio-hub', label: 'Voice & GCS Storage', icon: <Volume2 className="w-4 h-4" /> },
+    { id: 'audio-manager', label: 'Audio Management', icon: <Volume2 className="w-4 h-4" /> },
     { id: 'settings', label: 'Cohort Settings', icon: <Settings className="w-4 h-4" /> }
   ];
 
@@ -190,12 +190,12 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
 
         <div className="flex items-center gap-2.5 pt-1">
           <div className="w-7 h-7 rounded-full bg-[#DC2626]/10 border border-[#DC2626]/20 flex items-center justify-center font-bold text-xs text-[#DC2626] shrink-0">
-            T
+            C
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
               <div className="text-xs font-bold text-[#0A0A0A] truncate">
-                teacher_genshai
+                Chunker
               </div>
               <div className="text-[10px] text-[#16A34A] font-medium flex items-center gap-1 font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse"></span>

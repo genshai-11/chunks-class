@@ -23,7 +23,6 @@ import {
   Keyboard, 
   Eye, 
   EyeOff,
-  Music,
   GraduationCap,
   Sparkles,
   RefreshCw,
@@ -88,9 +87,10 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   );
   const [speed, setSpeed] = useState<number>(audioSettings?.default_speed || 1.0);
   const [repeatCount, setRepeatCount] = useState<number>(audioSettings?.repeat_count || 1);
-  const [languageMode, setLanguageMode] = useState<LanguageMode>(
-    audioSettings?.language_mode || 'EN_THEN_VI'
-  );
+  const [languageMode, setLanguageMode] = useState<LanguageMode>(() => {
+    if (audioSettings?.language_mode === 'VI_ONLY') return 'VI_ONLY';
+    return 'EN_ONLY';
+  });
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const [gcsConnectionStatus, setGcsConnectionStatus] = useState<'Connected' | 'Reconnecting'>('Connected');
@@ -548,13 +548,20 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       }`}>
         {/* Left: Lesson Context, Quick Switcher & Dynamic Progress */}
         <div className="flex items-center gap-2.5 min-w-0 flex-wrap sm:flex-nowrap">
+          {/* Day pill + Level badge */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-[#DC2626] text-white shrink-0">
+            <span 
+              className="font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-[#DC2626] text-white shrink-0 shadow-2xs"
+              title={`Day ${activeLesson?.day_number ?? 1}`}
+            >
               Day {activeLesson?.day_number ?? 1}
             </span>
-            <span className={`text-xs font-mono font-bold px-2 py-1 rounded-lg border shrink-0 ${
-              highContrastDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'
-            }`}>
+            <span 
+              className={`text-xs font-mono font-bold px-2 py-1 rounded-lg border shrink-0 ${
+                highContrastDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'
+              }`}
+              title={`Course Level: ${courseLevel}`}
+            >
               {courseLevel === 'LEVEL_A'
                 ? 'Level A'
                 : courseLevel === 'LEVEL_B_EREL'
@@ -565,7 +572,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             </span>
           </div>
 
-          {/* Quick Lesson Switcher Dropdown */}
+          {/* Quick Lesson Switcher Dropdown with clear truncate */}
           <div className="relative flex items-center min-w-0">
             <BookOpen className="w-3.5 h-3.5 text-[#DC2626] absolute left-2.5 pointer-events-none shrink-0" />
             <select
@@ -598,40 +605,42 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             </select>
           </div>
 
-          {/* Part & Class Progress Pills */}
+          {/* Part & Class Progress Pills with Tooltips */}
           <div className="hidden md:flex items-center gap-1.5 ml-1 shrink-0">
             {currentPart && (
               <button
+                type="button"
                 onClick={() => setIsPartsDrawerOpen(true)}
-                className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
+                className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
                   highContrastDark
-                    ? 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                    ? 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'
                     : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                 }`}
-                title={`Part ${currentPart.part_index}: ${currentPart.category.toUpperCase()} (${partChunkCurrent}/${partChunkTotal} chunks)`}
+                title={`Part ${currentPart.part_index}: ${currentPart.category.toUpperCase()} (${partChunkCurrent}/${partChunkTotal} chunks, ${partProgressPercent}%)`}
               >
-                <Layers className="w-3 h-3 text-[#DC2626]" />
+                <Layers className="w-3.5 h-3.5 text-[#DC2626]" />
                 <span>Part {currentPart.part_index}: {partProgressPercent}%</span>
               </button>
             )}
 
             <button
+              type="button"
               onClick={() => setIsChunkListOpen(true)}
-              className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border transition-all cursor-pointer flex items-center gap-1 ${
+              className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
                 highContrastDark
-                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800'
+                  ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800 hover:bg-emerald-900/60'
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
               }`}
-              title={`Class Total: ${currentChunkIndex + 1}/${chunks.length} chunks`}
+              title={`Tổng tiến độ bài học: ${currentChunkIndex + 1}/${chunks.length} chunks (${classProgressPercent}%)`}
             >
               <span>{currentChunkIndex + 1}/{chunks.length}</span>
             </button>
           </div>
         </div>
 
-        {/* Right: Minimal Smart Action Cluster */}
+        {/* Right Action Cluster: Provider switcher, Voice model selector, Fullscreen toggle, Theme toggle, Exit button with tooltips */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Quick Voice & Audio Provider Switcher */}
+          {/* Audio Engine Provider Switcher */}
           <select
             value={audioProvider}
             onChange={(e) => {
@@ -644,11 +653,12 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 setSelectedVoice('en-US-Journey-F');
               }
             }}
-            className={`text-xs font-mono font-bold rounded-lg px-2 py-1 border transition-all cursor-pointer ${
+            className={`text-xs font-mono font-bold rounded-lg px-2.5 py-1 border transition-all cursor-pointer shadow-2xs ${
               highContrastDark 
-                ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
-                : 'bg-zinc-50 text-zinc-800 border-zinc-200 hover:bg-white'
+                ? 'bg-zinc-800 text-zinc-200 border-zinc-700 hover:border-zinc-500' 
+                : 'bg-zinc-50 text-zinc-800 border-zinc-200 hover:bg-white hover:border-zinc-300'
             }`}
+            title="Audio Engine Provider (Deepgram Aura / Google Cloud TTS)"
           >
             <option value="DEEPGRAM_AURA">Deepgram Aura</option>
             <option value="GOOGLE_TTS">Google Cloud TTS</option>
@@ -668,11 +678,12 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 true
               );
             }}
-            className={`hidden sm:block text-xs font-mono font-medium rounded-lg px-2 py-1 border transition-all cursor-pointer ${
+            className={`hidden sm:block text-xs font-mono font-medium rounded-lg px-2.5 py-1 border transition-all cursor-pointer shadow-2xs ${
               highContrastDark 
-                ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
-                : 'bg-zinc-50 text-zinc-800 border-zinc-200 hover:bg-white'
+                ? 'bg-zinc-800 text-zinc-200 border-zinc-700 hover:border-zinc-500' 
+                : 'bg-zinc-50 text-zinc-800 border-zinc-200 hover:bg-white hover:border-zinc-300'
             }`}
+            title="Voice Model Selection"
           >
             {audioProvider === 'DEEPGRAM_AURA' ? (
               DEEPGRAM_AURA_VOICES.map(v => (
@@ -689,44 +700,37 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             )}
           </select>
 
-          {/* Prepare Audio Button */}
+          {/* Fullscreen Toggle */}
           <button
-            onClick={() => setIsPrepModalOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 transition-all cursor-pointer"
-            title="Pre-generate & cache all audio for this lesson"
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
-            <span className="hidden md:inline font-mono">Prepare</span>
-          </button>
-
-          {/* Dark / Light Toggle */}
-          <button
-            onClick={() => setHighContrastDark(prev => !prev)}
-            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-              highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'
-            }`}
-            title="Toggle Contrast"
-          >
-            {highContrastDark ? <SunMedium className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
-          </button>
-
-          {/* Fullscreen */}
-          <button
+            type="button"
             onClick={handleToggleFullscreen}
-            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-              highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-2xs ${
+              highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700'
             }`}
-            title="Fullscreen Mode (F / F5)"
+            title="Toàn Màn Hình / Fullscreen (F / F5)"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+
+          {/* Theme Toggle */}
+          <button
+            type="button"
+            onClick={() => setHighContrastDark(prev => !prev)}
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-2xs ${
+              highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-amber-400' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-600'
+            }`}
+            title="Giao Diện Sáng / Tối (High Contrast Theme)"
+          >
+            {highContrastDark ? <SunMedium className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {/* Exit Presentation */}
           {onExit && (
             <button
+              type="button"
               onClick={onExit}
-              className="p-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer"
-              title="Thoát chế độ lớp học"
+              className="p-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-[#DC2626] hover:text-red-700 transition-colors cursor-pointer shadow-2xs"
+              title="Thoát Chế Độ Trình Chiếu (Exit Presentation)"
             >
               <X className="w-4 h-4" />
             </button>
@@ -778,16 +782,6 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           >
             {currentChunk.english}
           </h1>
-
-          {/* Beat Prosody Notation */}
-          {currentChunk.beat_prosody && (
-            <div className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#DC2626]/[0.06] border border-[#DC2626]/20">
-              <Music className="w-4 h-4 text-[#DC2626] shrink-0 animate-pulse" />
-              <span className="text-sm md:text-base font-mono font-bold tracking-wide text-[#DC2626]">
-                {currentChunk.beat_prosody}
-              </span>
-            </div>
-          )}
 
           {/* Vietnamese Subtitle (Toggleable via Key V) */}
           <div className="min-h-[4rem] mt-6 flex items-center justify-center">
@@ -937,19 +931,28 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
         {/* Center: Language Mode & Drill Speed */}
         <div className="hidden lg:flex items-center gap-2">
-          {/* Sequence mode */}
+          {/* Language Mode Selector: EN and VI */}
           <div className="flex items-center gap-0.5 bg-zinc-100 border border-zinc-200 p-0.5 rounded-lg text-xs font-mono font-bold">
-            {(['EN_THEN_VI', 'EN_ONLY', 'VI_ONLY', 'VI_THEN_EN'] as LanguageMode[]).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setLanguageMode(mode)}
-                className={`px-2 py-1 rounded-md transition-colors cursor-pointer text-[11px] ${
-                  languageMode === mode ? 'bg-[#DC2626] text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
-                }`}
-              >
-                {mode === 'EN_THEN_VI' ? 'EN ➔ VI' : mode === 'EN_ONLY' ? 'EN' : mode === 'VI_ONLY' ? 'VI' : 'VI ➔ EN'}
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => setLanguageMode('EN_ONLY')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] ${
+                languageMode === 'EN_ONLY' ? 'bg-[#DC2626] text-white shadow-xs font-extrabold' : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+              title="Phát Tiếng Anh (EN Only - Deepgram / Google TTS EN / GCS)"
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguageMode('VI_ONLY')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] ${
+                languageMode === 'VI_ONLY' ? 'bg-[#DC2626] text-white shadow-xs font-extrabold' : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+              title="Phát Tiếng Việt (VI Only - Google TTS vi-VN-Neural2-A)"
+            >
+              VI
+            </button>
           </div>
 
           {/* Speed */}

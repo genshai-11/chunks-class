@@ -142,4 +142,4 @@ export interface LessonPart {
   chunk_count: number;
 }
 
-export type NavTab = 'schedule' | 'projector' | 'curriculum' | 'audio-hub' | 'settings';
+export type NavTab = 'schedule' | 'projector' | 'curriculum' | 'audio-hub' | 'audio-manager' | 'settings';

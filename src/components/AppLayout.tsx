@@ -77,6 +77,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               {activeTab === 'schedule' && '15-Session Cohort Schedule'}
               {activeTab === 'projector' && 'Classroom Presentation Drill'}
               {activeTab === 'curriculum' && 'Curriculum Repository (7,851 Chunks)'}
+              {activeTab === 'audio-manager' && 'Quản Lý Âm Thanh Toàn Diện (Audio Management)'}
               {activeTab === 'audio-hub' && 'Voice Engine & Audio Hub'}
               {activeTab === 'settings' && 'Cohort & System Settings'}
             </h2>

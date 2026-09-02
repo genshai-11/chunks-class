@@ -6,6 +6,7 @@ import { ScheduleView } from './components/ScheduleView';
 import { ClassroomPresentation } from './components/ClassroomPresentation';
 import { CurriculumExplorer } from './components/CurriculumExplorer';
 import { AudioHubView } from './components/AudioHubView';
+import { AudioManagerView } from './components/AudioManagerView';
 import { SettingsView } from './components/SettingsView';
 import { LessonExcelUploader } from './components/LessonExcelUploader';
 import { getFirestoreCohorts, saveFirestoreCohort, deleteFirestoreCohort, DEFAULT_COURSES } from './services/firestoreService';
@@ -229,6 +230,14 @@ export const App: React.FC = () => {
         <CurriculumExplorer
           onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
           defaultCourseLevel={activeCohort.level_code}
+        />
+      )}
+
+      {activeTab === 'audio-manager' && (
+        <AudioManagerView
+          cohortAudioSettings={activeCohort.audio_settings}
+          onUpdateAudioSettings={handleUpdateAudioSettings}
+          onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
         />
       )}
 

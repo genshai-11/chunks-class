@@ -40,6 +40,29 @@ interface CurriculumExplorerProps {
   defaultCourseLevel?: CourseLevel;
 }
 
+const CATEGORY_NAMES: Record<string, string> = {
+  vocab: 'Vocabulary',
+  phrase: 'Spoken Phrase',
+  sentence: 'Pattern Sentence',
+  dialogue: 'Dialogue',
+  monologue: 'Monologue',
+  idiom: 'Idiom',
+  slang: 'Slang',
+  grammar: 'Collocation (Ngữ pháp)',
+  word_family: 'Word Family',
+  review: 'Review',
+  verb: 'Verb / Action',
+};
+
+const getCategoryLabel = (category: string): string => {
+  if (CATEGORY_NAMES[category]) {
+    return CATEGORY_NAMES[category];
+  }
+  return category
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   onLaunchProjectorForLesson,
   defaultCourseLevel = 'LEVEL_B_ERES'
@@ -93,20 +116,6 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const [isBulkImportOpen, setIsBulkImportOpen] = useState<boolean>(false);
   const [bulkImportText, setBulkImportText] = useState<string>('');
   const [isExcelModalOpen, setIsExcelModalOpen] = useState<boolean>(false);
-
-  const categories: { id: ChunkCategory | 'all'; label: string }[] = [
-    { id: 'all', label: 'Tất Cả Thể Loại (All Categories)' },
-    { id: 'vocab', label: 'Vocabulary (Từ vựng cụm)' },
-    { id: 'phrase', label: 'Spoken Phrase (Cụm nói)' },
-    { id: 'sentence', label: 'Pattern Sentence (Mẫu câu)' },
-    { id: 'dialogue', label: 'Dialogue (Hội thoại)' },
-    { id: 'monologue', label: 'Monologue (Độc thoại)' },
-    { id: 'idiom', label: 'Idiom (Thành ngữ)' },
-    { id: 'slang', label: 'Slang (Tiếng lóng)' },
-    { id: 'grammar', label: 'Collocation (Ngữ pháp)' },
-    { id: 'word_family', label: 'Word Family (Họ từ)' },
-    { id: 'review', label: 'Review (Ôn tập)' }
-  ];
 
   // Load lessons from Firestore / Local storage
   const loadCurriculumData = async () => {
@@ -231,6 +240,61 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const totalChunksInLevel = useMemo(() => {
     return lessons.reduce((acc, l) => acc + (l.chunks?.length || 0), 0);
   }, [lessons]);
+
+  // Compute chunks in current scope (either all lessons in level or specific selected day)
+  const currentScopeChunks = useMemo(() => {
+    const list: ChunkItem[] = [];
+    lessons.forEach(lesson => {
+      if (selectedDay === 'all' || lesson.day_number === selectedDay) {
+        if (lesson.chunks && Array.isArray(lesson.chunks)) {
+          list.push(...lesson.chunks);
+        }
+      }
+    });
+    return list;
+  }, [lessons, selectedDay]);
+
+  // Dynamically compute unique categories present in current selection with chunk counts
+  const dynamicCategories = useMemo(() => {
+    const categoryCounts = new Map<string, number>();
+    currentScopeChunks.forEach(chunk => {
+      if (chunk.category) {
+        categoryCounts.set(chunk.category, (categoryCounts.get(chunk.category) || 0) + 1);
+      }
+    });
+
+    const result: { id: ChunkCategory; label: string; count: number }[] = [];
+    categoryCounts.forEach((count, catId) => {
+      result.push({
+        id: catId as ChunkCategory,
+        label: getCategoryLabel(catId),
+        count
+      });
+    });
+
+    // Preferred order for common chunk categories
+    const PREFERRED_ORDER = ['phrase', 'sentence', 'vocab', 'dialogue', 'monologue', 'idiom', 'slang', 'grammar', 'word_family', 'review', 'verb'];
+    result.sort((a, b) => {
+      const idxA = PREFERRED_ORDER.indexOf(a.id);
+      const idxB = PREFERRED_ORDER.indexOf(b.id);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.label.localeCompare(b.label);
+    });
+
+    return result;
+  }, [currentScopeChunks]);
+
+  // Reset selected category to 'all' if current selectedCategory doesn't exist in the new selection
+  useEffect(() => {
+    if (selectedCategory !== 'all') {
+      const exists = dynamicCategories.some(c => c.id === selectedCategory);
+      if (!exists) {
+        setSelectedCategory('all');
+      }
+    }
+  }, [dynamicCategories, selectedCategory]);
 
   // Open modal to add chunk
   const handleOpenAddChunk = () => {
@@ -389,59 +453,41 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
       )}
 
       {/* 2. Main Curriculum Hero & Action Toolbar */}
-      <div className="bg-white rounded-2xl border border-[#E8E8EC] p-6 shadow-xs space-y-6">
+      <div className="bg-white rounded-2xl border border-[#E8E8EC] p-5 md:p-6 shadow-xs space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626] uppercase">
-                Curriculum & Chunks Management
+          {/* Header Title & Info */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626] uppercase tracking-wider">
+                Curriculum Explorer
               </span>
-              <span className="text-xs text-[#6B6B6B] font-mono">
-                • {totalChunksInLevel.toLocaleString()} Chunks • {lessons.length} Lessons
+              <span className="text-xs text-zinc-500 font-mono">
+                • {totalChunksInLevel.toLocaleString()} Chunks • {lessons.length} Bài học
               </span>
             </div>
-            <h1 className="font-display font-bold text-2xl text-[#0A0A0A] tracking-tight">
+            <h1 className="font-display font-bold text-xl lg:text-2xl text-[#0A0A0A] tracking-tight">
               {currentCourse?.title || `Course ${selectedLevel}`}
             </h1>
-            <p className="text-xs text-zinc-500 mt-0.5">
+            <p className="text-xs text-zinc-500">
               {currentCourse?.description || 'Hệ thống cụm câu phản xạ chia theo Day & Part chuẩn sư phạm.'}
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 flex-wrap">
-            {/* View Mode Toggle */}
-            <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
-              <button
-                type="button"
-                onClick={() => setViewMode('CARDS')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewMode === 'CARDS' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
-                }`}
-                title="Chế độ thẻ chi tiết"
-              >
-                Thẻ Chi Tiết
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('COMPACT_TABLE')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewMode === 'COMPACT_TABLE' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
-                }`}
-                title="Chế độ bảng rút gọn"
-              >
-                Bảng Gọn
-              </button>
-            </div>
-
-            {/* Dynamic Course Pills / Tabs */}
-            <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200 gap-1 flex-wrap">
+          {/* Action Toolbar */}
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            {/* Course Level Selector Tabs */}
+            <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200/80 gap-1 flex-wrap">
               {availableCourses.map((course) => {
                 const isSelected = selectedLevel === course.level_code || selectedLevel === course.id;
                 return (
                   <button
                     key={course.id}
                     type="button"
-                    onClick={() => { setSelectedLevel(course.level_code); setSelectedDay('all'); }}
+                    onClick={() => { 
+                      setSelectedLevel(course.level_code); 
+                      setSelectedDay('all');
+                      setSelectedCategory('all');
+                    }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       isSelected ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                     }`}
@@ -452,10 +498,34 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
               })}
             </div>
 
+            {/* View Mode Toggle */}
+            <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200/80">
+              <button
+                type="button"
+                onClick={() => setViewMode('CARDS')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'CARDS' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+                title="Chế độ thẻ chi tiết"
+              >
+                Thẻ Chi Tiết
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('COMPACT_TABLE')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'COMPACT_TABLE' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+                title="Chế độ bảng rút gọn"
+              >
+                Bảng Gọn
+              </button>
+            </div>
+
             {/* Import Excel Action */}
             <button
               onClick={() => setIsExcelModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-zinc-200 hover:border-[#DC2626] text-zinc-800 hover:text-[#DC2626] text-xs font-bold transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-zinc-200 hover:border-[#DC2626] text-zinc-800 hover:text-[#DC2626] text-xs font-bold transition-all cursor-pointer shadow-xs"
             >
               <Upload className="w-3.5 h-3.5 text-[#DC2626]" />
               <span>Import Excel</span>
@@ -464,7 +534,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
             {/* Add Chunk Action */}
             <button
               onClick={handleOpenAddChunk}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Thêm Chunk</span>
@@ -518,15 +588,18 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
             ))}
           </select>
 
-          {/* Category Selector */}
+          {/* Dynamic Category Selector */}
           <select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value as any)}
+            onChange={(e) => setSelectedCategory(e.target.value as ChunkCategory | 'all')}
             className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
           >
-            {categories.map(c => (
+            <option value="all">
+              Tất Cả Thể Loại (All Categories) ({currentScopeChunks.length})
+            </option>
+            {dynamicCategories.map(c => (
               <option key={c.id} value={c.id}>
-                {c.label}
+                {c.label} ({c.count})
               </option>
             ))}
           </select>

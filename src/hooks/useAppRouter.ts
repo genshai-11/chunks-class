@@ -8,7 +8,8 @@ const PATH_TAB_MAP: Record<string, NavTab> = {
   '/projector': 'projector',
   '/curriculum': 'curriculum',
   '/audio-hub': 'audio-hub',
-  '/audio': 'audio-hub',
+  '/audio-manager': 'audio-manager',
+  '/audio': 'audio-manager',
   '/settings': 'settings'
 };
 
@@ -17,6 +18,7 @@ const TAB_PATH_MAP: Record<NavTab, string> = {
   'projector': '/presentation',
   'curriculum': '/curriculum',
   'audio-hub': '/audio-hub',
+  'audio-manager': '/audio-manager',
   'settings': '/settings'
 };
 
