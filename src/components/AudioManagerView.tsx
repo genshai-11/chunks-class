@@ -17,7 +17,7 @@ import {
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
-import { getAllLessons } from '../services/firestoreService';
+import { getAllLessons, addOrUpdateChunk } from '../services/firestoreService';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
 import { 
   Volume2, 
@@ -47,7 +47,9 @@ import {
   BarChart3,
   Sliders,
   Cpu,
-  Info
+  Info,
+  Edit3,
+  Save
 } from 'lucide-react';
 
 interface AudioManagerViewProps {
@@ -119,6 +121,13 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [playingChunkId, setPlayingChunkId] = useState<string | null>(null);
   const [playingLang, setPlayingLang] = useState<'en' | 'vi' | 'sequence' | null>(null);
   const [regeneratingChunkId, setRegeneratingChunkId] = useState<string | null>(null);
+  const [regeneratingTarget, setRegeneratingTarget] = useState<'en' | 'vi' | 'both' | null>(null);
+
+  // Quick Edit State for chunk
+  const [editingChunkId, setEditingChunkId] = useState<string | null>(null);
+  const [editEnText, setEditEnText] = useState<string>('');
+  const [editViText, setEditViText] = useState<string>('');
+  const [isSavingChunk, setIsSavingChunk] = useState<boolean>(false);
 
   // --------------------------------------------------------------------------
   // 5. Batch Generator State & Concurrency Controls
@@ -302,26 +311,91 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     }
   };
 
-  // Single chunk regeneration handler
-  const handleRegenerateSingleChunk = async (chunk: ChunkItem) => {
+  // Single chunk regeneration handler with explicit language target (EN, VI, or BOTH) and text override
+  const handleRegenerateChunkAudio = async (
+    chunk: ChunkItem, 
+    targetLang: 'en' | 'vi' | 'both' = 'both',
+    textEnOverride?: string,
+    textViOverride?: string
+  ) => {
     setRegeneratingChunkId(chunk.chunk_id);
+    setRegeneratingTarget(targetLang);
     try {
-      await audioPlayer.prepareChunksAudio(
-        [chunk],
-        {
-          voiceEn: voiceProfileEn,
-          voiceVi: voiceProfileVi,
-          provider: activeProvider,
-          target: batchTarget,
-          concurrency: 1
+      const enText = sanitizeSpeechText(textEnOverride || chunk.english);
+      const viText = sanitizeSpeechText(textViOverride || chunk.vietnamese || '');
+
+      if (targetLang === 'en' || targetLang === 'both') {
+        if (enText) {
+          await audioPlayer.synthesizeSingleChunk({
+            text: enText,
+            language: 'en',
+            voiceName: voiceProfileEn,
+            provider: activeProvider,
+            forceRegenerate: true
+          });
         }
-      );
-      addLog(`Tạo lại audio thành công cho chunk #${chunk.item_number}: "${chunk.english.slice(0, 30)}..."`, 'success');
+      }
+
+      if (targetLang === 'vi' || targetLang === 'both') {
+        if (viText) {
+          await audioPlayer.synthesizeSingleChunk({
+            text: viText,
+            language: 'vi',
+            voiceName: voiceProfileVi,
+            provider: 'GOOGLE_TTS',
+            forceRegenerate: true
+          });
+        }
+      }
+
+      const langLabel = targetLang === 'en' ? 'Tiếng Anh (EN)' : targetLang === 'vi' ? 'Tiếng Việt (VI)' : 'Cả 2 (EN + VI)';
+      addLog(`Tạo lại audio (${langLabel}) thành công cho chunk #${chunk.item_number}: "${enText.slice(0, 24)}..."`, 'success');
       calculateReadinessStatus();
     } catch (err: any) {
       addLog(`Lỗi tạo audio cho chunk #${chunk.item_number}: ${err?.message || String(err)}`, 'error');
     } finally {
       setRegeneratingChunkId(null);
+      setRegeneratingTarget(null);
+    }
+  };
+
+  // Quick save edited text handler with optional immediate audio synthesis
+  const handleSaveChunkText = async (
+    chunk: ChunkItem, 
+    alsoGenerateAudio?: 'en' | 'vi' | 'both'
+  ) => {
+    if (!inspectingLesson) return;
+    setIsSavingChunk(true);
+    try {
+      const updatedChunk: ChunkItem = {
+        ...chunk,
+        english: editEnText.trim() || chunk.english,
+        vietnamese: editViText.trim() || chunk.vietnamese
+      };
+
+      const updatedLesson = await addOrUpdateChunk(inspectingLesson.id, updatedChunk);
+      if (updatedLesson) {
+        setInspectingLesson(updatedLesson);
+        setLessons(prev => prev.map(l => l.id === updatedLesson.id ? updatedLesson : l));
+        addLog(`Đã cập nhật nội dung văn bản cho chunk #${chunk.item_number}`, 'success');
+      }
+
+      setEditingChunkId(null);
+
+      // Optionally synthesize audio immediately with the updated text
+      if (alsoGenerateAudio) {
+        await handleRegenerateChunkAudio(
+          updatedChunk, 
+          alsoGenerateAudio, 
+          updatedChunk.english, 
+          updatedChunk.vietnamese
+        );
+      }
+    } catch (err: any) {
+      addLog(`Lỗi khi lưu chunk #${chunk.item_number}: ${err?.message || String(err)}`, 'error');
+    } finally {
+      setIsSavingChunk(false);
+      calculateReadinessStatus();
     }
   };
 
@@ -1298,8 +1372,118 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 filteredChunks.map((chunk) => {
                   const isPlayingThis = playingChunkId === chunk.chunk_id;
                   const isRegeneratingThis = regeneratingChunkId === chunk.chunk_id;
+                  const isEditingThis = editingChunkId === chunk.chunk_id;
                   const isEnCached = audioPlayer.getLessonAudioStatus([chunk], voiceProfileEn, voiceProfileVi).enCached > 0;
                   const isViCached = audioPlayer.getLessonAudioStatus([chunk], voiceProfileEn, voiceProfileVi).viCached > 0;
+
+                  if (isEditingThis) {
+                    return (
+                      <div
+                        key={chunk.chunk_id}
+                        className="pt-3 first:pt-0 p-4 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-3 animate-fade-in shadow-xs"
+                      >
+                        {/* Header info */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-xs text-[#DC2626] bg-[#DC2626]/10 px-2 py-0.5 rounded">
+                              Chỉnh sửa Chunk #{chunk.item_number}
+                            </span>
+                            <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-200 text-zinc-700">
+                              {chunk.category || 'vocab'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={isSavingChunk}
+                            onClick={() => setEditingChunkId(null)}
+                            className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer"
+                          >
+                            Hủy
+                          </button>
+                        </div>
+
+                        {/* Text Inputs */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider flex items-center gap-1">
+                              <span>Tiếng Anh</span>
+                              <span className="text-zinc-400 font-normal">(hỗ trợ // để ngắt nhịp)</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={editEnText}
+                              disabled={isSavingChunk}
+                              onChange={(e) => setEditEnText(e.target.value)}
+                              placeholder="English phrase / sentence..."
+                              className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-xl text-xs font-bold text-zinc-900 focus:outline-none focus:border-[#DC2626]"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
+                              Dịch nghĩa Tiếng Việt
+                            </label>
+                            <input
+                              type="text"
+                              value={editViText}
+                              disabled={isSavingChunk}
+                              onChange={(e) => setEditViText(e.target.value)}
+                              placeholder="Vietnamese meaning..."
+                              className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-xl text-xs font-medium text-zinc-900 focus:outline-none focus:border-emerald-600"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                          <button
+                            type="button"
+                            disabled={isSavingChunk}
+                            onClick={() => setEditingChunkId(null)}
+                            className="px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold transition-all cursor-pointer"
+                          >
+                            Đóng
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isSavingChunk}
+                            onClick={() => handleSaveChunkText(chunk)}
+                            className="px-3 py-1.5 rounded-xl bg-white border border-zinc-300 hover:border-zinc-400 text-zinc-800 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+                          >
+                            {isSavingChunk ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                            <span>Chỉ Lưu Văn Bản</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isSavingChunk}
+                            onClick={() => handleSaveChunkText(chunk, 'en')}
+                            className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+                          >
+                            <Zap className="w-3.5 h-3.5 text-[#DC2626]" />
+                            <span>Lưu & Tạo Audio EN</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isSavingChunk}
+                            onClick={() => handleSaveChunkText(chunk, 'vi')}
+                            className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
+                          >
+                            <Zap className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Lưu & Tạo Audio VI</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isSavingChunk}
+                            onClick={() => handleSaveChunkText(chunk, 'both')}
+                            className="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Lưu & Tạo Cả 2</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div
@@ -1308,7 +1492,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                     >
                       {/* Left: Text & Info */}
                       <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono font-bold text-xs text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded">
                             #{chunk.item_number}
                           </span>
@@ -1320,6 +1504,19 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                               GCS Master
                             </span>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingChunkId(chunk.chunk_id);
+                              setEditEnText(chunk.english);
+                              setEditViText(chunk.vietnamese || '');
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-blue-600 text-[11px] font-semibold transition-colors cursor-pointer"
+                            title="Sửa nhanh nội dung câu tiếng Anh & tiếng Việt"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>Sửa Text</span>
+                          </button>
                         </div>
 
                         {/* English with Highlighted Prosody */}
@@ -1343,13 +1540,13 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                       </div>
 
                       {/* Right: Audio Audition & Regeneration Controls */}
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                         {/* Play EN */}
                         <button
                           type="button"
                           disabled={isPlayingThis && playingLang === 'en'}
                           onClick={() => handlePlayChunk(chunk, 'en')}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
                             isPlayingThis && playingLang === 'en'
                               ? 'bg-[#DC2626] text-white'
                               : isEnCached
@@ -1371,14 +1568,14 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                           type="button"
                           disabled={isPlayingThis && playingLang === 'vi'}
                           onClick={() => handlePlayChunk(chunk, 'vi')}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
                             isPlayingThis && playingLang === 'vi'
                               ? 'bg-emerald-600 text-white'
                               : isViCached
                               ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900'
                               : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
                           }`}
-                          title="Nghe thử tiếng Việt (Google Neural2)"
+                          title="Nghe thử tiếng Việt (Google Cloud TTS)"
                         >
                           {isPlayingThis && playingLang === 'vi' ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1403,18 +1600,53 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                           )}
                         </button>
 
-                        {/* Single Chunk Regenerate */}
+                        {/* Separator */}
+                        <div className="h-4 w-px bg-zinc-200 mx-0.5 hidden sm:block" />
+
+                        {/* Regenerate EN Button */}
                         <button
                           type="button"
                           disabled={isRegeneratingThis}
-                          onClick={() => handleRegenerateSingleChunk(chunk)}
-                          className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-[#DC2626] transition-colors cursor-pointer"
-                          title="Tạo lại âm thanh cho chunk này"
+                          onClick={() => handleRegenerateChunkAudio(chunk, 'en')}
+                          className="px-2 py-1 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                          title="Tạo lại âm thanh tiếng Anh (Deepgram / Google TTS)"
                         >
-                          {isRegeneratingThis ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                          {isRegeneratingThis && regeneratingTarget === 'en' ? (
+                            <Loader2 className="w-3 h-3 animate-spin text-[#DC2626]" />
                           ) : (
-                            <Zap className="w-4 h-4" />
+                            <Zap className="w-3 h-3 text-[#DC2626]" />
+                          )}
+                          <span>Tạo EN</span>
+                        </button>
+
+                        {/* Regenerate VI Button */}
+                        <button
+                          type="button"
+                          disabled={isRegeneratingThis}
+                          onClick={() => handleRegenerateChunkAudio(chunk, 'vi')}
+                          className="px-2 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                          title="Tạo lại âm thanh tiếng Việt (Google Cloud TTS)"
+                        >
+                          {isRegeneratingThis && regeneratingTarget === 'vi' ? (
+                            <Loader2 className="w-3 h-3 animate-spin text-emerald-600" />
+                          ) : (
+                            <Zap className="w-3 h-3 text-emerald-600" />
+                          )}
+                          <span>Tạo VI</span>
+                        </button>
+
+                        {/* Regenerate Both (EN + VI) Button */}
+                        <button
+                          type="button"
+                          disabled={isRegeneratingThis}
+                          onClick={() => handleRegenerateChunkAudio(chunk, 'both')}
+                          className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-amber-600 transition-colors cursor-pointer"
+                          title="Tạo lại cả 2 tiếng (EN + VI)"
+                        >
+                          {isRegeneratingThis && regeneratingTarget === 'both' ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                          ) : (
+                            <RefreshCw className="w-3.5 h-3.5" />
                           )}
                         </button>
                       </div>
