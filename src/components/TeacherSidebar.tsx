@@ -13,7 +13,8 @@ import {
   Layers,
   GraduationCap,
   ShieldCheck,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Play
 } from 'lucide-react';
 
 interface TeacherSidebarProps {
@@ -48,6 +49,8 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
   const menuItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'schedule', label: '15-Session Schedule', icon: <Calendar className="w-4 h-4" /> },
     { id: 'projector', label: 'Presentation - Focus Mode', icon: <Mic2 className="w-4 h-4" />, badge: 'LIVE' },
+    { id: 'improv-manager', label: 'Improv Studio', icon: <Sparkles className="w-4 h-4" /> },
+    { id: 'improv-presentation', label: 'Improv - Focus Mode', icon: <Play className="w-4 h-4 text-[#DC2626]" /> },
     { id: 'curriculum', label: 'Curriculum & Chunks', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'audio-manager', label: 'Audio Management', icon: <Volume2 className="w-4 h-4" /> },
     { id: 'settings', label: 'Cohort Settings', icon: <Settings className="w-4 h-4" /> }

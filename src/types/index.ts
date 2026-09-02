@@ -142,4 +142,17 @@ export interface LessonPart {
   chunk_count: number;
 }
 
-export type NavTab = 'schedule' | 'projector' | 'curriculum' | 'audio-hub' | 'audio-manager' | 'settings';
+export type NavTab = 
+  | 'schedule' 
+  | 'projector' 
+  | 'curriculum' 
+  | 'audio-hub' 
+  | 'audio-manager' 
+  | 'settings'
+  | 'improv-manager'
+  | 'improv-presentation';
+
+// --------------------------------------------------------------------------
+// 4. CHUNKS Improv Domain Models
+// --------------------------------------------------------------------------
+export * from './improv';

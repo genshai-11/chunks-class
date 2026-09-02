@@ -10,7 +10,12 @@ const PATH_TAB_MAP: Record<string, NavTab> = {
   '/audio-hub': 'audio-hub',
   '/audio-manager': 'audio-manager',
   '/audio': 'audio-manager',
-  '/settings': 'settings'
+  '/settings': 'settings',
+  '/improv-studio': 'improv-manager',
+  '/improv-manager': 'improv-manager',
+  '/improv': 'improv-manager',
+  '/improv-presentation': 'improv-presentation',
+  '/improv-drill': 'improv-presentation'
 };
 
 const TAB_PATH_MAP: Record<NavTab, string> = {
@@ -19,7 +24,9 @@ const TAB_PATH_MAP: Record<NavTab, string> = {
   'curriculum': '/curriculum',
   'audio-hub': '/audio-hub',
   'audio-manager': '/audio-manager',
-  'settings': '/settings'
+  'settings': '/settings',
+  'improv-manager': '/improv-studio',
+  'improv-presentation': '/improv-presentation'
 };
 
 function getTabFromPath(path: string): NavTab {

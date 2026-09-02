@@ -8,6 +8,8 @@ import { CurriculumExplorer } from './components/CurriculumExplorer';
 import { AudioHubView } from './components/AudioHubView';
 import { AudioManagerView } from './components/AudioManagerView';
 import { SettingsView } from './components/SettingsView';
+import { ImprovManagerView } from './components/ImprovManagerView';
+import { ImprovPresentation } from './components/ImprovPresentation';
 import { LessonExcelUploader } from './components/LessonExcelUploader';
 import { getFirestoreCohorts, saveFirestoreCohort, deleteFirestoreCohort, DEFAULT_COURSES } from './services/firestoreService';
 import { useAppRouter } from './hooks/useAppRouter';
@@ -51,6 +53,8 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [drillLessonId, setDrillLessonId] = useState<string>('level_b_eres_day_1');
   const [drillSessionNumber, setDrillSessionNumber] = useState<number>(1);
+  const [improvPackageId, setImprovPackageId] = useState<string>('pkg_level_b_reflex_mastery');
+  const [improvSessionNumber, setImprovSessionNumber] = useState<number>(1);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState<boolean>(false);
 
   // Load cohorts on mount
@@ -156,6 +160,12 @@ export const App: React.FC = () => {
     setActiveTab('projector');
   };
 
+  const handleLaunchImprovPresentation = (pkgId: string, sessionNum: number = 1) => {
+    setImprovPackageId(pkgId);
+    setImprovSessionNumber(sessionNum);
+    setActiveTab('improv-presentation');
+  };
+
   const handleUpdateAudioSettings = async (newAudioSettings: CohortAudioSettings) => {
     const updated = {
       ...activeCohort,
@@ -221,6 +231,28 @@ export const App: React.FC = () => {
             setDrillLessonId(cleanId);
             if (sessionNumber !== undefined) {
               setDrillSessionNumber(sessionNumber);
+            }
+          }}
+        />
+      )}
+
+      {activeTab === 'improv-manager' && (
+        <ImprovManagerView
+          onLaunchPresentation={handleLaunchImprovPresentation}
+          audioSettings={activeCohort.audio_settings}
+        />
+      )}
+
+      {activeTab === 'improv-presentation' && (
+        <ImprovPresentation
+          packageId={improvPackageId}
+          sessionNumber={improvSessionNumber}
+          onExit={() => setActiveTab('improv-manager')}
+          audioSettings={activeCohort.audio_settings}
+          onSelectPackage={(newPkgId, newSessionNum) => {
+            setImprovPackageId(newPkgId);
+            if (newSessionNum !== undefined) {
+              setImprovSessionNumber(newSessionNum);
             }
           }}
         />

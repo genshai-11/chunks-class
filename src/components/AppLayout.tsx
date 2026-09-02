@@ -76,6 +76,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             <h2 className="font-display font-bold text-lg text-[#0A0A0A]">
               {activeTab === 'schedule' && '15-Session Cohort Schedule'}
               {activeTab === 'projector' && 'Presentation - Focus Mode'}
+              {activeTab === 'improv-manager' && 'Improv Studio'}
+              {activeTab === 'improv-presentation' && 'Improv - Focus Mode'}
               {activeTab === 'curriculum' && 'Curriculum Repository (7,851 Chunks)'}
               {activeTab === 'audio-manager' && 'Quản Lý Âm Thanh Toàn Diện (Audio Management)'}
               {activeTab === 'audio-hub' && 'Voice Engine & Audio Hub'}
