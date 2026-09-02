@@ -95,14 +95,27 @@ You MUST output ONLY a valid JSON object matching the following structure withou
   ]
 }`;
 
-export const DEFAULT_IMPROV_LLM_CONFIG: ImprovLLMConfig = {
-  endpoint: 'https://rbkqhml.abc-tunnel.us/v1',
-  apiKey: 'sk-ba04304581f3081e-z78xn9-2f401106',
-  model: 'ds/deepseek-v4-flash',
+export const DEEPSEEK_DEFAULT_CONFIG: ImprovLLMConfig = {
+  provider: 'DEEPSEEK',
+  endpoint: 'https://api.deepseek.com',
+  apiKey: 'sk-2fec5e48a85f48cb99efd17c24207b7e',
+  model: 'deepseek-chat',
   masterPrompt: DEFAULT_IMPROV_MASTER_PROMPT,
   temperature: 0.7,
   maxTokens: 4000
 };
+
+export const GOOGLE_GENAI_DEFAULT_CONFIG: ImprovLLMConfig = {
+  provider: 'GOOGLE_GENAI',
+  endpoint: 'https://generativelanguage.googleapis.com',
+  apiKey: '',
+  model: 'gemini-2.5-flash',
+  masterPrompt: DEFAULT_IMPROV_MASTER_PROMPT,
+  temperature: 0.7,
+  maxTokens: 4000
+};
+
+export const DEFAULT_IMPROV_LLM_CONFIG: ImprovLLMConfig = DEEPSEEK_DEFAULT_CONFIG;
 
 const LOCAL_STORAGE_IMPROV_KEY = 'chunks_improv_packages_local';
 
@@ -522,8 +535,143 @@ export function exportImprovPackageToExcel(
 }
 
 // --------------------------------------------------------------------------
-// 5. LLM Generator Pipeline
+// 5. LLM Generator Pipeline (DeepSeek Official & Google GenAI)
 // --------------------------------------------------------------------------
+
+/**
+ * Calls LLM Generation API supporting DeepSeek Official, Google GenAI (Gemini), or Custom OpenAI-compatible endpoints.
+ */
+export async function executeLlmGeneration(
+  config: ImprovLLMConfig,
+  systemPrompt: string,
+  userPrompt: string,
+  signal?: AbortSignal
+): Promise<string> {
+  const provider = config.provider || (
+    config.endpoint.includes('deepseek.com') 
+      ? 'DEEPSEEK' 
+      : config.endpoint.includes('googleapis.com') 
+        ? 'GOOGLE_GENAI' 
+        : 'CUSTOM_OPENAI'
+  );
+
+  // 1. Google Gemini Provider
+  if (provider === 'GOOGLE_GENAI') {
+    const model = config.model || 'gemini-2.5-flash';
+    const apiKey = config.apiKey?.trim();
+    if (!apiKey) {
+      throw new Error('Chưa cung cấp Google Gemini API Key. Vui lòng nhập API Key từ Google AI Studio.');
+    }
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: userPrompt }]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: config.temperature ?? 0.7,
+          maxOutputTokens: config.maxTokens ?? 4000
+        }
+      }),
+      signal
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Google Gemini API Error (${response.status}): ${errText}`);
+    }
+
+    const data = await response.json();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!content) {
+      throw new Error('Google Gemini API không trả về nội dung.');
+    }
+    return content;
+  }
+
+  // 2. DeepSeek Official API Provider
+  if (provider === 'DEEPSEEK') {
+    const endpoint = 'https://api.deepseek.com/chat/completions';
+    const model = config.model || 'deepseek-chat';
+    const apiKey = config.apiKey?.trim() || 'sk-2fec5e48a85f48cb99efd17c24207b7e';
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        response_format: { type: 'json_object' },
+        temperature: config.temperature ?? 0.7,
+        max_tokens: config.maxTokens ?? 4000
+      }),
+      signal
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`DeepSeek API Error (${response.status}): ${errText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new Error('DeepSeek API không trả về nội dung.');
+    }
+    return content;
+  }
+
+  // 3. Custom OpenAI-compatible endpoint
+  const rawEndpoint = config.endpoint || 'https://api.deepseek.com';
+  const endpoint = rawEndpoint.replace(/\/+$/, '') + (rawEndpoint.endsWith('/chat/completions') ? '' : '/chat/completions');
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: config.model || 'deepseek-chat',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: config.temperature ?? 0.7,
+      max_tokens: config.maxTokens ?? 4000
+    }),
+    signal
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`LLM API Error (${response.status}): ${errText}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error('LLM API không trả về nội dung.');
+  }
+  return content;
+}
 
 /**
  * Generates an ImprovPackage using DeepSeek / LLM API based on the request parameters.
@@ -579,41 +727,16 @@ export async function generateImprovPackage(
 
   const systemPrompt = request.llmConfig.masterPrompt || DEFAULT_IMPROV_MASTER_PROMPT;
 
-  onProgress?.(5, 10, `Sending request to DeepSeek LLM (${request.llmConfig.model})...`);
+  onProgress?.(5, 10, `Sending request to LLM (${request.llmConfig.provider || 'DEEPSEEK'} - ${request.llmConfig.model})...`);
 
-  // Step 3: Call OpenAI-compatible LLM endpoint
-  const endpoint = request.llmConfig.endpoint.replace(/\/+$/, '') + '/chat/completions';
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${request.llmConfig.apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: request.llmConfig.model || 'ds/deepseek-v4-flash',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Please generate the Improv package based on this configuration:\n\n${userPrompt}` }
-      ],
-      temperature: request.llmConfig.temperature ?? 0.7,
-      max_tokens: request.llmConfig.maxTokens ?? 4000
-    })
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`LLM API Generation Error (${response.status}): ${errText}`);
-  }
+  // Step 3: Call LLM Generation API (DeepSeek Official, Google GenAI, or Custom)
+  const rawContent = await executeLlmGeneration(
+    request.llmConfig,
+    systemPrompt,
+    `Please generate the Improv package based on this configuration:\n\n${userPrompt}`
+  );
 
   onProgress?.(7, 10, 'Parsing LLM response...');
-
-  const responseData = await response.json();
-  const rawContent = responseData.choices?.[0]?.message?.content || '';
-
-  if (!rawContent) {
-    throw new Error('LLM returned an empty response.');
-  }
 
   // Step 4: Clean up and parse JSON
   let cleanedJson = rawContent.trim();

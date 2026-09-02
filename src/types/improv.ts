@@ -51,7 +51,10 @@ export interface ImprovPackage {
 // 3. LLM Configuration & Generation Request Contracts
 // --------------------------------------------------------------------------
 
+export type ImprovLlmProvider = 'DEEPSEEK' | 'GOOGLE_GENAI' | 'CUSTOM_OPENAI';
+
 export interface ImprovLLMConfig {
+  provider?: ImprovLlmProvider;
   endpoint: string;
   apiKey: string;
   model: string;

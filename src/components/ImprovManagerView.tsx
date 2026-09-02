@@ -6,6 +6,7 @@ import {
   ImprovHint, 
   ImprovSessionConfig, 
   ImprovLLMConfig,
+  ImprovLlmProvider,
   CourseLevel,
   LessonDoc,
   ChunkItem
@@ -19,7 +20,10 @@ import {
   parseImprovExcelFile, 
   exportImprovPackageToExcel,
   DEFAULT_IMPROV_MASTER_PROMPT,
-  DEFAULT_IMPROV_LLM_CONFIG
+  DEFAULT_IMPROV_LLM_CONFIG,
+  DEEPSEEK_DEFAULT_CONFIG,
+  GOOGLE_GENAI_DEFAULT_CONFIG,
+  executeLlmGeneration
 } from '../services/improvService';
 import { 
   improvTts, 
@@ -416,12 +420,30 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [genRelevance, setGenRelevance] = useState<'Thấp (Brainstorming ngẫu nhiên)' | 'Vừa (Tương quan ngữ cảnh)' | 'Cao (Gắn kết câu chuyện logic)'>('Cao (Gắn kết câu chuyện logic)');
 
   // LLM Config
-  const [isLlmAccordionOpen, setIsLlmAccordionOpen] = useState<boolean>(false);
-  const [genEndpoint, setGenEndpoint] = useState<string>('https://rbkqhml.abc-tunnel.us/v1');
-  const [genApiKey, setGenApiKey] = useState<string>('sk-ba04304581f3081e-z78xn9-2f401106');
+  const [genProvider, setGenProvider] = useState<ImprovLlmProvider>('DEEPSEEK');
+  const [isLlmAccordionOpen, setIsLlmAccordionOpen] = useState<boolean>(true);
+  const [genEndpoint, setGenEndpoint] = useState<string>(DEEPSEEK_DEFAULT_CONFIG.endpoint);
+  const [genApiKey, setGenApiKey] = useState<string>(DEEPSEEK_DEFAULT_CONFIG.apiKey);
   const [genShowApiKey, setGenShowApiKey] = useState<boolean>(false);
-  const [genModel, setGenModel] = useState<string>('ds/deepseek-v4-flash');
+  const [genModel, setGenModel] = useState<string>(DEEPSEEK_DEFAULT_CONFIG.model);
   const [genMasterPrompt, setGenMasterPrompt] = useState<string>(DEFAULT_IMPROV_MASTER_PROMPT);
+
+  const handleProviderChange = (newProvider: ImprovLlmProvider) => {
+    setGenProvider(newProvider);
+    if (newProvider === 'DEEPSEEK') {
+      setGenEndpoint(DEEPSEEK_DEFAULT_CONFIG.endpoint);
+      setGenApiKey(DEEPSEEK_DEFAULT_CONFIG.apiKey);
+      setGenModel('deepseek-chat');
+    } else if (newProvider === 'GOOGLE_GENAI') {
+      setGenEndpoint(GOOGLE_GENAI_DEFAULT_CONFIG.endpoint);
+      const savedGeminiKey = localStorage.getItem('chunks_gemini_api_key') || '';
+      setGenApiKey(savedGeminiKey);
+      setGenModel('gemini-2.5-flash');
+    } else {
+      setGenEndpoint('https://api.openai.com/v1');
+      setGenModel('gpt-4o-mini');
+    }
+  };
 
   // Generator Live Execution
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -895,7 +917,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       }
 
       addGenLog('info', `Đã gom được ${seedVocabs.length} từ vựng hạt giống. Đang biên soạn Prompt gửi LLM...`);
-      setGenProgress({ percent: 25, current: 10, total: genTotalItems, message: 'Đang gửi yêu cầu tới DeepSeek Flash LLM...' });
+      setGenProgress({ percent: 25, current: 10, total: genTotalItems, message: `Đang gửi yêu cầu tới ${genProvider === 'DEEPSEEK' ? 'DeepSeek Official API' : genProvider === 'GOOGLE_GENAI' ? 'Google Gemini (GenAI)' : 'LLM Engine'}...` });
 
       // Compile master prompt variables
       const compiledPrompt = genMasterPrompt
@@ -904,50 +926,38 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         .replace(/\{\{vocabList\}\}/g, seedVocabs.slice(0, 30).map(v => `${v.english} (${v.vietnamese})`).join(', '))
         .replace(/\{\{itemCount\}\}/g, String(genTotalItems));
 
-      const requestPayload = {
-        model: genModel || 'ds/deepseek-v4-flash',
-        messages: [
-          { role: 'system', content: compiledPrompt },
-          {
-            role: 'user',
-            content: `Generate an Improv Package with Title "${genTitle}", Total Items: ${genTotalItems}, Sessions: ${JSON.stringify(genSessionConfigs)}, Seed Vocabularies: ${JSON.stringify(seedVocabs.slice(0, 25))}. Output ONLY JSON.`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 4000
-      };
+      const providerLabel = genProvider === 'DEEPSEEK' 
+        ? 'DeepSeek Official API' 
+        : genProvider === 'GOOGLE_GENAI' 
+          ? 'Google Gemini API' 
+          : 'Custom Endpoint';
 
-      addGenLog('info', `Gửi POST tới endpoint: ${genEndpoint} (Model: ${genModel})...`);
+      addGenLog('info', `Gửi yêu cầu tới ${providerLabel} (Model: ${genModel})...`);
 
-      const endpointUrl = genEndpoint.replace(/\/+$/, '') + '/chat/completions';
-      
       let rawJsonContent = '';
 
       try {
-        const response = await fetch(endpointUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${genApiKey}`
+        rawJsonContent = await executeLlmGeneration(
+          {
+            provider: genProvider,
+            endpoint: genEndpoint,
+            apiKey: genApiKey,
+            model: genModel,
+            masterPrompt: compiledPrompt,
+            temperature: 0.7,
+            maxTokens: 4000
           },
-          body: JSON.stringify(requestPayload),
-          signal: abortController.signal
-        });
-
-        if (!response.ok) {
-          const errBody = await response.text();
-          throw new Error(`LLM HTTP ${response.status}: ${errBody}`);
-        }
-
-        const resData = await response.json();
-        rawJsonContent = resData.choices?.[0]?.message?.content || '';
+          compiledPrompt,
+          `Generate an Improv Package with Title "${genTitle}", Total Items: ${genTotalItems}, Sessions: ${JSON.stringify(genSessionConfigs)}, Seed Vocabularies: ${JSON.stringify(seedVocabs.slice(0, 25))}. Output ONLY JSON.`,
+          abortController.signal
+        );
         addGenLog('success', 'Nhận phản hồi thành công từ LLM! Đang bóc tách cú pháp JSON...');
       } catch (fetchErr: any) {
         if (abortController.signal.aborted) {
           addGenLog('warning', 'Quá trình sinh dữ liệu đã bị người dùng hủy.');
           return;
         }
-        addGenLog('warning', `Không kết nối được LLM Endpoint (${fetchErr?.message}). Đang kích hoạt bộ sinh dữ liệu ngoại tuyến chuẩn xác...`);
+        addGenLog('warning', `Không kết nối được LLM (${fetchErr?.message}). Đang kích hoạt bộ sinh dữ liệu ngoại tuyến chuẩn xác...`);
         
         // Fallback offline procedural generator for instant resilience
         rawJsonContent = generateOfflineFallbackPackageJson(
@@ -2326,7 +2336,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <Cpu className="w-4 h-4 text-purple-600" />
-                    <span className="font-bold text-zinc-800 text-xs">Cấu Hình Mô Hình LLM & Prompt Nâng Cao</span>
+                    <span className="font-bold text-zinc-800 text-xs">Cấu Hình AI Provider & Prompt Nâng Cao</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                      {genProvider === 'DEEPSEEK' ? 'DeepSeek Official' : genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Custom'}
+                    </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
                       {genModel}
                     </span>
@@ -2336,30 +2349,130 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                 {isLlmAccordionOpen && (
                   <div className="p-4 border-t border-zinc-100 space-y-4 bg-zinc-50/50">
+                    {/* Provider Tabs */}
+                    <div>
+                      <label className="font-bold text-zinc-700 block mb-1.5 text-xs font-mono">
+                        Chọn AI Engine / Provider
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleProviderChange('DEEPSEEK')}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex flex-col gap-1 cursor-pointer ${
+                            genProvider === 'DEEPSEEK'
+                              ? 'bg-blue-50/90 border-blue-500 text-blue-900 shadow-2xs ring-2 ring-blue-500/20'
+                              : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-blue-500" />
+                              DeepSeek Official
+                            </span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono">Trực Tiếp</span>
+                          </div>
+                          <span className="text-[10px] text-zinc-400 font-normal truncate">api.deepseek.com (Khuyên dùng)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleProviderChange('GOOGLE_GENAI')}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex flex-col gap-1 cursor-pointer ${
+                            genProvider === 'GOOGLE_GENAI'
+                              ? 'bg-purple-50/90 border-purple-500 text-purple-900 shadow-2xs ring-2 ring-purple-500/20'
+                              : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-purple-500" />
+                              Google Gemini
+                            </span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono">Google GenAI</span>
+                          </div>
+                          <span className="text-[10px] text-zinc-400 font-normal truncate">Gemini 2.5 Flash / 2.0 Flash</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleProviderChange('CUSTOM_OPENAI')}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex flex-col gap-1 cursor-pointer ${
+                            genProvider === 'CUSTOM_OPENAI'
+                              ? 'bg-zinc-900 border-zinc-900 text-white shadow-2xs'
+                              : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold">Tùy Chỉnh</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-700 font-mono">Custom</span>
+                          </div>
+                          <span className="text-[10px] text-zinc-400 font-normal truncate">OpenAI-compatible URL</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Model & Config Controls */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
-                        <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">Endpoint URL</label>
-                        <input
-                          type="text"
-                          value={genEndpoint}
-                          onChange={(e) => setGenEndpoint(e.target.value)}
-                          className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
-                        />
+                        <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">
+                          Mô hình ({genProvider === 'DEEPSEEK' ? 'DeepSeek' : genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Model'})
+                        </label>
+                        {genProvider === 'DEEPSEEK' ? (
+                          <select
+                            value={genModel}
+                            onChange={(e) => setGenModel(e.target.value)}
+                            className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800 focus:outline-none focus:border-blue-500"
+                          >
+                            <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 • Khuyên Dùng)</option>
+                            <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 • Suy Luận Sâu)</option>
+                          </select>
+                        ) : genProvider === 'GOOGLE_GENAI' ? (
+                          <select
+                            value={genModel}
+                            onChange={(e) => setGenModel(e.target.value)}
+                            className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800 focus:outline-none focus:border-purple-500"
+                          >
+                            <option value="gemini-2.5-flash">gemini-2.5-flash (Gemini 2.5 Flash • Cực Nhanh & Mới Nhất)</option>
+                            <option value="gemini-2.0-flash">gemini-2.0-flash (Gemini 2.0 Flash • Low Latency)</option>
+                            <option value="gemini-1.5-flash">gemini-1.5-flash (Gemini 1.5 Flash • Hạn Mức Lớn)</option>
+                            <option value="gemini-1.5-pro">gemini-1.5-pro (Gemini 1.5 Pro • Chuyên Sâu)</option>
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={genModel}
+                            onChange={(e) => setGenModel(e.target.value)}
+                            placeholder="e.g. gpt-4o-mini"
+                            className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800"
+                          />
+                        )}
                       </div>
 
                       <div>
-                        <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">API Key</label>
+                        <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">
+                          {genProvider === 'DEEPSEEK' 
+                            ? 'DeepSeek API Key (Đã Cấu Hình)' 
+                            : genProvider === 'GOOGLE_GENAI' 
+                              ? 'Google Gemini API Key (AIzaSy...)' 
+                              : 'API Key'}
+                        </label>
                         <div className="relative">
                           <input
                             type={genShowApiKey ? 'text' : 'password'}
                             value={genApiKey}
-                            onChange={(e) => setGenApiKey(e.target.value)}
-                            className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-[11px] pr-8"
+                            onChange={(e) => {
+                              setGenApiKey(e.target.value);
+                              if (genProvider === 'GOOGLE_GENAI') {
+                                localStorage.setItem('chunks_gemini_api_key', e.target.value);
+                              }
+                            }}
+                            placeholder={genProvider === 'GOOGLE_GENAI' ? 'Dán Google AI Studio API Key...' : 'Nhập API Key...'}
+                            className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs pr-8"
                           />
                           <button
                             type="button"
                             onClick={() => setGenShowApiKey(!genShowApiKey)}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 cursor-pointer"
                           >
                             {genShowApiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           </button>
@@ -2367,12 +2480,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       </div>
 
                       <div>
-                        <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">Model</label>
+                        <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">Endpoint URL</label>
                         <input
                           type="text"
-                          value={genModel}
-                          onChange={(e) => setGenModel(e.target.value)}
-                          className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
+                          value={genEndpoint}
+                          onChange={(e) => setGenEndpoint(e.target.value)}
+                          disabled={genProvider !== 'CUSTOM_OPENAI'}
+                          className={`w-full p-2 rounded-lg font-mono text-xs border ${
+                            genProvider !== 'CUSTOM_OPENAI' ? 'bg-zinc-100 text-zinc-500 border-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
+                          }`}
                         />
                       </div>
                     </div>
