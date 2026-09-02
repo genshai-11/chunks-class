@@ -162,7 +162,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const [isListDrawerOpen, setIsListDrawerOpen] = useState<boolean>(false);
 
   // Audio Engine & Synthesis State
-  const [languageMode, setLanguageMode] = useState<LanguageMode>('EN_ONLY');
+  const [languageMode, setLanguageMode] = useState<'EN_ONLY' | 'VI_ONLY'>('EN_ONLY');
   const [selectedVoice, setSelectedVoice] = useState<string>(
     audioSettings?.voice_profile_en || 'aura-asteria-en'
   );
@@ -285,25 +285,18 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         setActivePlayingHintIndex(i);
         const hint = hintsToPlay[i];
         
-        const enText = getHintTextByLanguage(hint, 'en');
-        const viText = getHintTextByLanguage(hint, 'vi');
+        const enText = getHintTextByLanguage(hint, 'en') || hint.text;
+        const viText = getHintTextByLanguage(hint, 'vi') || hint.translation;
 
-        if (languageMode === 'EN_ONLY' || languageMode === 'PRIMARY_ONLY') {
+        if (languageMode === 'VI_ONLY') {
+          const textToSpeak = viText || enText;
+          if (textToSpeak) {
+            await audioPlayer.playChunk(textToSpeak, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
+          }
+        } else {
+          // EN_ONLY
           if (enText) {
-            await audioPlayer.playChunk(enText, null, selectedVoice, speed);
-          }
-        } else if (languageMode === 'VI_ONLY' || languageMode === 'SECONDARY_ONLY') {
-          if (viText) {
-            await audioPlayer.playChunk(viText, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
-          }
-        } else if (languageMode === 'EN_THEN_VI') {
-          if (enText) {
-            await audioPlayer.playChunk(enText, null, selectedVoice, speed);
-            await new Promise(res => setTimeout(res, 400));
-          }
-          if (activeSequenceRef.current !== seqId) return;
-          if (viText) {
-            await audioPlayer.playChunk(viText, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
+            await audioPlayer.playChunk(enText, null, selectedVoice, speed, selectedVoice.startsWith('en-US'));
           }
         }
 
@@ -331,25 +324,18 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     setActivePlayingHintIndex(index);
 
     try {
-      const enText = getHintTextByLanguage(hint, 'en');
-      const viText = getHintTextByLanguage(hint, 'vi');
+      const enText = getHintTextByLanguage(hint, 'en') || hint.text;
+      const viText = getHintTextByLanguage(hint, 'vi') || hint.translation;
 
-      if (languageMode === 'VI_ONLY' || languageMode === 'SECONDARY_ONLY') {
-        if (viText) {
-          await audioPlayer.playChunk(viText, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
-        }
-      } else if (languageMode === 'EN_THEN_VI') {
-        if (enText) {
-          await audioPlayer.playChunk(enText, null, selectedVoice, speed);
-          await new Promise(res => setTimeout(res, 400));
-        }
-        if (activeSequenceRef.current !== seqId) return;
-        if (viText) {
-          await audioPlayer.playChunk(viText, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
+      if (languageMode === 'VI_ONLY') {
+        const textToSpeak = viText || enText;
+        if (textToSpeak) {
+          await audioPlayer.playChunk(textToSpeak, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
         }
       } else {
+        // EN_ONLY
         if (enText) {
-          await audioPlayer.playChunk(enText, null, selectedVoice, speed);
+          await audioPlayer.playChunk(enText, null, selectedVoice, speed, selectedVoice.startsWith('en-US'));
         }
       }
     } catch (err) {
@@ -450,6 +436,23 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     }
   };
 
+  // Keybinding listener for Language Mode (Key 1 -> EN_ONLY, Key 2 -> VI_ONLY)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+      if (showShortcutsModal || isPackagePopoverOpen || isAudioSettingsOpen || isSessionPopoverOpen || isListDrawerOpen) return;
+
+      if (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1') {
+        setLanguageMode('EN_ONLY');
+      } else if (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') {
+        setLanguageMode('VI_ONLY');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showShortcutsModal, isPackagePopoverOpen, isAudioSettingsOpen, isSessionPopoverOpen, isListDrawerOpen]);
+
   // Hardware Clicker Listener Hook
   usePresenterClicker({
     onNext: handleNext,
@@ -460,6 +463,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     onTogglePartsDrawer: () => setIsListDrawerOpen(prev => !prev),
     onToggleChunkList: () => setIsListDrawerOpen(prev => !prev),
     onToggleFullscreen: handleToggleFullscreen,
+    onSetLoop: (count) => {
+      if (count === 1) setLanguageMode('EN_ONLY');
+      if (count === 2) setLanguageMode('VI_ONLY');
+    },
     isModalOpen: showShortcutsModal || isPackagePopoverOpen || isAudioSettingsOpen || isSessionPopoverOpen || isListDrawerOpen
   });
 
@@ -731,36 +738,25 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           <div className="hidden sm:flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
             <button
               onClick={() => setLanguageMode('EN_ONLY')}
-              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all ${
-                languageMode === 'EN_ONLY' || languageMode === 'PRIMARY_ONLY'
+              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                languageMode === 'EN_ONLY'
                   ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
                   : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
-              title="Chỉ đọc tiếng Anh"
+              title="Chỉ đọc tiếng Anh (Phím 1)"
             >
               EN
             </button>
             <button
               onClick={() => setLanguageMode('VI_ONLY')}
-              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all ${
-                languageMode === 'VI_ONLY' || languageMode === 'SECONDARY_ONLY'
+              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                languageMode === 'VI_ONLY'
                   ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
                   : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
-              title="Chỉ đọc tiếng Việt (Google Cloud TTS)"
+              title="Chỉ đọc tiếng Việt (Google Cloud TTS) (Phím 2)"
             >
               VI
-            </button>
-            <button
-              onClick={() => setLanguageMode('EN_THEN_VI')}
-              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all ${
-                languageMode === 'EN_THEN_VI'
-                  ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-              }`}
-              title="Song ngữ EN rồi VI"
-            >
-              EN ➔ VI
             </button>
           </div>
 
@@ -1067,20 +1063,32 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       </button>
                     </div>
 
-                    {/* Card Center: English Text with Large Crisp Display Typography */}
+                    {/* Card Center: Dynamic Display Typography (Inverted by Language Mode) */}
                     <div className="my-auto py-2">
                       <div className="font-display font-extrabold text-2xl md:text-4xl lg:text-5xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">
-                        {hint.text}
+                        {languageMode === 'VI_ONLY' ? (hint.translation || hint.text) : hint.text}
                       </div>
                     </div>
 
-                    {/* Card Bottom: Vietnamese Translation Subtitle */}
-                    {showSubtitle && hint.translation && (
-                      <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
-                        <div className="text-sm md:text-base font-sans font-medium text-zinc-500 dark:text-zinc-400">
-                          {hint.translation}
-                        </div>
-                      </div>
+                    {/* Card Bottom: Subtitle Translation / Secondary Text */}
+                    {showSubtitle && (
+                      languageMode === 'VI_ONLY' ? (
+                        hint.text ? (
+                          <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+                            <div className="text-sm md:text-base font-mono font-medium text-zinc-500 dark:text-zinc-400">
+                              {hint.text}
+                            </div>
+                          </div>
+                        ) : null
+                      ) : (
+                        hint.translation ? (
+                          <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+                            <div className="text-sm md:text-base font-sans font-medium text-zinc-500 dark:text-zinc-400">
+                              {hint.translation}
+                            </div>
+                          </div>
+                        ) : null
+                      )
                     )}
                   </div>
                 );
@@ -1100,7 +1108,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             : 'bg-white border-[#E8E8EC]'
         }`}
       >
-        {/* Left: Reveal Mode Selector & Subtitle Toggle */}
+        {/* Left: Reveal Mode Selector, Language Mode Toggle & Subtitle Toggle */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Reveal Mode Segmented Switch */}
           <div className="flex items-center p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -1109,7 +1117,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 setRevealMode('step');
                 setCurrentRevealStep(1);
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 revealMode === 'step'
                   ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
                   : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
@@ -1122,13 +1130,41 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 setRevealMode('all');
                 setCurrentRevealStep(hints.length);
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 revealMode === 'all'
                   ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
                   : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
             >
               Hiện tất cả (All)
+            </button>
+          </div>
+
+          {/* Language Mode Segmented Switch (EN / VI) */}
+          <div className="flex items-center p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <button
+              onClick={() => setLanguageMode('EN_ONLY')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                languageMode === 'EN_ONLY'
+                  ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+              }`}
+              title="Tiếng Anh làm trung tâm (Phím 1)"
+            >
+              <span>EN</span>
+              <span className="text-[9px] font-mono px-1 rounded bg-zinc-200/80 dark:bg-zinc-700/80 text-zinc-600 dark:text-zinc-300">1</span>
+            </button>
+            <button
+              onClick={() => setLanguageMode('VI_ONLY')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                languageMode === 'VI_ONLY'
+                  ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+              }`}
+              title="Tiếng Việt làm trung tâm (Phím 2)"
+            >
+              <span>VI</span>
+              <span className="text-[9px] font-mono px-1 rounded bg-zinc-200/80 dark:bg-zinc-700/80 text-zinc-600 dark:text-zinc-300">2</span>
             </button>
           </div>
 
@@ -1299,6 +1335,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500">Chế độ Tiếng Anh / Tiếng Việt</span>
+                <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
+                  Phím 1 / Phím 2
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="text-zinc-500">Mở danh sách câu trong bài</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
                   Key L / Key P
@@ -1397,7 +1439,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             </div>
 
             {/* Items List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+            <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-1.5">
               {items.map((item, idx) => {
                 const isCurrent = idx === currentItemIndex;
                 const isCompleted = idx < currentItemIndex;
@@ -1410,24 +1452,24 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       setCurrentRevealStep(1);
                       setIsListDrawerOpen(false);
                     }}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                    className={`p-2 sm:p-2.5 rounded-xl border transition-all cursor-pointer ${
                       isCurrent
-                        ? 'border-[#DC2626] bg-[#DC2626]/10 ring-2 ring-[#DC2626]/30'
+                        ? 'border-[#DC2626] bg-red-50/90 text-zinc-900 ring-2 ring-red-500/20 shadow-xs dark:bg-red-950/40 dark:border-red-600 dark:text-zinc-100'
                         : isCompleted
                         ? highContrastDark
-                          ? 'border-emerald-900/50 bg-emerald-950/20 hover:bg-emerald-950/40'
-                          : 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50'
+                          ? 'border-emerald-900/50 bg-emerald-950/20 hover:bg-emerald-950/40 text-zinc-200'
+                          : 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 text-zinc-900'
                         : highContrastDark
-                        ? 'border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/80'
-                        : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                        ? 'border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/80 text-zinc-200'
+                        : 'border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50 text-zinc-900'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="mb-1 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-xs">
                           Câu {item.itemNumber || idx + 1}
                         </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
                           {item.hints.length} hints
                         </span>
                       </div>
@@ -1449,14 +1491,23 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                     </div>
 
                     {/* Hints Preview */}
-                    <div className="flex flex-wrap gap-1.5 items-center">
+                    <div className="flex flex-wrap items-baseline gap-y-1">
                       {item.hints.map((h, hIdx) => (
                         <React.Fragment key={h.id || hIdx}>
-                          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                            {h.text}
+                          <span className="inline-flex items-baseline gap-1">
+                            {h.translation && (
+                              <span className="text-zinc-900 dark:text-zinc-100 font-bold text-xs sm:text-sm">
+                                {h.translation}
+                              </span>
+                            )}
+                            {h.text && (
+                              <span className="text-zinc-700 dark:text-zinc-300 font-semibold text-xs font-mono">
+                                {h.text}
+                              </span>
+                            )}
                           </span>
                           {hIdx < item.hints.length - 1 && (
-                            <span className="text-zinc-300 dark:text-zinc-700 text-xs font-bold">➔</span>
+                            <span className="text-[#DC2626] font-bold text-xs mx-1">➔</span>
                           )}
                         </React.Fragment>
                       ))}

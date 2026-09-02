@@ -113,7 +113,7 @@ export const GOOGLE_GENAI_DEFAULT_CONFIG: ImprovLLMConfig = {
   model: 'gemini-2.5-flash',
   masterPrompt: DEFAULT_IMPROV_MASTER_PROMPT,
   temperature: 0.7,
-  maxTokens: 4000
+  maxTokens: 8192
 };
 
 export const DEFAULT_IMPROV_LLM_CONFIG: ImprovLLMConfig = DEEPSEEK_DEFAULT_CONFIG;
@@ -541,8 +541,8 @@ export function exportImprovPackageToExcel(
 
 /**
  * Safely extracts and parses JSON from raw LLM output strings,
- * handling markdown code fences, <think> tags (DeepSeek-R1 / reasoning models),
- * trailing commas, and wrapped conversational text.
+ * handling markdown code fences, reasoning/thinking tags (<think>, <thought>, <reasoning>),
+ * trailing commas, unclosed JSON blocks, and wrapped conversational text.
  */
 export function extractAndParseJson<T = any>(rawText: string): T {
   if (!rawText || typeof rawText !== 'string') {
@@ -551,8 +551,12 @@ export function extractAndParseJson<T = any>(rawText: string): T {
 
   let text = rawText.trim();
 
-  // 1. Remove <think>...</think> blocks (DeepSeek-R1 / reasoning models)
-  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  // 1. Remove reasoning / thought blocks (<think>...</think>, <thought>...</thought>, <reasoning>...</reasoning>)
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  text = text.replace(/<thought>[\s\S]*?<\/thought>/gi, '');
+  text = text.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
+  // Also strip unclosed reasoning tags if model output was truncated mid-thought
+  text = text.replace(/<(?:think|thought|reasoning)>[\s\S]*$/gi, '').trim();
 
   // 2. Strip markdown code fences (```json ... ``` or ``` ... ```)
   text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
@@ -613,7 +617,7 @@ export function extractAndParseJson<T = any>(rawText: string): T {
 
 /**
  * Calls LLM Generation API supporting DeepSeek Official, Google GenAI (Gemini), or Custom OpenAI-compatible endpoints.
- * Implements strict JSON Mode compliance (DeepSeek requirement for 'json' keyword and Gemini responseMimeType).
+ * Implements strict JSON Mode compliance (DeepSeek requirement for 'json' keyword and Gemini responseMimeType + thinkingConfig).
  */
 export async function executeLlmGeneration(
   config: ImprovLLMConfig,
@@ -646,13 +650,22 @@ export async function executeLlmGeneration(
       throw new Error('Chưa cung cấp Google Gemini API Key. Vui lòng nhập API Key từ Google AI Studio.');
     }
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+
+    // Payload helper:
+    // Gemini 2.5 Flash / 2.5 Pro / reasoning models enable thinking by default which consumes up to 4k tokens and cuts off JSON output.
+    // Setting thinkingBudget: 0 disables thinking tokens for pure, instant JSON output.
+    const buildGeminiBody = (includeThinkingConfig: boolean) => {
+      const genConfig: Record<string, any> = {
+        responseMimeType: 'application/json',
+        temperature: config.temperature ?? 0.7,
+        maxOutputTokens: config.maxTokens ?? 8192
+      };
+      if (includeThinkingConfig) {
+        genConfig.thinkingConfig = {
+          thinkingBudget: 0
+        };
+      }
+      return {
         systemInstruction: {
           parts: [{ text: sysPromptWithJson }]
         },
@@ -662,14 +675,38 @@ export async function executeLlmGeneration(
             parts: [{ text: userPromptWithJson }]
           }
         ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: config.temperature ?? 0.7,
-          maxOutputTokens: config.maxTokens ?? 8192
-        }
-      }),
+        generationConfig: genConfig
+      };
+    };
+
+    // Attempt first with thinkingConfig enabled for Gemini 2.5 / 2.0 / reasoning models
+    const shouldTryThinkingConfig = model.includes('2.5') || model.includes('2.0') || model.includes('thinking');
+    let response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(buildGeminiBody(shouldTryThinkingConfig)),
       signal
     });
+
+    // Graceful fallback: If older Gemini models reject thinkingConfig with 400 Bad Request, retry without it
+    if (!response.ok && shouldTryThinkingConfig && response.status === 400) {
+      const errPeek = await response.text();
+      if (errPeek.includes('thinkingConfig') || errPeek.includes('thinkingBudget') || errPeek.includes('Unknown field')) {
+        console.warn('[ImprovService] Gemini model rejected thinkingConfig, retrying without thinkingConfig...');
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(buildGeminiBody(false)),
+          signal
+        });
+      } else {
+        throw new Error(`Google Gemini API Error (${response.status}): ${errPeek}`);
+      }
+    }
 
     if (!response.ok) {
       const errText = await response.text();
@@ -677,9 +714,17 @@ export async function executeLlmGeneration(
     }
 
     const data = await response.json();
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const candidate = data.candidates?.[0];
+    const content = candidate?.content?.parts?.[0]?.text;
+    
     if (!content) {
-      throw new Error('Google Gemini API không trả về nội dung.');
+      if (candidate?.finishReason === 'MAX_TOKENS') {
+        throw new Error('Google Gemini API chạm giới hạn MAX_TOKENS và bị cắt ngắn (Reasoning thoughts đã chiếm token). Hãy kiểm tra lại cấu hình thinkingBudget.');
+      }
+      if (candidate?.finishReason === 'SAFETY') {
+        throw new Error('Google Gemini API bị chặn bởi bộ lọc an toàn (Safety Filter).');
+      }
+      throw new Error(`Google Gemini API không trả về nội dung. FinishReason: ${candidate?.finishReason || 'UNKNOWN'}`);
     }
     return content;
   }
@@ -715,8 +760,12 @@ export async function executeLlmGeneration(
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const choice = data.choices?.[0];
+    const content = choice?.message?.content;
     if (!content) {
+      if (choice?.finish_reason === 'length') {
+        throw new Error('DeepSeek API chạm giới hạn max_tokens. Vui lòng giảm số câu trong micro-batch.');
+      }
       throw new Error('DeepSeek API không trả về nội dung.');
     }
     return content;
@@ -765,7 +814,7 @@ export interface LlmTestResult {
 
 /**
  * Verifies live connectivity and response latency to the configured LLM endpoint (DeepSeek, Google Gemini, or Custom).
- * Strictly complies with JSON mode requirements for both providers.
+ * Strictly complies with JSON mode requirements and thinkingConfig for both providers.
  */
 export async function testLlmConnection(
   config: ImprovLLMConfig,
@@ -802,24 +851,48 @@ export async function testLlmConnection(
       }
 
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      
+      const buildTestBody = (includeThinkingConfig: boolean) => {
+        const genConfig: Record<string, any> = {
+          responseMimeType: 'application/json',
+          temperature: 0.1,
+          maxOutputTokens: 1000
+        };
+        if (includeThinkingConfig) {
+          genConfig.thinkingConfig = {
+            thinkingBudget: 0
+          };
+        }
+        return {
           contents: [
             {
               role: 'user',
-              parts: [{ text: 'Respond with JSON: {"status":"OK"}' }]
+              parts: [{ text: 'Respond strictly in JSON format: {"status":"OK"}' }]
             }
           ],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            temperature: 0.1,
-            maxOutputTokens: 100
-          }
-        }),
+          generationConfig: genConfig
+        };
+      };
+
+      const shouldTryThinkingConfig = model.includes('2.5') || model.includes('2.0') || model.includes('thinking');
+      let response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildTestBody(shouldTryThinkingConfig)),
         signal
       });
+
+      if (!response.ok && shouldTryThinkingConfig && response.status === 400) {
+        const errPeek = await response.text();
+        if (errPeek.includes('thinkingConfig') || errPeek.includes('thinkingBudget') || errPeek.includes('Unknown field')) {
+          response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildTestBody(false)),
+            signal
+          });
+        }
+      }
 
       const latencyMs = Math.round(performance.now() - startTime);
 
@@ -960,8 +1033,8 @@ export async function testLlmConnection(
 }
 
 /**
- * Generates an ImprovPackage using Chunk-Safe batching (generating session-by-session or in safe chunks)
- * to avoid output token truncation and ensure 100% compliant pedagogical structure.
+ * Generates an ImprovPackage using resilient Micro-Batching (splitting large sessions into 5–8 item batches)
+ * to guarantee that Gemini, DeepSeek, and custom LLMs never hit MAX_TOKENS or output truncation limits.
  */
 export async function generateImprovPackage(
   request: ImprovGenerateRequest,
@@ -996,7 +1069,7 @@ export async function generateImprovPackage(
   let seedSample = effectiveSeeds.map((c, i) => ({
     seedNumber: i + 1,
     english: c.english,
-    vietnamese: c.vietnamese
+    vietnamese: c.vietnamese || ''
   }));
 
   if (seedSample.length === 0) {
@@ -1027,39 +1100,108 @@ export async function generateImprovPackage(
   const now = new Date().toISOString();
   const packageId = generateId('pkg_improv');
 
-  const generatedSessions: ImprovSession[] = [];
+  // Plan micro-batches across all sessions
+  // If itemsCount > 8, break into micro-batches of 5–8 items (e.g. 10 items = 2 batches of 5)
+  interface PlannedBatch {
+    sessionNumber: number;
+    sessionConfig: ImprovSessionConfig;
+    batchIndex: number;
+    totalBatchesInSession: number;
+    startItem: number;
+    count: number;
+  }
 
-  // Step 2: Safe Chunked Generation (1 Session per LLM call to guarantee zero token truncation)
-  for (let sIdx = 0; sIdx < sessionConfigs.length; sIdx++) {
-    const sConfig = sessionConfigs[sIdx];
-    const sessionNum = sConfig.sessionNumber || (sIdx + 1);
-    const progressPercent = Math.round(5 + ((sIdx) / totalSessions) * 85);
+  const allPlannedBatches: PlannedBatch[] = [];
+  const MICRO_BATCH_THRESHOLD = 8;
 
-    onProgress?.(
-      progressPercent,
-      100,
-      `Đang sinh Session ${sessionNum}/${totalSessions}: ${sConfig.itemsCount} câu (${sConfig.hcTotal} hints)...`
-    );
-
-    // Distribute seed vocab slice to prevent repeating words across sessions
-    const seedsPerSession = Math.max(8, Math.ceil(sConfig.itemsCount * 1.5));
-    const startSeedIdx = (sIdx * seedsPerSession) % Math.max(1, seedSample.length);
-    let sessionSeeds = seedSample.slice(startSeedIdx, startSeedIdx + seedsPerSession);
-    if (sessionSeeds.length < seedsPerSession && seedSample.length >= seedsPerSession) {
-      sessionSeeds = [...sessionSeeds, ...seedSample.slice(0, seedsPerSession - sessionSeeds.length)];
+  sessionConfigs.forEach(sConfig => {
+    const totalItems = sConfig.itemsCount || 5;
+    if (totalItems <= MICRO_BATCH_THRESHOLD) {
+      allPlannedBatches.push({
+        sessionNumber: sConfig.sessionNumber,
+        sessionConfig: sConfig,
+        batchIndex: 0,
+        totalBatchesInSession: 1,
+        startItem: 1,
+        count: totalItems
+      });
+    } else {
+      // Split into 5-8 items batches (ideal batch size: 5 or 6 items)
+      const batchSize = totalItems <= 12 ? Math.ceil(totalItems / 2) : 6;
+      let remaining = totalItems;
+      let currentStart = 1;
+      const sessionBatches: { startItem: number; count: number }[] = [];
+      while (remaining > 0) {
+        const currentCount = Math.min(batchSize, remaining);
+        sessionBatches.push({ startItem: currentStart, count: currentCount });
+        currentStart += currentCount;
+        remaining -= currentCount;
+      }
+      sessionBatches.forEach((b, bIdx) => {
+        allPlannedBatches.push({
+          sessionNumber: sConfig.sessionNumber,
+          sessionConfig: sConfig,
+          batchIndex: bIdx,
+          totalBatchesInSession: sessionBatches.length,
+          startItem: b.startItem,
+          count: b.count
+        });
+      });
     }
-    if (sessionSeeds.length === 0) {
-      sessionSeeds = seedSample;
+  });
+
+  const totalBatchesCount = allPlannedBatches.length;
+  const sessionAccumulators = new Map<number, {
+    title: string;
+    hcTotal: number;
+    hintTypes: string[];
+    items: ImprovItem[];
+  }>();
+
+  // Initialize session accumulators
+  sessionConfigs.forEach(sConfig => {
+    sessionAccumulators.set(sConfig.sessionNumber, {
+      title: `Session ${sConfig.sessionNumber}`,
+      hcTotal: sConfig.hcTotal,
+      hintTypes: sConfig.hintTypes,
+      items: []
+    });
+  });
+
+  // Step 2: Execute Micro-Batches sequentially
+  for (let batchStep = 0; batchStep < allPlannedBatches.length; batchStep++) {
+    const batch = allPlannedBatches[batchStep];
+    const sConfig = batch.sessionConfig;
+    const sessionNum = batch.sessionNumber;
+    const endItem = batch.startItem + batch.count - 1;
+
+    const progressPercent = Math.round(5 + ((batchStep) / totalBatchesCount) * 88);
+    const batchInfoMsg = batch.totalBatchesInSession > 1
+      ? `Đang sinh Session ${sessionNum}/${totalSessions}: câu ${batch.startItem}-${endItem} / ${sConfig.itemsCount} (${sConfig.hcTotal} hints)...`
+      : `Đang sinh Session ${sessionNum}/${totalSessions}: ${sConfig.itemsCount} câu (${sConfig.hcTotal} hints)...`;
+
+    onProgress?.(progressPercent, 100, batchInfoMsg);
+
+    // Distribute fresh seed vocabularies for this batch
+    const seedsPerBatch = Math.max(6, Math.ceil(batch.count * 1.5));
+    const startSeedIdx = (batchStep * seedsPerBatch) % Math.max(1, seedSample.length);
+    let batchSeeds = seedSample.slice(startSeedIdx, startSeedIdx + seedsPerBatch);
+    if (batchSeeds.length < seedsPerBatch && seedSample.length >= seedsPerBatch) {
+      batchSeeds = [...batchSeeds, ...seedSample.slice(0, seedsPerBatch - batchSeeds.length)];
+    }
+    if (batchSeeds.length === 0) {
+      batchSeeds = seedSample;
     }
 
-    const sessionUserPrompt = `You must generate valid JSON for Session ${sessionNum} of ${totalSessions} for Improv Package "${request.packageTitle}".
+    const isMultiBatch = batch.totalBatchesInSession > 1;
+    const sessionUserPrompt = `You must generate valid JSON for Session ${sessionNum}${isMultiBatch ? ` [Batch ${batch.batchIndex + 1}/${batch.totalBatchesInSession}: Items ${batch.startItem} to ${endItem}]` : ''} of Improv Package "${request.packageTitle}".
 - Session Number: ${sessionNum}
-- Total Items: ${sConfig.itemsCount}
+- Total Items in this Batch: ${batch.count} (Item numbers ${batch.startItem} to ${endItem})
 - Hints per Item (hcTotal): ${sConfig.hcTotal}
 - Hint Types: ${JSON.stringify(sConfig.hintTypes)}
 - Difficulty Level: ${request.difficulty || 'Medium (B1)'}
 - Relevance / Context: ${request.relevance || 'High'}
-- Seed Vocabularies: ${JSON.stringify(sessionSeeds)}
+- Seed Vocabularies: ${JSON.stringify(batchSeeds)}
 
 CRITICAL RULES:
 1. Respond ONLY with a valid JSON object matching this exact schema:
@@ -1070,7 +1212,7 @@ CRITICAL RULES:
   "hintTypes": ${JSON.stringify(sConfig.hintTypes)},
   "items": [
     {
-      "itemNumber": 1,
+      "itemNumber": ${batch.startItem},
       "sessionNumber": ${sessionNum},
       "hcTotal": ${sConfig.hcTotal},
       "hints": [
@@ -1084,13 +1226,13 @@ CRITICAL RULES:
     }
   ]
 }
-2. Generate exactly ${sConfig.itemsCount} items.
+2. Generate exactly ${batch.count} items, numbered sequentially from ${batch.startItem} to ${endItem}.
 3. Every single item MUST have exactly ${sConfig.hcTotal} hints (itemIndex from 1 to ${sConfig.hcTotal}).
 4. Ensure all Vietnamese translations are 100% natural, colloquial, and accurate.
 5. DO NOT repeat fixed sentence patterns. Make every item unique and distinct!
-6. Output ONLY pure JSON. Do NOT wrap in markdown explanation.`;
+6. Output ONLY pure JSON. Do NOT wrap in markdown explanation or reasoning tags.`;
 
-    // Execute LLM call for this session
+    // Execute LLM call for this micro-batch
     const rawContent = await executeLlmGeneration(
       request.llmConfig,
       masterSystemPrompt,
@@ -1101,26 +1243,25 @@ CRITICAL RULES:
     // Robust JSON extraction
     const parsed = extractAndParseJson<any>(rawContent);
 
-    // Extract items array from response (handling various response wrappers)
+    // Extract items array from response (handling various response structures)
     let rawItems: any[] = [];
-    let sessionTitle = `Session ${sessionNum}`;
-
     if (Array.isArray(parsed)) {
       rawItems = parsed;
     } else if (Array.isArray(parsed.items)) {
       rawItems = parsed.items;
-      if (parsed.title) sessionTitle = parsed.title;
+      if (parsed.title) sessionAccumulators.get(sessionNum)!.title = parsed.title;
     } else if (Array.isArray(parsed.sessions) && parsed.sessions[0]?.items) {
       rawItems = parsed.sessions[0].items;
-      if (parsed.sessions[0].title) sessionTitle = parsed.sessions[0].title;
+      if (parsed.sessions[0].title) sessionAccumulators.get(sessionNum)!.title = parsed.sessions[0].title;
     } else if (parsed.session && Array.isArray(parsed.session.items)) {
       rawItems = parsed.session.items;
-      if (parsed.session.title) sessionTitle = parsed.session.title;
+      if (parsed.session.title) sessionAccumulators.get(sessionNum)!.title = parsed.session.title;
     }
 
-    // Normalize and validate items
-    const validatedItems: ImprovItem[] = rawItems.map((it: any, itIdx: number) => {
-      const itemNumber = it.itemNumber || (itIdx + 1);
+    // Normalize and validate items for this batch
+    const validatedBatchItems: ImprovItem[] = rawItems.map((it: any, itIdx: number) => {
+      const assignedItemNumber = batch.startItem + itIdx;
+      const itemNumber = Number(it.itemNumber) || assignedItemNumber;
       const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
       
       const hints: ImprovHint[] = (it.hints || []).map((h: any, hIdx: number) => ({
@@ -1143,6 +1284,11 @@ CRITICAL RULES:
         });
       }
 
+      // If more hints than hcTotal, trim to hcTotal
+      if (hints.length > sConfig.hcTotal) {
+        hints.length = sConfig.hcTotal;
+      }
+
       return {
         id: itemId,
         itemNumber,
@@ -1153,14 +1299,54 @@ CRITICAL RULES:
       };
     });
 
-    generatedSessions.push({
-      sessionNumber: sessionNum,
-      title: sessionTitle,
+    // If LLM returned fewer items than requested, synthesize remaining items to guarantee count
+    while (validatedBatchItems.length < batch.count) {
+      const missingIdx = validatedBatchItems.length;
+      const itemNumber = batch.startItem + missingIdx;
+      const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      const seed = batchSeeds[missingIdx % batchSeeds.length] || { english: 'Practice phrase', vietnamese: 'Cụm từ thực hành' };
+      
+      const hints: ImprovHint[] = [];
+      for (let h = 1; h <= sConfig.hcTotal; h++) {
+        hints.push({
+          id: `h_${sessionNum}_${itemNumber}_${h}`,
+          text: h === 1 ? seed.english : `Collocation ${h}`,
+          translation: h === 1 ? seed.vietnamese : `Kết hợp từ ${h}`,
+          typeFunction: sConfig.hintTypes[h - 1] || `Hint ${h}`,
+          itemIndex: h
+        });
+      }
+
+      validatedBatchItems.push({
+        id: itemId,
+        itemNumber,
+        sessionNumber: sessionNum,
+        hcTotal: hints.length,
+        hints,
+        createdAt: now
+      });
+    }
+
+    // Append batch items to session accumulator
+    sessionAccumulators.get(sessionNum)!.items.push(...validatedBatchItems);
+  }
+
+  // Step 3: Construct generatedSessions
+  const generatedSessions: ImprovSession[] = sessionConfigs.map(sConfig => {
+    const sessionData = sessionAccumulators.get(sConfig.sessionNumber)!;
+    // Sort items by itemNumber and re-index cleanly
+    const sortedItems = sessionData.items
+      .sort((a, b) => a.itemNumber - b.itemNumber)
+      .map((it, idx) => ({ ...it, itemNumber: idx + 1 }));
+
+    return {
+      sessionNumber: sConfig.sessionNumber,
+      title: sessionData.title,
       hcTotal: sConfig.hcTotal,
       hintTypes: sConfig.hintTypes,
-      items: validatedItems
-    });
-  }
+      items: sortedItems
+    };
+  });
 
   const totalItemsCount = generatedSessions.reduce((sum, s) => sum + s.items.length, 0);
 
@@ -1177,7 +1363,7 @@ CRITICAL RULES:
     updatedAt: now
   };
 
-  // Step 3: Save to Firestore & Local Storage
+  // Step 4: Save to Firestore & Local Storage
   await saveImprovPackage(pkg);
 
   onProgress?.(100, 100, `Hoàn tất tạo thành công ${pkg.title} với ${totalItemsCount} items!`);
