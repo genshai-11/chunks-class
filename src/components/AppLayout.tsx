@@ -75,7 +75,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           <div className="flex items-center gap-3">
             <h2 className="font-display font-bold text-lg text-[#0A0A0A]">
               {activeTab === 'schedule' && '15-Session Cohort Schedule'}
-              {activeTab === 'projector' && 'Classroom Presentation Drill'}
+              {activeTab === 'projector' && 'Presentation - Focus Mode'}
               {activeTab === 'curriculum' && 'Curriculum Repository (7,851 Chunks)'}
               {activeTab === 'audio-manager' && 'Quản Lý Âm Thanh Toàn Diện (Audio Management)'}
               {activeTab === 'audio-hub' && 'Voice Engine & Audio Hub'}
@@ -100,57 +100,64 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
               </button>
 
-              {/* Cohort Switcher Dropdown */}
+              {/* Click-outside backdrop overlay */}
               {isCohortDropdownOpen && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-[#E8E8EC] py-2 z-50 animate-scale-up"
-                >
-                  <div className="px-3 py-1.5 text-[11px] font-mono font-bold uppercase text-zinc-400 border-b border-zinc-100">
-                    Active Cohorts ({(allCohorts || []).length})
-                  </div>
+                <>
+                  <div
+                    className="fixed inset-0 z-[90]"
+                    onClick={() => setIsCohortDropdownOpen(false)}
+                  />
+                  {/* Cohort Switcher Dropdown */}
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-[#E8E8EC] py-2 z-[100] animate-scale-up"
+                  >
+                    <div className="px-3 py-1.5 text-[11px] font-mono font-bold uppercase text-zinc-400 border-b border-zinc-100">
+                      Active Cohorts ({(allCohorts || []).length})
+                    </div>
 
-                  <div className="max-h-60 overflow-y-auto py-1">
-                    {(allCohorts || []).map((c) => {
-                      const isSelected = c.id === activeCohort?.id;
-                      return (
-                        <button
-                          key={c.id}
-                          onClick={() => {
-                            onSelectCohort(c);
-                            setIsCohortDropdownOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 flex items-center justify-between text-xs transition-colors ${
-                            isSelected
-                              ? 'bg-[#DC2626]/10 text-[#DC2626] font-bold'
-                              : 'hover:bg-zinc-50 text-zinc-800'
-                          }`}
-                        >
-                          <div className="truncate mr-2">
-                            <div className="truncate">{c.title}</div>
-                            <div className="text-[10px] text-zinc-400 font-mono">
-                              {c.start_date} • 15 sessions
+                    <div className="max-h-60 overflow-y-auto py-1">
+                      {(allCohorts || []).map((c) => {
+                        const isSelected = c.id === activeCohort?.id;
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => {
+                              onSelectCohort(c);
+                              setIsCohortDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 flex items-center justify-between text-xs transition-colors ${
+                              isSelected
+                                ? 'bg-[#DC2626]/10 text-[#DC2626] font-bold'
+                                : 'hover:bg-zinc-50 text-zinc-800'
+                            }`}
+                          >
+                            <div className="truncate mr-2">
+                              <div className="truncate">{c.title}</div>
+                              <div className="text-[10px] text-zinc-400 font-mono">
+                                {c.start_date} • 15 sessions
+                              </div>
                             </div>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-[#DC2626] shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+                            {isSelected && <Check className="w-4 h-4 text-[#DC2626] shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                  <div className="p-2 border-t border-zinc-100">
-                    <button
-                      onClick={() => {
-                        setIsCohortDropdownOpen(false);
-                        setIsCreateCohortOpen(true);
-                      }}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-lg text-xs font-semibold cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>New 15-Session Cohort</span>
-                    </button>
+                    <div className="p-2 border-t border-zinc-100">
+                      <button
+                        onClick={() => {
+                          setIsCohortDropdownOpen(false);
+                          setIsCreateCohortOpen(true);
+                        }}
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-lg text-xs font-semibold cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>New 15-Session Cohort</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart } from '../types';
 import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
@@ -40,7 +40,12 @@ import {
   TrendingUp,
   Zap,
   CheckCircle2,
-  X
+  X,
+  Sliders,
+  Search,
+  Play,
+  Check,
+  ChevronDown
 } from 'lucide-react';
 
 interface ClassroomPresentationProps {
@@ -78,9 +83,19 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [isPartsDrawerOpen, setIsPartsDrawerOpen] = useState<boolean>(false);
   const [isChunkListOpen, setIsChunkListOpen] = useState<boolean>(false);
 
+  // Redesign Popover States
+  const [isLessonSwitcherOpen, setIsLessonSwitcherOpen] = useState<boolean>(false);
+  const [isSoundSettingsOpen, setIsSoundSettingsOpen] = useState<boolean>(false);
+  const [lessonSearchQuery, setLessonSearchQuery] = useState<string>('');
+  const [isAuditioningEn, setIsAuditioningEn] = useState<boolean>(false);
+  const [isAuditioningVi, setIsAuditioningVi] = useState<boolean>(false);
+
+  const lessonSwitcherRef = useRef<HTMLDivElement>(null);
+  const soundSettingsRef = useRef<HTMLDivElement>(null);
+
   // Audio parameters & Real Google Cloud TTS Models
   const [selectedVoice, setSelectedVoice] = useState<string>(
-    audioSettings?.voice_profile_en || 'en-US-Journey-F'
+    audioSettings?.voice_profile_en || 'aura-asteria-en'
   );
   const [selectedVoiceVi, setSelectedVoiceVi] = useState<string>(
     audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
@@ -108,6 +123,25 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [prepProgress, setPrepProgress] = useState<{ current: number; total: number; text: string } | null>(null);
   const [isPrepModalOpen, setIsPrepModalOpen] = useState<boolean>(false);
   const [prepSummary, setPrepSummary] = useState<{ prepared: number; failed: number } | null>(null);
+
+  // Outside click listeners for popovers
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (lessonSwitcherRef.current && !lessonSwitcherRef.current.contains(event.target as Node)) {
+        setIsLessonSwitcherOpen(false);
+      }
+      if (soundSettingsRef.current && !soundSettingsRef.current.contains(event.target as Node)) {
+        setIsSoundSettingsOpen(false);
+      }
+    };
+
+    if (isLessonSwitcherOpen || isSoundSettingsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isLessonSwitcherOpen, isSoundSettingsOpen]);
 
   // Synchronize when initialLessonId changes
   useEffect(() => {
@@ -234,9 +268,27 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const currentPart = parts.find(p => currentChunkIndex >= p.start_index && currentChunkIndex <= p.end_index) || parts[0] || null;
 
   // Grouped courses for the quick lesson switcher
-  const groupedCourses = React.useMemo(() => {
+  const groupedCourses = useMemo(() => {
     return curriculumRegistry.getGroupedCoursesWithLessons();
   }, []);
+
+  // Filtered courses for searchable lesson switcher popover
+  const filteredGroupedCourses = useMemo(() => {
+    const query = lessonSearchQuery.trim().toLowerCase();
+    if (!query) return groupedCourses;
+
+    return groupedCourses
+      .map(group => ({
+        ...group,
+        lessons: group.lessons.filter(l => 
+          l.lesson_title.toLowerCase().includes(query) ||
+          `day ${l.day_number}`.toLowerCase().includes(query) ||
+          l.id.toLowerCase().includes(query) ||
+          group.course.title.toLowerCase().includes(query)
+        )
+      }))
+      .filter(group => group.lessons.length > 0);
+  }, [groupedCourses, lessonSearchQuery]);
 
   const handleSwitchLesson = (newLessonId: string) => {
     let cleanId = newLessonId;
@@ -251,6 +303,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       setFetchedLessonDoc(localDoc);
     }
     onSelectLesson?.(cleanId);
+    setIsLessonSwitcherOpen(false);
+    setLessonSearchQuery('');
   };
 
   // Dual Progress % Computations
@@ -436,7 +490,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     onToggleChunkList: () => setIsChunkListOpen(prev => !prev),
     onToggleFullscreen: handleToggleFullscreen,
     onSetLoop: handleSetLoop,
-    isModalOpen: isPrepModalOpen || isDiagnosticOpen || showKeyboardGuide || isPartsDrawerOpen || isChunkListOpen
+    isModalOpen: isLessonSwitcherOpen || isSoundSettingsOpen || isPrepModalOpen || isDiagnosticOpen || showKeyboardGuide || isPartsDrawerOpen || isChunkListOpen
   }, true);
 
   // Play audio when lesson changes or first mounts
@@ -542,22 +596,22 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
       )}
 
-      {/* 2. SLIM HIGH-SIGNAL TOP BAR */}
-      <div className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-4 transition-colors z-20 ${
+      {/* 3. SLIM HIGH-SIGNAL TOP BAR */}
+      <div className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-3 transition-colors z-20 ${
         highContrastDark ? 'border-zinc-800 bg-[#0F0F12]' : 'border-[#E8E8EC] bg-white/95 backdrop-blur-xs'
       }`}>
-        {/* Left: Lesson Context, Quick Switcher & Dynamic Progress */}
-        <div className="flex items-center gap-2.5 min-w-0 flex-wrap sm:flex-nowrap">
+        {/* Left: Lesson Context, Compact Lesson Switcher & Dynamic Progress */}
+        <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
           {/* Day pill + Level badge */}
           <div className="flex items-center gap-1.5 shrink-0">
             <span 
-              className="font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-[#DC2626] text-white shrink-0 shadow-2xs"
+              className="font-mono font-bold text-xs px-2.5 py-1.5 rounded-xl bg-[#DC2626] text-white shrink-0 shadow-2xs"
               title={`Day ${activeLesson?.day_number ?? 1}`}
             >
               Day {activeLesson?.day_number ?? 1}
             </span>
             <span 
-              className={`text-xs font-mono font-bold px-2 py-1 rounded-lg border shrink-0 ${
+              className={`hidden sm:inline-block text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl border shrink-0 ${
                 highContrastDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'
               }`}
               title={`Course Level: ${courseLevel}`}
@@ -572,46 +626,162 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             </span>
           </div>
 
-          {/* Quick Lesson Switcher Dropdown with clear truncate */}
-          <div className="relative flex items-center min-w-0">
-            <BookOpen className="w-3.5 h-3.5 text-[#DC2626] absolute left-2.5 pointer-events-none shrink-0" />
-            <select
-              value={normalizedId}
-              onChange={(e) => handleSwitchLesson(e.target.value)}
-              className={`text-xs font-bold pl-8 pr-3 py-1 rounded-lg border transition-all cursor-pointer max-w-[180px] sm:max-w-[260px] md:max-w-[320px] truncate shadow-2xs ${
-                highContrastDark 
-                  ? 'bg-zinc-900 text-zinc-100 border-zinc-700 hover:border-zinc-500' 
-                  : 'bg-zinc-50 text-zinc-900 border-zinc-200 hover:bg-white hover:border-zinc-300'
+          {/* 1. COMPACT LESSON SWITCHER BUTTON & POPOVER (Feature 1) */}
+          <div className="relative" ref={lessonSwitcherRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsLessonSwitcherOpen(prev => !prev);
+                setIsSoundSettingsOpen(false);
+              }}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs max-w-[170px] sm:max-w-[240px] md:max-w-[280px] truncate ${
+                isLessonSwitcherOpen
+                  ? 'border-[#DC2626] ring-2 ring-[#DC2626]/20 bg-red-50/50 dark:bg-red-950/20 text-[#DC2626]'
+                  : highContrastDark
+                  ? 'border-zinc-700 bg-zinc-900 text-zinc-100 hover:border-zinc-500'
+                  : 'border-zinc-200 bg-zinc-50 text-zinc-900 hover:bg-white hover:border-zinc-300'
               }`}
-              title="Đổi Bài Học / Quick Lesson Switcher"
+              title="Đổi Bài Học / Switch Lesson"
             >
-              {groupedCourses.map(({ course, lessons }) => (
-                <optgroup 
-                  key={course.id} 
-                  label={`${
-                    course.level_code === 'LEVEL_A' ? '📗 Level A - Foundation' :
-                    course.level_code === 'LEVEL_B_EREL' ? '🎧 Level B - EREL (Listening)' :
-                    course.level_code === 'LEVEL_B_ERES' ? '🗣️ Level B - ERES (Speaking)' :
-                    course.title
-                  } (${lessons.length} bài)`}
-                >
-                  {lessons.map(l => (
-                    <option key={l.id} value={l.id}>
-                      {l.day_number === 0 ? 'Day 0: Word List' : `Day ${l.day_number}`}: {l.lesson_title} ({l.total_chunks || l.chunks?.length || 0} chunks)
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              <BookOpen className="w-4 h-4 text-[#DC2626] shrink-0" />
+              <span className="truncate font-semibold text-left">
+                {activeLesson?.day_number === 0 ? 'Day 0: Word List' : `Day ${activeLesson?.day_number ?? 1}`}: {activeLesson?.lesson_title || 'Chọn bài học'}
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform ${isLessonSwitcherOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Floating Lesson Switcher Popover (z-50) */}
+            {isLessonSwitcherOpen && (
+              <div className={`absolute top-full left-0 mt-2 w-[320px] sm:w-[420px] max-h-[75vh] rounded-2xl border shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 ${
+                highContrastDark ? 'bg-[#121216] border-zinc-700 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'
+              }`}>
+                {/* Popover Header */}
+                <div className={`p-3.5 border-b flex items-center justify-between gap-2 ${
+                  highContrastDark ? 'border-zinc-800 bg-zinc-900/80' : 'border-zinc-100 bg-zinc-50/80'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-red-100 text-[#DC2626] dark:bg-red-950/50">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold leading-tight">Danh Mục Bài Học</h4>
+                      <p className="text-[10px] text-zinc-500">Chọn nhanh bài học để chuyển ngay trên lớp</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsLessonSwitcherOpen(false)}
+                    className="p-1 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Search Bar */}
+                <div className={`p-2.5 border-b ${highContrastDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
+                  <div className="relative flex items-center">
+                    <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={lessonSearchQuery}
+                      onChange={(e) => setLessonSearchQuery(e.target.value)}
+                      placeholder="Tìm theo Day hoặc tên bài học..."
+                      className={`w-full text-xs pl-8.5 pr-8 py-2 rounded-xl border transition-all outline-none ${
+                        highContrastDark
+                          ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-[#DC2626]'
+                          : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-[#DC2626]'
+                      }`}
+                      autoFocus
+                    />
+                    {lessonSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setLessonSearchQuery('')}
+                        className="absolute right-2.5 text-zinc-400 hover:text-zinc-600 p-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Grouped Courses & Lessons List */}
+                <div className="overflow-y-auto p-2 space-y-3 divide-y divide-zinc-100 dark:divide-zinc-800/60 max-h-[50vh]">
+                  {filteredGroupedCourses.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-zinc-400">
+                      Không tìm thấy bài học nào phù hợp với từ khóa "{lessonSearchQuery}".
+                    </div>
+                  ) : (
+                    filteredGroupedCourses.map(({ course, lessons }, gIdx) => (
+                      <div key={course.id} className={gIdx > 0 ? 'pt-2.5' : ''}>
+                        {/* Course Group Header */}
+                        <div className="px-2 py-1 flex items-center justify-between text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                          <span>
+                            {course.level_code === 'LEVEL_A' ? '📗 Level A - Foundation' :
+                             course.level_code === 'LEVEL_B_EREL' ? '🎧 Level B - EREL (Listening)' :
+                             course.level_code === 'LEVEL_B_ERES' ? '🗣️ Level B - ERES (Speaking)' :
+                             course.title}
+                          </span>
+                          <span className="font-mono text-[10px] lowercase font-normal bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+                            {lessons.length} bài
+                          </span>
+                        </div>
+
+                        {/* Lesson Items */}
+                        <div className="mt-1 space-y-1">
+                          {lessons.map(l => {
+                            const isCurrent = l.id === normalizedId || l.id === currentLessonId;
+                            return (
+                              <button
+                                key={l.id}
+                                type="button"
+                                onClick={() => handleSwitchLesson(l.id)}
+                                className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl text-left text-xs transition-all cursor-pointer ${
+                                  isCurrent
+                                    ? 'bg-red-50 dark:bg-red-950/40 text-[#DC2626] font-bold border border-red-200 dark:border-red-900/60'
+                                    : highContrastDark
+                                    ? 'hover:bg-zinc-800/80 text-zinc-200'
+                                    : 'hover:bg-zinc-100 text-zinc-800'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                                    isCurrent
+                                      ? 'bg-[#DC2626] text-white'
+                                      : highContrastDark ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-700'
+                                  }`}>
+                                    {l.day_number === 0 ? 'Day 0' : `Day ${l.day_number}`}
+                                  </span>
+                                  <span className="truncate">{l.lesson_title}</span>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className="font-mono text-[10px] text-zinc-400">
+                                    {l.total_chunks || l.chunks?.length || 0} chunks
+                                  </span>
+                                  {isCurrent && (
+                                    <Check className="w-3.5 h-3.5 text-[#DC2626]" />
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Part & Class Progress Pills with Tooltips */}
-          <div className="hidden md:flex items-center gap-1.5 ml-1 shrink-0">
+          <div className="hidden md:flex items-center gap-1.5 shrink-0">
             {currentPart && (
               <button
                 type="button"
                 onClick={() => setIsPartsDrawerOpen(true)}
-                className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                className={`text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
                   highContrastDark
                     ? 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'
                     : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
@@ -626,7 +796,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             <button
               type="button"
               onClick={() => setIsChunkListOpen(true)}
-              className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+              className={`text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
                 highContrastDark
                   ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800 hover:bg-emerald-900/60'
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
@@ -638,73 +808,250 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           </div>
         </div>
 
-        {/* Right Action Cluster: Provider switcher, Voice model selector, Fullscreen toggle, Theme toggle, Exit button with tooltips */}
+        {/* Right Action Cluster: Audio Settings Popover, Fullscreen toggle, Theme toggle, Exit */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Audio Engine Provider Switcher */}
-          <select
-            value={audioProvider}
-            onChange={(e) => {
-              const newProv = e.target.value as AudioProvider;
-              setAudioProvider(newProv);
-              audioPlayer.setAudioProvider(newProv);
-              if (newProv === 'DEEPGRAM_AURA') {
-                setSelectedVoice('aura-asteria-en');
-              } else {
-                setSelectedVoice('en-US-Journey-F');
-              }
-            }}
-            className={`text-xs font-mono font-bold rounded-lg px-2.5 py-1 border transition-all cursor-pointer shadow-2xs ${
-              highContrastDark 
-                ? 'bg-zinc-800 text-zinc-200 border-zinc-700 hover:border-zinc-500' 
-                : 'bg-zinc-50 text-zinc-800 border-zinc-200 hover:bg-white hover:border-zinc-300'
-            }`}
-            title="Audio Engine Provider (Deepgram Aura / Google Cloud TTS)"
-          >
-            <option value="DEEPGRAM_AURA">Deepgram Aura</option>
-            <option value="GOOGLE_TTS">Google Cloud TTS</option>
-          </select>
+          {/* 2. AUDIO & SOUND SETTINGS ICON BUTTON & POPOVER (Feature 2) */}
+          <div className="relative" ref={soundSettingsRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSoundSettingsOpen(prev => !prev);
+                setIsLessonSwitcherOpen(false);
+              }}
+              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 ${
+                isSoundSettingsOpen
+                  ? 'border-[#DC2626] ring-2 ring-[#DC2626]/20 bg-red-50 text-[#DC2626] dark:bg-red-950/30'
+                  : highContrastDark
+                  ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200'
+                  : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700'
+              }`}
+              title="Cài Đặt Âm Thanh / Audio Setup"
+            >
+              <Sliders className="w-4 h-4 text-[#DC2626]" />
+              <span className="hidden sm:inline text-xs font-bold font-mono">
+                {audioProvider === 'DEEPGRAM_AURA' ? 'Aura AI' : 'Google TTS'}
+              </span>
+            </button>
 
-          {/* Voice Model Selector */}
-          <select
-            value={selectedVoice}
-            onChange={(e) => {
-              const newVoice = e.target.value;
-              setSelectedVoice(newVoice);
-              audioPlayer.playChunk(
-                currentChunk?.english || "Chunking method",
-                null,
-                newVoice,
-                speed,
-                true
-              );
-            }}
-            className={`hidden sm:block text-xs font-mono font-medium rounded-lg px-2.5 py-1 border transition-all cursor-pointer shadow-2xs ${
-              highContrastDark 
-                ? 'bg-zinc-800 text-zinc-200 border-zinc-700 hover:border-zinc-500' 
-                : 'bg-zinc-50 text-zinc-800 border-zinc-200 hover:bg-white hover:border-zinc-300'
-            }`}
-            title="Voice Model Selection"
-          >
-            {audioProvider === 'DEEPGRAM_AURA' ? (
-              DEEPGRAM_AURA_VOICES.map(v => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                </option>
-              ))
-            ) : (
-              GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                </option>
-              ))
+            {/* Floating Audio & Sound Settings Popover (z-50) */}
+            {isSoundSettingsOpen && (
+              <div className={`absolute top-full right-0 mt-2 w-[320px] sm:w-[390px] max-h-[85vh] rounded-2xl border shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 ${
+                highContrastDark ? 'bg-[#121216] border-zinc-700 text-zinc-100' : 'bg-white border-zinc-200 text-zinc-900'
+              }`}>
+                {/* Popover Header */}
+                <div className={`p-4 border-b flex items-center justify-between ${
+                  highContrastDark ? 'border-zinc-800 bg-zinc-900/80' : 'border-zinc-100 bg-zinc-50/80'
+                }`}>
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-red-100 text-[#DC2626] dark:bg-red-950/50">
+                      <Sliders className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-extrabold tracking-tight">Cài Đặt Bộ Tổng Hợp Âm Thanh</h3>
+                      <p className="text-[10px] text-zinc-500">Deepgram Aura & Google Cloud TTS Audio Engine</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSoundSettingsOpen(false)}
+                    className="p-1 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Popover Body */}
+                <div className="p-4 space-y-4 overflow-y-auto text-xs">
+                  {/* 1. Audio Engine Provider Switcher */}
+                  <div>
+                    <label className="block font-bold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5">
+                      1. Chọn Engine Tổng Hợp Giọng (Provider)
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAudioProvider('DEEPGRAM_AURA');
+                          audioPlayer.setAudioProvider('DEEPGRAM_AURA');
+                          setSelectedVoice('aura-asteria-en');
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          audioProvider === 'DEEPGRAM_AURA'
+                            ? 'border-purple-500 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 font-bold ring-2 ring-purple-500/20'
+                            : highContrastDark ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800' : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-extrabold text-xs">Deepgram Aura</span>
+                          <Zap className="w-3.5 h-3.5 text-purple-600 fill-purple-500" />
+                        </div>
+                        <p className="text-[10px] text-zinc-500 leading-tight">Neural Natural Voice AI (Khuyên dùng)</p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAudioProvider('GOOGLE_TTS');
+                          audioPlayer.setAudioProvider('GOOGLE_TTS');
+                          setSelectedVoice('en-US-Journey-F');
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          audioProvider === 'GOOGLE_TTS'
+                            ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold ring-2 ring-blue-500/20'
+                            : highContrastDark ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800' : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-extrabold text-xs">Google Cloud TTS</span>
+                          <Cloud className="w-3.5 h-3.5 text-blue-600" />
+                        </div>
+                        <p className="text-[10px] text-zinc-500 leading-tight">Journey & Studio Models</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. English Voice Model */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
+                        2. Giọng Đọc Tiếng Anh (English Model)
+                      </label>
+                      <button
+                        type="button"
+                        disabled={isAuditioningEn}
+                        onClick={async () => {
+                          setIsAuditioningEn(true);
+                          try {
+                            await audioPlayer.playChunk(
+                              "Master English chunk by chunk with natural rhythm.",
+                              null,
+                              selectedVoice,
+                              speed,
+                              true
+                            );
+                          } finally {
+                            setIsAuditioningEn(false);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#DC2626] hover:text-red-700 cursor-pointer disabled:opacity-50"
+                        title="Nghe thử giọng tiếng Anh đã chọn"
+                      >
+                        <Play className={`w-3 h-3 fill-current ${isAuditioningEn ? 'animate-pulse' : ''}`} />
+                        <span>{isAuditioningEn ? 'Đang phát...' : 'Nghe thử EN'}</span>
+                      </button>
+                    </div>
+
+                    <select
+                      value={selectedVoice}
+                      onChange={(e) => setSelectedVoice(e.target.value)}
+                      className={`w-full text-xs font-medium rounded-xl p-2.5 border transition-all cursor-pointer outline-none ${
+                        highContrastDark
+                          ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-[#DC2626]'
+                          : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-[#DC2626]'
+                      }`}
+                    >
+                      {audioProvider === 'DEEPGRAM_AURA' ? (
+                        DEEPGRAM_AURA_VOICES.map(v => (
+                          <option key={v.id} value={v.id}>
+                            {v.name} ({v.accent} - {v.gender})
+                          </option>
+                        ))
+                      ) : (
+                        GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
+                          <option key={v.id} value={v.id}>
+                            {v.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
+                  {/* 3. Vietnamese Voice Model */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
+                        3. Giọng Đọc Tiếng Việt (Vietnamese Model)
+                      </label>
+                      <button
+                        type="button"
+                        disabled={isAuditioningVi}
+                        onClick={async () => {
+                          setIsAuditioningVi(true);
+                          try {
+                            await audioPlayer.playChunk(
+                              "Luyện tập phản xạ tiếng Anh tự nhiên theo cụm từ.",
+                              null,
+                              selectedVoiceVi,
+                              speed,
+                              true
+                            );
+                          } finally {
+                            setIsAuditioningVi(false);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer disabled:opacity-50"
+                        title="Nghe thử giọng tiếng Việt đã chọn"
+                      >
+                        <Play className={`w-3 h-3 fill-current ${isAuditioningVi ? 'animate-pulse' : ''}`} />
+                        <span>{isAuditioningVi ? 'Đang phát...' : 'Nghe thử VI'}</span>
+                      </button>
+                    </div>
+
+                    <select
+                      value={selectedVoiceVi}
+                      onChange={(e) => setSelectedVoiceVi(e.target.value)}
+                      className={`w-full text-xs font-medium rounded-xl p-2.5 border transition-all cursor-pointer outline-none ${
+                        highContrastDark
+                          ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-emerald-600'
+                          : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-emerald-600'
+                      }`}
+                    >
+                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN').map(v => (
+                        <option key={v.id} value={v.id}>
+                          {v.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Quick Actions Footer */}
+                  <div className={`pt-3 border-t flex items-center justify-between gap-2 ${
+                    highContrastDark ? 'border-zinc-800' : 'border-zinc-100'
+                  }`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsDiagnosticOpen(true);
+                        setIsSoundSettingsOpen(false);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <Activity className="w-3.5 h-3.5 text-red-500" />
+                      <span>Diagnostics</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPrepModalOpen(true);
+                        setIsSoundSettingsOpen(false);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#DC2626] text-white text-[11px] font-bold hover:bg-red-700 transition-colors shadow-2xs"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-white" />
+                      <span>Batch Prepare</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
-          </select>
+          </div>
 
           {/* Fullscreen Toggle */}
           <button
             type="button"
             onClick={handleToggleFullscreen}
-            className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-2xs ${
+            className={`p-1.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
               highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700'
             }`}
             title="Toàn Màn Hình / Fullscreen (F / F5)"
@@ -716,7 +1063,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           <button
             type="button"
             onClick={() => setHighContrastDark(prev => !prev)}
-            className={`p-1.5 rounded-lg border transition-all cursor-pointer shadow-2xs ${
+            className={`p-1.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
               highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-amber-400' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-600'
             }`}
             title="Giao Diện Sáng / Tối (High Contrast Theme)"
@@ -729,7 +1076,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             <button
               type="button"
               onClick={onExit}
-              className="p-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-[#DC2626] hover:text-red-700 transition-colors cursor-pointer shadow-2xs"
+              className="p-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-[#DC2626] hover:text-red-700 transition-colors cursor-pointer shadow-2xs"
               title="Thoát Chế Độ Trình Chiếu (Exit Presentation)"
             >
               <X className="w-4 h-4" />
@@ -738,7 +1085,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
       </div>
 
-      {/* 3. PRIMARY DRILL STAGE (OPTIMIZED FOR LARGE PROJECTOR VISIBILITY) */}
+      {/* 4. PRIMARY DRILL STAGE (DYNAMIC LANGUAGE INVERSION & ENLARGED TYPOGRAPHY - Feature 4) */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-14 text-center max-w-5xl mx-auto w-full relative">
         {/* Badges */}
         <div className="flex items-center gap-2 mb-6 flex-wrap justify-center">
@@ -769,40 +1116,57 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           )}
         </div>
 
-        {/* Primary English Chunk */}
-        <div className="my-auto py-4">
-          <h1
-            className={`font-display font-bold leading-tight md:leading-tight tracking-tight transition-all duration-200 ${
-              currentChunk.english.length > 70 
-                ? 'text-3xl md:text-5xl' 
-                : currentChunk.english.length > 40 
-                  ? 'text-4xl md:text-6xl' 
-                  : 'text-5xl md:text-7xl'
-            } ${activeSpeechStep === 'en' ? 'text-[#DC2626] scale-[1.02]' : ''}`}
-          >
-            {currentChunk.english}
-          </h1>
+        {/* Primary Stage Chunk (Dynamic Language Inversion based on languageMode) */}
+        {(() => {
+          const isViMode = languageMode === 'VI_ONLY';
+          const primaryText = isViMode ? (currentChunk.vietnamese || currentChunk.english) : currentChunk.english;
+          const subtitleText = isViMode ? currentChunk.english : currentChunk.vietnamese;
+          const isPrimarySpeaking = isViMode ? activeSpeechStep === 'vi' : activeSpeechStep === 'en';
+          const isSubtitleSpeaking = isViMode ? activeSpeechStep === 'en' : activeSpeechStep === 'vi';
 
-          {/* Vietnamese Subtitle (Toggleable via Key V) */}
-          <div className="min-h-[4rem] mt-6 flex items-center justify-center">
-            {showSubtitle ? (
-              <p className={`text-xl md:text-2xl font-medium transition-all ${
-                activeSpeechStep === 'vi' 
-                  ? 'text-emerald-600 font-bold' 
-                  : highContrastDark ? 'text-zinc-400' : 'text-[#6B6B6B]'
-              }`}>
-                {currentChunk.vietnamese}
-              </p>
-            ) : (
-              <button
-                onClick={() => setShowSubtitle(true)}
-                className="text-xs font-mono text-zinc-400 hover:text-zinc-600 bg-zinc-100 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 cursor-pointer"
+          return (
+            <div className="my-auto py-4 w-full">
+              {/* Primary Large Text */}
+              <h1
+                className={`font-display font-bold leading-tight md:leading-tight tracking-tight transition-all duration-200 ${
+                  primaryText.length > 70 
+                    ? 'text-3xl md:text-5xl' 
+                    : primaryText.length > 40 
+                      ? 'text-4xl md:text-6xl' 
+                      : 'text-5xl md:text-7xl'
+                } ${isPrimarySpeaking ? 'text-[#DC2626] scale-[1.02]' : ''}`}
               >
-                [Subtitle Hidden — Press 'V' or click to reveal translation]
-              </button>
-            )}
-          </div>
-        </div>
+                {primaryText}
+              </h1>
+
+              {/* Subtitle (Toggleable via Key V, Font size +20% enlarged: text-2xl md:text-3xl font-medium) */}
+              <div className="min-h-[4rem] mt-6 flex items-center justify-center">
+                {showSubtitle ? (
+                  <p className={`text-2xl md:text-3xl font-medium transition-all leading-relaxed ${
+                    isSubtitleSpeaking 
+                      ? 'text-emerald-600 font-bold' 
+                      : highContrastDark ? 'text-zinc-400' : 'text-[#6B6B6B]'
+                  }`}>
+                    {subtitleText}
+                  </p>
+                ) : (
+                  <button
+                    onClick={() => setShowSubtitle(true)}
+                    className={`text-xs font-mono px-3.5 py-2 rounded-xl border border-dashed cursor-pointer transition-colors ${
+                      highContrastDark 
+                        ? 'text-zinc-400 hover:text-zinc-200 bg-zinc-800 border-zinc-700' 
+                        : 'text-zinc-400 hover:text-zinc-600 bg-zinc-100 border-zinc-300'
+                    }`}
+                  >
+                    {isViMode 
+                      ? "[English translation hidden — Press 'V' or click to reveal]" 
+                      : "[Subtitle Hidden — Press 'V' or click to reveal translation]"}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Audio Speaking State Animation */}
         {isPlayingAudio && (
@@ -817,7 +1181,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         )}
       </div>
 
-      {/* 4. PARTS NAVIGATION DRAWER */}
+      {/* 5. PARTS NAVIGATION DRAWER */}
       <PartsDrawer
         isOpen={isPartsDrawerOpen}
         onClose={() => setIsPartsDrawerOpen(false)}
@@ -829,7 +1193,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         }}
       />
 
-      {/* 5. CLICKER SHORTCUT GUIDE MODAL */}
+      {/* 6. CLICKER SHORTCUT GUIDE MODAL */}
       {showKeyboardGuide && (
         <div
           onClick={() => setShowKeyboardGuide(false)}
@@ -894,7 +1258,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
       )}
 
-      {/* 6. MINIMAL HIGH-CONTRAST FLOATING CLASSROOM DOCK */}
+      {/* 7. MINIMAL HIGH-CONTRAST FLOATING CLASSROOM DOCK (Feature 3: Speed Slider) */}
       <div className={`p-3 px-4 sm:px-6 border-t flex flex-wrap items-center justify-between gap-3 z-20 ${
         highContrastDark ? 'border-zinc-800 bg-[#0F0F12]' : 'border-zinc-200 bg-white/95 backdrop-blur-xs'
       }`}>
@@ -929,17 +1293,17 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           </button>
         </div>
 
-        {/* Center: Language Mode & Drill Speed */}
-        <div className="hidden lg:flex items-center gap-2">
+        {/* Center: Language Mode, Smooth Speed Slider & Loop Count (Feature 3) */}
+        <div className="hidden lg:flex items-center gap-3">
           {/* Language Mode Selector: EN and VI */}
-          <div className="flex items-center gap-0.5 bg-zinc-100 border border-zinc-200 p-0.5 rounded-lg text-xs font-mono font-bold">
+          <div className="flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 p-0.5 rounded-lg text-xs font-mono font-bold">
             <button
               type="button"
               onClick={() => setLanguageMode('EN_ONLY')}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] ${
-                languageMode === 'EN_ONLY' ? 'bg-[#DC2626] text-white shadow-xs font-extrabold' : 'text-zinc-600 hover:text-zinc-900'
+                languageMode === 'EN_ONLY' ? 'bg-[#DC2626] text-white shadow-xs font-extrabold' : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
               }`}
-              title="Phát Tiếng Anh (EN Only - Deepgram / Google TTS EN / GCS)"
+              title="Chế độ Tiếng Anh (EN Only - Primary EN, Subtitle VI)"
             >
               EN
             </button>
@@ -947,38 +1311,44 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               type="button"
               onClick={() => setLanguageMode('VI_ONLY')}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] ${
-                languageMode === 'VI_ONLY' ? 'bg-[#DC2626] text-white shadow-xs font-extrabold' : 'text-zinc-600 hover:text-zinc-900'
+                languageMode === 'VI_ONLY' ? 'bg-[#DC2626] text-white shadow-xs font-extrabold' : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
               }`}
-              title="Phát Tiếng Việt (VI Only - Google Cloud TTS)"
+              title="Chế độ Tiếng Việt (VI Only - Primary VI, Subtitle EN)"
             >
               VI
             </button>
           </div>
 
-          {/* Speed */}
-          <div className="flex items-center gap-0.5 bg-zinc-100 border border-zinc-200 p-0.5 rounded-lg text-xs font-mono font-bold">
-            {[0.8, 1.0, 1.2].map((s) => (
-              <button
-                key={s}
-                onClick={() => setSpeed(s)}
-                className={`px-2 py-1 rounded-md transition-colors cursor-pointer text-[11px] ${
-                  speed === s ? 'bg-zinc-900 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
-                }`}
-              >
-                {s}x
-              </button>
-            ))}
+          {/* 3. SMOOTH SPEED RANGE SLIDER (Feature 3) */}
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-xl border ${
+            highContrastDark ? 'bg-zinc-800/80 border-zinc-700' : 'bg-zinc-100/90 border-zinc-200'
+          }`}>
+            <span className="text-[11px] font-mono font-bold text-zinc-500 dark:text-zinc-400">Speed:</span>
+            <input
+              type="range"
+              min="0.8"
+              max="2.0"
+              step="0.1"
+              value={speed}
+              onChange={(e) => setSpeed(parseFloat(e.target.value))}
+              className="w-20 sm:w-24 accent-[#DC2626] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg"
+              title={`Tốc độ đọc: ${speed.toFixed(1)}x (0.8x - 2.0x)`}
+            />
+            <span className="text-[11px] font-mono font-extrabold text-[#DC2626] min-w-[30px] text-right">
+              {speed.toFixed(1)}x
+            </span>
           </div>
 
           {/* Loop Count */}
-          <div className="flex items-center gap-0.5 bg-zinc-100 border border-zinc-200 p-0.5 rounded-lg text-xs font-mono font-bold">
+          <div className="flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 p-0.5 rounded-lg text-xs font-mono font-bold">
             {[1, 2, 3].map((r) => (
               <button
                 key={r}
                 onClick={() => setRepeatCount(r)}
                 className={`px-2 py-1 rounded-md transition-colors cursor-pointer text-[11px] ${
-                  repeatCount === r ? 'bg-amber-500 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                  repeatCount === r ? 'bg-amber-500 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
                 }`}
+                title={`Lặp lại ${r} lần (Phím ${r})`}
               >
                 {r}x
               </button>
@@ -1042,7 +1412,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
       </div>
 
-      {/* 9. VOCABULARY & CHUNKS PREVIEW DRAWER */}
+      {/* 8. VOCABULARY & CHUNKS PREVIEW DRAWER */}
       <ChunkListPreviewDrawer
         isOpen={isChunkListOpen}
         onClose={() => setIsChunkListOpen(false)}
@@ -1060,7 +1430,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         }}
       />
 
-      {/* 10. BATCH AUDIO PREPARATION MODAL */}
+      {/* 9. BATCH AUDIO PREPARATION MODAL */}
       {isPrepModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
           <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-150">
@@ -1174,7 +1544,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
       )}
 
-      {/* 11. AUDIO ENGINE DIAGNOSTICS MODAL */}
+      {/* 10. AUDIO ENGINE DIAGNOSTICS MODAL */}
       <AudioDiagnosticModal
         isOpen={isDiagnosticOpen}
         onClose={() => setIsDiagnosticOpen(false)}
