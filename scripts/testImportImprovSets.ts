@@ -130,8 +130,8 @@ if (!fs.existsSync(excel02Path)) throw new Error(`Missing Excel: ${excel02Path}`
 const excel01Buf = fs.readFileSync(excel01Path);
 const excel02Buf = fs.readFileSync(excel02Path);
 
-const parsedExcel01 = await parseImprovExcelFile(excel01Buf.buffer);
-const parsedExcel02 = await parseImprovExcelFile(excel02Buf.buffer);
+const parsedExcel01 = await parseImprovExcelFile(excel01Buf);
+const parsedExcel02 = await parseImprovExcelFile(excel02Buf);
 
 validatePackage(parsedExcel01, 'public/data/Improv_Set_01_Wandering_Souls.xlsx');
 validatePackage(parsedExcel02, 'public/data/Improv_Set_02_Tell_Me_About_Yourself.xlsx');

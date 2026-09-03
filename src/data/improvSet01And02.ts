@@ -1,6 +1,6 @@
 import { ImprovPackage } from '../types/improv';
 
-// Helper interface
+// Helper to construct items
 interface HintDef {
   text: string;
   translation: string;
@@ -11,101 +11,101 @@ interface ItemDef {
   hints: HintDef[];
 }
 
-// ============================================================================
-// SET 01: Wandering Souls (Airport & Travel Reflex)
-// Based on Level B ERES Day 2 (Airport, Travel, Customs, Transit, Exploration)
-// ============================================================================
+// -------------------------------------------------------------
+// SET 01: Wandering Souls (Airport, Travel, Flight, Belongings, Transit)
+// Based on Level B ERES Day 2
+// -------------------------------------------------------------
 
 // Session 1: 15 items, hcTotal = 2, hintTypes: ['Keyword', 'Ending']
 const s1_items_set1: ItemDef[] = [
   {
     hints: [
-      { text: 'boarding pass', translation: 'thẻ lên máy bay', typeFunction: 'Danh từ · Keyword' },
-      { text: 'lost', translation: 'làm mất', typeFunction: 'Động từ · Ending' }
+      { text: 'cơm tối', translation: 'dinner', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nấu', translation: 'cook', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'loose change', translation: 'tiền lẻ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'front pocket', translation: 'túi trước', typeFunction: 'Danh từ · Ending' }
+      { text: 'thẻ lên máy bay', translation: 'boarding pass', typeFunction: 'Danh từ · Keyword' },
+      { text: 'làm mất', translation: 'lose / lost', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'luggage cart', translation: 'xe đẩy hành lý', typeFunction: 'Danh từ · Keyword' },
-      { text: 'heavy', translation: 'nặng', typeFunction: 'Tính từ · Ending' }
+      { text: 'tiền lẻ', translation: 'loose change', typeFunction: 'Danh từ · Keyword' },
+      { text: 'túi trước', translation: 'front pocket', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'customs officer', translation: 'nhân viên hải quan', typeFunction: 'Danh từ · Keyword' },
-      { text: 'check', translation: 'kiểm tra', typeFunction: 'Động từ · Ending' }
+      { text: 'xe đẩy hành lý', translation: 'luggage cart', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nặng', translation: 'heavy', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'sleeping bag', translation: 'túi ngủ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'warm', translation: 'ấm áp', typeFunction: 'Tính từ · Ending' }
+      { text: 'nhân viên hải quan', translation: 'customs officer', typeFunction: 'Danh từ · Keyword' },
+      { text: 'kiểm tra', translation: 'check', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'hotel', translation: 'khách sạn', typeFunction: 'Danh từ · Keyword' },
-      { text: 'book in advance', translation: 'đặt trước', typeFunction: 'Động từ · Ending' }
+      { text: 'túi ngủ', translation: 'sleeping bag', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ấm áp', translation: 'warm', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'flight', translation: 'chuyến bay', typeFunction: 'Danh từ · Keyword' },
-      { text: 'delayed', translation: 'hoãn', typeFunction: 'Tính từ · Ending' }
+      { text: 'khách sạn', translation: 'hotel', typeFunction: 'Danh từ · Keyword' },
+      { text: 'đặt trước', translation: 'book in advance', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'passport', translation: 'hộ chiếu', typeFunction: 'Danh từ · Keyword' },
-      { text: 'forget', translation: 'quên', typeFunction: 'Động từ · Ending' }
+      { text: 'chuyến bay', translation: 'flight', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hoãn', translation: 'delayed', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'suitcase', translation: 'vali', typeFunction: 'Danh từ · Keyword' },
-      { text: 'lock', translation: 'khóa', typeFunction: 'Động từ · Ending' }
+      { text: 'hộ chiếu', translation: 'passport', typeFunction: 'Danh từ · Keyword' },
+      { text: 'cất kỹ', translation: 'keep safe', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'flip-flops', translation: 'dép lào', typeFunction: 'Danh từ · Keyword' },
-      { text: 'beach trip', translation: 'đi biển', typeFunction: 'Danh từ · Ending' }
+      { text: 'vali', translation: 'suitcase', typeFunction: 'Danh từ · Keyword' },
+      { text: 'khóa', translation: 'lock', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'boarding gate', translation: 'cửa khởi hành', typeFunction: 'Danh từ · Keyword' },
-      { text: 'find', translation: 'tìm', typeFunction: 'Động từ · Ending' }
+      { text: 'dép lào', translation: 'flip-flops', typeFunction: 'Danh từ · Keyword' },
+      { text: 'đi biển', translation: 'beach trip', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'snacks', translation: 'đồ ăn nhẹ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'bring along', translation: 'mang theo', typeFunction: 'Động từ · Ending' }
+      { text: 'cửa khởi hành', translation: 'boarding gate', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tìm', translation: 'find', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'layover time', translation: 'thời gian quá cảnh', typeFunction: 'Danh từ · Keyword' },
-      { text: 'long', translation: 'dài', typeFunction: 'Tính từ · Ending' }
+      { text: 'đồ ăn nhẹ', translation: 'snacks', typeFunction: 'Danh từ · Keyword' },
+      { text: 'mang theo', translation: 'bring along', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'taxi driver', translation: 'tài xế taxi', typeFunction: 'Danh từ · Keyword' },
-      { text: 'friendly', translation: 'thân thiện', typeFunction: 'Tính từ · Ending' }
+      { text: 'thời gian quá cảnh', translation: 'layover time', typeFunction: 'Danh từ · Keyword' },
+      { text: 'dài', translation: 'long', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'rice cooker', translation: 'nồi cơm điện', typeFunction: 'Danh từ · Keyword' },
-      { text: 'cook rice', translation: 'nấu cơm', typeFunction: 'Động từ · Ending' }
+      { text: 'tài xế taxi', translation: 'taxi driver', typeFunction: 'Danh từ · Keyword' },
+      { text: 'thân thiện', translation: 'friendly', typeFunction: 'Tính từ · Ending' }
     ]
   }
 ];
@@ -114,107 +114,107 @@ const s1_items_set1: ItemDef[] = [
 const s2_items_set1: ItemDef[] = [
   {
     hints: [
-      { text: 'heavy luggage', translation: 'hành lý nặng', typeFunction: 'Danh từ · Keyword' },
-      { text: 'therefore', translation: 'do đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'exhausted', translation: 'mệt lử', typeFunction: 'Tính từ · Ending' }
+      { text: 'Chuyến bay đêm', translation: 'red-eye flight', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tuy nhiên', translation: 'however', typeFunction: 'Từ nối · Logic word' },
+      { text: 'mệt mỏi', translation: 'exhausted', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'passport renewal', translation: 'gia hạn hộ chiếu', typeFunction: 'Danh từ · Keyword' },
-      { text: 'before that', translation: 'trước đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'urgent', translation: 'khẩn cấp', typeFunction: 'Tính từ · Ending' }
+      { text: 'Đổi vé', translation: 'rebook ticket', typeFunction: 'Động từ · Keyword' },
+      { text: 'trước đó', translation: 'before that', typeFunction: 'Từ nối · Logic word' },
+      { text: 'miễn phí', translation: 'free of charge', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'flight delay', translation: 'chuyến bay hoãn', typeFunction: 'Danh từ · Keyword' },
-      { text: 'meanwhile', translation: 'đồng thời', typeFunction: 'Từ nối · Logic word' },
-      { text: 'rest', translation: 'nghỉ ngơi', typeFunction: 'Động từ · Ending' }
+      { text: 'Quầy thủ tục', translation: 'check-in desk', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hơn nữa', translation: 'moreover', typeFunction: 'Từ nối · Logic word' },
+      { text: 'đông đúc', translation: 'crowded', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'taxi fare', translation: 'tiền taxi', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in addition', translation: 'hơn nữa', typeFunction: 'Từ nối · Logic word' },
-      { text: 'expensive', translation: 'đắt đỏ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Hành lý xách tay', translation: 'carry-on bag', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nếu không', translation: 'otherwise', typeFunction: 'Từ nối · Logic word' },
+      { text: 'quá cước', translation: 'overweight', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'boarding gate', translation: 'cửa ra máy bay', typeFunction: 'Danh từ · Keyword' },
-      { text: 'next', translation: 'tiếp theo', typeFunction: 'Từ nối · Logic word' },
-      { text: 'sprint', translation: 'chạy nước rút', typeFunction: 'Động từ · Ending' }
+      { text: 'Thẻ lên tàu', translation: 'boarding pass', typeFunction: 'Danh từ · Keyword' },
+      { text: 'sau cùng', translation: 'eventually', typeFunction: 'Từ nối · Logic word' },
+      { text: 'tìm thấy', translation: 'found', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'window seat', translation: 'ghế cạnh cửa sổ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'otherwise', translation: 'nếu không', typeFunction: 'Từ nối · Logic word' },
-      { text: 'cramped', translation: 'chật chội', typeFunction: 'Tính từ · Ending' }
+      { text: 'Giờ khởi hành', translation: 'departure time', typeFunction: 'Danh từ · Keyword' },
+      { text: 'do đó', translation: 'therefore', typeFunction: 'Từ nối · Logic word' },
+      { text: 'vội vã', translation: 'rush', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'travel insurance', translation: 'bảo hiểm du lịch', typeFunction: 'Danh từ · Keyword' },
-      { text: 'if', translation: 'nếu', typeFunction: 'Từ nối · Logic word' },
-      { text: 'secure', translation: 'an tâm', typeFunction: 'Tính từ · Ending' }
+      { text: 'Lối thoát hiểm', translation: 'emergency exit', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nếu', translation: 'if', typeFunction: 'Từ nối · Logic word' },
+      { text: 'rộng rãi', translation: 'spacious', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'broken wheel', translation: 'bánh xe bị gãy', typeFunction: 'Danh từ · Keyword' },
-      { text: 'nevertheless', translation: 'dù vậy', typeFunction: 'Từ nối · Logic word' },
-      { text: 'manageable', translation: 'xoay xở được', typeFunction: 'Tính từ · Ending' }
+      { text: 'Đổi tiền', translation: 'currency exchange', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tiếp theo', translation: 'next', typeFunction: 'Từ nối · Logic word' },
+      { text: 'thuận tiện', translation: 'convenient', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'foreign currency', translation: 'ngoại tệ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in other words', translation: 'nói cách khác', typeFunction: 'Từ nối · Logic word' },
-      { text: 'exchange', translation: 'đổi tiền', typeFunction: 'Động từ · Ending' }
+      { text: 'Khách sạn', translation: 'hotel room', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nói cách khác', translation: 'in other words', typeFunction: 'Từ nối · Logic word' },
+      { text: 'kín phòng', translation: 'fully booked', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'hotel room', translation: 'phòng khách sạn', typeFunction: 'Danh từ · Keyword' },
-      { text: 'eventually', translation: 'sau cùng', typeFunction: 'Từ nối · Logic word' },
-      { text: 'confirmed', translation: 'xác nhận', typeFunction: 'Tính từ · Ending' }
+      { text: 'Bản đồ sân bay', translation: 'terminal map', typeFunction: 'Danh từ · Keyword' },
+      { text: 'dù vậy', translation: 'nevertheless', typeFunction: 'Từ nối · Logic word' },
+      { text: 'hữu ích', translation: 'helpful', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'street market', translation: 'chợ đường phố', typeFunction: 'Danh từ · Keyword' },
-      { text: 'however', translation: 'tuy nhiên', typeFunction: 'Từ nối · Logic word' },
-      { text: 'crowded', translation: 'đông đúc', typeFunction: 'Tính từ · Ending' }
+      { text: 'Khu miễn thuế', translation: 'duty-free shop', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ví dụ', translation: 'for example', typeFunction: 'Từ nối · Logic word' },
+      { text: 'đắt đỏ', translation: 'pricey', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'transit flight', translation: 'chuyến bay quá cảnh', typeFunction: 'Danh từ · Keyword' },
-      { text: 'as long as', translation: 'miễn là', typeFunction: 'Từ nối · Logic word' },
-      { text: 'on time', translation: 'đúng giờ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Xe buýt sân bay', translation: 'shuttle bus', typeFunction: 'Danh từ · Keyword' },
+      { text: 'đúng lúc', translation: 'just in time', typeFunction: 'Trạng từ · Logic word' },
+      { text: 'khởi hành', translation: 'depart', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'power bank', translation: 'sạc dự phòng', typeFunction: 'Danh từ · Keyword' },
-      { text: 'for example', translation: 'ví dụ', typeFunction: 'Từ nối · Logic word' },
-      { text: 'essential', translation: 'thiết yếu', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thất lạc đồ', translation: 'lost luggage', typeFunction: 'Danh từ · Keyword' },
+      { text: 'đồng thời', translation: 'meanwhile', typeFunction: 'Từ nối · Logic word' },
+      { text: 'lo lắng', translation: 'anxious', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'sudden rain', translation: 'mưa bất chợt', typeFunction: 'Danh từ · Keyword' },
-      { text: 'then', translation: 'sau đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'take shelter', translation: 'trú mưa', typeFunction: 'Động từ · Ending' }
+      { text: 'Băng chuyền hành lý', translation: 'baggage carousel', typeFunction: 'Danh từ · Keyword' },
+      { text: 'cuối cùng', translation: 'finally', typeFunction: 'Từ nối · Logic word' },
+      { text: 'dừng lại', translation: 'stop', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'tour guide', translation: 'hướng dẫn viên', typeFunction: 'Danh từ · Keyword' },
-      { text: 'besides', translation: 'ngoài ra', typeFunction: 'Từ nối · Logic word' },
-      { text: 'knowledgeable', translation: 'am hiểu', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thẻ tín dụng', translation: 'credit card', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ngoài ra', translation: 'in addition', typeFunction: 'Từ nối · Logic word' },
+      { text: 'chấp nhận', translation: 'accepted', typeFunction: 'Tính từ · Ending' }
     ]
   }
 ];
@@ -223,360 +223,360 @@ const s2_items_set1: ItemDef[] = [
 const s3_items_set1: ItemDef[] = [
   {
     hints: [
-      { text: 'customs check', translation: 'kiểm tra hải quan', typeFunction: 'Danh từ · Keyword' },
-      { text: 'while', translation: 'trong khi', typeFunction: 'Từ nối · Logic word' },
-      { text: 'red flag', translation: 'dấu hiệu khả nghi', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'strict', translation: 'nghiêm ngặt', typeFunction: 'Tính từ · Ending' }
+      { text: 'Hộ chiếu', translation: 'passport', typeFunction: 'Danh từ · Keyword' },
+      { text: 'trong khi', translation: 'while', typeFunction: 'Từ nối · Logic word' },
+      { text: 'săm soi', translation: 'scrutinize', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'hải quan', translation: 'customs', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'airport terminal', translation: 'nhà ga sân bay', typeFunction: 'Danh từ · Keyword' },
-      { text: 'however', translation: 'tuy nhiên', typeFunction: 'Từ nối · Logic word' },
-      { text: 'lifeline', translation: 'phao cứu trợ', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'helpful', translation: 'hữu ích', typeFunction: 'Tính từ · Ending' }
+      { text: 'Nồi cơm điện', translation: 'rice cooker', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nhưng', translation: 'but', typeFunction: 'Từ nối · Logic word' },
+      { text: 'cồng kềnh', translation: 'bulky item', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'xách tay', translation: 'carry on', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Which flight', translation: 'Chuyến bay nào', typeFunction: 'Cụm nghi vấn · WH word' },
-      { text: 'otherwise', translation: 'nếu không', typeFunction: 'Từ nối · Logic word' },
-      { text: 'last call', translation: 'loa gọi chót', typeFunction: 'Cụm gợi hình · Fancy word' },
-      { text: 'missed', translation: 'bị lỡ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Bao lâu', translation: 'How long', typeFunction: 'Cụm nghi vấn · WH word' },
+      { text: 'nếu không', translation: 'otherwise', typeFunction: 'Từ nối · Logic word' },
+      { text: 'ùn tắc', translation: 'bottleneck', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'lỡ chuyến', translation: 'miss the flight', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'lost baggage', translation: 'thất lạc hành lý', typeFunction: 'Danh từ · Keyword' },
-      { text: 'therefore', translation: 'do đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'headache', translation: 'cơn đau đầu', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'stressful', translation: 'căng thẳng', typeFunction: 'Tính từ · Ending' }
+      { text: 'Xe đẩy hành lý', translation: 'luggage cart', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tuy nhiên', translation: 'however', typeFunction: 'Từ nối · Logic word' },
+      { text: 'kẹt cứng', translation: 'dead stop', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'sảnh đến', translation: 'arrival hall', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'flight cancellation', translation: 'chuyến bay bị hủy', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in contrast', translation: 'ngược lại', typeFunction: 'Từ nối · Logic word' },
-      { text: 'dead stop', translation: 'dừng hẳn', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'refunded', translation: 'được bồi hoàn', typeFunction: 'Tính từ · Ending' }
+      { text: 'Quá cảnh', translation: 'layover', typeFunction: 'Danh từ · Keyword' },
+      { text: 'do đó', translation: 'therefore', typeFunction: 'Từ nối · Logic word' },
+      { text: 'mỏi mòn', translation: 'endless wait', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'phòng chờ', translation: 'lounge', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Why delay', translation: 'Tại sao lại hoãn', typeFunction: 'Cụm nghi vấn · WH word' },
-      { text: 'finally', translation: 'sau cùng', typeFunction: 'Từ nối · Logic word' },
-      { text: 'safe harbor', translation: 'bến đỗ an toàn', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'relieved', translation: 'thở phào', typeFunction: 'Tính từ · Ending' }
+      { text: 'Tại sao', translation: 'Why', typeFunction: 'Cụm nghi vấn · WH word' },
+      { text: 'ngược lại', translation: 'in contrast', typeFunction: 'Từ nối · Logic word' },
+      { text: 'bặt vô âm tín', translation: 'vanished', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'hành lý ký gửi', translation: 'checked bag', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'overseas travel', translation: 'du lịch nước ngoài', typeFunction: 'Danh từ · Keyword' },
-      { text: 'as long as', translation: 'miễn là', typeFunction: 'Từ nối · Logic word' },
-      { text: 'Better safe than sorry', translation: 'cẩn tắc vô áy náy', typeFunction: 'Tục ngữ · Proverb' },
-      { text: 'prepared', translation: 'chuẩn bị kỹ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Say xe', translation: 'carsick', typeFunction: 'Tính từ · Keyword' },
+      { text: 'bởi thế', translation: 'for that reason', typeFunction: 'Từ nối · Logic word' },
+      { text: 'choáng váng', translation: 'dizzy spell', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'dầu gió', translation: 'medicated oil', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'midnight layover', translation: 'quá cảnh nửa đêm', typeFunction: 'Danh từ · Keyword' },
-      { text: 'meanwhile', translation: 'đồng thời', typeFunction: 'Từ nối · Logic word' },
-      { text: 'empty chairs', translation: 'ghế trống trơn', typeFunction: 'Cụm gợi hình · Fancy word' },
-      { text: 'freezing', translation: 'lạnh cóng', typeFunction: 'Tính từ · Ending' }
+      { text: 'Cửa khởi hành', translation: 'gate', typeFunction: 'Danh từ · Keyword' },
+      { text: 'mặc dù', translation: 'although', typeFunction: 'Từ nối · Logic word' },
+      { text: 'xa tít', translation: 'miles away', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'kịp giờ', translation: 'in time', typeFunction: 'Trạng từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'How long', translation: 'Bao lâu', typeFunction: 'Cụm nghi vấn · WH word' },
-      { text: 'if', translation: 'nếu', typeFunction: 'Từ nối · Logic word' },
-      { text: 'green light', translation: 'bật đèn xanh', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'smooth', translation: 'trơn tru', typeFunction: 'Tính từ · Ending' }
+      { text: 'Giờ cất cánh', translation: 'takeoff time', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tiếp theo', translation: 'next', typeFunction: 'Từ nối · Logic word' },
+      { text: 'thông báo khẩn', translation: 'red alert', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'hoãn bay', translation: 'postponed', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'budget airline', translation: 'hãng bay giá rẻ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'nevertheless', translation: 'dù vậy', typeFunction: 'Từ nối · Logic word' },
-      { text: 'hidden cost', translation: 'chi phí ngầm', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'pricey', translation: 'đắt đỏ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Tiền lẻ', translation: 'loose change', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hơn nữa', translation: 'in addition', typeFunction: 'Từ nối · Logic word' },
+      { text: 'leng keng', translation: 'clinking sound', typeFunction: 'Từ tượng thanh · Fancy word' },
+      { text: 'khay kiểm tra', translation: 'scanner tray', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'commuter train', translation: 'tàu trung chuyển', typeFunction: 'Danh từ · Keyword' },
-      { text: 'before that', translation: 'trước đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'rush hour', translation: 'giờ cao điểm', typeFunction: 'Cụm gợi hình · Fancy word' },
-      { text: 'packed', translation: 'chật ních', typeFunction: 'Tính từ · Ending' }
+      { text: 'Khi nào', translation: 'When', typeFunction: 'Cụm nghi vấn · WH word' },
+      { text: 'sau đó', translation: 'then', typeFunction: 'Từ nối · Logic word' },
+      { text: 'thở phào', translation: 'sigh of relief', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'hạ cánh', translation: 'touch down', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'travel SIM', translation: 'SIM du lịch', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in addition', translation: 'hơn nữa', typeFunction: 'Từ nối · Logic word' },
-      { text: 'game changer', translation: 'bước đột phá', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'connected', translation: 'thông suốt', typeFunction: 'Tính từ · Ending' }
+      { text: 'Chợ đêm địa phương', translation: 'night market', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ví dụ', translation: 'for instance', typeFunction: 'Từ nối · Logic word' },
+      { text: 'ấm bụng', translation: 'comfort food', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'thưởng thức', translation: 'enjoy', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Where to go', translation: 'Đi đâu bây giờ', typeFunction: 'Cụm nghi vấn · WH word' },
-      { text: 'next', translation: 'tiếp theo', typeFunction: 'Từ nối · Logic word' },
-      { text: 'hidden gem', translation: 'viên ngọc ẩn', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'breathtaking', translation: 'tuyệt đẹp', typeFunction: 'Tính từ · Ending' }
+      { text: 'Đôi dép lào', translation: 'flip-flops', typeFunction: 'Danh từ · Keyword' },
+      { text: 'miễn là', translation: 'as long as', typeFunction: 'Từ nối · Logic word' },
+      { text: 'êm chân', translation: 'cushiony feel', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'dạo biển', translation: 'stroll', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'emergency exit', translation: 'cửa thoát hiểm', typeFunction: 'Danh từ · Keyword' },
-      { text: 'for that reason', translation: 'chính vì thế', typeFunction: 'Từ nối · Logic word' },
-      { text: 'watchful eye', translation: 'ánh mắt quan sát', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'alert', translation: 'cảnh giác', typeFunction: 'Tính từ · Ending' }
+      { text: 'Sim du lịch', translation: 'travel SIM', typeFunction: 'Danh từ · Keyword' },
+      { text: 'sau cùng', translation: 'eventually', typeFunction: 'Từ nối · Logic word' },
+      { text: 'thông suốt', translation: 'smooth signal', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'kích hoạt', translation: 'activate', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'night market', translation: 'khu chợ đêm', typeFunction: 'Danh từ · Keyword' },
-      { text: 'then', translation: 'sau đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'food heaven', translation: 'thiên đường món ngon', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'bustling', translation: 'nhộn nhịp', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thời tiết xấu', translation: 'bad weather', typeFunction: 'Danh từ · Keyword' },
+      { text: 'cho nên', translation: 'so that', typeFunction: 'Từ nối · Logic word' },
+      { text: 'giông bão', translation: 'turbulent sky', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'rung lắc', translation: 'bumpy ride', typeFunction: 'Cụm gợi hình · Ending' }
     ]
   }
 ];
 
-// Session 4: 15 items, hcTotal = 5, hintTypes: ['Intro', 'Keyword', 'Logic word', 'Fancy word', 'Ending']
+// Session 4: 15 items, hcTotal = 5, hintTypes: ['Intro / Setup', 'Keyword', 'Logic word', 'Fancy word', 'Ending']
 const s4_items_set1: ItemDef[] = [
   {
     hints: [
-      { text: 'Just so you know', translation: 'Nói trước cho bạn hay', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'boarding gate', translation: 'cửa lên tàu bay', typeFunction: 'Danh từ · Keyword' },
-      { text: 'meanwhile', translation: 'đồng thời', typeFunction: 'Từ nối · Logic word' },
-      { text: 'final call', translation: 'hiệu lệnh cuối', typeFunction: 'Cụm gợi hình · Fancy word' },
-      { text: 'hurry', translation: 'khẩn trương', typeFunction: 'Động từ · Ending' }
+      { text: 'Trước tiên', translation: 'First off', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'thủ tục an ninh', translation: 'security check', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hơn nữa', translation: 'moreover', typeFunction: 'Từ nối · Logic word' },
+      { text: 'xếp hàng dài', translation: 'snaking line', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'kiên nhẫn', translation: 'patient', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'To tell you the truth', translation: 'Thật lòng mà nói', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'rough turbulence', translation: 'nhiễu động dữ dội', typeFunction: 'Danh từ · Keyword' },
-      { text: 'while', translation: 'trong khi', typeFunction: 'Từ nối · Logic word' },
-      { text: 'roller coaster', translation: 'tàu lượn rung giật', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'scary', translation: 'đáng sợ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thú thật', translation: 'Honestly', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'vé máy bay', translation: 'airfare', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tuy nhiên', translation: 'however', typeFunction: 'Từ nối · Logic word' },
+      { text: 'giá trên trời', translation: 'sky-high price', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'cân nhắc', translation: 'reconsider', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'It seems that', translation: 'Có vẻ như là', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'customs officer', translation: 'nhân viên hải quan', typeFunction: 'Danh từ · Keyword' },
-      { text: 'however', translation: 'tuy nhiên', typeFunction: 'Từ nối · Logic word' },
-      { text: 'eagle eye', translation: 'mắt đại bàng', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'thorough', translation: 'kỹ lưỡng', typeFunction: 'Tính từ · Ending' }
+      { text: 'Để ý xem', translation: 'Notice that', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'khu vực quá cảnh', translation: 'transit area', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nếu không', translation: 'otherwise', typeFunction: 'Từ nối · Logic word' },
+      { text: 'mê cung', translation: 'maze-like corridor', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'lạc đường', translation: 'get lost', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'As far as I know', translation: 'Theo chỗ tôi biết', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'entry visa', translation: 'thị thực nhập cảnh', typeFunction: 'Danh từ · Keyword' },
-      { text: 'otherwise', translation: 'nếu không', typeFunction: 'Từ nối · Logic word' },
-      { text: 'red tape', translation: 'thủ tục quan liêu', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'delayed', translation: 'bị ách lại', typeFunction: 'Tính từ · Ending' }
+      { text: 'Tin tôi đi', translation: 'Trust me', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'gói bảo hiểm', translation: 'travel insurance', typeFunction: 'Danh từ · Keyword' },
+      { text: 'trong khi', translation: 'while', typeFunction: 'Từ nối · Logic word' },
+      { text: 'phao cứu sinh', translation: 'lifesaver', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'cần thiết', translation: 'essential', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Believe it or not', translation: 'Tin hay không tùy bạn', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'baggage carousel', translation: 'băng chuyền hành lý', typeFunction: 'Danh từ · Keyword' },
-      { text: 'eventually', translation: 'sau cùng', typeFunction: 'Từ nối · Logic word' },
-      { text: 'dead end', translation: 'chỗ kẹt nghẽn', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'jammed', translation: 'bị kẹt cứng', typeFunction: 'Tính từ · Ending' }
+      { text: 'Nghe này', translation: 'Listen up', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'đồ dùng cá nhân', translation: 'personal belongings', typeFunction: 'Danh từ · Keyword' },
+      { text: 'trước đó', translation: 'before that', typeFunction: 'Từ nối · Logic word' },
+      { text: 'cất kỹ', translation: 'lock tight', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'an toàn', translation: 'secure', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'From my perspective', translation: 'Theo góc nhìn của tôi', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'sleeping pod', translation: 'buồng ngủ sân bay', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in addition', translation: 'hơn nữa', typeFunction: 'Từ nối · Logic word' },
-      { text: 'godsend', translation: 'món quà cứu cánh', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'comfortable', translation: 'dễ chịu', typeFunction: 'Tính từ · Ending' }
+      { text: 'Bạn biết đấy', translation: 'You know', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'chỗ ngồi', translation: 'seat reservation', typeFunction: 'Danh từ · Keyword' },
+      { text: 'do đó', translation: 'therefore', typeFunction: 'Từ nối · Logic word' },
+      { text: 'vị trí vàng', translation: 'prime spot', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'thoải mái', translation: 'comfortable', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'In my opinion', translation: 'Theo quan điểm của tôi', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'street food', translation: 'món ăn đường phố', typeFunction: 'Danh từ · Keyword' },
-      { text: 'if', translation: 'nếu', typeFunction: 'Từ nối · Logic word' },
-      { text: 'gold mine', translation: 'mỏ vàng ẩm thực', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'authentic', translation: 'chuẩn vị', typeFunction: 'Tính từ · Ending' }
+      { text: 'May mắn thay', translation: 'Luckily', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'chuyến bay nối chuyến', translation: 'connecting flight', typeFunction: 'Danh từ · Keyword' },
+      { text: 'mặc dù', translation: 'although', typeFunction: 'Từ nối · Logic word' },
+      { text: 'chạy đua thời gian', translation: 'race against time', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'kịp giờ', translation: 'on time', typeFunction: 'Trạng từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: "Don't get me wrong", translation: 'Đừng hiểu sai ý tôi', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'souvenir shop', translation: 'cửa hàng lưu niệm', typeFunction: 'Danh từ · Keyword' },
-      { text: 'nevertheless', translation: 'dù vậy', typeFunction: 'Từ nối · Logic word' },
-      { text: 'tourist trap', translation: 'cái bẫy du khách', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'pricey', translation: 'đắt đỏ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Rõ ràng là', translation: 'Obviously', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'tài xế đón', translation: 'airport pickup', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tiếp theo', translation: 'next', typeFunction: 'Từ nối · Logic word' },
+      { text: 'biển tên', translation: 'signboard', typeFunction: 'Danh từ · Fancy word' },
+      { text: 'chờ sẵn', translation: 'wait outside', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'As a matter of fact', translation: 'Thực tế là', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'flight attendant', translation: 'tiếp viên hàng không', typeFunction: 'Danh từ · Keyword' },
-      { text: 'therefore', translation: 'do đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'lifesaver', translation: 'vị cứu tinh', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'supportive', translation: 'tận tình', typeFunction: 'Tính từ · Ending' }
+      { text: 'Theo tôi thấy', translation: 'In my view', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'thẻ lên tàu điện tử', translation: 'mobile pass', typeFunction: 'Danh từ · Keyword' },
+      { text: 'đồng thời', translation: 'meanwhile', typeFunction: 'Từ nối · Logic word' },
+      { text: 'cứu cánh', translation: 'game changer', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'tiện lợi', translation: 'convenient', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'First of all', translation: 'Trước hết là', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'medical insurance', translation: 'bảo hiểm y tế', typeFunction: 'Danh từ · Keyword' },
-      { text: 'before that', translation: 'trước đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'safety net', translation: 'lưới bảo hiểm an toàn', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'vital', translation: 'sống còn', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thử tưởng tượng', translation: 'Imagine that', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'băng chuyền hành lý', translation: 'baggage carousel', typeFunction: 'Danh từ · Keyword' },
+      { text: 'cuối cùng', translation: 'finally', typeFunction: 'Từ nối · Logic word' },
+      { text: 'trống trơn', translation: 'empty belt', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'thất vọng', translation: 'disappointed', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'By the way', translation: 'Nhân tiện đây', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'hotel reception', translation: 'tiếp tân khách sạn', typeFunction: 'Danh từ · Keyword' },
-      { text: 'next', translation: 'tiếp theo', typeFunction: 'Từ nối · Logic word' },
-      { text: 'warm welcome', translation: 'chào đón ấm áp', typeFunction: 'Cụm gợi hình · Fancy word' },
-      { text: 'hospitable', translation: 'hiếu khách', typeFunction: 'Tính từ · Ending' }
+      { text: 'Đừng lo', translation: "Don't worry", typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'nhân viên hỗ trợ', translation: 'ground staff', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ví dụ', translation: 'for example', typeFunction: 'Từ nối · Logic word' },
+      { text: 'nhiệt tình', translation: 'warm-hearted', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'giải quyết', translation: 'resolve', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Honestly speaking', translation: 'Thành thật mà nói', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'overweight luggage', translation: 'hành lý quá cước', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in other words', translation: 'nói cách khác', typeFunction: 'Từ nối · Logic word' },
-      { text: 'money pit', translation: 'hố ngốn tiền', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'costly', translation: 'hao tốn', typeFunction: 'Tính từ · Ending' }
+      { text: 'Về cơ bản', translation: 'Basically', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'quy định hải quan', translation: 'customs rule', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nếu', translation: 'if', typeFunction: 'Từ nối · Logic word' },
+      { text: 'rào cản', translation: 'barrier', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'tuân thủ', translation: 'comply', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Keep in mind', translation: 'Hãy luôn ghi nhớ', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'meter taxi', translation: 'taxi có đồng hồ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'as long as', translation: 'miễn là', typeFunction: 'Từ nối · Logic word' },
-      { text: 'fair play', translation: 'chơi đẹp minh bạch', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'honest', translation: 'trung thực', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thú thật là', translation: 'To be frank', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'lệch múi giờ', translation: 'jet lag', typeFunction: 'Danh từ · Keyword' },
+      { text: 'sau cùng', translation: 'eventually', typeFunction: 'Từ nối · Logic word' },
+      { text: 'kiệt sức', translation: 'dead tired', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'chợp mắt', translation: 'take a nap', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'You can bet that', translation: 'Bạn cứ yên tâm rằng', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'ocean sunrise', translation: 'bình minh biển', typeFunction: 'Danh từ · Keyword' },
-      { text: 'then', translation: 'sau đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'postcard view', translation: 'khung cảnh như tranh', typeFunction: 'Cụm gợi hình · Fancy word' },
-      { text: 'stunning', translation: 'đẹp ngỡ ngàng', typeFunction: 'Tính từ · Ending' }
+      { text: 'Nói thật nhé', translation: 'Truth be told', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'vali hành lý', translation: 'hard suitcase', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ngoài ra', translation: 'besides', typeFunction: 'Từ nối · Logic word' },
+      { text: 'bền bỉ', translation: 'built to last', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'bảo vệ', translation: 'protect', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'All things considered', translation: 'Cân nhắc mọi mặt', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'solo trip', translation: 'chuyến du hành độc hành', typeFunction: 'Danh từ · Keyword' },
-      { text: 'finally', translation: 'cuối cùng', typeFunction: 'Từ nối · Logic word' },
-      { text: 'eye opener', translation: 'trải nghiệm mở rộng tầm mắt', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'unforgettable', translation: 'khó quên', typeFunction: 'Tính từ · Ending' }
+      { text: 'Không nghi ngờ gì', translation: 'No doubt', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'cẩm nang du lịch', translation: 'travel guide', typeFunction: 'Danh từ · Keyword' },
+      { text: 'bởi thế', translation: 'for that reason', typeFunction: 'Từ nối · Logic word' },
+      { text: 'kim chỉ nam', translation: 'compass', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'hữu ích', translation: 'useful', typeFunction: 'Tính từ · Ending' }
     ]
   }
 ];
 
-// ============================================================================
-// SET 02: Tell Me About Yourself (Professional & Accounting Reflex)
-// Based on Level B ERES Day 3 (Interview, Accounting, Risk, Projects, Skills)
-// ============================================================================
+// -------------------------------------------------------------
+// SET 02: Tell Me About Yourself (Self Intro, Accounting, Finance, Skills, Experience)
+// Based on Level B ERES Day 3
+// -------------------------------------------------------------
 
 // Session 1: 15 items, hcTotal = 2, hintTypes: ['Keyword', 'Ending']
 const s1_items_set2: ItemDef[] = [
   {
     hints: [
-      { text: 'experience', translation: 'kinh nghiệm', typeFunction: 'Danh từ · Keyword' },
-      { text: 'gain', translation: 'tích lũy', typeFunction: 'Động từ · Ending' }
+      { text: 'kinh nghiệm', translation: 'experience', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tích lũy', translation: 'gain', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'financial report', translation: 'báo cáo tài chính', typeFunction: 'Danh từ · Keyword' },
-      { text: 'finish', translation: 'hoàn thành', typeFunction: 'Động từ · Ending' }
+      { text: 'báo cáo tài chính', translation: 'financial report', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hoàn thành', translation: 'finish', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'proactive', translation: 'năng động', typeFunction: 'Tính từ · Keyword' },
-      { text: 'work', translation: 'làm việc', typeFunction: 'Động từ · Ending' }
+      { text: 'năng động', translation: 'proactive', typeFunction: 'Tính từ · Keyword' },
+      { text: 'làm việc', translation: 'work', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'skills', translation: 'kỹ năng', typeFunction: 'Danh từ · Keyword' },
-      { text: 'improve', translation: 'cải thiện', typeFunction: 'Động từ · Ending' }
+      { text: 'kỹ năng', translation: 'skills', typeFunction: 'Danh từ · Keyword' },
+      { text: 'cải thiện', translation: 'improve', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'risk management', translation: 'quản lý rủi ro', typeFunction: 'Danh từ · Keyword' },
-      { text: 'careful', translation: 'cẩn thận', typeFunction: 'Tính từ · Ending' }
+      { text: 'quản lý rủi ro', translation: 'risk management', typeFunction: 'Danh từ · Keyword' },
+      { text: 'cẩn thận', translation: 'careful', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'colleagues', translation: 'đồng nghiệp', typeFunction: 'Danh từ · Keyword' },
-      { text: 'support', translation: 'hỗ trợ', typeFunction: 'Động từ · Ending' }
+      { text: 'đồng nghiệp', translation: 'colleagues', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hỗ trợ', translation: 'support', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'job interview', translation: 'phỏng vấn', typeFunction: 'Danh từ · Keyword' },
-      { text: 'confident', translation: 'tự tin', typeFunction: 'Tính từ · Ending' }
+      { text: 'phỏng vấn', translation: 'job interview', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tự tin', translation: 'confident', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'transactions', translation: 'giao dịch', typeFunction: 'Danh từ · Keyword' },
-      { text: 'reconcile', translation: 'đối soát', typeFunction: 'Động từ · Ending' }
+      { text: 'giao dịch', translation: 'transactions', typeFunction: 'Danh từ · Keyword' },
+      { text: 'đối soát', translation: 'reconcile', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'creative', translation: 'sáng tạo', typeFunction: 'Tính từ · Keyword' },
-      { text: 'solutions', translation: 'giải pháp', typeFunction: 'Danh từ · Ending' }
+      { text: 'sáng tạo', translation: 'creative', typeFunction: 'Tính từ · Keyword' },
+      { text: 'giải pháp', translation: 'solutions', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'balance sheet', translation: 'bảng cân đối kế toán', typeFunction: 'Danh từ · Keyword' },
-      { text: 'accurate', translation: 'chính xác', typeFunction: 'Tính từ · Ending' }
+      { text: 'mục tiêu nghề nghiệp', translation: 'career goals', typeFunction: 'Danh từ · Keyword' },
+      { text: 'theo đuổi', translation: 'pursue', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'deadline', translation: 'hạn chót', typeFunction: 'Danh từ · Keyword' },
-      { text: 'meet', translation: 'kịp thời hạn', typeFunction: 'Động từ · Ending' }
+      { text: 'bảng cân đối kế toán', translation: 'balance sheet', typeFunction: 'Danh từ · Keyword' },
+      { text: 'chính xác', translation: 'accurate', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'accounting system', translation: 'hệ thống kế toán', typeFunction: 'Danh từ · Keyword' },
-      { text: 'upgrade', translation: 'nâng cấp', typeFunction: 'Động từ · Ending' }
+      { text: 'áp lực công việc', translation: 'work pressure', typeFunction: 'Danh từ · Keyword' },
+      { text: 'thích nghi', translation: 'adapt', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'leadership', translation: 'năng lực lãnh đạo', typeFunction: 'Danh từ · Keyword' },
-      { text: 'demonstrate', translation: 'thể hiện', typeFunction: 'Động từ · Ending' }
+      { text: 'dự án mới', translation: 'new project', typeFunction: 'Danh từ · Keyword' },
+      { text: 'bắt đầu', translation: 'launch', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'audit team', translation: 'đoàn kiểm toán', typeFunction: 'Danh từ · Keyword' },
-      { text: 'coordinate', translation: 'phối hợp', typeFunction: 'Động từ · Ending' }
+      { text: 'khách hàng', translation: 'clients', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hài lòng', translation: 'satisfied', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'career path', translation: 'định hướng nghề nghiệp', typeFunction: 'Danh từ · Keyword' },
-      { text: 'clear', translation: 'rõ ràng', typeFunction: 'Tính từ · Ending' }
+      { text: 'văn hóa công ty', translation: 'company culture', typeFunction: 'Danh từ · Keyword' },
+      { text: 'phù hợp', translation: 'fit in', typeFunction: 'Động từ · Ending' }
     ]
   }
 ];
@@ -585,107 +585,107 @@ const s1_items_set2: ItemDef[] = [
 const s2_items_set2: ItemDef[] = [
   {
     hints: [
-      { text: 'tax audit', translation: 'kiểm toán thuế', typeFunction: 'Danh từ · Keyword' },
-      { text: 'before that', translation: 'trước đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'prepare', translation: 'chuẩn bị kỹ', typeFunction: 'Động từ · Ending' }
+      { text: 'Báo cáo quý', translation: 'quarterly report', typeFunction: 'Danh từ · Keyword' },
+      { text: 'trước đó', translation: 'before that', typeFunction: 'Từ nối · Logic word' },
+      { text: 'phê duyệt', translation: 'approved', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'financial data', translation: 'dữ liệu tài chính', typeFunction: 'Danh từ · Keyword' },
-      { text: 'therefore', translation: 'do đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'reliable', translation: 'đáng tin cậy', typeFunction: 'Tính từ · Ending' }
+      { text: 'Chuyên môn kế toán', translation: 'accounting expertise', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hơn nữa', translation: 'in addition', typeFunction: 'Từ nối · Logic word' },
+      { text: 'vững chắc', translation: 'solid', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'team performance', translation: 'hiệu suất nhóm', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in addition', translation: 'hơn nữa', typeFunction: 'Từ nối · Logic word' },
-      { text: 'exceed', translation: 'vượt chỉ tiêu', typeFunction: 'Động từ · Ending' }
+      { text: 'Dòng tiền', translation: 'cash flow', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tuy nhiên', translation: 'however', typeFunction: 'Từ nối · Logic word' },
+      { text: 'biến động', translation: 'volatile', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'cash flow', translation: 'dòng tiền', typeFunction: 'Danh từ · Keyword' },
-      { text: 'meanwhile', translation: 'đồng thời', typeFunction: 'Từ nối · Logic word' },
-      { text: 'healthy', translation: 'dồi dào lành mạnh', typeFunction: 'Tính từ · Ending' }
+      { text: 'Đào tạo nội bộ', translation: 'internal training', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tiếp theo', translation: 'next', typeFunction: 'Từ nối · Logic word' },
+      { text: 'hiệu quả', translation: 'effective', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'data discrepancy', translation: 'chênh lệch số liệu', typeFunction: 'Danh từ · Keyword' },
-      { text: 'however', translation: 'tuy nhiên', typeFunction: 'Từ nối · Logic word' },
-      { text: 'resolved', translation: 'được xử lý', typeFunction: 'Tính từ · Ending' }
+      { text: 'Chi phí vận hành', translation: 'operating expenses', typeFunction: 'Danh từ · Keyword' },
+      { text: 'do đó', translation: 'therefore', typeFunction: 'Từ nối · Logic word' },
+      { text: 'cắt giảm', translation: 'cut down', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'job promotion', translation: 'thăng tiến công việc', typeFunction: 'Danh từ · Keyword' },
-      { text: 'as long as', translation: 'miễn là', typeFunction: 'Từ nối · Logic word' },
-      { text: 'dedicated', translation: 'tận tụy', typeFunction: 'Tính từ · Ending' }
+      { text: 'Sổ cái tổng hợp', translation: 'general ledger', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nếu', translation: 'if', typeFunction: 'Từ nối · Logic word' },
+      { text: 'cân bằng', translation: 'balanced', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'annual budget', translation: 'ngân sách năm', typeFunction: 'Danh từ · Keyword' },
-      { text: 'next', translation: 'tiếp theo', typeFunction: 'Từ nối · Logic word' },
-      { text: 'approved', translation: 'được thông qua', typeFunction: 'Tính từ · Ending' }
+      { text: 'Làm việc nhóm', translation: 'teamwork', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nói cách khác', translation: 'in other words', typeFunction: 'Từ nối · Logic word' },
+      { text: 'hợp tác', translation: 'collaborative', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'internal control', translation: 'kiểm soát nội bộ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'otherwise', translation: 'nếu không', typeFunction: 'Từ nối · Logic word' },
-      { text: 'risky', translation: 'rủi ro cao', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thử việc', translation: 'probation period', typeFunction: 'Danh từ · Keyword' },
+      { text: 'sau cùng', translation: 'eventually', typeFunction: 'Từ nối · Logic word' },
+      { text: 'vượt qua', translation: 'pass', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'professional growth', translation: 'phát triển chuyên môn', typeFunction: 'Danh từ · Keyword' },
-      { text: 'if', translation: 'nếu', typeFunction: 'Từ nối · Logic word' },
-      { text: 'persistent', translation: 'kiên trì', typeFunction: 'Tính từ · Ending' }
+      { text: 'Kiểm toán độc lập', translation: 'external audit', typeFunction: 'Danh từ · Keyword' },
+      { text: 'mặc dù', translation: 'although', typeFunction: 'Từ nối · Logic word' },
+      { text: 'nghiêm ngặt', translation: 'strict', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'accounting books', translation: 'sổ sách kế toán', typeFunction: 'Danh từ · Keyword' },
-      { text: 'eventually', translation: 'sau cùng', typeFunction: 'Từ nối · Logic word' },
-      { text: 'transparent', translation: 'minh bạch', typeFunction: 'Tính từ · Ending' }
+      { text: 'Hạn chót', translation: 'deadline', typeFunction: 'Danh từ · Keyword' },
+      { text: 'vì thế', translation: 'so', typeFunction: 'Từ nối · Logic word' },
+      { text: 'hoàn thành sớm', translation: 'finish early', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'market analysis', translation: 'phân tích thị trường', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in other words', translation: 'nói cách khác', typeFunction: 'Từ nối · Logic word' },
-      { text: 'strategic', translation: 'có tính chiến lược', typeFunction: 'Tính từ · Ending' }
+      { text: 'Phần mềm kế toán', translation: 'accounting software', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ví dụ', translation: 'for example', typeFunction: 'Từ nối · Logic word' },
+      { text: 'tự động hóa', translation: 'automate', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'heavy workload', translation: 'khối lượng công việc lớn', typeFunction: 'Danh từ · Keyword' },
-      { text: 'nevertheless', translation: 'dù vậy', typeFunction: 'Từ nối · Logic word' },
-      { text: 'manageable', translation: 'xoay xở ổn', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thuế doanh nghiệp', translation: 'corporate tax', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ngoài ra', translation: 'besides', typeFunction: 'Từ nối · Logic word' },
+      { text: 'tuân thủ', translation: 'comply', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'software training', translation: 'đào tạo phần mềm', typeFunction: 'Danh từ · Keyword' },
-      { text: 'for example', translation: 'ví dụ', typeFunction: 'Từ nối · Logic word' },
-      { text: 'productive', translation: 'năng suất', typeFunction: 'Tính từ · Ending' }
+      { text: 'Hiệu suất công việc', translation: 'work performance', typeFunction: 'Danh từ · Keyword' },
+      { text: 'đồng thời', translation: 'meanwhile', typeFunction: 'Từ nối · Logic word' },
+      { text: 'đánh giá cao', translation: 'highly rated', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'client relationship', translation: 'quan hệ khách hàng', typeFunction: 'Danh từ · Keyword' },
-      { text: 'then', translation: 'sau đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'strengthen', translation: 'củng cố vững chắc', typeFunction: 'Động từ · Ending' }
+      { text: 'Đàm phán hợp đồng', translation: 'contract negotiation', typeFunction: 'Danh từ · Keyword' },
+      { text: 'dù vậy', translation: 'nevertheless', typeFunction: 'Từ nối · Logic word' },
+      { text: 'linh hoạt', translation: 'flexible', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'project milestone', translation: 'mốc tiến độ dự án', typeFunction: 'Danh từ · Keyword' },
-      { text: 'besides', translation: 'ngoài ra', typeFunction: 'Từ nối · Logic word' },
-      { text: 'completed', translation: 'hoàn tất', typeFunction: 'Tính từ · Ending' }
+      { text: 'Tăng trưởng doanh thu', translation: 'revenue growth', typeFunction: 'Danh từ · Keyword' },
+      { text: 'cuối cùng', translation: 'finally', typeFunction: 'Từ nối · Logic word' },
+      { text: 'đạt mục tiêu', translation: 'reach targets', typeFunction: 'Động từ · Ending' }
     ]
   }
 ];
@@ -694,268 +694,266 @@ const s2_items_set2: ItemDef[] = [
 const s3_items_set2: ItemDef[] = [
   {
     hints: [
-      { text: 'risk assessment', translation: 'đánh giá rủi ro', typeFunction: 'Danh từ · Keyword' },
-      { text: 'while', translation: 'trong khi', typeFunction: 'Từ nối · Logic word' },
-      { text: 'red flag', translation: 'dấu hiệu cảnh báo', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'investigate', translation: 'điều tra kỹ', typeFunction: 'Động từ · Ending' }
+      { text: 'Bảng cân đối', translation: 'balance sheet', typeFunction: 'Danh từ · Keyword' },
+      { text: 'trong khi', translation: 'while', typeFunction: 'Từ nối · Logic word' },
+      { text: 'lệch sổ', translation: 'mismatch', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'rà soát', translation: 're-check', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'audit season', translation: 'mùa kiểm toán', typeFunction: 'Danh từ · Keyword' },
-      { text: 'however', translation: 'tuy nhiên', typeFunction: 'Từ nối · Logic word' },
-      { text: 'lifeline', translation: 'phao cứu cánh', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'supportive', translation: 'tương trợ đắc lực', typeFunction: 'Tính từ · Ending' }
+      { text: 'Dòng tiền dự phòng', translation: 'cash reserve', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nhưng', translation: 'but', typeFunction: 'Từ nối · Logic word' },
+      { text: 'tấm đệm êm', translation: 'safety cushion', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'ổn định', translation: 'stable', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Why accounting', translation: 'Tại sao chọn kế toán', typeFunction: 'Cụm nghi vấn · WH word' },
-      { text: 'finally', translation: 'sau cùng', typeFunction: 'Từ nối · Logic word' },
-      { text: 'stepping stone', translation: 'bước đệm vững chắc', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'rewarding', translation: 'xứng đáng', typeFunction: 'Tính từ · Ending' }
+      { text: 'Quản lý rủi ro', translation: 'risk management', typeFunction: 'Danh từ · Keyword' },
+      { text: 'do đó', translation: 'therefore', typeFunction: 'Từ nối · Logic word' },
+      { text: 'lá chắn thép', translation: 'strong shield', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'an toàn', translation: 'secure', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'financial discrepancy', translation: 'bất thường tài chính', typeFunction: 'Danh từ · Keyword' },
-      { text: 'therefore', translation: 'do đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'wake-up call', translation: 'hồi chuông cảnh tỉnh', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'corrected', translation: 'đã sửa chữa', typeFunction: 'Tính từ · Ending' }
+      { text: 'Tại sao', translation: 'Why', typeFunction: 'Cụm nghi vấn · WH word' },
+      { text: 'ngược lại', translation: 'in contrast', typeFunction: 'Từ nối · Logic word' },
+      { text: 'thâm hụt', translation: 'in the red', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'kiểm soát', translation: 'control', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'balance sheet', translation: 'bảng cân đối kế toán', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in contrast', translation: 'ngược lại', typeFunction: 'Từ nối · Logic word' },
-      { text: 'rock solid', translation: 'vững như bàn thạch', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'accurate', translation: 'chuẩn xác', typeFunction: 'Tính từ · Ending' }
+      { text: 'Nhân viên mới', translation: 'new recruit', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tuy nhiên', translation: 'however', typeFunction: 'Từ nối · Logic word' },
+      { text: 'hạt giống tiềm năng', translation: 'rising star', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'hòa nhập', translation: 'adapt', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Which strength', translation: 'Điểm mạnh nào', typeFunction: 'Cụm nghi vấn · WH word' },
-      { text: 'otherwise', translation: 'nếu không', typeFunction: 'Từ nối · Logic word' },
-      { text: 'trump card', translation: 'con bài chiến lược', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'outstanding', translation: 'vượt trội', typeFunction: 'Tính từ · Ending' }
+      { text: 'Khi nào', translation: 'When', typeFunction: 'Cụm nghi vấn · WH word' },
+      { text: 'sau đó', translation: 'then', typeFunction: 'Từ nối · Logic word' },
+      { text: 'bước ngoặt', translation: 'game changer', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'thăng tiến', translation: 'promoted', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'budget deficit', translation: 'thâm hụt ngân sách', typeFunction: 'Danh từ · Keyword' },
-      { text: 'nevertheless', translation: 'dù vậy', typeFunction: 'Từ nối · Logic word' },
-      { text: 'game plan', translation: 'chiến lược bài bản', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'solved', translation: 'được tháo gỡ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Lợi nhuận ròng', translation: 'net profit', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hơn nữa', translation: 'moreover', typeFunction: 'Từ nối · Logic word' },
+      { text: 'tăng vọt', translation: 'skyrocket', typeFunction: 'Cụm gợi hình · Fancy word' },
+      { text: 'ấn tượng', translation: 'impressive', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'data integrity', translation: 'tính toàn vẹn dữ liệu', typeFunction: 'Danh từ · Keyword' },
-      { text: 'as long as', translation: 'miễn là', typeFunction: 'Từ nối · Logic word' },
-      { text: 'cornerstone', translation: 'hòn đá tảng', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'intact', translation: 'nguyên vẹn', typeFunction: 'Tính từ · Ending' }
+      { text: 'Kiểm toán nội bộ', translation: 'internal audit', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nếu không', translation: 'otherwise', typeFunction: 'Từ nối · Logic word' },
+      { text: 'hồi chuông cảnh báo', translation: 'red flag', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'khắc phục', translation: 'resolve', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'How much value', translation: 'Đem lại bao nhiêu giá trị', typeFunction: 'Cụm nghi vấn · WH word' },
-      { text: 'if', translation: 'nếu', typeFunction: 'Từ nối · Logic word' },
-      { text: 'win-win', translation: 'đôi bên cùng có lợi', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'measurable', translation: 'đo lường được', typeFunction: 'Tính từ · Ending' }
+      { text: 'Bao nhiêu', translation: 'How much', typeFunction: 'Cụm nghi vấn · WH word' },
+      { text: 'bởi thế', translation: 'for that reason', typeFunction: 'Từ nối · Logic word' },
+      { text: 'thắt lưng buộc bụng', translation: 'belt-tightening', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'ngân sách', translation: 'budget', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'executive pitch', translation: 'bài thuyết trình ban giám đốc', typeFunction: 'Danh từ · Keyword' },
-      { text: 'before that', translation: 'trước đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'dry run', translation: 'buổi tập dượt kỹ', typeFunction: 'Cụm gợi hình · Fancy word' },
-      { text: 'persuasive', translation: 'thuyết phục', typeFunction: 'Tính từ · Ending' }
+      { text: 'Kỹ năng giao tiếp', translation: 'interpersonal skills', typeFunction: 'Danh từ · Keyword' },
+      { text: 'đồng thời', translation: 'meanwhile', typeFunction: 'Từ nối · Logic word' },
+      { text: 'chìa khóa vàng', translation: 'golden key', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'kết nối', translation: 'connect', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'system bottleneck', translation: 'nút thắt cổ chai', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in addition', translation: 'hơn nữa', typeFunction: 'Từ nối · Logic word' },
-      { text: 'silver bullet', translation: 'phương thuốc đặc trị', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'streamlined', translation: 'tinh gọn', typeFunction: 'Tính từ · Ending' }
+      { text: 'Mục tiêu kinh doanh', translation: 'business goal', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tiếp theo', translation: 'next', typeFunction: 'Từ nối · Logic word' },
+      { text: 'tầm nhìn xa', translation: 'big picture', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'bứt phá', translation: 'breakthrough', typeFunction: 'Danh từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'probation period', translation: 'giai đoạn thử việc', typeFunction: 'Danh từ · Keyword' },
-      { text: 'next', translation: 'tiếp theo', typeFunction: 'Từ nối · Logic word' },
-      { text: 'acid test', translation: 'phép thử thực tế', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'passed', translation: 'vượt qua xuất sắc', typeFunction: 'Tính từ · Ending' }
+      { text: 'Sai lệch số liệu', translation: 'data discrepancy', typeFunction: 'Danh từ · Keyword' },
+      { text: 'mặc dù', translation: 'although', typeFunction: 'Từ nối · Logic word' },
+      { text: 'lỗ hổng nhỏ', translation: 'tiny leak', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'chấn chỉnh', translation: 'rectify', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Where to improve', translation: 'Nên cải thiện mặt nào', typeFunction: 'Cụm nghi vấn · WH word' },
-      { text: 'then', translation: 'sau đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'learning curve', translation: 'quá trình tiếp thu', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'accelerated', translation: 'được đẩy nhanh', typeFunction: 'Tính từ · Ending' }
+      { text: 'Giải pháp sáng tạo', translation: 'creative solution', typeFunction: 'Danh từ · Keyword' },
+      { text: 'sau cùng', translation: 'eventually', typeFunction: 'Từ nối · Logic word' },
+      { text: 'luồng gió mới', translation: 'breath of fresh air', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'thành công', translation: 'succeed', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'unethical practice', translation: 'hành vi phi đạo đức', typeFunction: 'Danh từ · Keyword' },
-      { text: 'for that reason', translation: 'chính vì thế', typeFunction: 'Từ nối · Logic word' },
-      { text: 'line in the sand', translation: 'ranh giới bất khả xâm phạm', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'rejected', translation: 'bị khước từ dứt khoát', typeFunction: 'Tính từ · Ending' }
+      { text: 'Áp lực doanh số', translation: 'sales pressure', typeFunction: 'Danh từ · Keyword' },
+      { text: 'cho nên', translation: 'so that', typeFunction: 'Từ nối · Logic word' },
+      { text: 'tôi luyện', translation: 'forge ahead', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'kiên cường', translation: 'resilient', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'career opportunity', translation: 'cơ hội nghề nghiệp', typeFunction: 'Danh từ · Keyword' },
-      { text: 'besides', translation: 'ngoài ra', typeFunction: 'Từ nối · Logic word' },
-      { text: 'golden ticket', translation: 'tấm vé vàng đổi đời', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'seized', translation: 'được nắm bắt', typeFunction: 'Tính từ · Ending' }
+      { text: 'Cơ hội việc làm', translation: 'career opening', typeFunction: 'Danh từ · Keyword' },
+      { text: 'miễn là', translation: 'as long as', typeFunction: 'Từ nối · Logic word' },
+      { text: 'nắm bắt', translation: 'seize the day', typeFunction: 'Tục ngữ · Proverb' },
+      { text: 'phát triển', translation: 'thrive', typeFunction: 'Động từ · Ending' }
     ]
   }
 ];
 
-// Session 4: 15 items, hcTotal = 5, hintTypes: ['Intro', 'Keyword', 'Logic word', 'Fancy word', 'Ending']
+// Session 4: 15 items, hcTotal = 5, hintTypes: ['Intro / Setup', 'Keyword', 'Logic word', 'Fancy word', 'Ending']
 const s4_items_set2: ItemDef[] = [
   {
     hints: [
-      { text: 'First and foremost', translation: 'Trước hết và quan trọng nhất', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'professional ethics', translation: 'đạo đức nghề nghiệp', typeFunction: 'Danh từ · Keyword' },
-      { text: 'while', translation: 'trong khi', typeFunction: 'Từ nối · Logic word' },
-      { text: 'moral compass', translation: 'kim chỉ nam dẫn đường', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'unbending', translation: 'không nhân nhượng', typeFunction: 'Tính từ · Ending' }
+      { text: 'Về cơ bản', translation: 'Basically', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'kiểm soát tài chính', translation: 'financial control', typeFunction: 'Danh từ · Keyword' },
+      { text: 'hơn nữa', translation: 'moreover', typeFunction: 'Từ nối · Logic word' },
+      { text: 'xương sống doanh nghiệp', translation: 'backbone', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'vững chắc', translation: 'solid', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'To tell you the truth', translation: 'Thành thật giãi bày', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'financial modeling', translation: 'mô hình hóa tài chính', typeFunction: 'Danh từ · Keyword' },
-      { text: 'however', translation: 'tuy nhiên', typeFunction: 'Từ nối · Logic word' },
-      { text: 'hard nut', translation: 'bài toán hóc búa', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'conquered', translation: 'được chinh phục', typeFunction: 'Tính từ · Ending' }
+      { text: 'Theo tôi thấy', translation: 'In my view', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'đạo đức nghề nghiệp', translation: 'professional ethics', typeFunction: 'Danh từ · Keyword' },
+      { text: 'luôn luôn', translation: 'always', typeFunction: 'Trạng từ · Logic word' },
+      { text: 'kim chỉ nam', translation: 'guiding compass', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'chuẩn mực', translation: 'standard', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'In my humble opinion', translation: 'Theo ý kiến khiêm tốn của tôi', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'cross-functional team', translation: 'nhóm liên phòng ban', typeFunction: 'Danh từ · Keyword' },
-      { text: 'otherwise', translation: 'nếu không', typeFunction: 'Từ nối · Logic word' },
-      { text: 'silo mentality', translation: 'tư duy cục bộ', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'collaborative', translation: 'hợp tác khăng khít', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thú thật rằng', translation: 'To be frank', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'khối lượng công việc', translation: 'workload', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tuy nhiên', translation: 'however', typeFunction: 'Từ nối · Logic word' },
+      { text: 'thử lửa', translation: 'baptism by fire', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'trưởng thành', translation: 'mature', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: "As far as I'm concerned", translation: 'Theo góc nhìn chuyên môn của tôi', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'cost reduction', translation: 'cắt giảm chi phí', typeFunction: 'Danh từ · Keyword' },
-      { text: 'therefore', translation: 'do đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'low-hanging fruit', translation: 'thành quả dễ gặt hái', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'optimized', translation: 'được tối ưu', typeFunction: 'Tính từ · Ending' }
+      { text: 'Điểm mấu chốt', translation: 'The key point', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'tối ưu hóa quy trình', translation: 'process optimization', typeFunction: 'Danh từ · Keyword' },
+      { text: 'trước đó', translation: 'before that', typeFunction: 'Từ nối · Logic word' },
+      { text: 'bàn đạp vững', translation: 'launchpad', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'hiệu quả', translation: 'efficient', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Believe it or not', translation: 'Dù tin hay không', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'cloud migration', translation: 'chuyển đổi dữ liệu đám mây', typeFunction: 'Danh từ · Keyword' },
-      { text: 'eventually', translation: 'sau cùng', typeFunction: 'Từ nối · Logic word' },
-      { text: 'smooth sailing', translation: 'thuận buồm xuôi gió', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'seamless', translation: 'liền mạch trơn tru', typeFunction: 'Tính từ · Ending' }
+      { text: 'Bạn biết đấy', translation: 'As you know', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'quản trị dòng tiền', translation: 'cash flow management', typeFunction: 'Danh từ · Keyword' },
+      { text: 'do đó', translation: 'therefore', typeFunction: 'Từ nối · Logic word' },
+      { text: 'huyết mạch', translation: 'lifeblood', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'sống còn', translation: 'vital', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'From my experience', translation: 'Từ kinh nghiệm thực tế của tôi', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'quarterly closing', translation: 'chốt sổ kế toán quý', typeFunction: 'Danh từ · Keyword' },
-      { text: 'meanwhile', translation: 'đồng thời', typeFunction: 'Từ nối · Logic word' },
-      { text: 'cool head', translation: 'cái đầu lạnh điềm tĩnh', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'focused', translation: 'tập trung cao độ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Để tôi giải thích', translation: 'Let me explain', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'phân tích dữ liệu', translation: 'data analytics', typeFunction: 'Danh từ · Keyword' },
+      { text: 'đồng thời', translation: 'meanwhile', typeFunction: 'Từ nối · Logic word' },
+      { text: 'đòn bẩy mạnh', translation: 'powerful leverage', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'chính xác', translation: 'accurate', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Honestly speaking', translation: 'Nói một cách chân thành', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'junior analyst', translation: 'chuyên viên phân tích trẻ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'if', translation: 'nếu', typeFunction: 'Từ nối · Logic word' },
-      { text: 'eager beaver', translation: 'người chăm chỉ nhiệt thành', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'promising', translation: 'đầy triển vọng', typeFunction: 'Tính từ · Ending' }
+      { text: 'Rõ ràng là', translation: 'Clearly', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'năng lực cốt lõi', translation: 'core competency', typeFunction: 'Danh từ · Keyword' },
+      { text: 'tiếp theo', translation: 'next', typeFunction: 'Từ nối · Logic word' },
+      { text: 'bước đệm tốt', translation: 'stepping stone', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'nâng cao', translation: 'elevate', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: "Don't get me wrong", translation: 'Đừng hiểu sai ý tôi', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'internal audit', translation: 'kiểm toán nội bộ', typeFunction: 'Danh từ · Keyword' },
-      { text: 'nevertheless', translation: 'dù vậy', typeFunction: 'Từ nối · Logic word' },
-      { text: 'fine-tooth comb', translation: 'soi kỹ từng chân tơ kẽ tóc', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'rigorous', translation: 'ngặt nghèo chuẩn chỉ', typeFunction: 'Tính từ · Ending' }
+      { text: 'Đáng chú ý là', translation: 'Notably', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'rủi ro thanh khoản', translation: 'liquidity risk', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nếu không', translation: 'otherwise', typeFunction: 'Từ nối · Logic word' },
+      { text: 'vết dầu loang', translation: 'spillover', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'kiểm soát', translation: 'mitigate', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'As a matter of fact', translation: 'Trên thực tế kiểm chứng', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'budget variance', translation: 'chênh lệch ngân sách', typeFunction: 'Danh từ · Keyword' },
-      { text: 'before that', translation: 'trước đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'smoking gun', translation: 'bằng chứng rõ mười mươi', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'detected', translation: 'được phát hiện', typeFunction: 'Tính từ · Ending' }
+      { text: 'Thật lòng mà nói', translation: 'Honestly speaking', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'môi trường làm việc', translation: 'work environment', typeFunction: 'Danh từ · Keyword' },
+      { text: 'mặc dù', translation: 'although', typeFunction: 'Từ nối · Logic word' },
+      { text: 'lò luyện thép', translation: 'crucible', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'gắn bó', translation: 'committed', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Just to clarify', translation: 'Chỉ để làm rõ hơn', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'emergency reserve', translation: 'khoản dự phòng khẩn cấp', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in addition', translation: 'hơn nữa', typeFunction: 'Từ nối · Logic word' },
-      { text: 'financial cushion', translation: 'tấm đệm tài chính', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'safe', translation: 'an toàn tuyệt đối', typeFunction: 'Tính từ · Ending' }
+      { text: 'Nhìn chung', translation: 'Overall', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'kế hoạch tài chính', translation: 'financial planning', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ví dụ', translation: 'for example', typeFunction: 'Từ nối · Logic word' },
+      { text: 'bản thiết kế', translation: 'blueprint', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'khả thi', translation: 'feasible', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'By all accounts', translation: 'Theo đánh giá chung', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'project leader', translation: 'người dẫn dắt dự án', typeFunction: 'Danh từ · Keyword' },
-      { text: 'next', translation: 'tiếp theo', typeFunction: 'Từ nối · Logic word' },
-      { text: 'driving force', translation: 'đầu tàu kéo tiến độ', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'inspirational', translation: 'truyền cảm hứng', typeFunction: 'Tính từ · Ending' }
+      { text: 'Tin tôi đi', translation: 'Believe me', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'tinh thần đồng đội', translation: 'team synergy', typeFunction: 'Danh từ · Keyword' },
+      { text: 'sau cùng', translation: 'eventually', typeFunction: 'Từ nối · Logic word' },
+      { text: 'sức mạnh tổng hợp', translation: 'multiplier effect', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'bứt phá', translation: 'excel', typeFunction: 'Động từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'To put it another way', translation: 'Nói bằng cách khác', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'client trust', translation: 'niềm tin của khách hàng', typeFunction: 'Danh từ · Keyword' },
-      { text: 'in other words', translation: 'nói cách khác', typeFunction: 'Từ nối · Logic word' },
-      { text: 'bread and butter', translation: 'miếng cơm manh áo cốt lõi', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'vital', translation: 'sống còn', typeFunction: 'Tính từ · Ending' }
+      { text: 'Tôi nhận thấy', translation: 'I noticed', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'tự động hóa báo cáo', translation: 'report automation', typeFunction: 'Danh từ · Keyword' },
+      { text: 'ngoài ra', translation: 'besides', typeFunction: 'Từ nối · Logic word' },
+      { text: 'cánh tay phải', translation: 'right hand', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'tiết kiệm', translation: 'time-saving', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'Keep in mind', translation: 'Hãy luôn ghi nhớ', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'compliance regulation', translation: 'quy định tuân thủ pháp lý', typeFunction: 'Danh từ · Keyword' },
-      { text: 'as long as', translation: 'miễn là', typeFunction: 'Từ nối · Logic word' },
-      { text: 'ahead of curve', translation: 'đi trước đón đầu', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'bulletproof', translation: 'vững vàng không sơ hở', typeFunction: 'Tính từ · Ending' }
+      { text: 'Không nghi ngờ gì', translation: 'Undoubtedly', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'kinh nghiệm thực chiến', translation: 'hands-on experience', typeFunction: 'Danh từ · Keyword' },
+      { text: 'cho nên', translation: 'so that', typeFunction: 'Từ nối · Logic word' },
+      { text: 'nền móng vững', translation: 'bedrock', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'tự tin', translation: 'confident', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'You can be sure that', translation: 'Bạn có thể chắc chắn rằng', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'final report', translation: 'báo cáo quyết toán cuối cùng', typeFunction: 'Danh từ · Keyword' },
-      { text: 'then', translation: 'sau đó', typeFunction: 'Từ nối · Logic word' },
-      { text: 'clean sheet', translation: 'hồ sơ sạch tinh tươm', typeFunction: 'Cụm gợi hình · Fancy word' },
-      { text: 'flawless', translation: 'hoàn hảo', typeFunction: 'Tính từ · Ending' }
+      { text: 'Đặt trường hợp', translation: 'Suppose that', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'thị trường biến động', translation: 'market volatility', typeFunction: 'Danh từ · Keyword' },
+      { text: 'nếu', translation: 'if', typeFunction: 'Từ nối · Logic word' },
+      { text: 'tay chèo lái', translation: 'steady helm', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'an toàn', translation: 'secure', typeFunction: 'Tính từ · Ending' }
     ]
   },
   {
     hints: [
-      { text: 'All in all', translation: 'Tóm lại mọi điều', typeFunction: 'Cụm mào đầu · Intro' },
-      { text: 'finance career', translation: 'con đường sự nghiệp tài chính', typeFunction: 'Danh từ · Keyword' },
-      { text: 'finally', translation: 'cuối cùng', typeFunction: 'Từ nối · Logic word' },
-      { text: 'true calling', translation: 'tiếng gọi đam mê đích thực', typeFunction: 'Ẩn dụ · Fancy word' },
-      { text: 'fulfilling', translation: 'viên mãn trọn vẹn', typeFunction: 'Tính từ · Ending' }
+      { text: 'Cuối cùng là', translation: 'Last but not least', typeFunction: 'Cụm mào đầu · Intro' },
+      { text: 'khát vọng phát triển', translation: 'growth mindset', typeFunction: 'Danh từ · Keyword' },
+      { text: 'bởi thế', translation: 'for that reason', typeFunction: 'Từ nối · Logic word' },
+      { text: 'ngọn lửa đam mê', translation: 'inner drive', typeFunction: 'Ẩn dụ · Fancy word' },
+      { text: 'bền bỉ', translation: 'relentless', typeFunction: 'Tính từ · Ending' }
     ]
   }
 ];
 
-// ============================================================================
-// Builder function to assemble full ImprovPackage
-// ============================================================================
+// Helper to construct ImprovPackage
 function buildPackage(
   id: string,
   title: string,
@@ -970,36 +968,30 @@ function buildPackage(
   const sessionsConfig = [
     {
       sessionNumber: 1,
-      title: id.includes('01') 
-        ? 'Session 1 • 2 Hints (Airport & Travel Rapid Reflex)' 
-        : 'Session 1 • 2 Hints (Self Pitch & Core Accounting Reflex)',
+      title: 'Session 1 • 2 Hints (Rapid Reaction & Core Phrasing)',
       hcTotal: 2,
-      hintTypes: ['Danh từ · Keyword', 'Động từ · Ending'],
+      hintTypes: ['Keyword', 'Ending'],
       itemsData: s1_items
     },
     {
       sessionNumber: 2,
-      title: id.includes('01')
-        ? 'Session 2 • 3 Hints (Cause-Effect & Travel Situations)'
-        : 'Session 2 • 3 Hints (Cause-Effect & Career Context)',
+      title: 'Session 2 • 3 Hints (Logic Transitions & Phrasing)',
       hcTotal: 3,
-      hintTypes: ['Danh từ · Keyword', 'Từ nối · Logic word', 'Tính từ · Ending'],
+      hintTypes: ['Keyword', 'Logic word', 'Ending'],
       itemsData: s2_items
     },
     {
       sessionNumber: 3,
-      title: id.includes('01')
-        ? 'Session 3 • 4 Hints (Nuance & Travel Mishaps)'
-        : 'Session 3 • 4 Hints (Nuance & Professional Skills)',
+      title: 'Session 3 • 4 Hints (Fancy Metaphors & Idiomatic Reflex)',
       hcTotal: 4,
-      hintTypes: ['Danh từ · Keyword', 'Từ nối · Logic word', 'Ẩn dụ · Fancy word', 'Tính từ · Ending'],
+      hintTypes: ['Keyword', 'Logic word', 'Fancy word', 'Ending'],
       itemsData: s3_items
     },
     {
       sessionNumber: 4,
       title: 'Session 4 • 5 Hints (Full Spoken Reflex Flow)',
       hcTotal: 5,
-      hintTypes: ['Cụm mào đầu · Intro', 'Danh từ · Keyword', 'Từ nối · Logic word', 'Ẩn dụ · Fancy word', 'Tính từ · Ending'],
+      hintTypes: ['Intro / Setup', 'Keyword', 'Logic word', 'Fancy word', 'Ending'],
       itemsData: s4_items
     }
   ];

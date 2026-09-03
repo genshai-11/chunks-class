@@ -31,10 +31,10 @@ export function packageToExcelBuffer(pkg: ImprovPackage): Buffer {
   // 2. Build Data rows
   const aoa: any[][] = [];
 
-  // Row 0: Package Title
-  aoa.push([pkg.title]);
-  // Row 1: Package Description / Instructions
-  aoa.push([pkg.description]);
+  // Row 0: Title banner matching Improv-package-sample.xlsx
+  aoa.push([`Presentation — ${pkg.title}`]);
+  // Row 1: Subtitle / instruction matching Improv-package-sample.xlsx
+  aoa.push(['Hints first; translations and explanations afterward. Fancy words are limited to 1–2 words (except the required proverb). HC 3–4 hints are intentionally related.']);
   // Row 2: Header row
   aoa.push(headers);
 
@@ -50,19 +50,19 @@ export function packageToExcelBuffer(pkg: ImprovPackage): Buffer {
       // hint texts
       for (let h = 1; h <= maxHints; h++) {
         const hint = item.hints.find(hi => hi.itemIndex === h) || item.hints[h - 1];
-        rowData.push(hint ? hint.text : '');
+        rowData.push(hint ? hint.text : null);
       }
 
       // hint translations
       for (let h = 1; h <= maxHints; h++) {
         const hint = item.hints.find(hi => hi.itemIndex === h) || item.hints[h - 1];
-        rowData.push(hint ? hint.translation : '');
+        rowData.push(hint ? hint.translation : null);
       }
 
       // hint types / functions
       for (let h = 1; h <= maxHints; h++) {
         const hint = item.hints.find(hi => hi.itemIndex === h) || item.hints[h - 1];
-        rowData.push(hint ? hint.typeFunction : '');
+        rowData.push(hint ? hint.typeFunction : null);
       }
 
       aoa.push(rowData);
@@ -71,10 +71,26 @@ export function packageToExcelBuffer(pkg: ImprovPackage): Buffer {
 
   const worksheet = XLSX.utils.aoa_to_sheet(aoa);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Improv_Package');
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
 
   const buf = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
   return buf;
+}
+
+async function writeWithRetry(filePath: string, buf: Buffer, retries = 5, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      fs.writeFileSync(filePath, buf);
+      return;
+    } catch (err: any) {
+      if (err.code === 'EBUSY' && i < retries - 1) {
+        console.warn(`[WARN] ${path.basename(filePath)} is busy/locked. Waiting ${delay}ms before retry ${i + 1}/${retries}...`);
+        await new Promise(res => setTimeout(res, delay));
+      } else {
+        throw err;
+      }
+    }
+  }
 }
 
 async function main() {
@@ -87,12 +103,12 @@ async function main() {
   const set02Path = path.join(outputDir, 'Improv_Set_02_Tell_Me_About_Yourself.xlsx');
 
   const buf1 = packageToExcelBuffer(IMPROV_SET_01);
-  fs.writeFileSync(set01Path, buf1);
+  await writeWithRetry(set01Path, buf1);
   const stat1 = fs.statSync(set01Path);
   console.log(`[SUCCESS] Generated: ${set01Path} (${stat1.size} bytes)`);
 
   const buf2 = packageToExcelBuffer(IMPROV_SET_02);
-  fs.writeFileSync(set02Path, buf2);
+  await writeWithRetry(set02Path, buf2);
   const stat2 = fs.statSync(set02Path);
   console.log(`[SUCCESS] Generated: ${set02Path} (${stat2.size} bytes)`);
 }

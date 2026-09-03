@@ -7,11 +7,11 @@
   "sessions": [
     {
       "sessionNumber": 1,
-      "title": "Session 1 • 2 Hints (Airport & Travel Rapid Reflex)",
+      "title": "Session 1 • 2 Hints (Rapid Reaction & Core Phrasing)",
       "hcTotal": 2,
       "hintTypes": [
-        "Danh từ · Keyword",
-        "Động từ · Ending"
+        "Keyword",
+        "Ending"
       ],
       "items": [
         {
@@ -22,15 +22,15 @@
           "hints": [
             {
               "id": "h_set01_s1_i1_1",
-              "text": "boarding pass",
-              "translation": "thẻ lên máy bay",
+              "text": "cơm tối",
+              "translation": "dinner",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i1_2",
-              "text": "lost",
-              "translation": "làm mất",
+              "text": "nấu",
+              "translation": "cook",
               "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
@@ -44,16 +44,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i2_1",
-              "text": "loose change",
-              "translation": "tiền lẻ",
+              "text": "thẻ lên máy bay",
+              "translation": "boarding pass",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i2_2",
-              "text": "front pocket",
-              "translation": "túi trước",
-              "typeFunction": "Danh từ · Ending",
+              "text": "làm mất",
+              "translation": "lose / lost",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -66,16 +66,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i3_1",
-              "text": "luggage cart",
-              "translation": "xe đẩy hành lý",
+              "text": "tiền lẻ",
+              "translation": "loose change",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i3_2",
-              "text": "heavy",
-              "translation": "nặng",
-              "typeFunction": "Tính từ · Ending",
+              "text": "túi trước",
+              "translation": "front pocket",
+              "typeFunction": "Danh từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -88,16 +88,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i4_1",
-              "text": "customs officer",
-              "translation": "nhân viên hải quan",
+              "text": "xe đẩy hành lý",
+              "translation": "luggage cart",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i4_2",
-              "text": "check",
-              "translation": "kiểm tra",
-              "typeFunction": "Động từ · Ending",
+              "text": "nặng",
+              "translation": "heavy",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -110,16 +110,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i5_1",
-              "text": "sleeping bag",
-              "translation": "túi ngủ",
+              "text": "nhân viên hải quan",
+              "translation": "customs officer",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i5_2",
-              "text": "warm",
-              "translation": "ấm áp",
-              "typeFunction": "Tính từ · Ending",
+              "text": "kiểm tra",
+              "translation": "check",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -132,16 +132,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i6_1",
-              "text": "hotel",
-              "translation": "khách sạn",
+              "text": "túi ngủ",
+              "translation": "sleeping bag",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i6_2",
-              "text": "book in advance",
-              "translation": "đặt trước",
-              "typeFunction": "Động từ · Ending",
+              "text": "ấm áp",
+              "translation": "warm",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -154,16 +154,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i7_1",
-              "text": "flight",
-              "translation": "chuyến bay",
+              "text": "khách sạn",
+              "translation": "hotel",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i7_2",
-              "text": "delayed",
-              "translation": "hoãn",
-              "typeFunction": "Tính từ · Ending",
+              "text": "đặt trước",
+              "translation": "book in advance",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -176,16 +176,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i8_1",
-              "text": "passport",
-              "translation": "hộ chiếu",
+              "text": "chuyến bay",
+              "translation": "flight",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i8_2",
-              "text": "forget",
-              "translation": "quên",
-              "typeFunction": "Động từ · Ending",
+              "text": "hoãn",
+              "translation": "delayed",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -198,15 +198,15 @@
           "hints": [
             {
               "id": "h_set01_s1_i9_1",
-              "text": "suitcase",
-              "translation": "vali",
+              "text": "hộ chiếu",
+              "translation": "passport",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i9_2",
-              "text": "lock",
-              "translation": "khóa",
+              "text": "cất kỹ",
+              "translation": "keep safe",
               "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
@@ -220,16 +220,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i10_1",
-              "text": "flip-flops",
-              "translation": "dép lào",
+              "text": "vali",
+              "translation": "suitcase",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i10_2",
-              "text": "beach trip",
-              "translation": "đi biển",
-              "typeFunction": "Danh từ · Ending",
+              "text": "khóa",
+              "translation": "lock",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -242,16 +242,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i11_1",
-              "text": "boarding gate",
-              "translation": "cửa khởi hành",
+              "text": "dép lào",
+              "translation": "flip-flops",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i11_2",
-              "text": "find",
-              "translation": "tìm",
-              "typeFunction": "Động từ · Ending",
+              "text": "đi biển",
+              "translation": "beach trip",
+              "typeFunction": "Danh từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -264,15 +264,15 @@
           "hints": [
             {
               "id": "h_set01_s1_i12_1",
-              "text": "snacks",
-              "translation": "đồ ăn nhẹ",
+              "text": "cửa khởi hành",
+              "translation": "boarding gate",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i12_2",
-              "text": "bring along",
-              "translation": "mang theo",
+              "text": "tìm",
+              "translation": "find",
               "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
@@ -286,16 +286,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i13_1",
-              "text": "layover time",
-              "translation": "thời gian quá cảnh",
+              "text": "đồ ăn nhẹ",
+              "translation": "snacks",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i13_2",
-              "text": "long",
-              "translation": "dài",
-              "typeFunction": "Tính từ · Ending",
+              "text": "mang theo",
+              "translation": "bring along",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -308,15 +308,15 @@
           "hints": [
             {
               "id": "h_set01_s1_i14_1",
-              "text": "taxi driver",
-              "translation": "tài xế taxi",
+              "text": "thời gian quá cảnh",
+              "translation": "layover time",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i14_2",
-              "text": "friendly",
-              "translation": "thân thiện",
+              "text": "dài",
+              "translation": "long",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 2
             }
@@ -330,16 +330,16 @@
           "hints": [
             {
               "id": "h_set01_s1_i15_1",
-              "text": "rice cooker",
-              "translation": "nồi cơm điện",
+              "text": "tài xế taxi",
+              "translation": "taxi driver",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s1_i15_2",
-              "text": "cook rice",
-              "translation": "nấu cơm",
-              "typeFunction": "Động từ · Ending",
+              "text": "thân thiện",
+              "translation": "friendly",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -348,12 +348,12 @@
     },
     {
       "sessionNumber": 2,
-      "title": "Session 2 • 3 Hints (Cause-Effect & Travel Situations)",
+      "title": "Session 2 • 3 Hints (Logic Transitions & Phrasing)",
       "hcTotal": 3,
       "hintTypes": [
-        "Danh từ · Keyword",
-        "Từ nối · Logic word",
-        "Tính từ · Ending"
+        "Keyword",
+        "Logic word",
+        "Ending"
       ],
       "items": [
         {
@@ -364,22 +364,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i1_1",
-              "text": "heavy luggage",
-              "translation": "hành lý nặng",
+              "text": "Chuyến bay đêm",
+              "translation": "red-eye flight",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i1_2",
-              "text": "therefore",
-              "translation": "do đó",
+              "text": "tuy nhiên",
+              "translation": "however",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i1_3",
-              "text": "exhausted",
-              "translation": "mệt lử",
+              "text": "mệt mỏi",
+              "translation": "exhausted",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
@@ -393,22 +393,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i2_1",
-              "text": "passport renewal",
-              "translation": "gia hạn hộ chiếu",
-              "typeFunction": "Danh từ · Keyword",
+              "text": "Đổi vé",
+              "translation": "rebook ticket",
+              "typeFunction": "Động từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i2_2",
-              "text": "before that",
-              "translation": "trước đó",
+              "text": "trước đó",
+              "translation": "before that",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i2_3",
-              "text": "urgent",
-              "translation": "khẩn cấp",
+              "text": "miễn phí",
+              "translation": "free of charge",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
@@ -422,23 +422,23 @@
           "hints": [
             {
               "id": "h_set01_s2_i3_1",
-              "text": "flight delay",
-              "translation": "chuyến bay hoãn",
+              "text": "Quầy thủ tục",
+              "translation": "check-in desk",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i3_2",
-              "text": "meanwhile",
-              "translation": "đồng thời",
+              "text": "hơn nữa",
+              "translation": "moreover",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i3_3",
-              "text": "rest",
-              "translation": "nghỉ ngơi",
-              "typeFunction": "Động từ · Ending",
+              "text": "đông đúc",
+              "translation": "crowded",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -451,22 +451,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i4_1",
-              "text": "taxi fare",
-              "translation": "tiền taxi",
+              "text": "Hành lý xách tay",
+              "translation": "carry-on bag",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i4_2",
-              "text": "in addition",
-              "translation": "hơn nữa",
+              "text": "nếu không",
+              "translation": "otherwise",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i4_3",
-              "text": "expensive",
-              "translation": "đắt đỏ",
+              "text": "quá cước",
+              "translation": "overweight",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
@@ -480,22 +480,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i5_1",
-              "text": "boarding gate",
-              "translation": "cửa ra máy bay",
+              "text": "Thẻ lên tàu",
+              "translation": "boarding pass",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i5_2",
-              "text": "next",
-              "translation": "tiếp theo",
+              "text": "sau cùng",
+              "translation": "eventually",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i5_3",
-              "text": "sprint",
-              "translation": "chạy nước rút",
+              "text": "tìm thấy",
+              "translation": "found",
               "typeFunction": "Động từ · Ending",
               "itemIndex": 3
             }
@@ -509,23 +509,23 @@
           "hints": [
             {
               "id": "h_set01_s2_i6_1",
-              "text": "window seat",
-              "translation": "ghế cạnh cửa sổ",
+              "text": "Giờ khởi hành",
+              "translation": "departure time",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i6_2",
-              "text": "otherwise",
-              "translation": "nếu không",
+              "text": "do đó",
+              "translation": "therefore",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i6_3",
-              "text": "cramped",
-              "translation": "chật chội",
-              "typeFunction": "Tính từ · Ending",
+              "text": "vội vã",
+              "translation": "rush",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -538,22 +538,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i7_1",
-              "text": "travel insurance",
-              "translation": "bảo hiểm du lịch",
+              "text": "Lối thoát hiểm",
+              "translation": "emergency exit",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i7_2",
-              "text": "if",
-              "translation": "nếu",
+              "text": "nếu",
+              "translation": "if",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i7_3",
-              "text": "secure",
-              "translation": "an tâm",
+              "text": "rộng rãi",
+              "translation": "spacious",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
@@ -567,22 +567,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i8_1",
-              "text": "broken wheel",
-              "translation": "bánh xe bị gãy",
+              "text": "Đổi tiền",
+              "translation": "currency exchange",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i8_2",
-              "text": "nevertheless",
-              "translation": "dù vậy",
+              "text": "tiếp theo",
+              "translation": "next",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i8_3",
-              "text": "manageable",
-              "translation": "xoay xở được",
+              "text": "thuận tiện",
+              "translation": "convenient",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
@@ -596,23 +596,23 @@
           "hints": [
             {
               "id": "h_set01_s2_i9_1",
-              "text": "foreign currency",
-              "translation": "ngoại tệ",
+              "text": "Khách sạn",
+              "translation": "hotel room",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i9_2",
-              "text": "in other words",
-              "translation": "nói cách khác",
+              "text": "nói cách khác",
+              "translation": "in other words",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i9_3",
-              "text": "exchange",
-              "translation": "đổi tiền",
-              "typeFunction": "Động từ · Ending",
+              "text": "kín phòng",
+              "translation": "fully booked",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -625,22 +625,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i10_1",
-              "text": "hotel room",
-              "translation": "phòng khách sạn",
+              "text": "Bản đồ sân bay",
+              "translation": "terminal map",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i10_2",
-              "text": "eventually",
-              "translation": "sau cùng",
+              "text": "dù vậy",
+              "translation": "nevertheless",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i10_3",
-              "text": "confirmed",
-              "translation": "xác nhận",
+              "text": "hữu ích",
+              "translation": "helpful",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
@@ -654,22 +654,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i11_1",
-              "text": "street market",
-              "translation": "chợ đường phố",
+              "text": "Khu miễn thuế",
+              "translation": "duty-free shop",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i11_2",
-              "text": "however",
-              "translation": "tuy nhiên",
+              "text": "ví dụ",
+              "translation": "for example",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i11_3",
-              "text": "crowded",
-              "translation": "đông đúc",
+              "text": "đắt đỏ",
+              "translation": "pricey",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
@@ -683,23 +683,23 @@
           "hints": [
             {
               "id": "h_set01_s2_i12_1",
-              "text": "transit flight",
-              "translation": "chuyến bay quá cảnh",
+              "text": "Xe buýt sân bay",
+              "translation": "shuttle bus",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i12_2",
-              "text": "as long as",
-              "translation": "miễn là",
-              "typeFunction": "Từ nối · Logic word",
+              "text": "đúng lúc",
+              "translation": "just in time",
+              "typeFunction": "Trạng từ · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i12_3",
-              "text": "on time",
-              "translation": "đúng giờ",
-              "typeFunction": "Tính từ · Ending",
+              "text": "khởi hành",
+              "translation": "depart",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -712,22 +712,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i13_1",
-              "text": "power bank",
-              "translation": "sạc dự phòng",
+              "text": "Thất lạc đồ",
+              "translation": "lost luggage",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i13_2",
-              "text": "for example",
-              "translation": "ví dụ",
+              "text": "đồng thời",
+              "translation": "meanwhile",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i13_3",
-              "text": "essential",
-              "translation": "thiết yếu",
+              "text": "lo lắng",
+              "translation": "anxious",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
@@ -741,22 +741,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i14_1",
-              "text": "sudden rain",
-              "translation": "mưa bất chợt",
+              "text": "Băng chuyền hành lý",
+              "translation": "baggage carousel",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i14_2",
-              "text": "then",
-              "translation": "sau đó",
+              "text": "cuối cùng",
+              "translation": "finally",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i14_3",
-              "text": "take shelter",
-              "translation": "trú mưa",
+              "text": "dừng lại",
+              "translation": "stop",
               "typeFunction": "Động từ · Ending",
               "itemIndex": 3
             }
@@ -770,22 +770,22 @@
           "hints": [
             {
               "id": "h_set01_s2_i15_1",
-              "text": "tour guide",
-              "translation": "hướng dẫn viên",
+              "text": "Thẻ tín dụng",
+              "translation": "credit card",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s2_i15_2",
-              "text": "besides",
-              "translation": "ngoài ra",
+              "text": "ngoài ra",
+              "translation": "in addition",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s2_i15_3",
-              "text": "knowledgeable",
-              "translation": "am hiểu",
+              "text": "chấp nhận",
+              "translation": "accepted",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
@@ -795,13 +795,13 @@
     },
     {
       "sessionNumber": 3,
-      "title": "Session 3 • 4 Hints (Nuance & Travel Mishaps)",
+      "title": "Session 3 • 4 Hints (Fancy Metaphors & Idiomatic Reflex)",
       "hcTotal": 4,
       "hintTypes": [
-        "Danh từ · Keyword",
-        "Từ nối · Logic word",
-        "Ẩn dụ · Fancy word",
-        "Tính từ · Ending"
+        "Keyword",
+        "Logic word",
+        "Fancy word",
+        "Ending"
       ],
       "items": [
         {
@@ -812,30 +812,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i1_1",
-              "text": "customs check",
-              "translation": "kiểm tra hải quan",
+              "text": "Hộ chiếu",
+              "translation": "passport",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i1_2",
-              "text": "while",
-              "translation": "trong khi",
+              "text": "trong khi",
+              "translation": "while",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i1_3",
-              "text": "red flag",
-              "translation": "dấu hiệu khả nghi",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "săm soi",
+              "translation": "scrutinize",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i1_4",
-              "text": "strict",
-              "translation": "nghiêm ngặt",
-              "typeFunction": "Tính từ · Ending",
+              "text": "hải quan",
+              "translation": "customs",
+              "typeFunction": "Danh từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -848,30 +848,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i2_1",
-              "text": "airport terminal",
-              "translation": "nhà ga sân bay",
+              "text": "Nồi cơm điện",
+              "translation": "rice cooker",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i2_2",
-              "text": "however",
-              "translation": "tuy nhiên",
+              "text": "nhưng",
+              "translation": "but",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i2_3",
-              "text": "lifeline",
-              "translation": "phao cứu trợ",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "cồng kềnh",
+              "translation": "bulky item",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i2_4",
-              "text": "helpful",
-              "translation": "hữu ích",
-              "typeFunction": "Tính từ · Ending",
+              "text": "xách tay",
+              "translation": "carry on",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -884,30 +884,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i3_1",
-              "text": "Which flight",
-              "translation": "Chuyến bay nào",
+              "text": "Bao lâu",
+              "translation": "How long",
               "typeFunction": "Cụm nghi vấn · WH word",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i3_2",
-              "text": "otherwise",
-              "translation": "nếu không",
+              "text": "nếu không",
+              "translation": "otherwise",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i3_3",
-              "text": "last call",
-              "translation": "loa gọi chót",
-              "typeFunction": "Cụm gợi hình · Fancy word",
+              "text": "ùn tắc",
+              "translation": "bottleneck",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i3_4",
-              "text": "missed",
-              "translation": "bị lỡ",
-              "typeFunction": "Tính từ · Ending",
+              "text": "lỡ chuyến",
+              "translation": "miss the flight",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -920,30 +920,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i4_1",
-              "text": "lost baggage",
-              "translation": "thất lạc hành lý",
+              "text": "Xe đẩy hành lý",
+              "translation": "luggage cart",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i4_2",
-              "text": "therefore",
-              "translation": "do đó",
+              "text": "tuy nhiên",
+              "translation": "however",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i4_3",
-              "text": "headache",
-              "translation": "cơn đau đầu",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "kẹt cứng",
+              "translation": "dead stop",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i4_4",
-              "text": "stressful",
-              "translation": "căng thẳng",
-              "typeFunction": "Tính từ · Ending",
+              "text": "sảnh đến",
+              "translation": "arrival hall",
+              "typeFunction": "Danh từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -956,30 +956,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i5_1",
-              "text": "flight cancellation",
-              "translation": "chuyến bay bị hủy",
+              "text": "Quá cảnh",
+              "translation": "layover",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i5_2",
-              "text": "in contrast",
-              "translation": "ngược lại",
+              "text": "do đó",
+              "translation": "therefore",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i5_3",
-              "text": "dead stop",
-              "translation": "dừng hẳn",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "mỏi mòn",
+              "translation": "endless wait",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i5_4",
-              "text": "refunded",
-              "translation": "được bồi hoàn",
-              "typeFunction": "Tính từ · Ending",
+              "text": "phòng chờ",
+              "translation": "lounge",
+              "typeFunction": "Danh từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -992,30 +992,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i6_1",
-              "text": "Why delay",
-              "translation": "Tại sao lại hoãn",
+              "text": "Tại sao",
+              "translation": "Why",
               "typeFunction": "Cụm nghi vấn · WH word",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i6_2",
-              "text": "finally",
-              "translation": "sau cùng",
+              "text": "ngược lại",
+              "translation": "in contrast",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i6_3",
-              "text": "safe harbor",
-              "translation": "bến đỗ an toàn",
+              "text": "bặt vô âm tín",
+              "translation": "vanished",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i6_4",
-              "text": "relieved",
-              "translation": "thở phào",
-              "typeFunction": "Tính từ · Ending",
+              "text": "hành lý ký gửi",
+              "translation": "checked bag",
+              "typeFunction": "Danh từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1028,30 +1028,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i7_1",
-              "text": "overseas travel",
-              "translation": "du lịch nước ngoài",
-              "typeFunction": "Danh từ · Keyword",
+              "text": "Say xe",
+              "translation": "carsick",
+              "typeFunction": "Tính từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i7_2",
-              "text": "as long as",
-              "translation": "miễn là",
+              "text": "bởi thế",
+              "translation": "for that reason",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i7_3",
-              "text": "Better safe than sorry",
-              "translation": "cẩn tắc vô áy náy",
-              "typeFunction": "Tục ngữ · Proverb",
+              "text": "choáng váng",
+              "translation": "dizzy spell",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i7_4",
-              "text": "prepared",
-              "translation": "chuẩn bị kỹ",
-              "typeFunction": "Tính từ · Ending",
+              "text": "dầu gió",
+              "translation": "medicated oil",
+              "typeFunction": "Danh từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1064,30 +1064,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i8_1",
-              "text": "midnight layover",
-              "translation": "quá cảnh nửa đêm",
+              "text": "Cửa khởi hành",
+              "translation": "gate",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i8_2",
-              "text": "meanwhile",
-              "translation": "đồng thời",
+              "text": "mặc dù",
+              "translation": "although",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i8_3",
-              "text": "empty chairs",
-              "translation": "ghế trống trơn",
+              "text": "xa tít",
+              "translation": "miles away",
               "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i8_4",
-              "text": "freezing",
-              "translation": "lạnh cóng",
-              "typeFunction": "Tính từ · Ending",
+              "text": "kịp giờ",
+              "translation": "in time",
+              "typeFunction": "Trạng từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1100,29 +1100,29 @@
           "hints": [
             {
               "id": "h_set01_s3_i9_1",
-              "text": "How long",
-              "translation": "Bao lâu",
-              "typeFunction": "Cụm nghi vấn · WH word",
+              "text": "Giờ cất cánh",
+              "translation": "takeoff time",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i9_2",
-              "text": "if",
-              "translation": "nếu",
+              "text": "tiếp theo",
+              "translation": "next",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i9_3",
-              "text": "green light",
-              "translation": "bật đèn xanh",
+              "text": "thông báo khẩn",
+              "translation": "red alert",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i9_4",
-              "text": "smooth",
-              "translation": "trơn tru",
+              "text": "hoãn bay",
+              "translation": "postponed",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
@@ -1136,30 +1136,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i10_1",
-              "text": "budget airline",
-              "translation": "hãng bay giá rẻ",
+              "text": "Tiền lẻ",
+              "translation": "loose change",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i10_2",
-              "text": "nevertheless",
-              "translation": "dù vậy",
+              "text": "hơn nữa",
+              "translation": "in addition",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i10_3",
-              "text": "hidden cost",
-              "translation": "chi phí ngầm",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "leng keng",
+              "translation": "clinking sound",
+              "typeFunction": "Từ tượng thanh · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i10_4",
-              "text": "pricey",
-              "translation": "đắt đỏ",
-              "typeFunction": "Tính từ · Ending",
+              "text": "khay kiểm tra",
+              "translation": "scanner tray",
+              "typeFunction": "Danh từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1172,30 +1172,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i11_1",
-              "text": "commuter train",
-              "translation": "tàu trung chuyển",
-              "typeFunction": "Danh từ · Keyword",
+              "text": "Khi nào",
+              "translation": "When",
+              "typeFunction": "Cụm nghi vấn · WH word",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i11_2",
-              "text": "before that",
-              "translation": "trước đó",
+              "text": "sau đó",
+              "translation": "then",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i11_3",
-              "text": "rush hour",
-              "translation": "giờ cao điểm",
-              "typeFunction": "Cụm gợi hình · Fancy word",
+              "text": "thở phào",
+              "translation": "sigh of relief",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i11_4",
-              "text": "packed",
-              "translation": "chật ních",
-              "typeFunction": "Tính từ · Ending",
+              "text": "hạ cánh",
+              "translation": "touch down",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1208,30 +1208,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i12_1",
-              "text": "travel SIM",
-              "translation": "SIM du lịch",
+              "text": "Chợ đêm địa phương",
+              "translation": "night market",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i12_2",
-              "text": "in addition",
-              "translation": "hơn nữa",
+              "text": "ví dụ",
+              "translation": "for instance",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i12_3",
-              "text": "game changer",
-              "translation": "bước đột phá",
+              "text": "ấm bụng",
+              "translation": "comfort food",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i12_4",
-              "text": "connected",
-              "translation": "thông suốt",
-              "typeFunction": "Tính từ · Ending",
+              "text": "thưởng thức",
+              "translation": "enjoy",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1244,30 +1244,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i13_1",
-              "text": "Where to go",
-              "translation": "Đi đâu bây giờ",
-              "typeFunction": "Cụm nghi vấn · WH word",
+              "text": "Đôi dép lào",
+              "translation": "flip-flops",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i13_2",
-              "text": "next",
-              "translation": "tiếp theo",
+              "text": "miễn là",
+              "translation": "as long as",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i13_3",
-              "text": "hidden gem",
-              "translation": "viên ngọc ẩn",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "êm chân",
+              "translation": "cushiony feel",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i13_4",
-              "text": "breathtaking",
-              "translation": "tuyệt đẹp",
-              "typeFunction": "Tính từ · Ending",
+              "text": "dạo biển",
+              "translation": "stroll",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1280,30 +1280,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i14_1",
-              "text": "emergency exit",
-              "translation": "cửa thoát hiểm",
+              "text": "Sim du lịch",
+              "translation": "travel SIM",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i14_2",
-              "text": "for that reason",
-              "translation": "chính vì thế",
+              "text": "sau cùng",
+              "translation": "eventually",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i14_3",
-              "text": "watchful eye",
-              "translation": "ánh mắt quan sát",
+              "text": "thông suốt",
+              "translation": "smooth signal",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i14_4",
-              "text": "alert",
-              "translation": "cảnh giác",
-              "typeFunction": "Tính từ · Ending",
+              "text": "kích hoạt",
+              "translation": "activate",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1316,30 +1316,30 @@
           "hints": [
             {
               "id": "h_set01_s3_i15_1",
-              "text": "night market",
-              "translation": "khu chợ đêm",
+              "text": "Thời tiết xấu",
+              "translation": "bad weather",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s3_i15_2",
-              "text": "then",
-              "translation": "sau đó",
+              "text": "cho nên",
+              "translation": "so that",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s3_i15_3",
-              "text": "food heaven",
-              "translation": "thiên đường món ngon",
+              "text": "giông bão",
+              "translation": "turbulent sky",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s3_i15_4",
-              "text": "bustling",
-              "translation": "nhộn nhịp",
-              "typeFunction": "Tính từ · Ending",
+              "text": "rung lắc",
+              "translation": "bumpy ride",
+              "typeFunction": "Cụm gợi hình · Ending",
               "itemIndex": 4
             }
           ]
@@ -1351,11 +1351,11 @@
       "title": "Session 4 • 5 Hints (Full Spoken Reflex Flow)",
       "hcTotal": 5,
       "hintTypes": [
-        "Cụm mào đầu · Intro",
-        "Danh từ · Keyword",
-        "Từ nối · Logic word",
-        "Ẩn dụ · Fancy word",
-        "Tính từ · Ending"
+        "Intro / Setup",
+        "Keyword",
+        "Logic word",
+        "Fancy word",
+        "Ending"
       ],
       "items": [
         {
@@ -1366,37 +1366,37 @@
           "hints": [
             {
               "id": "h_set01_s4_i1_1",
-              "text": "Just so you know",
-              "translation": "Nói trước cho bạn hay",
+              "text": "Trước tiên",
+              "translation": "First off",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i1_2",
-              "text": "boarding gate",
-              "translation": "cửa lên tàu bay",
+              "text": "thủ tục an ninh",
+              "translation": "security check",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i1_3",
-              "text": "meanwhile",
-              "translation": "đồng thời",
+              "text": "hơn nữa",
+              "translation": "moreover",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i1_4",
-              "text": "final call",
-              "translation": "hiệu lệnh cuối",
+              "text": "xếp hàng dài",
+              "translation": "snaking line",
               "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i1_5",
-              "text": "hurry",
-              "translation": "khẩn trương",
-              "typeFunction": "Động từ · Ending",
+              "text": "kiên nhẫn",
+              "translation": "patient",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1409,37 +1409,37 @@
           "hints": [
             {
               "id": "h_set01_s4_i2_1",
-              "text": "To tell you the truth",
-              "translation": "Thật lòng mà nói",
+              "text": "Thú thật",
+              "translation": "Honestly",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i2_2",
-              "text": "rough turbulence",
-              "translation": "nhiễu động dữ dội",
+              "text": "vé máy bay",
+              "translation": "airfare",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i2_3",
-              "text": "while",
-              "translation": "trong khi",
+              "text": "tuy nhiên",
+              "translation": "however",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i2_4",
-              "text": "roller coaster",
-              "translation": "tàu lượn rung giật",
+              "text": "giá trên trời",
+              "translation": "sky-high price",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i2_5",
-              "text": "scary",
-              "translation": "đáng sợ",
-              "typeFunction": "Tính từ · Ending",
+              "text": "cân nhắc",
+              "translation": "reconsider",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1452,37 +1452,37 @@
           "hints": [
             {
               "id": "h_set01_s4_i3_1",
-              "text": "It seems that",
-              "translation": "Có vẻ như là",
+              "text": "Để ý xem",
+              "translation": "Notice that",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i3_2",
-              "text": "customs officer",
-              "translation": "nhân viên hải quan",
+              "text": "khu vực quá cảnh",
+              "translation": "transit area",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i3_3",
-              "text": "however",
-              "translation": "tuy nhiên",
+              "text": "nếu không",
+              "translation": "otherwise",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i3_4",
-              "text": "eagle eye",
-              "translation": "mắt đại bàng",
+              "text": "mê cung",
+              "translation": "maze-like corridor",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i3_5",
-              "text": "thorough",
-              "translation": "kỹ lưỡng",
-              "typeFunction": "Tính từ · Ending",
+              "text": "lạc đường",
+              "translation": "get lost",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1495,36 +1495,36 @@
           "hints": [
             {
               "id": "h_set01_s4_i4_1",
-              "text": "As far as I know",
-              "translation": "Theo chỗ tôi biết",
+              "text": "Tin tôi đi",
+              "translation": "Trust me",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i4_2",
-              "text": "entry visa",
-              "translation": "thị thực nhập cảnh",
+              "text": "gói bảo hiểm",
+              "translation": "travel insurance",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i4_3",
-              "text": "otherwise",
-              "translation": "nếu không",
+              "text": "trong khi",
+              "translation": "while",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i4_4",
-              "text": "red tape",
-              "translation": "thủ tục quan liêu",
+              "text": "phao cứu sinh",
+              "translation": "lifesaver",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i4_5",
-              "text": "delayed",
-              "translation": "bị ách lại",
+              "text": "cần thiết",
+              "translation": "essential",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
@@ -1538,36 +1538,36 @@
           "hints": [
             {
               "id": "h_set01_s4_i5_1",
-              "text": "Believe it or not",
-              "translation": "Tin hay không tùy bạn",
+              "text": "Nghe này",
+              "translation": "Listen up",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i5_2",
-              "text": "baggage carousel",
-              "translation": "băng chuyền hành lý",
+              "text": "đồ dùng cá nhân",
+              "translation": "personal belongings",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i5_3",
-              "text": "eventually",
-              "translation": "sau cùng",
+              "text": "trước đó",
+              "translation": "before that",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i5_4",
-              "text": "dead end",
-              "translation": "chỗ kẹt nghẽn",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "cất kỹ",
+              "translation": "lock tight",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i5_5",
-              "text": "jammed",
-              "translation": "bị kẹt cứng",
+              "text": "an toàn",
+              "translation": "secure",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
@@ -1581,36 +1581,36 @@
           "hints": [
             {
               "id": "h_set01_s4_i6_1",
-              "text": "From my perspective",
-              "translation": "Theo góc nhìn của tôi",
+              "text": "Bạn biết đấy",
+              "translation": "You know",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i6_2",
-              "text": "sleeping pod",
-              "translation": "buồng ngủ sân bay",
+              "text": "chỗ ngồi",
+              "translation": "seat reservation",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i6_3",
-              "text": "in addition",
-              "translation": "hơn nữa",
+              "text": "do đó",
+              "translation": "therefore",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i6_4",
-              "text": "godsend",
-              "translation": "món quà cứu cánh",
+              "text": "vị trí vàng",
+              "translation": "prime spot",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i6_5",
-              "text": "comfortable",
-              "translation": "dễ chịu",
+              "text": "thoải mái",
+              "translation": "comfortable",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
@@ -1624,37 +1624,37 @@
           "hints": [
             {
               "id": "h_set01_s4_i7_1",
-              "text": "In my opinion",
-              "translation": "Theo quan điểm của tôi",
+              "text": "May mắn thay",
+              "translation": "Luckily",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i7_2",
-              "text": "street food",
-              "translation": "món ăn đường phố",
+              "text": "chuyến bay nối chuyến",
+              "translation": "connecting flight",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i7_3",
-              "text": "if",
-              "translation": "nếu",
+              "text": "mặc dù",
+              "translation": "although",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i7_4",
-              "text": "gold mine",
-              "translation": "mỏ vàng ẩm thực",
+              "text": "chạy đua thời gian",
+              "translation": "race against time",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i7_5",
-              "text": "authentic",
-              "translation": "chuẩn vị",
-              "typeFunction": "Tính từ · Ending",
+              "text": "kịp giờ",
+              "translation": "on time",
+              "typeFunction": "Trạng từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1667,37 +1667,37 @@
           "hints": [
             {
               "id": "h_set01_s4_i8_1",
-              "text": "Don't get me wrong",
-              "translation": "Đừng hiểu sai ý tôi",
+              "text": "Rõ ràng là",
+              "translation": "Obviously",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i8_2",
-              "text": "souvenir shop",
-              "translation": "cửa hàng lưu niệm",
+              "text": "tài xế đón",
+              "translation": "airport pickup",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i8_3",
-              "text": "nevertheless",
-              "translation": "dù vậy",
+              "text": "tiếp theo",
+              "translation": "next",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i8_4",
-              "text": "tourist trap",
-              "translation": "cái bẫy du khách",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "biển tên",
+              "translation": "signboard",
+              "typeFunction": "Danh từ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i8_5",
-              "text": "pricey",
-              "translation": "đắt đỏ",
-              "typeFunction": "Tính từ · Ending",
+              "text": "chờ sẵn",
+              "translation": "wait outside",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1710,36 +1710,36 @@
           "hints": [
             {
               "id": "h_set01_s4_i9_1",
-              "text": "As a matter of fact",
-              "translation": "Thực tế là",
+              "text": "Theo tôi thấy",
+              "translation": "In my view",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i9_2",
-              "text": "flight attendant",
-              "translation": "tiếp viên hàng không",
+              "text": "thẻ lên tàu điện tử",
+              "translation": "mobile pass",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i9_3",
-              "text": "therefore",
-              "translation": "do đó",
+              "text": "đồng thời",
+              "translation": "meanwhile",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i9_4",
-              "text": "lifesaver",
-              "translation": "vị cứu tinh",
+              "text": "cứu cánh",
+              "translation": "game changer",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i9_5",
-              "text": "supportive",
-              "translation": "tận tình",
+              "text": "tiện lợi",
+              "translation": "convenient",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
@@ -1753,36 +1753,36 @@
           "hints": [
             {
               "id": "h_set01_s4_i10_1",
-              "text": "First of all",
-              "translation": "Trước hết là",
+              "text": "Thử tưởng tượng",
+              "translation": "Imagine that",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i10_2",
-              "text": "medical insurance",
-              "translation": "bảo hiểm y tế",
+              "text": "băng chuyền hành lý",
+              "translation": "baggage carousel",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i10_3",
-              "text": "before that",
-              "translation": "trước đó",
+              "text": "cuối cùng",
+              "translation": "finally",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i10_4",
-              "text": "safety net",
-              "translation": "lưới bảo hiểm an toàn",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "trống trơn",
+              "translation": "empty belt",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i10_5",
-              "text": "vital",
-              "translation": "sống còn",
+              "text": "thất vọng",
+              "translation": "disappointed",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
@@ -1796,37 +1796,37 @@
           "hints": [
             {
               "id": "h_set01_s4_i11_1",
-              "text": "By the way",
-              "translation": "Nhân tiện đây",
+              "text": "Đừng lo",
+              "translation": "Don't worry",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i11_2",
-              "text": "hotel reception",
-              "translation": "tiếp tân khách sạn",
+              "text": "nhân viên hỗ trợ",
+              "translation": "ground staff",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i11_3",
-              "text": "next",
-              "translation": "tiếp theo",
+              "text": "ví dụ",
+              "translation": "for example",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i11_4",
-              "text": "warm welcome",
-              "translation": "chào đón ấm áp",
+              "text": "nhiệt tình",
+              "translation": "warm-hearted",
               "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i11_5",
-              "text": "hospitable",
-              "translation": "hiếu khách",
-              "typeFunction": "Tính từ · Ending",
+              "text": "giải quyết",
+              "translation": "resolve",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1839,37 +1839,37 @@
           "hints": [
             {
               "id": "h_set01_s4_i12_1",
-              "text": "Honestly speaking",
-              "translation": "Thành thật mà nói",
+              "text": "Về cơ bản",
+              "translation": "Basically",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i12_2",
-              "text": "overweight luggage",
-              "translation": "hành lý quá cước",
+              "text": "quy định hải quan",
+              "translation": "customs rule",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i12_3",
-              "text": "in other words",
-              "translation": "nói cách khác",
+              "text": "nếu",
+              "translation": "if",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i12_4",
-              "text": "money pit",
-              "translation": "hố ngốn tiền",
+              "text": "rào cản",
+              "translation": "barrier",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i12_5",
-              "text": "costly",
-              "translation": "hao tốn",
-              "typeFunction": "Tính từ · Ending",
+              "text": "tuân thủ",
+              "translation": "comply",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1882,37 +1882,37 @@
           "hints": [
             {
               "id": "h_set01_s4_i13_1",
-              "text": "Keep in mind",
-              "translation": "Hãy luôn ghi nhớ",
+              "text": "Thú thật là",
+              "translation": "To be frank",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i13_2",
-              "text": "meter taxi",
-              "translation": "taxi có đồng hồ",
+              "text": "lệch múi giờ",
+              "translation": "jet lag",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i13_3",
-              "text": "as long as",
-              "translation": "miễn là",
+              "text": "sau cùng",
+              "translation": "eventually",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i13_4",
-              "text": "fair play",
-              "translation": "chơi đẹp minh bạch",
-              "typeFunction": "Ẩn dụ · Fancy word",
+              "text": "kiệt sức",
+              "translation": "dead tired",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i13_5",
-              "text": "honest",
-              "translation": "trung thực",
-              "typeFunction": "Tính từ · Ending",
+              "text": "chợp mắt",
+              "translation": "take a nap",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1925,37 +1925,37 @@
           "hints": [
             {
               "id": "h_set01_s4_i14_1",
-              "text": "You can bet that",
-              "translation": "Bạn cứ yên tâm rằng",
+              "text": "Nói thật nhé",
+              "translation": "Truth be told",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i14_2",
-              "text": "ocean sunrise",
-              "translation": "bình minh biển",
+              "text": "vali hành lý",
+              "translation": "hard suitcase",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i14_3",
-              "text": "then",
-              "translation": "sau đó",
+              "text": "ngoài ra",
+              "translation": "besides",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i14_4",
-              "text": "postcard view",
-              "translation": "khung cảnh như tranh",
+              "text": "bền bỉ",
+              "translation": "built to last",
               "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i14_5",
-              "text": "stunning",
-              "translation": "đẹp ngỡ ngàng",
-              "typeFunction": "Tính từ · Ending",
+              "text": "bảo vệ",
+              "translation": "protect",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1968,36 +1968,36 @@
           "hints": [
             {
               "id": "h_set01_s4_i15_1",
-              "text": "All things considered",
-              "translation": "Cân nhắc mọi mặt",
+              "text": "Không nghi ngờ gì",
+              "translation": "No doubt",
               "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set01_s4_i15_2",
-              "text": "solo trip",
-              "translation": "chuyến du hành độc hành",
+              "text": "cẩm nang du lịch",
+              "translation": "travel guide",
               "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set01_s4_i15_3",
-              "text": "finally",
-              "translation": "cuối cùng",
+              "text": "bởi thế",
+              "translation": "for that reason",
               "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set01_s4_i15_4",
-              "text": "eye opener",
-              "translation": "trải nghiệm mở rộng tầm mắt",
+              "text": "kim chỉ nam",
+              "translation": "compass",
               "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set01_s4_i15_5",
-              "text": "unforgettable",
-              "translation": "khó quên",
+              "text": "hữu ích",
+              "translation": "useful",
               "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }

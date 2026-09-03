@@ -368,60 +368,83 @@ export async function deleteImprovItem(
  * Maps columns: Session, Item, hc-total, hint-1..N, hint-1..N-translation, hint-1..N-type / function
  */
 export async function parseImprovExcelFile(
-  fileOrBuffer: File | ArrayBuffer,
+  fileOrBuffer: File | ArrayBuffer | Uint8Array,
   packageTitle?: string
 ): Promise<ImprovPackage> {
-  let arrayBuffer: ArrayBuffer;
+  let data: Uint8Array;
 
-  if (fileOrBuffer instanceof File) {
-    arrayBuffer = await fileOrBuffer.arrayBuffer();
+  if (typeof File !== 'undefined' && fileOrBuffer instanceof File) {
+    const arrayBuffer = await fileOrBuffer.arrayBuffer();
+    data = new Uint8Array(arrayBuffer);
+  } else if (fileOrBuffer instanceof Uint8Array) {
+    data = fileOrBuffer;
+  } else if (fileOrBuffer instanceof ArrayBuffer) {
+    data = new Uint8Array(fileOrBuffer);
   } else {
-    arrayBuffer = fileOrBuffer;
+    data = new Uint8Array(fileOrBuffer as any);
   }
 
-  const data = new Uint8Array(arrayBuffer);
   const workbook = XLSX.read(data, { type: 'array' });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
-  // Robust header detection: scan first 10 rows for 'Session' or 'Item' or 'hc-total'
-  let rows: any[] = XLSX.utils.sheet_to_json(worksheet);
+  // Robust header detection: scan all rows for header containing 'Session', 'Item', or 'hc-total'
+  const raw2D: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  let headerRowIdx = -1;
+
+  for (let i = 0; i < raw2D.length; i++) {
+    const r = raw2D[i];
+    if (Array.isArray(r) && r.some(c => {
+      if (c === null || c === undefined) return false;
+      const str = String(c).toLowerCase().trim();
+      return str === 'session' || str === 'item' || str === 'hc-total' || str === 'hint-1';
+    })) {
+      headerRowIdx = i;
+      break;
+    }
+  }
+
+  let rows: any[] = [];
   let titleFromSheet = '';
   let descFromSheet = '';
-  const hasValidHeader = rows.length > 0 && ('Session' in rows[0] || 'session' in rows[0] || 'hint-1' in rows[0]);
-  if (!hasValidHeader) {
-    const raw2D: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    let headerRowIdx = -1;
-    for (let i = 0; i < Math.min(raw2D.length, 10); i++) {
-      const r = raw2D[i];
-      if (Array.isArray(r) && r.some(c => {
-        const str = String(c).toLowerCase().trim();
-        return str === 'session' || str === 'item' || str === 'hc-total' || str === 'hint-1';
-      })) {
-        headerRowIdx = i;
-        break;
+
+  if (headerRowIdx !== -1) {
+    // Attempt to extract title/desc from rows above header if available
+    for (let preIdx = 0; preIdx < headerRowIdx; preIdx++) {
+      const preRow = raw2D[preIdx];
+      if (Array.isArray(preRow)) {
+        const textCell = preRow.find(c => c !== null && c !== undefined && String(c).trim().length > 0);
+        if (textCell) {
+          const val = String(textCell).trim();
+          if (!titleFromSheet) {
+            titleFromSheet = val;
+          } else if (!descFromSheet) {
+            descFromSheet = val;
+          }
+        }
       }
     }
-    if (headerRowIdx !== -1) {
-      if (headerRowIdx > 0 && raw2D[0] && raw2D[0][0]) {
-        titleFromSheet = String(raw2D[0][0]).trim();
-      }
-      if (headerRowIdx > 1 && raw2D[1] && raw2D[1][0]) {
-        descFromSheet = String(raw2D[1][0]).trim();
-      }
-      const header = raw2D[headerRowIdx];
-      const customRows: any[] = [];
-      for (let rIdx = headerRowIdx + 1; rIdx < raw2D.length; rIdx++) {
-        const r = raw2D[rIdx];
-        if (!r || r.length === 0) continue;
-        const obj: Record<string, any> = {};
-        header.forEach((colName, colIdx) => {
-          if (colName) obj[String(colName).trim()] = r[colIdx];
-        });
-        customRows.push(obj);
-      }
-      rows = customRows;
+
+    const header = raw2D[headerRowIdx];
+    const customRows: any[] = [];
+    for (let rIdx = headerRowIdx + 1; rIdx < raw2D.length; rIdx++) {
+      const r = raw2D[rIdx];
+      if (!r || !Array.isArray(r)) continue;
+      const hasAnyValue = r.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '');
+      if (!hasAnyValue) continue;
+
+      const obj: Record<string, any> = {};
+      header.forEach((colName, colIdx) => {
+        if (colName !== null && colName !== undefined && String(colName).trim() !== '') {
+          obj[String(colName).trim()] = r[colIdx];
+        }
+      });
+      customRows.push(obj);
     }
+    rows = customRows;
+  } else {
+    // Fallback if no specific header pattern found
+    rows = XLSX.utils.sheet_to_json(worksheet);
   }
 
   if (!rows || rows.length === 0) {
@@ -515,22 +538,24 @@ export async function parseImprovExcelFile(
     const items = sessionsMap.get(sessionNum)!.sort((a, b) => a.itemNumber - b.itemNumber);
     const sessionHcTotal = items[0]?.hcTotal || (items[0]?.hints?.length || 4);
     
-    // Collect distinct hint types in this session
-    const hintTypeSet = new Set<string>();
-    items.forEach(it => it.hints.forEach(h => {
-      if (h.typeFunction) hintTypeSet.add(h.typeFunction);
-    }));
+    // Determine canonical hint type for each hint position (1 to sessionHcTotal)
+    const hintTypes: string[] = [];
+    for (let h = 1; h <= sessionHcTotal; h++) {
+      const sampleHint = items.find(it => it.hints.some(hi => hi.itemIndex === h))?.hints.find(hi => hi.itemIndex === h);
+      hintTypes.push(sampleHint?.typeFunction || `Hint ${h}`);
+    }
 
     return {
       sessionNumber: sessionNum,
       title: `Session ${sessionNum}`,
       hcTotal: sessionHcTotal,
-      hintTypes: Array.from(hintTypeSet),
+      hintTypes,
       items
     };
   });
 
-  const title = packageTitle || titleFromSheet || (fileOrBuffer instanceof File ? fileOrBuffer.name.replace(/\.[^/.]+$/, "") : "Imported Improv Package");
+  const cleanTitle = titleFromSheet ? titleFromSheet.replace(/^Presentation\s*[—–-]\s*/i, '').trim() : '';
+  const title = packageTitle || cleanTitle || (fileOrBuffer instanceof File ? fileOrBuffer.name.replace(/\.[^/.]+$/, "") : "Imported Improv Package");
   const description = descFromSheet || `Imported Improv package containing ${sessions.length} sessions and ${totalItemsCount} practice items.`;
   const now = new Date().toISOString();
 
@@ -583,8 +608,8 @@ export function exportImprovPackageToExcel(
 
   // 3. Build AOA (Array of Arrays)
   const aoa: any[][] = [];
-  aoa.push([pkg.title]);
-  aoa.push([pkg.description]);
+  aoa.push([`Presentation — ${pkg.title}`]);
+  aoa.push(['Hints first; translations and explanations afterward. Fancy words are limited to 1–2 words (except the required proverb). HC 3–4 hints are intentionally related.']);
   aoa.push(headers);
 
   pkg.sessions.forEach(session => {
@@ -597,15 +622,15 @@ export function exportImprovPackageToExcel(
 
       for (let h = 1; h <= maxHints; h++) {
         const hint = item.hints.find(hi => hi.itemIndex === h) || item.hints[h - 1];
-        rowData.push(hint ? hint.text : '');
+        rowData.push(hint ? hint.text : null);
       }
       for (let h = 1; h <= maxHints; h++) {
         const hint = item.hints.find(hi => hi.itemIndex === h) || item.hints[h - 1];
-        rowData.push(hint ? hint.translation : '');
+        rowData.push(hint ? hint.translation : null);
       }
       for (let h = 1; h <= maxHints; h++) {
         const hint = item.hints.find(hi => hi.itemIndex === h) || item.hints[h - 1];
-        rowData.push(hint ? hint.typeFunction : '');
+        rowData.push(hint ? hint.typeFunction : null);
       }
 
       aoa.push(rowData);
@@ -615,7 +640,7 @@ export function exportImprovPackageToExcel(
   // 4. Create worksheet and workbook
   const worksheet = XLSX.utils.aoa_to_sheet(aoa);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Improv_Package');
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
 
   // 4. Trigger download if in browser
   const filename = customFilename || `${pkg.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_Improv_Package.xlsx`;
