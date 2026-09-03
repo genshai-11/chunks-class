@@ -13,9 +13,18 @@ import {
   Laptop,
   Cloud,
   Check,
-  Zap
+  Zap,
+  Sparkles,
+  Layers
 } from 'lucide-react';
-import { audioPlayer, AudioSourceType } from '../services/googleTtsService';
+import { 
+  audioPlayer, 
+  AudioSourceType,
+  GoogleApiKeyConfig,
+  SingleKeyTestResult,
+  maskApiKey,
+  detectGoogleKeyType
+} from '../services/googleTtsService';
 
 interface AudioDiagnosticModalProps {
   isOpen: boolean;
@@ -32,15 +41,25 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
     statusCode: number;
     message: string;
     isBlocked: boolean;
+    activeKey?: string;
+    type?: 'GOOGLE_CLOUD_TTS' | 'GEMINI_AI_STUDIO';
   } | null>(null);
 
-  const [customKey, setCustomKey] = useState<string>('');
+  const [customKeysInput, setCustomKeysInput] = useState<string>('');
   const [savedKeySuccess, setSavedKeySuccess] = useState<boolean>(false);
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [currentSource, setCurrentSource] = useState<AudioSourceType>(audioPlayer.getLastSource());
   const [isPlayingSample, setIsPlayingSample] = useState<boolean>(false);
   const [deepgramTestResult, setDeepgramTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testingDeepgram, setTestingDeepgram] = useState<boolean>(false);
+
+  const [keyPool, setKeyPool] = useState<GoogleApiKeyConfig[]>([]);
+  const [testingKey, setTestingKey] = useState<string | null>(null);
+  const [singleKeyResults, setSingleKeyResults] = useState<Record<string, SingleKeyTestResult>>({});
+
+  const refreshKeyPool = () => {
+    setKeyPool([...audioPlayer.getApiKeyPool()]);
+  };
 
   const runDeepgramTest = async () => {
     setTestingDeepgram(true);
@@ -56,7 +75,8 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setCustomKey(audioPlayer.getCustomApiKey());
+      setCustomKeysInput(audioPlayer.getCustomApiKeys().join('\n'));
+      refreshKeyPool();
       const voices = audioPlayer.getBrowserVoices();
       setBrowserVoices(voices);
       setCurrentSource(audioPlayer.getLastSource());
@@ -70,6 +90,7 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
     try {
       const result = await audioPlayer.testCloudTtsConnection(keyToTest);
       setTestResult(result);
+      refreshKeyPool();
     } catch (e: any) {
       setTestResult({
         success: false,
@@ -82,11 +103,38 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
     }
   };
 
-  const handleSaveCustomKey = () => {
-    audioPlayer.setCustomApiKey(customKey);
+  const handleSaveCustomKeys = () => {
+    const rawKeys = customKeysInput
+      .split(/[\n,;]+/)
+      .map(k => k.trim())
+      .filter(Boolean);
+    audioPlayer.setCustomApiKeys(rawKeys);
+    refreshKeyPool();
     setSavedKeySuccess(true);
     setTimeout(() => setSavedKeySuccess(false), 3000);
-    runTest(customKey);
+    runTest();
+  };
+
+  const handleTestSingleKey = async (key: string) => {
+    setTestingKey(key);
+    try {
+      const res = await audioPlayer.testSingleKey(key);
+      setSingleKeyResults(prev => ({ ...prev, [key]: res }));
+      refreshKeyPool();
+    } catch (e: any) {
+      setSingleKeyResults(prev => ({
+        ...prev,
+        [key]: {
+          success: false,
+          statusCode: 0,
+          message: e?.message || 'Connection error',
+          type: detectGoogleKeyType(key),
+          isBlocked: false
+        }
+      }));
+    } finally {
+      setTestingKey(null);
+    }
   };
 
   const handleTestAudioSample = async (voice: string) => {
@@ -180,23 +228,145 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
             )}
           </div>
 
-          {/* 2. Google Cloud TTS Test Card */}
-          <div className="p-4 rounded-xl border bg-zinc-50/50 space-y-3">
+          {/* 2. Google Cloud TTS & Gemini AI Studio Multi-Key Pool Card */}
+          <div className="p-4 rounded-xl border bg-zinc-50/50 space-y-3.5">
             <div className="flex items-center justify-between">
               <span className="font-bold text-zinc-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                 <Cloud className="w-4 h-4 text-blue-600" />
-                2. Google Cloud TTS API Endpoint
+                2. Google Cloud & Gemini TTS Pool (Tự động Failover)
               </span>
               <button
                 onClick={() => runTest()}
                 disabled={testing}
-                className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white border border-zinc-300 text-zinc-700 font-semibold hover:bg-zinc-100 transition-colors cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white border border-zinc-300 text-zinc-700 font-semibold hover:bg-zinc-100 transition-colors cursor-pointer disabled:opacity-50 text-xs shadow-2xs"
               >
                 <RefreshCw className={`w-3 h-3 ${testing ? 'animate-spin' : ''}`} />
-                <span>{testing ? 'Testing...' : 'Test Google Cloud'}</span>
+                <span>{testing ? 'Testing...' : 'Test Toàn Bộ Pool'}</span>
               </button>
             </div>
 
+            {/* Informational Banner */}
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200/90 flex items-start gap-3">
+              <div className="p-1.5 rounded-lg bg-purple-600 text-white shrink-0 mt-0.5 shadow-2xs">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div className="space-y-1">
+                <div className="font-bold text-xs text-purple-950 flex items-center gap-1.5">
+                  <span>Hệ thống Tự động Chuyển đổi Multi-Key Pool</span>
+                  <span className="px-1.5 py-0.2 rounded-md text-[9px] font-extrabold bg-purple-200 text-purple-800">FAILOVER</span>
+                </div>
+                <p className="text-[11px] text-purple-900 leading-relaxed font-medium">
+                  Hệ thống tự động chuyển đổi (Failover) khi Google Cloud TTS gặp lỗi 429 (Rate limit / Quota). Key AQ... được điều phối qua Google Gemini Flash TTS (AI Studio), đảm bảo bài giảng không bao giờ bị gián đoạn hay rơi vào giọng máy robot!
+                </p>
+              </div>
+            </div>
+
+            {/* Key Pool Status Summary Counters */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-2.5 rounded-xl bg-white border border-zinc-200 text-center shadow-2xs">
+                <div className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">Tổng số Key</div>
+                <div className="text-base font-bold text-zinc-900 mt-0.5">{keyPool.length}</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-center shadow-2xs">
+                <div className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wider">Sẵn Sàng (Ready)</div>
+                <div className="text-base font-bold text-emerald-700 mt-0.5">
+                  {keyPool.filter(k => (!k.rateLimitedUntil || k.rateLimitedUntil <= Date.now()) && k.status !== 'ERROR').length}
+                </div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 text-center shadow-2xs">
+                <div className="text-[10px] text-amber-700 font-semibold uppercase tracking-wider">Tạm Khóa (429 Cooldown)</div>
+                <div className="text-base font-bold text-amber-700 mt-0.5">
+                  {keyPool.filter(k => (k.rateLimitedUntil && k.rateLimitedUntil > Date.now()) || k.status === 'RATE_LIMITED').length}
+                </div>
+              </div>
+            </div>
+
+            {/* Render Each Key in Pool */}
+            <div className="space-y-2 pt-1">
+              <div className="text-[11px] font-bold text-zinc-700 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-zinc-500" />
+                  Danh sách Keys trong Pool:
+                </span>
+                <span className="text-[10px] font-normal text-zinc-400">Luân chuyển tự động theo thứ tự ưu tiên</span>
+              </div>
+
+              <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                {keyPool.map((k, idx) => {
+                  const isAQ = k.type === 'GEMINI_AI_STUDIO';
+                  const isRateLimited = (k.rateLimitedUntil && k.rateLimitedUntil > Date.now()) || k.status === 'RATE_LIMITED';
+                  const isErr = k.status === 'ERROR';
+                  const res = singleKeyResults[k.key];
+                  const isTestingThis = testingKey === k.key;
+
+                  return (
+                    <div 
+                      key={k.key + idx}
+                      className="p-2.5 rounded-xl border border-zinc-200 bg-white hover:border-zinc-300 transition-colors space-y-1.5 shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono font-bold text-xs text-zinc-800 tracking-tight bg-zinc-100 px-2 py-0.5 rounded-md">
+                            {maskApiKey(k.key)}
+                          </span>
+
+                          {/* Type badge */}
+                          {isAQ ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                              <Sparkles className="w-3 h-3 text-purple-600" />
+                              Gemini Flash TTS
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                              <Cloud className="w-3 h-3 text-blue-600" />
+                              Google Cloud TTS
+                            </span>
+                          )}
+
+                          {/* Status badge */}
+                          {isRateLimited ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                              <AlertTriangle className="w-3 h-3 text-amber-600" />
+                              Cooldown / 429
+                            </span>
+                          ) : isErr ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                              <XCircle className="w-3 h-3 text-rose-600" />
+                              Error
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              Ready
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => handleTestSingleKey(k.key)}
+                          disabled={isTestingThis}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-50 border border-zinc-200 hover:bg-zinc-100 text-zinc-700 font-semibold text-[11px] transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-2.5 h-2.5 ${isTestingThis ? 'animate-spin' : ''}`} />
+                          <span>{isTestingThis ? 'Testing...' : 'Test Key'}</span>
+                        </button>
+                      </div>
+
+                      {res && (
+                        <div className={`p-1.5 px-2 rounded-lg text-[10px] flex items-center gap-1.5 ${
+                          res.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                        }`}>
+                          {res.success ? <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" /> : <XCircle className="w-3 h-3 text-rose-600 shrink-0" />}
+                          <span className="truncate">{res.message}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Overall Pool Test Result */}
             {testResult && (
               <div className={`p-3.5 rounded-xl border flex items-start gap-3 ${
                 testResult.success 
@@ -215,18 +385,23 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
                 <div className="space-y-1">
                   <div className="font-bold text-xs">
                     {testResult.success 
-                      ? 'ĐÃ KẾT NỐI THÀNH CÔNG (Google Cloud Journey AI Ready)'
+                      ? `KẾT NỐI POOL THÀNH CÔNG (${testResult.type === 'GEMINI_AI_STUDIO' ? 'Google Gemini Flash TTS' : 'Google Cloud Journey AI'} Online)`
                       : testResult.isBlocked 
                         ? 'Google Cloud API Key bị giới hạn dịch vụ TTS (403)'
-                        : `Lỗi kết nối (Mã: ${testResult.statusCode})`
+                        : `Lỗi kết nối Pool (Mã: ${testResult.statusCode})`
                     }
                   </div>
                   <p className="text-[11px] leading-relaxed opacity-90">
                     {testResult.isBlocked 
-                      ? 'Key Firebase mặc định chỉ mở quyền Auth/Firestore và bị chặn dịch vụ Google Text-to-Speech (403). Hãy sử dụng Deepgram Aura AI ở trên hoặc nhập Custom Google Cloud API Key đã bật Text-to-Speech API bên dưới.'
+                      ? 'Key mặc định bị giới hạn dịch vụ Text-to-Speech (403). Hệ thống sẽ tự động failover sang key Gemini Flash AI Studio (AQ...) hoặc bạn có thể nhập key tùy chỉnh bên dưới.'
                       : testResult.message
                     }
                   </p>
+                  {testResult.activeKey && (
+                    <div className="text-[10px] font-mono text-zinc-500 pt-0.5">
+                      Key hoạt động: {maskApiKey(testResult.activeKey)} ({testResult.type})
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -300,38 +475,40 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
             </div>
           </div>
 
-          {/* 3. Custom Google Cloud API Key Configuration */}
-          <div className="p-4 rounded-xl border border-zinc-200 bg-white space-y-3">
+          {/* 3. Custom Google Cloud & Gemini AI Studio API Keys Configuration */}
+          <div className="p-4 rounded-xl border border-zinc-200 bg-white space-y-3 shadow-2xs">
             <div className="flex items-center justify-between">
               <label className="font-bold text-zinc-800 text-xs flex items-center gap-1.5">
                 <Key className="w-4 h-4 text-[#DC2626]" />
-                Tuỳ chỉnh Google Cloud TTS API Key (Tự do kích hoạt Journey AI):
+                Tuỳ chỉnh Multi-Key Pool (Google Cloud AIza... & Gemini AI Studio AQ...):
               </label>
               {savedKeySuccess && (
                 <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1 font-mono">
-                  <Check className="w-3 h-3" /> Đã lưu Key!
+                  <Check className="w-3 h-3" /> Đã lưu Key Pool!
                 </span>
               )}
             </div>
 
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={customKey}
-                onChange={(e) => setCustomKey(e.target.value)}
-                placeholder="Nhập Google Cloud API Key có bật Text-to-Speech API..."
-                className="flex-1 px-3 py-2 rounded-xl border border-zinc-300 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626]"
-              />
+            <textarea
+              value={customKeysInput}
+              onChange={(e) => setCustomKeysInput(e.target.value)}
+              rows={3}
+              placeholder="Nhập các API Keys bổ sung (mỗi key một dòng hoặc cách nhau bởi dấu phẩy).&#10;Hỗ trợ cả Google Cloud (AIza...) và Gemini AI Studio (AQ...)..."
+              className="w-full px-3 py-2 rounded-xl border border-zinc-300 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626] leading-relaxed"
+            />
+
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[10px] text-zinc-400 leading-tight">
+                Key được lưu an toàn trên trình duyệt cục bộ của bạn và tự động đưa vào hàng đợi Failover.
+              </p>
               <button
-                onClick={handleSaveCustomKey}
-                className="px-4 py-2 rounded-xl bg-zinc-900 text-white font-bold hover:bg-zinc-800 transition-colors cursor-pointer"
+                onClick={handleSaveCustomKeys}
+                className="px-4 py-2 rounded-xl bg-zinc-900 text-white font-bold hover:bg-zinc-800 transition-colors cursor-pointer text-xs flex items-center gap-1.5 shadow-xs"
               >
-                Lưu & Test
+                <Check className="w-3.5 h-3.5" />
+                Lưu & Kích hoạt Pool
               </button>
             </div>
-            <p className="text-[10px] text-zinc-400">
-              Key được lưu an toàn trong trình duyệt cục bộ của bạn để kiểm thử trực tiếp các model Journey / Studio.
-            </p>
           </div>
 
           {/* 4. Quick Sample Playback Test */}

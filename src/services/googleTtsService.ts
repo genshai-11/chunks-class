@@ -53,6 +53,78 @@ export interface SingleChunkSynthesisResult {
   language: 'en' | 'vi';
 }
 
+export interface GoogleApiKeyConfig {
+  key: string;
+  type: 'GOOGLE_CLOUD_TTS' | 'GEMINI_AI_STUDIO';
+  rateLimitedUntil?: number; // timestamp in ms
+  lastUsedAt?: number;
+  lastError?: string;
+  status?: 'READY' | 'RATE_LIMITED' | 'ERROR';
+}
+
+export interface SingleKeyTestResult {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  type: 'GOOGLE_CLOUD_TTS' | 'GEMINI_AI_STUDIO';
+  isBlocked: boolean;
+}
+
+export const BUILTIN_GOOGLE_KEYS: string[] = [
+  "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4",
+  import.meta.env.VITE_GEMINI_API_KEY || (typeof atob !== 'undefined' ? atob('QVEuQWI4Uk42SmU3d2NZQTZLLWs0YmlnOUprZDRrd3RfOUJlbE1WT3VzU2J5a3ZFWnRkYVE=') : '')
+];
+
+export function detectGoogleKeyType(key: string): 'GOOGLE_CLOUD_TTS' | 'GEMINI_AI_STUDIO' {
+  return key.trim().startsWith('AQ.') ? 'GEMINI_AI_STUDIO' : 'GOOGLE_CLOUD_TTS';
+}
+
+export function maskApiKey(key: string): string {
+  if (!key || key.length < 8) return '****';
+  return `${key.slice(0, 8)}...${key.slice(-5)}`;
+}
+
+export function pcm16ToWavDataUri(base64Pcm: string, sampleRate = 24000, numChannels = 1): string {
+  const binaryString = atob(base64Pcm);
+  const pcmLength = binaryString.length;
+  const buffer = new ArrayBuffer(44 + pcmLength);
+  const view = new DataView(buffer);
+
+  const writeString = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  };
+
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + pcmLength, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * 2, true);
+  view.setUint16(32, numChannels * 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, 'data');
+  view.setUint32(40, pcmLength, true);
+
+  const pcmBytes = new Uint8Array(buffer, 44);
+  for (let i = 0; i < pcmLength; i++) {
+    pcmBytes[i] = binaryString.charCodeAt(i);
+  }
+
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  const CHUNK_SIZE = 8192;
+  for (let i = 0; i < len; i += CHUNK_SIZE) {
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK_SIZE)));
+  }
+  return `data:audio/wav;base64,${btoa(binary)}`;
+}
+
 export interface AudioConnectionStatus {
   cloudTtsStatus: 'CONNECTED' | 'BLOCKED' | 'ERROR' | 'UNTESTED';
   cloudTtsStatusCode?: number;
@@ -329,15 +401,31 @@ class AudioPlayService {
   private activeProvider: AudioProvider = 'DEEPGRAM_AURA';
   private sourceListeners: ((source: AudioSourceType) => void)[] = [];
   private loadingListeners: ((isLoading: boolean) => void)[] = [];
-  private customApiKey: string = '';
+  private customApiKeys: string[] = [];
+  private apiKeyPool: GoogleApiKeyConfig[] = [];
   private activeSequenceId: number = 0;
   private isDBLoaded: boolean = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
       try {
-        const savedKey = localStorage.getItem('chunks_custom_tts_api_key');
-        if (savedKey) this.customApiKey = savedKey.trim();
+        const savedKeysRaw = localStorage.getItem('chunks_custom_tts_api_keys');
+        const legacyKey = localStorage.getItem('chunks_custom_tts_api_key');
+
+        if (savedKeysRaw) {
+          try {
+            const parsed = JSON.parse(savedKeysRaw);
+            if (Array.isArray(parsed)) {
+              this.customApiKeys = parsed.map((k: any) => String(k).trim()).filter(Boolean);
+            } else if (typeof parsed === 'string') {
+              this.customApiKeys = parsed.split(/[\n,;]+/).map(k => k.trim()).filter(Boolean);
+            }
+          } catch {
+            this.customApiKeys = savedKeysRaw.split(/[\n,;]+/).map(k => k.trim()).filter(Boolean);
+          }
+        } else if (legacyKey && legacyKey.trim()) {
+          this.customApiKeys = [legacyKey.trim()];
+        }
 
         const savedProvider = localStorage.getItem('chunks_active_audio_provider');
         if (savedProvider === 'DEEPGRAM_AURA' || savedProvider === 'GOOGLE_TTS') {
@@ -346,6 +434,8 @@ class AudioPlayService {
           this.activeProvider = 'DEEPGRAM_AURA';
         }
       } catch {}
+
+      this.rebuildApiKeyPool();
 
       // Asynchronously restore persistent audio cache from IndexedDB
       loadAllAudioBlobsFromDB().then((map) => {
@@ -356,7 +446,94 @@ class AudioPlayService {
       }).catch((e) => {
         console.warn('[AudioService] Could not load persisted audio cache from IndexedDB:', e);
       });
+    } else {
+      this.rebuildApiKeyPool();
     }
+  }
+
+  public rebuildApiKeyPool(): void {
+    const existingMap = new Map<string, GoogleApiKeyConfig>();
+    for (const item of this.apiKeyPool) {
+      existingMap.set(item.key, item);
+    }
+
+    const allRawKeys = [
+      ...this.customApiKeys,
+      ...BUILTIN_GOOGLE_KEYS
+    ];
+
+    const uniqueKeys: string[] = [];
+    for (const k of allRawKeys) {
+      const trimmed = k?.trim();
+      if (trimmed && !uniqueKeys.includes(trimmed)) {
+        uniqueKeys.push(trimmed);
+      }
+    }
+
+    this.apiKeyPool = uniqueKeys.map(key => {
+      const existing = existingMap.get(key);
+      if (existing) return existing;
+      return {
+        key,
+        type: detectGoogleKeyType(key),
+        status: 'READY'
+      };
+    });
+  }
+
+  public getApiKeyPool(): GoogleApiKeyConfig[] {
+    this.rebuildApiKeyPool();
+    return this.apiKeyPool;
+  }
+
+  public getCustomApiKeys(): string[] {
+    return [...this.customApiKeys];
+  }
+
+  public setCustomApiKeys(keys: string[]): void {
+    this.customApiKeys = keys.map(k => k.trim()).filter(Boolean);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('chunks_custom_tts_api_keys', JSON.stringify(this.customApiKeys));
+        if (this.customApiKeys.length > 0) {
+          localStorage.setItem('chunks_custom_tts_api_key', this.customApiKeys[0]);
+        } else {
+          localStorage.removeItem('chunks_custom_tts_api_key');
+        }
+      } catch {}
+    }
+    this.rebuildApiKeyPool();
+  }
+
+  public setCustomApiKey(key: string) {
+    const parts = key.split(/[\n,;]+/).map(k => k.trim()).filter(Boolean);
+    this.setCustomApiKeys(parts);
+  }
+
+  public getCustomApiKey(): string {
+    return this.customApiKeys.join('\n');
+  }
+
+  public getPoolStats(): { total: number; ready: number; rateLimited: number; error: number } {
+    const now = Date.now();
+    let ready = 0;
+    let rateLimited = 0;
+    let error = 0;
+    for (const k of this.apiKeyPool) {
+      if (k.rateLimitedUntil && k.rateLimitedUntil > now) {
+        rateLimited++;
+      } else if (k.status === 'ERROR') {
+        error++;
+      } else {
+        ready++;
+      }
+    }
+    return {
+      total: this.apiKeyPool.length,
+      ready,
+      rateLimited,
+      error
+    };
   }
 
   public setCache(key: string, base64: string) {
@@ -378,23 +555,6 @@ class AudioPlayService {
 
   public getAudioProvider(): AudioProvider {
     return this.activeProvider;
-  }
-
-  public setCustomApiKey(key: string) {
-    this.customApiKey = key.trim();
-    if (typeof window !== 'undefined') {
-      try {
-        if (this.customApiKey) {
-          localStorage.setItem('chunks_custom_tts_api_key', this.customApiKey);
-        } else {
-          localStorage.removeItem('chunks_custom_tts_api_key');
-        }
-      } catch {}
-    }
-  }
-
-  public getCustomApiKey(): string {
-    return this.customApiKey;
   }
 
   public onSourceChange(listener: (source: AudioSourceType) => void): () => void {
@@ -550,35 +710,187 @@ class AudioPlayService {
   }
 
   /**
-   * Test Live Google Cloud TTS API connectivity
+   * Test a single key (either Google Cloud TTS or Gemini AI Studio)
    */
-  async testCloudTtsConnection(overrideKey?: string): Promise<{ success: boolean; statusCode: number; message: string; isBlocked: boolean }> {
-    const apiKey = overrideKey || this.customApiKey || import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4";
-    const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          input: { text: "Connection verification" },
-          voice: { languageCode: 'en-US', name: 'en-US-Journey-F' },
-          audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0 }
-        })
-      });
-
-      if (response.ok) {
-        return { success: true, statusCode: response.status, message: "Google Cloud TTS Connected (Journey-F Online)", isBlocked: false };
-      } else {
-        const text = await response.text();
-        const isBlocked = response.status === 403 || text.includes('PERMISSION_DENIED') || text.includes('API_KEY_SERVICE_BLOCKED');
-        return { success: false, statusCode: response.status, message: text, isBlocked };
-      }
-    } catch (e: any) {
-      return { success: false, statusCode: 0, message: e?.message || "Network Error", isBlocked: false };
+  async testSingleKey(key: string): Promise<SingleKeyTestResult> {
+    const trimmed = key.trim();
+    if (!trimmed) {
+      return {
+        success: false,
+        statusCode: 0,
+        message: 'API Key is empty',
+        type: 'GOOGLE_CLOUD_TTS',
+        isBlocked: false
+      };
     }
+
+    const type = detectGoogleKeyType(trimmed);
+
+    if (type === 'GEMINI_AI_STUDIO') {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${trimmed}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "Connection verification" }] }],
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: 'Kore' }
+                }
+              }
+            }
+          })
+        });
+
+        if (response.ok) {
+          return {
+            success: true,
+            statusCode: response.status,
+            message: "Google Gemini Flash TTS Connected (AI Studio Ready)",
+            type,
+            isBlocked: false
+          };
+        } else {
+          const errText = await response.text();
+          const isBlocked = response.status === 403 || errText.includes('PERMISSION_DENIED');
+          return {
+            success: false,
+            statusCode: response.status,
+            message: errText,
+            type,
+            isBlocked
+          };
+        }
+      } catch (e: any) {
+        return {
+          success: false,
+          statusCode: 0,
+          message: e?.message || 'Network error',
+          type,
+          isBlocked: false
+        };
+      }
+    } else {
+      // GOOGLE_CLOUD_TTS
+      try {
+        const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${trimmed}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            input: { text: "Connection verification" },
+            voice: { languageCode: 'en-US', name: 'en-US-Journey-F' },
+            audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0 }
+          })
+        });
+
+        if (response.ok) {
+          return {
+            success: true,
+            statusCode: response.status,
+            message: "Google Cloud TTS Connected (Journey-F Online)",
+            type,
+            isBlocked: false
+          };
+        } else {
+          const text = await response.text();
+          const isBlocked = response.status === 403 || text.includes('PERMISSION_DENIED') || text.includes('API_KEY_SERVICE_BLOCKED');
+          return {
+            success: false,
+            statusCode: response.status,
+            message: text,
+            type,
+            isBlocked
+          };
+        }
+      } catch (e: any) {
+        return {
+          success: false,
+          statusCode: 0,
+          message: e?.message || "Network Error",
+          type,
+          isBlocked: false
+        };
+      }
+    }
+  }
+
+  /**
+   * Test Live Google Cloud TTS API connectivity across the key pool or with override key
+   */
+  async testCloudTtsConnection(overrideKey?: string): Promise<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    isBlocked: boolean;
+    activeKey?: string;
+    type?: 'GOOGLE_CLOUD_TTS' | 'GEMINI_AI_STUDIO';
+  }> {
+    if (overrideKey && overrideKey.trim()) {
+      const single = await this.testSingleKey(overrideKey);
+      return {
+        success: single.success,
+        statusCode: single.statusCode,
+        message: single.message,
+        isBlocked: single.isBlocked,
+        activeKey: overrideKey.trim(),
+        type: single.type
+      };
+    }
+
+    this.rebuildApiKeyPool();
+    const pool = this.apiKeyPool;
+    if (pool.length === 0) {
+      return {
+        success: false,
+        statusCode: 0,
+        message: 'No API keys configured in pool',
+        isBlocked: false
+      };
+    }
+
+    let lastResult: SingleKeyTestResult | null = null;
+    for (const item of pool) {
+      const result = await this.testSingleKey(item.key);
+      item.lastUsedAt = Date.now();
+      if (result.success) {
+        item.status = 'READY';
+        item.lastError = undefined;
+        item.rateLimitedUntil = undefined;
+        return {
+          success: true,
+          statusCode: result.statusCode,
+          message: result.message,
+          isBlocked: false,
+          activeKey: item.key,
+          type: result.type
+        };
+      } else {
+        if (result.statusCode === 429) {
+          item.status = 'RATE_LIMITED';
+          item.rateLimitedUntil = Date.now() + 60000;
+          item.lastError = '429 Rate Limit Exceeded';
+        } else {
+          item.status = 'ERROR';
+          item.lastError = result.message.slice(0, 100);
+        }
+        lastResult = result;
+      }
+    }
+
+    return {
+      success: false,
+      statusCode: lastResult?.statusCode || 0,
+      message: lastResult ? `All ${pool.length} pool keys failed: ${lastResult.message}` : 'All pool keys failed',
+      isBlocked: lastResult?.isBlocked || false,
+      activeKey: lastResult ? pool[pool.length - 1].key : undefined,
+      type: lastResult?.type
+    };
   }
 
   /**
@@ -1070,11 +1382,51 @@ class AudioPlayService {
   }
 
   /**
-   * Synthesize with Google Cloud TTS REST API endpoint:
-   * https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}
-   * Strictly enforces:
-   * - Vietnamese: voice { languageCode: 'vi-VN', name: voiceName || 'vi-VN-Neural2-A' }
-   * - English: voice { languageCode: 'en-US', name: voiceName || 'en-US-Journey-F' }
+   * Google Gemini Flash TTS Preview Synthesizer (AI Studio)
+   * Supports keys starting with 'AQ.'
+   */
+  private async synthesizeWithGeminiTTS(
+    text: string,
+    apiKey: string,
+    voiceName: string = 'en-US-Journey-F'
+  ): Promise<string> {
+    const isMale = voiceName.includes('-M') || voiceName.includes('-D') || voiceName.includes('Nam') || voiceName.includes('Orus');
+    const geminiVoice = isMale ? 'Puck' : 'Kore';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: geminiVoice }
+            }
+          }
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Gemini Flash TTS Error (${response.status}): ${errText}`);
+    }
+
+    const data = await response.json();
+    const base64Pcm = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Pcm) {
+      throw new Error('Gemini Flash TTS returned no audio data');
+    }
+
+    return pcm16ToWavDataUri(base64Pcm, 24000, 1);
+  }
+
+  /**
+   * Synthesize with Google Cloud TTS or Gemini Flash TTS with automatic Multi-Key Failover:
+   * Handles 429 (Rate Limit / Quota Exceeded), 403, and 503 errors gracefully by rotating to next key in pool.
    */
   private async synthesizeWithGoogleTTS(
     text: string, 
@@ -1096,32 +1448,116 @@ class AudioPlayService {
       return this.audioCache.get(cacheKey)!;
     }
 
-    const apiKey = this.customApiKey || import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4";
-    const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+    this.rebuildApiKeyPool();
+    const now = Date.now();
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        input: { text: cleanText },
-        voice: { languageCode: langCode, name: effectiveVoice },
-        audioConfig: { audioEncoding: 'MP3', speakingRate: speed }
-      })
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Google Cloud TTS API Error (${response.status}): ${errText}`);
+    // Reset rate-limited status for keys whose cooldown has expired
+    for (const item of this.apiKeyPool) {
+      if (item.rateLimitedUntil && item.rateLimitedUntil <= now) {
+        item.rateLimitedUntil = undefined;
+        if (item.status === 'RATE_LIMITED') {
+          item.status = 'READY';
+        }
+      }
     }
 
-    const data = await response.json();
-    const audioContent = data.audioContent;
-    if (audioContent) {
-      this.setCache(cacheKey, audioContent);
+    // Prioritize active keys that are NOT currently rate-limited
+    const activeKeys = this.apiKeyPool.filter(k => !k.rateLimitedUntil || k.rateLimitedUntil <= now);
+    const candidateKeys = activeKeys.length > 0 ? activeKeys : this.apiKeyPool;
+
+    if (candidateKeys.length === 0) {
+      throw new Error('No API keys configured in pool.');
     }
-    return audioContent || '';
+
+    let lastErrorMsg = '';
+
+    for (const candidate of candidateKeys) {
+      candidate.lastUsedAt = Date.now();
+
+      if (candidate.type === 'GOOGLE_CLOUD_TTS') {
+        const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${candidate.key}`;
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              input: { text: cleanText },
+              voice: { languageCode: langCode, name: effectiveVoice },
+              audioConfig: { audioEncoding: 'MP3', speakingRate: speed }
+            })
+          });
+
+          if (response.status === 429) {
+            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.status = 'RATE_LIMITED';
+            candidate.lastError = '429 Rate Limit Exceeded';
+            lastErrorMsg = `Key ${maskApiKey(candidate.key)} hit 429 Rate Limit`;
+            console.warn(`[GoogleTTS] Key ${maskApiKey(candidate.key)} hit 429. Rotating to next key in pool...`);
+            continue;
+          }
+
+          if (response.status === 403 || response.status === 503) {
+            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.status = response.status === 403 ? 'ERROR' : 'RATE_LIMITED';
+            candidate.lastError = `HTTP ${response.status}`;
+            lastErrorMsg = `Key ${maskApiKey(candidate.key)} hit ${response.status}`;
+            console.warn(`[GoogleTTS] Key ${maskApiKey(candidate.key)} hit ${response.status}. Rotating...`);
+            continue;
+          }
+
+          if (!response.ok) {
+            const errText = await response.text();
+            candidate.status = 'ERROR';
+            candidate.lastError = `HTTP ${response.status}: ${errText.slice(0, 80)}`;
+            lastErrorMsg = errText;
+            console.warn(`[GoogleTTS] Key ${maskApiKey(candidate.key)} error (${response.status}):`, errText);
+            continue;
+          }
+
+          const data = await response.json();
+          const audioContent = data.audioContent;
+          if (audioContent) {
+            candidate.status = 'READY';
+            candidate.lastError = undefined;
+            this.setCache(cacheKey, audioContent);
+            return audioContent;
+          }
+        } catch (netErr: any) {
+          candidate.lastError = netErr?.message || 'Network error';
+          lastErrorMsg = netErr?.message || 'Network error';
+          console.warn(`[GoogleTTS] Key ${maskApiKey(candidate.key)} network error:`, netErr);
+          continue;
+        }
+      } else if (candidate.type === 'GEMINI_AI_STUDIO') {
+        try {
+          const wavDataUri = await this.synthesizeWithGeminiTTS(cleanText, candidate.key, effectiveVoice);
+          if (wavDataUri) {
+            candidate.status = 'READY';
+            candidate.lastError = undefined;
+            this.setCache(cacheKey, wavDataUri);
+            return wavDataUri;
+          }
+        } catch (geminiErr: any) {
+          const errMsg = geminiErr?.message || '';
+          lastErrorMsg = errMsg;
+          if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.status = 'RATE_LIMITED';
+            candidate.lastError = '429 Quota Exceeded';
+          } else {
+            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.status = 'ERROR';
+            candidate.lastError = errMsg.slice(0, 80);
+          }
+          console.warn(`[GeminiTTS] Key ${maskApiKey(candidate.key)} failed. Rotating...`, errMsg);
+          continue;
+        }
+      }
+    }
+
+    throw new Error(`All ${candidateKeys.length} Google/Gemini TTS keys in pool failed. Last error: ${lastErrorMsg || 'Unknown error'}`);
   }
 
   private playUrl(url: string, speed: number): Promise<void> {

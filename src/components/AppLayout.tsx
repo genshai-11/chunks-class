@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState } from 'react';
 import { TeacherSidebar } from './TeacherSidebar';
 import { Course, NavTab, Cohort } from '../types';
 import { CohortModal } from './CohortModal';
@@ -10,9 +10,7 @@ import {
   Check, 
   Sparkles,
   BookOpen,
-  Volume2,
-  Moon,
-  Sun
+  Volume2
 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -45,38 +43,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isCreateCohortOpen, setIsCreateCohortOpen] = useState<boolean>(false);
   const [isCohortDropdownOpen, setIsCohortDropdownOpen] = useState<boolean>(false);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('chunks_theme') === 'dark' || document.documentElement.classList.contains('dark');
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(prev => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('chunks_theme', next ? 'dark' : 'light');
-        if (next) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
-      return next;
-    });
-  };
 
   return (
-    <div className={`flex min-h-screen bg-[#FAFAFA] dark:bg-[#09090B] font-sans antialiased text-[#0A0A0A] dark:text-zinc-100 ${isDarkMode ? 'dark' : ''}`}>
+    <div className="flex min-h-screen bg-[#FAFAFA] font-sans antialiased text-[#0A0A0A]">
       {/* 1. TEACHER SIDEBAR */}
       <TeacherSidebar
         activeTab={activeTab}
@@ -102,9 +71,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       {/* 2. MAIN CONTENT AREA */}
       <div className="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto">
         {/* Top Navbar */}
-        <header className="h-16 bg-white dark:bg-[#121215] border-b border-[#E8E8EC] dark:border-zinc-800 px-6 flex items-center justify-between sticky top-0 z-20 shrink-0">
+        <header className="h-16 bg-white border-b border-[#E8E8EC] px-6 flex items-center justify-between sticky top-0 z-20 shrink-0">
           <div className="flex items-center gap-3">
-            <h2 className="font-display font-bold text-lg text-[#0A0A0A] dark:text-zinc-100">
+            <h2 className="font-display font-bold text-lg text-[#0A0A0A]">
               {activeTab === 'schedule' && '15-Session Cohort Schedule'}
               {activeTab === 'projector' && 'Presentation - Focus Mode'}
               {activeTab === 'improv-manager' && 'Improv Studio'}
@@ -115,26 +84,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               {activeTab === 'settings' && 'Cohort & System Settings'}
             </h2>
 
-            <span className="hidden sm:inline-block text-xs font-mono px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+            <span className="hidden sm:inline-block text-xs font-mono px-2 py-0.5 rounded bg-zinc-100 text-zinc-600">
               Level {activeCohort?.level_code?.replace('_', ' ') || 'B'}
             </span>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Dark Mode Theme Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-xl border border-[#E8E8EC] dark:border-zinc-700 bg-[#FAFAFA] dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all cursor-pointer"
-              title={isDarkMode ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
-            >
-              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
-            </button>
-
             {/* Quick Cohort switcher button */}
             <div className="relative">
               <button
                 onClick={() => setIsCohortDropdownOpen(!isCohortDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#E8E8EC] dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-[#FAFAFA] dark:bg-zinc-800 text-xs font-semibold text-[#0A0A0A] dark:text-zinc-100 transition-all cursor-pointer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#E8E8EC] hover:border-zinc-300 bg-[#FAFAFA] text-xs font-semibold text-[#0A0A0A] transition-all cursor-pointer"
               >
                 <span className="truncate max-w-[150px] sm:max-w-[200px]">
                   {activeCohort?.title || 'Select Cohort'}
@@ -152,9 +112,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   {/* Cohort Switcher Dropdown */}
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#18181B] rounded-xl shadow-xl border border-[#E8E8EC] dark:border-zinc-700 py-2 z-[100] animate-scale-up"
+                    className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-[#E8E8EC] py-2 z-[100] animate-scale-up"
                   >
-                    <div className="px-3 py-1.5 text-[11px] font-mono font-bold uppercase text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800">
+                    <div className="px-3 py-1.5 text-[11px] font-mono font-bold uppercase text-zinc-400 border-b border-zinc-100">
                       Active Cohorts ({(allCohorts || []).length})
                     </div>
 
@@ -171,7 +131,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                             className={`w-full text-left px-3 py-2 flex items-center justify-between text-xs transition-colors ${
                               isSelected
                                 ? 'bg-[#DC2626]/10 text-[#DC2626] font-bold'
-                                : 'hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                                : 'hover:bg-zinc-50 text-zinc-800'
                             }`}
                           >
                             <div className="truncate mr-2">
@@ -186,7 +146,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                       })}
                     </div>
 
-                    <div className="p-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="p-2 border-t border-zinc-100">
                       <button
                         onClick={() => {
                           setIsCohortDropdownOpen(false);
@@ -220,3 +180,4 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     </div>
   );
 };
+

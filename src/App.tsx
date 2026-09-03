@@ -47,6 +47,12 @@ function sanitizeCohort(cohort: Cohort): Cohort {
 }
 
 export const App: React.FC = () => {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      document.documentElement.classList.remove("dark");
+      localStorage.removeItem("chunks_theme");
+    }
+  }, []);
   const { currentTab: activeTab, navigateToTab: setActiveTab } = useAppRouter();
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [activeCohortId, setActiveCohortId] = useState<string>('');
