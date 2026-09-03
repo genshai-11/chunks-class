@@ -389,11 +389,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d1_0038",
         "item_number": 38,
         "category": "vocab",
-        "english": "Tuktuk Xe lam",
-        "vietnamese": "",
+        "english": "Tuktuk",
+        "vietnamese": "Xe lam",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Tuktuk Xe lam"
+        "beat_prosody": "Tuktuk"
       },
       {
         "chunk_id": "chunk_eres_d1_0039",
@@ -419,11 +419,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d1_0041",
         "item_number": 41,
         "category": "vocab",
-        "english": "Show (off) / brag / boast Khoe khoang",
-        "vietnamese": "",
+        "english": "Show (off) / brag / boast",
+        "vietnamese": "Khoe khoang",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Show (off) // brag // boast Khoe khoang"
+        "beat_prosody": "Show (off) // brag // boast"
       },
       {
         "chunk_id": "chunk_eres_d1_0042",
@@ -526,7 +526,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
     "day_number": 2,
     "lesson_title": "Day 2 - Lesson 1: Wandering souls",
     "lesson_type": "Spoken Reflection",
-    "total_chunks": 360,
+    "total_chunks": 357,
     "categories": [
       "vocab",
       "slang",
@@ -911,11 +911,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d2_0038",
         "item_number": 38,
         "category": "vocab",
-        "english": "Tuktuk Xe lam",
-        "vietnamese": "",
+        "english": "Tuktuk",
+        "vietnamese": "Xe lam",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Tuktuk Xe lam"
+        "beat_prosody": "Tuktuk"
       },
       {
         "chunk_id": "chunk_eres_d2_0039",
@@ -941,11 +941,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d2_0041",
         "item_number": 41,
         "category": "vocab",
-        "english": "Show (off) / brag / boast Khoe khoang",
-        "vietnamese": "",
+        "english": "Show (off) / brag / boast",
+        "vietnamese": "Khoe khoang",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Show (off) // brag // boast Khoe khoang"
+        "beat_prosody": "Show (off) // brag // boast"
       },
       {
         "chunk_id": "chunk_eres_d2_0042",
@@ -1241,11 +1241,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d2_0071",
         "item_number": 71,
         "category": "vocab",
-        "english": "Battery Pin",
-        "vietnamese": "",
+        "english": "Battery",
+        "vietnamese": "Pin",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Battery Pin"
+        "beat_prosody": "Battery"
       },
       {
         "chunk_id": "chunk_eres_d2_0072",
@@ -2592,7 +2592,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 206,
         "category": "sentence",
         "english": "Just so you know, now I still don't know what his name is",
-        "vietnamese": "",
+        "vietnamese": "Nói cho cậu biết luôn, tới giờ tôi vẫn chưa biết tên anh ta là gì",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Just so you know // now I still don't know what his name is"
@@ -2602,7 +2602,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 207,
         "category": "sentence",
         "english": "It seems we have to take a detour to avoid a traffic accident",
-        "vietnamese": "",
+        "vietnamese": "Hình như chúng ta phải đi đường vòng để tránh một vụ tai nạn giao thông",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It seems we have to take a detour to avoid a traffic accident"
@@ -2612,7 +2612,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 208,
         "category": "sentence",
         "english": "Seriously, this is the first time I've been to Singapore with my family",
-        "vietnamese": "",
+        "vietnamese": "Thiệt luôn, đây là lần đầu tiên tôi đi Singapore với gia đình",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Seriously // this is the first time I've been to Singapore with my family"
@@ -2622,7 +2622,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 209,
         "category": "sentence",
         "english": "You need to put on the tie if you wanna join the event tonight",
-        "vietnamese": "",
+        "vietnamese": "Cậu cần phải thắt cà vạt nếu muốn tham gia sự kiện tối nay",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "You need to put on the tie if you wanna join the event tonight"
@@ -2632,7 +2632,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 210,
         "category": "sentence",
         "english": "It's pouring outside, how long have you been waiting here?",
-        "vietnamese": "",
+        "vietnamese": "Ngoài trời đang mưa tầm tã, cậu đã chờ ở đây bao lâu rồi?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It's pouring outside // how long have you been waiting here?"
@@ -2642,7 +2642,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 211,
         "category": "sentence",
         "english": "No wonder today I've had to see the customer twice",
-        "vietnamese": "",
+        "vietnamese": "Hèn gì hôm nay tôi đã phải gặp khách hàng tới 2 lần",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "No wonder today I've had to see the customer twice"
@@ -2652,7 +2652,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 212,
         "category": "sentence",
         "english": "You got diarrhea? What did you have this morning?",
-        "vietnamese": "",
+        "vietnamese": "Cậu bị tiêu chảy hả? Sáng nay cậu ăn gì vậy?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "You got diarrhea? What did you have this morning?"
@@ -2662,7 +2662,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 213,
         "category": "sentence",
         "english": "Seriously? Don't tell me you forgot your passport",
-        "vietnamese": "",
+        "vietnamese": "Thiệt luôn á? Đừng nói là cậu quên mang hộ chiếu rồi nha",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Seriously? Don't tell me you forgot your passport"
@@ -2672,7 +2672,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 214,
         "category": "sentence",
         "english": "How to put it? I'm not supposed to see this client?",
-        "vietnamese": "",
+        "vietnamese": "Nói sao đây? Tôi không được phép gặp khách hàng này hả?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "How to put it? I'm not supposed to see this client?"
@@ -2782,7 +2782,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 225,
         "category": "monologue",
         "english": "I'm not being funny! Don't give me that look",
-        "vietnamese": "Tao ko có đùa nha! Đừng có mà nhìn tao vậy chớ",
+        "vietnamese": "Tao không có đùa nha! Đừng có mà nhìn tao vậy chớ",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I'm not being funny! Don't give me that look"
@@ -2802,7 +2802,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 227,
         "category": "monologue",
         "english": "I only have the boarding pass and some loose change",
-        "vietnamese": "Tao chỉ có vé máy bay với một ít tiền lẻthôi",
+        "vietnamese": "Tao chỉ có vé máy bay với một ít tiền lẻ thôi",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I only have the boarding pass and some loose change"
@@ -2872,7 +2872,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 234,
         "category": "monologue",
         "english": "just use the hotel address",
-        "vietnamese": "cứ dùng cái địa chỉ khách sạn thôi",
+        "vietnamese": "Cứ dùng cái địa chỉ khách sạn thôi",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "just use the hotel address"
@@ -2882,7 +2882,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 235,
         "category": "monologue",
         "english": "It's lucky I didn't ask you to keep my passport",
-        "vietnamese": "Cũng may tao ko nhờ mày giữ cái passport tao",
+        "vietnamese": "Cũng may tao không nhờ mày giữ cái passport tao",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It's lucky I didn't ask you to keep my passport"
@@ -2932,7 +2932,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 240,
         "category": "monologue",
         "english": "What kind of airport that doesn't have a single socket!!!",
-        "vietnamese": "Sân bay cái kiểu gì mà ko có đến 1 cái ổ cắm nữa!!!",
+        "vietnamese": "Sân bay cái kiểu gì mà không có đến 1 cái ổ cắm nữa!!!",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "What kind of airport that doesn't have a single socket!!!"
@@ -2982,7 +2982,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 245,
         "category": "monologue",
         "english": "Hey, are you hungry?",
-        "vietnamese": "Ê, mày đói ko?",
+        "vietnamese": "Ê, mày đói không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Hey // are you hungry?"
@@ -3012,7 +3012,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 248,
         "category": "monologue",
         "english": "Are you carsick, seasick or anything?",
-        "vietnamese": "Mày có say xe, say sóng hay gì ko?",
+        "vietnamese": "Mày có say xe, say sóng hay gì không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Are you carsick // seasick or anything?"
@@ -3022,7 +3022,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 249,
         "category": "monologue",
         "english": "I don't know if we have to transit in Long An",
-        "vietnamese": "Tao ko biết mình có phải quá cảnh ở Long An ko nữa",
+        "vietnamese": "Tao không biết mình có phải quá cảnh ở Long An không nữa",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I don't know if we have to transit in Long An"
@@ -3052,7 +3052,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 252,
         "category": "monologue",
         "english": "going around the old temples",
-        "vietnamese": "đi lòng vòng mấy cái đền cổ cổ",
+        "vietnamese": "Đi lòng vòng mấy cái đền cổ cổ",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "going around the old temples"
@@ -3062,7 +3062,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 253,
         "category": "monologue",
         "english": "and tuktuk and the monks and the night markets",
-        "vietnamese": "rồi xe lam, mấy ông sư, rồi mấy cái chợ đêm",
+        "vietnamese": "Rồi xe lam, mấy ông sư, rồi mấy cái chợ đêm",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "and tuktuk and the monks and the night markets"
@@ -3092,7 +3092,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 256,
         "category": "monologue",
         "english": "On the plane, I really love window seats",
-        "vietnamese": "Trên máy bay, tao rất thích mấy cái chỗ ngồi cạnh cửa sổnha",
+        "vietnamese": "Trên máy bay, tao rất thích mấy cái chỗ ngồi cạnh cửa sổ nha",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "On the plane // I really love window seats"
@@ -3122,7 +3122,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 259,
         "category": "monologue",
         "english": "or we came too early?",
-        "vietnamese": "hay mình đến sớm quá?",
+        "vietnamese": "Hay mình đến sớm quá?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "or we came too early?"
@@ -3162,8 +3162,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 263,
         "category": "dialogue",
         "english": "Hey, Steve, Steve, over here",
-        "vietnamese": "R: Hey, Steve, Steve, ở bên này nè",
-        "speaker": "Roger",
+        "vietnamese": "Hey, Steve, Steve, ở bên này nè",
+        "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Hey // Steve // Steve // over here"
       },
@@ -3172,8 +3172,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 264,
         "category": "dialogue",
         "english": "Thank God you are here!",
-        "vietnamese": "R: Ơn giời mày đây rồi!",
-        "speaker": "Roger",
+        "vietnamese": "Ơn giời mày đây rồi!",
+        "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Thank God you are here!"
       },
@@ -3182,7 +3182,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 265,
         "category": "dialogue",
         "english": "What took you so long, buddy?!?",
-        "vietnamese": "R: Mày làm cái gì lâu quá vậy, mảy?!?",
+        "vietnamese": "Mày làm cái gì lâu quá vậy, mày?!?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "What took you so long // buddy?!?"
@@ -3192,7 +3192,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 266,
         "category": "dialogue",
         "english": "Sorry I'm late, I didn't mean to",
-        "vietnamese": "S: Xin lỗi tao tới trễ, tao đâu cố ý đâu",
+        "vietnamese": "Xin lỗi tao tới trễ, tao đâu cố ý đâu",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Sorry I'm late // I didn't mean to"
@@ -3202,7 +3202,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "How long have you been waiting here?",
-        "vietnamese": "S: Mày chờ ở đây lâu chưa?",
+        "vietnamese": "Mày chờ ở đây lâu chưa?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "How long have you been waiting here?"
@@ -3212,7 +3212,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "Long enough to finish 2 coffees",
-        "vietnamese": "R: Đủ lâu để xong 2 ly cà phê rồi nè",
+        "vietnamese": "Đủ lâu để xong 2 ly cà phê rồi nè",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Long enough to finish 2 coffees"
@@ -3222,7 +3222,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "Hey, hey, hey, don't give me that look!",
-        "vietnamese": "S: Ê, ê, ê, đừng có nhìn tao dzậy nha!",
+        "vietnamese": "Ê, ê, ê, đừng có nhìn tao vậy nha!",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Hey // hey // hey // don't give me that look!"
@@ -3232,7 +3232,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 270,
         "category": "dialogue",
         "english": "Actually I didn't oversleep.",
-        "vietnamese": "S: Thực ra tao không có ngủ quên à.",
+        "vietnamese": "Thực ra tao không có ngủ quên à.",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Actually I didn't oversleep."
@@ -3242,7 +3242,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "dialogue",
         "english": "I got diarrhea. Okay?",
-        "vietnamese": "S: Tao bị tiêu chảy. Okay?",
+        "vietnamese": "Tao bị tiêu chảy. Okay?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "I got diarrhea. Okay?"
@@ -3252,7 +3252,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "dialogue",
         "english": "Just so you know, on the way here",
-        "vietnamese": "S: Nói mày biết luôn, trên đường tới đây",
+        "vietnamese": "Nói mày biết luôn, trên đường tới đây",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Just so you know // on the way here"
@@ -3262,7 +3262,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 273,
         "category": "dialogue",
         "english": "I've had to use the washroom 5 times",
-        "vietnamese": "S: Tao đã phải dùng nhà vệ sinh 5 lần rồi",
+        "vietnamese": "Tao đã phải dùng nhà vệ sinh 5 lần rồi",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "I've had to use the washroom 5 times"
@@ -3272,7 +3272,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 274,
         "category": "dialogue",
         "english": "But don't worry, I already took the medicines",
-        "vietnamese": "S: Nhưng mà đừng có lo, tao uống thuốc rồi",
+        "vietnamese": "Nhưng mà đừng có lo, tao uống thuốc rồi",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "But don't worry // I already took the medicines"
@@ -3282,7 +3282,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 275,
         "category": "dialogue",
         "english": "Wait a minute, what did you have last night?",
-        "vietnamese": "R: Khoan, tối qua mày ăn gì?",
+        "vietnamese": "Khoan, tối qua mày ăn gì?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Wait a minute // what did you have last night?"
@@ -3292,7 +3292,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 276,
         "category": "dialogue",
         "english": "Hey, don't tell me you ate the leftover rice",
-        "vietnamese": "R: Hey, đừng nói tao mày ăn cái cơm nguội nha",
+        "vietnamese": "Hey, đừng nói tao mày ăn cái cơm nguội nha",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Hey // don't tell me you ate the leftover rice"
@@ -3302,7 +3302,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 277,
         "category": "dialogue",
         "english": "What'd you mean? I'm not supposed to eat that rice???",
-        "vietnamese": "S: Là sao? Tao không có được ăn cái cơm đó hả???",
+        "vietnamese": "Là sao? Tao không có được ăn cái cơm đó hả???",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "What'd you mean? I'm not supposed to eat that rice???"
@@ -3312,7 +3312,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 278,
         "category": "dialogue",
         "english": "No, no, no, there's a lot of MSG in there!",
-        "vietnamese": "R: Nô, nô, nô, haiya, có nhiều bột ngọt ở trỏng lắm!",
+        "vietnamese": "Nô, nô, nô, haiya, có nhiều bột ngọt ở trỏng lắm!",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "No // no // no // there's a lot of MSG in there!"
@@ -3322,7 +3322,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 279,
         "category": "dialogue",
         "english": "You're allergic to MSG, right?",
-        "vietnamese": "R: Mày bị dị ứng với bột ngọt, phải không?",
+        "vietnamese": "Mày bị dị ứng với bột ngọt, phải không?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "You're allergic to MSG // right?"
@@ -3331,18 +3331,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d2_0280",
         "item_number": 280,
         "category": "dialogue",
-        "english": "Emotional damage! Now you tell me! S: Emotional damage,",
-        "vietnamese": "sao giờ mày mới nói!",
+        "english": "Emotional damage! Now you tell me!",
+        "vietnamese": "Tổn thương tâm lý ghê luôn á! Giờ mày mới nói!",
         "speaker": "S",
         "audio_url": null,
-        "beat_prosody": "Emotional damage! Now you tell me! S: Emotional damage,"
+        "beat_prosody": "Emotional damage! // Now you tell me!"
       },
       {
         "chunk_id": "chunk_eres_d2_0281",
         "item_number": 281,
         "category": "dialogue",
         "english": "Okay, okay, listen, my bad",
-        "vietnamese": "R: Okay, okay, nghe nè, lỗi tao",
+        "vietnamese": "Okay, okay, nghe nè, lỗi tao",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Okay // okay // listen // my bad"
@@ -3352,7 +3352,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 282,
         "category": "dialogue",
         "english": "To make it up to you,",
-        "vietnamese": "R: Để đền bù lại cho mày,",
+        "vietnamese": "Để đền bù lại cho mày,",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "To make it up to you,"
@@ -3361,285 +3361,255 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d2_0283",
         "item_number": 283,
         "category": "dialogue",
-        "english": "To make it up to you, R:",
-        "vietnamese": "Tao sẽ dắt mày đi hồ Xuân Hương",
-        "speaker": "R",
-        "audio_url": null,
-        "beat_prosody": "To make it up to you // R:"
-      },
-      {
-        "chunk_id": "chunk_eres_d2_0284",
-        "item_number": 284,
-        "category": "dialogue",
         "english": "I'll take you to Xuan Huong lake",
-        "vietnamese": "R: Ý mày sao?",
+        "vietnamese": "Tao sẽ dắt mày đi hồ Xuân Hương",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "I'll take you to Xuan Huong lake"
       },
       {
-        "chunk_id": "chunk_eres_d2_0285",
-        "item_number": 285,
+        "chunk_id": "chunk_eres_d2_0284",
+        "item_number": 284,
         "category": "dialogue",
         "english": "What do you say?",
-        "vietnamese": "S: Hồ Xuân Hương? Mình tới đó chi?",
+        "vietnamese": "Ý mày sao?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "What do you say?"
       },
       {
+        "chunk_id": "chunk_eres_d2_0285",
+        "item_number": 285,
+        "category": "dialogue",
+        "english": "Xuan Huong lake? We go there for what?",
+        "vietnamese": "Hồ Xuân Hương? Mình tới đó chi?",
+        "speaker": "S",
+        "audio_url": null,
+        "beat_prosody": "Xuan Huong lake? // We go there for what?"
+      },
+      {
         "chunk_id": "chunk_eres_d2_0286",
         "item_number": 286,
         "category": "dialogue",
-        "english": "Xuan Huong lake? We go there for what?",
-        "vietnamese": "R: Đương nhiên là đạp vịt rồi!",
-        "speaker": "S",
-        "audio_url": null,
-        "beat_prosody": "Xuan Huong lake? We go there for what?"
-      },
-      {
-        "chunk_id": "chunk_eres_d2_0287",
-        "item_number": 287,
-        "category": "dialogue",
         "english": "Of course, ride the duck paddle boat!",
-        "vietnamese": "S: Okay, nghe ổn đấy",
+        "vietnamese": "Đương nhiên là đạp vịt rồi!",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Of course // ride the duck paddle boat!"
       },
       {
-        "chunk_id": "chunk_eres_d2_0288",
-        "item_number": 288,
+        "chunk_id": "chunk_eres_d2_0287",
+        "item_number": 287,
         "category": "dialogue",
         "english": "Okay, sounds good",
-        "vietnamese": "S: Mày biết đường tới đó không?",
+        "vietnamese": "Okay, nghe ổn đấy",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Okay // sounds good"
       },
       {
-        "chunk_id": "chunk_eres_d2_0289",
-        "item_number": 289,
+        "chunk_id": "chunk_eres_d2_0288",
+        "item_number": 288,
         "category": "dialogue",
         "english": "Do you know the way to go there?",
-        "vietnamese": "R: Tao không chắc nhưng mà mình có Google map mà",
+        "vietnamese": "Mày biết đường tới đó không?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Do you know the way to go there?"
       },
       {
+        "chunk_id": "chunk_eres_d2_0289",
+        "item_number": 289,
+        "category": "dialogue",
+        "english": "I'm not sure but we have the Google map",
+        "vietnamese": "Tao không chắc nhưng mà mình có Google map mà",
+        "speaker": "R",
+        "audio_url": null,
+        "beat_prosody": "I'm not sure // but we have the Google map"
+      },
+      {
         "chunk_id": "chunk_eres_d2_0290",
         "item_number": 290,
         "category": "dialogue",
-        "english": "I'm not sure but we have the Google map",
-        "vietnamese": "R: Dùng điện thoại mày đi, của tao hết pin rồi",
-        "speaker": "R",
-        "audio_url": null,
-        "beat_prosody": "I'm not sure but we have the Google map"
-      },
-      {
-        "chunk_id": "chunk_eres_d2_0291",
-        "item_number": 291,
-        "category": "dialogue",
         "english": "Use your phone, mine is out of battery",
-        "vietnamese": "S: Gì? Mày mất trí hả?",
+        "vietnamese": "Dùng điện thoại mày đi, của tao hết pin rồi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Use your phone // mine is out of battery"
       },
       {
+        "chunk_id": "chunk_eres_d2_0291",
+        "item_number": 291,
+        "category": "dialogue",
+        "english": "What? Did you lose your mind???",
+        "vietnamese": "Gì? Mày mất trí hả???",
+        "speaker": "S",
+        "audio_url": null,
+        "beat_prosody": "What? // Did you lose your mind???"
+      },
+      {
         "chunk_id": "chunk_eres_d2_0292",
         "item_number": 292,
         "category": "dialogue",
-        "english": "What? Did you lose your mind??? S:",
-        "vietnamese": "Để đền bù lại cho mày,",
-        "speaker": "S",
-        "audio_url": null,
-        "beat_prosody": "What? Did you lose your mind??? S:"
-      },
-      {
-        "chunk_id": "chunk_eres_d2_0293",
-        "item_number": 293,
-        "category": "dialogue",
-        "english": "And now we're in the middle of nowhere",
-        "vietnamese": "S: Rồi giờ mình đang ở cái chỗ khỉ ho cò gáy nè",
-        "speaker": "S",
-        "audio_url": null,
-        "beat_prosody": "And now we're in the middle of nowhere"
-      },
-      {
-        "chunk_id": "chunk_eres_d2_0294",
-        "item_number": 294,
-        "category": "dialogue",
-        "english": "Relax, This is not the first time we got lost",
-        "vietnamese": "R: Bình tĩnh. Đây đâu phải lần đầu tụi mình bị lạc",
-        "speaker": "R",
-        "audio_url": null,
-        "beat_prosody": "Relax // This is not the first time we got lost"
-      },
-      {
-        "chunk_id": "chunk_eres_d2_0295",
-        "item_number": 295,
-        "category": "dialogue",
         "english": "I've got the plan",
-        "vietnamese": "R: Tao có cách rồi",
+        "vietnamese": "Tao có cách rồi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "I've got the plan"
       },
       {
-        "chunk_id": "chunk_eres_d2_0296",
-        "item_number": 296,
+        "chunk_id": "chunk_eres_d2_0293",
+        "item_number": 293,
         "category": "dialogue",
         "english": "This morning I already asked a local",
-        "vietnamese": "R: Sáng nay tao có hỏi một đứa dân địa phương rồi",
+        "vietnamese": "Sáng nay tao có hỏi một đứa dân địa phương rồi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "This morning I already asked a local"
       },
       {
-        "chunk_id": "chunk_eres_d2_0297",
-        "item_number": 297,
+        "chunk_id": "chunk_eres_d2_0294",
+        "item_number": 294,
         "category": "dialogue",
         "english": "You see that mango tree?",
-        "vietnamese": "R: Mày thấy cây xoài đó không?",
+        "vietnamese": "Mày thấy cây xoài đó không?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "You see that mango tree?"
       },
       {
-        "chunk_id": "chunk_eres_d2_0298",
-        "item_number": 298,
+        "chunk_id": "chunk_eres_d2_0295",
+        "item_number": 295,
         "category": "dialogue",
         "english": "There's a shortcut there",
-        "vietnamese": "R: Có một cái đường tắt ở đó",
+        "vietnamese": "Có một cái đường tắt ở đó",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "There's a shortcut there"
       },
       {
-        "chunk_id": "chunk_eres_d2_0299",
-        "item_number": 299,
+        "chunk_id": "chunk_eres_d2_0296",
+        "item_number": 296,
         "category": "dialogue",
         "english": "Are you saying we'll do the trekking now?",
-        "vietnamese": "S: Ý mày nói là giờ mình đi đường rừng á hả?",
+        "vietnamese": "Ý mày nói là giờ mình đi đường rừng á hả?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Are you saying we'll do the trekking now?"
       },
       {
-        "chunk_id": "chunk_eres_d2_0300",
-        "item_number": 300,
+        "chunk_id": "chunk_eres_d2_0297",
+        "item_number": 297,
         "category": "dialogue",
         "english": "I don't think it's a good idea",
-        "vietnamese": "S: Tao không nghĩ đó là ý hay đâu",
+        "vietnamese": "Tao không nghĩ đó là ý hay đâu",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "I don't think it's a good idea"
       },
       {
-        "chunk_id": "chunk_eres_d2_0301",
-        "item_number": 301,
+        "chunk_id": "chunk_eres_d2_0298",
+        "item_number": 298,
         "category": "dialogue",
         "english": "It's too risky",
-        "vietnamese": "S: Nó quá là liều",
+        "vietnamese": "Nó quá là liều",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "It's too risky"
       },
       {
-        "chunk_id": "chunk_eres_d2_0302",
-        "item_number": 302,
+        "chunk_id": "chunk_eres_d2_0299",
+        "item_number": 299,
         "category": "dialogue",
         "english": "Listen, it's not that hard",
-        "vietnamese": "R: Nghe nè, nó đâu có khó đến vậy đâu",
+        "vietnamese": "Nghe nè, nó đâu có khó đến vậy đâu",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Listen // it's not that hard"
       },
       {
-        "chunk_id": "chunk_eres_d2_0303",
-        "item_number": 303,
+        "chunk_id": "chunk_eres_d2_0300",
+        "item_number": 300,
         "category": "dialogue",
         "english": "It's only 500 meters away from the main road",
-        "vietnamese": "R: Nó chỉ cách đường chính có 500 mét thôi",
+        "vietnamese": "Nó chỉ cách đường chính có 500 mét thôi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "It's only 500 meters away from the main road"
       },
       {
-        "chunk_id": "chunk_eres_d2_0304",
-        "item_number": 304,
+        "chunk_id": "chunk_eres_d2_0301",
+        "item_number": 301,
         "category": "dialogue",
         "english": "How do you know that is the main road?",
-        "vietnamese": "S: Sao mày biết đó là đường chính?",
+        "vietnamese": "Sao mày biết đó là đường chính?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "How do you know that is the main road?"
       },
       {
-        "chunk_id": "chunk_eres_d2_0305",
-        "item_number": 305,
+        "chunk_id": "chunk_eres_d2_0302",
+        "item_number": 302,
         "category": "dialogue",
         "english": "There's a big gas station at the intersection",
-        "vietnamese": "R: Có một cái cây xăng bự lắm ở chỗ giao nhau ấy",
+        "vietnamese": "Có một cái cây xăng bự lắm ở chỗ giao nhau ấy",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "There's a big gas station at the intersection"
       },
       {
-        "chunk_id": "chunk_eres_d2_0306",
-        "item_number": 306,
+        "chunk_id": "chunk_eres_d2_0303",
+        "item_number": 303,
         "category": "dialogue",
         "english": "If my mind serves me right",
-        "vietnamese": "R: Nếu mà tao nhớ không nhầm thì...",
+        "vietnamese": "Nếu mà tao nhớ không nhầm thì...",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "If my mind serves me right"
       },
       {
-        "chunk_id": "chunk_eres_d2_0307",
-        "item_number": 307,
+        "chunk_id": "chunk_eres_d2_0304",
+        "item_number": 304,
         "category": "dialogue",
         "english": "That is the intersection between 1A National Highway and Le Loi street",
-        "vietnamese": "R: Đó là cái chỗ giao nhau giữa QL1A với đường Lê Lợi",
+        "vietnamese": "Đó là cái chỗ giao nhau giữa QL1A với đường Lê Lợi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "That is the intersection between 1A National Highway and Le Loi street"
       },
       {
-        "chunk_id": "chunk_eres_d2_0308",
-        "item_number": 308,
+        "chunk_id": "chunk_eres_d2_0305",
+        "item_number": 305,
         "category": "dialogue",
         "english": "When we get there, we'll make a right",
-        "vietnamese": "R: Khi mình tới đó, mình sẽ quẹo phải",
+        "vietnamese": "Khi mình tới đó, mình sẽ quẹo phải",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "When we get there // we'll make a right"
       },
       {
-        "chunk_id": "chunk_eres_d2_0309",
-        "item_number": 309,
+        "chunk_id": "chunk_eres_d2_0306",
+        "item_number": 306,
         "category": "dialogue",
         "english": "Then we'll go along the main road until we see the big lake",
-        "vietnamese": "R: Sau đó mình sẽ đi dọc theo đường chính cho đến khi mình thấy một cái hồ lớn",
+        "vietnamese": "Sau đó mình sẽ đi dọc theo đường chính cho đến khi mình thấy một cái hồ lớn",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Then we'll go along the main road until we see the big lake"
       },
       {
-        "chunk_id": "chunk_eres_d2_0310",
-        "item_number": 310,
+        "chunk_id": "chunk_eres_d2_0307",
+        "item_number": 307,
         "category": "dialogue",
         "english": "Okay, but I'm hungry, let's grab something to eat!",
-        "vietnamese": "S: Okay, nhưng mà tao đói rồi, mình kiếm gì ăn đi!",
+        "vietnamese": "Okay, nhưng mà tao đói rồi, mình kiếm gì ăn đi!",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Okay // but I'm hungry // let's grab something to eat!"
       },
       {
-        "chunk_id": "chunk_eres_d2_0311",
-        "item_number": 311,
+        "chunk_id": "chunk_eres_d2_0308",
+        "item_number": 308,
         "category": "review",
         "english": "No wonder they went to the US",
         "vietnamese": "Hèn gì họ đi Mỹ",
@@ -3648,8 +3618,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "No wonder they went to the US"
       },
       {
-        "chunk_id": "chunk_eres_d2_0312",
-        "item_number": 312,
+        "chunk_id": "chunk_eres_d2_0309",
+        "item_number": 309,
         "category": "review",
         "english": "Seriously, go ask her",
         "vietnamese": "Thiệt, đi hỏi cổ đi",
@@ -3658,8 +3628,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Seriously // go ask her"
       },
       {
-        "chunk_id": "chunk_eres_d2_0313",
-        "item_number": 313,
+        "chunk_id": "chunk_eres_d2_0310",
+        "item_number": 310,
         "category": "review",
         "english": "Sleeping bag is a bag",
         "vietnamese": "Túi ngủ là một cái túi",
@@ -3668,8 +3638,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Sleeping bag is a bag"
       },
       {
-        "chunk_id": "chunk_eres_d2_0314",
-        "item_number": 314,
+        "chunk_id": "chunk_eres_d2_0311",
+        "item_number": 311,
         "category": "review",
         "english": "Back pocket is a pocket",
         "vietnamese": "Túi sau là một cái túi",
@@ -3678,8 +3648,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Back pocket is a pocket"
       },
       {
-        "chunk_id": "chunk_eres_d2_0315",
-        "item_number": 315,
+        "chunk_id": "chunk_eres_d2_0312",
+        "item_number": 312,
         "category": "review",
         "english": "I'm the big fan of durian",
         "vietnamese": "Tui là fan ruột của sầu riêng",
@@ -3688,8 +3658,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm the big fan of durian"
       },
       {
-        "chunk_id": "chunk_eres_d2_0316",
-        "item_number": 316,
+        "chunk_id": "chunk_eres_d2_0313",
+        "item_number": 313,
         "category": "review",
         "english": "We're in the raining season",
         "vietnamese": "Ta đang ở trong mùa mưa",
@@ -3698,8 +3668,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "We're in the raining season"
       },
       {
-        "chunk_id": "chunk_eres_d2_0317",
-        "item_number": 317,
+        "chunk_id": "chunk_eres_d2_0314",
+        "item_number": 314,
         "category": "review",
         "english": "Carsick is worse than lovesick",
         "vietnamese": "Say xe còn tệ hơn thất tình",
@@ -3708,8 +3678,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Carsick is worse than lovesick"
       },
       {
-        "chunk_id": "chunk_eres_d2_0318",
-        "item_number": 318,
+        "chunk_id": "chunk_eres_d2_0315",
+        "item_number": 315,
         "category": "review",
         "english": "Rice cooker is very convenient",
         "vietnamese": "Nồi cơm điện rất là tiện",
@@ -3718,8 +3688,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Rice cooker is very convenient"
       },
       {
-        "chunk_id": "chunk_eres_d2_0319",
-        "item_number": 319,
+        "chunk_id": "chunk_eres_d2_0316",
+        "item_number": 316,
         "category": "review",
         "english": "Where do you leave my key?",
         "vietnamese": "Cậu để chìa khóa tui ở đâu vậy?",
@@ -3728,8 +3698,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Where do you leave my key?"
       },
       {
-        "chunk_id": "chunk_eres_d2_0320",
-        "item_number": 320,
+        "chunk_id": "chunk_eres_d2_0317",
+        "item_number": 317,
         "category": "review",
         "english": "I'm allergic to boys",
         "vietnamese": "Tui dị ứng với trai",
@@ -3738,8 +3708,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm allergic to boys"
       },
       {
-        "chunk_id": "chunk_eres_d2_0321",
-        "item_number": 321,
+        "chunk_id": "chunk_eres_d2_0318",
+        "item_number": 318,
         "category": "review",
         "english": "My phone was out of battery",
         "vietnamese": "Điện thoại tui hết pin rồi",
@@ -3748,8 +3718,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "My phone was out of battery"
       },
       {
-        "chunk_id": "chunk_eres_d2_0322",
-        "item_number": 322,
+        "chunk_id": "chunk_eres_d2_0319",
+        "item_number": 319,
         "category": "review",
         "english": "We walk there, what do you say?",
         "vietnamese": "Chúng ta đi bộ đến đó, ý cậu sao?",
@@ -3758,8 +3728,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "We walk there // what do you say?"
       },
       {
-        "chunk_id": "chunk_eres_d2_0323",
-        "item_number": 323,
+        "chunk_id": "chunk_eres_d2_0320",
+        "item_number": 320,
         "category": "review",
         "english": "Don't touch my cart",
         "vietnamese": "Đừng động vào xe đẩy của tôi",
@@ -3768,8 +3738,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Don't touch my cart"
       },
       {
-        "chunk_id": "chunk_eres_d2_0324",
-        "item_number": 324,
+        "chunk_id": "chunk_eres_d2_0321",
+        "item_number": 321,
         "category": "review",
         "english": "Are you nervous?",
         "vietnamese": "Cậu có lo không?",
@@ -3778,8 +3748,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Are you nervous?"
       },
       {
-        "chunk_id": "chunk_eres_d2_0325",
-        "item_number": 325,
+        "chunk_id": "chunk_eres_d2_0322",
+        "item_number": 322,
         "category": "review",
         "english": "Food court is so crowded",
         "vietnamese": "Khu vực ăn uống rất là đông",
@@ -3788,8 +3758,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Food court is so crowded"
       },
       {
-        "chunk_id": "chunk_eres_d2_0326",
-        "item_number": 326,
+        "chunk_id": "chunk_eres_d2_0323",
+        "item_number": 323,
         "category": "review",
         "english": "Painkillers don't kill pain",
         "vietnamese": "Thuốc giảm đau không có giảm đau",
@@ -3798,8 +3768,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Painkillers don't kill pain"
       },
       {
-        "chunk_id": "chunk_eres_d2_0327",
-        "item_number": 327,
+        "chunk_id": "chunk_eres_d2_0324",
+        "item_number": 324,
         "category": "review",
         "english": "Socket or plug",
         "vietnamese": "Ổ cắm hoặc phích cắm",
@@ -3808,8 +3778,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Socket or plug"
       },
       {
-        "chunk_id": "chunk_eres_d2_0328",
-        "item_number": 328,
+        "chunk_id": "chunk_eres_d2_0325",
+        "item_number": 325,
         "category": "review",
         "english": "Flip flops have nothing to do with Laos",
         "vietnamese": "Dép Lào chả liên quan gì đến Lào",
@@ -3818,8 +3788,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Flip flops have nothing to do with Laos"
       },
       {
-        "chunk_id": "chunk_eres_d2_0329",
-        "item_number": 329,
+        "chunk_id": "chunk_eres_d2_0326",
+        "item_number": 326,
         "category": "review",
         "english": "Take off your shoes first",
         "vietnamese": "Cởi giày ra trước",
@@ -3828,8 +3798,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Take off your shoes first"
       },
       {
-        "chunk_id": "chunk_eres_d2_0330",
-        "item_number": 330,
+        "chunk_id": "chunk_eres_d2_0327",
+        "item_number": 327,
         "category": "review",
         "english": "What will be will be",
         "vietnamese": "Chuyện gì tới sẽ tới thôi",
@@ -3838,8 +3808,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "What will be will be"
       },
       {
-        "chunk_id": "chunk_eres_d2_0331",
-        "item_number": 331,
+        "chunk_id": "chunk_eres_d2_0328",
+        "item_number": 328,
         "category": "review",
         "english": "Misread the contract",
         "vietnamese": "Đọc nhầm hợp đồng",
@@ -3848,8 +3818,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Misread the contract"
       },
       {
-        "chunk_id": "chunk_eres_d2_0332",
-        "item_number": 332,
+        "chunk_id": "chunk_eres_d2_0329",
+        "item_number": 329,
         "category": "review",
         "english": "Ride the duck paddle boat",
         "vietnamese": "Đạp vịt",
@@ -3858,8 +3828,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Ride the duck paddle boat"
       },
       {
-        "chunk_id": "chunk_eres_d2_0333",
-        "item_number": 333,
+        "chunk_id": "chunk_eres_d2_0330",
+        "item_number": 330,
         "category": "review",
         "english": "Beware of that",
         "vietnamese": "Coi chừng cái đó",
@@ -3868,8 +3838,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Beware of that"
       },
       {
-        "chunk_id": "chunk_eres_d2_0334",
-        "item_number": 334,
+        "chunk_id": "chunk_eres_d2_0331",
+        "item_number": 331,
         "category": "review",
         "english": "Leftover rice",
         "vietnamese": "Cơm nguội",
@@ -3878,8 +3848,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Leftover rice"
       },
       {
-        "chunk_id": "chunk_eres_d2_0335",
-        "item_number": 335,
+        "chunk_id": "chunk_eres_d2_0332",
+        "item_number": 332,
         "category": "review",
         "english": "Road signs",
         "vietnamese": "Biển báo",
@@ -3888,8 +3858,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Road signs"
       },
       {
-        "chunk_id": "chunk_eres_d2_0336",
-        "item_number": 336,
+        "chunk_id": "chunk_eres_d2_0333",
+        "item_number": 333,
         "category": "review",
         "english": "Reality shows",
         "vietnamese": "Show thực tế",
@@ -3898,8 +3868,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Reality shows"
       },
       {
-        "chunk_id": "chunk_eres_d2_0337",
-        "item_number": 337,
+        "chunk_id": "chunk_eres_d2_0334",
+        "item_number": 334,
         "category": "review",
         "english": "There's no milestone",
         "vietnamese": "Không có cột cây số",
@@ -3908,8 +3878,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "There's no milestone"
       },
       {
-        "chunk_id": "chunk_eres_d2_0338",
-        "item_number": 338,
+        "chunk_id": "chunk_eres_d2_0335",
+        "item_number": 335,
         "category": "review",
         "english": "Stay away from that hotel",
         "vietnamese": "Tránh xa khỏi cái khách sạn đó",
@@ -3918,8 +3888,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Stay away from that hotel"
       },
       {
-        "chunk_id": "chunk_eres_d2_0339",
-        "item_number": 339,
+        "chunk_id": "chunk_eres_d2_0336",
+        "item_number": 336,
         "category": "review",
         "english": "War museum",
         "vietnamese": "Bảo tàng chiến tranh",
@@ -3928,8 +3898,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "War museum"
       },
       {
-        "chunk_id": "chunk_eres_d2_0340",
-        "item_number": 340,
+        "chunk_id": "chunk_eres_d2_0337",
+        "item_number": 337,
         "category": "review",
         "english": "A controversial topic",
         "vietnamese": "Một chủ đề gây tranh cãi",
@@ -3938,8 +3908,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "A controversial topic"
       },
       {
-        "chunk_id": "chunk_eres_d2_0341",
-        "item_number": 341,
+        "chunk_id": "chunk_eres_d2_0338",
+        "item_number": 338,
         "category": "review",
         "english": "Pick up at A and drop off at B",
         "vietnamese": "Đón tại A và thả xuống tại B",
@@ -3948,8 +3918,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Pick up at A and drop off at B"
       },
       {
-        "chunk_id": "chunk_eres_d2_0342",
-        "item_number": 342,
+        "chunk_id": "chunk_eres_d2_0339",
+        "item_number": 339,
         "category": "review",
         "english": "Keychain sucks",
         "vietnamese": "Móc khóa chán òm",
@@ -3958,8 +3928,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Keychain sucks"
       },
       {
-        "chunk_id": "chunk_eres_d2_0343",
-        "item_number": 343,
+        "chunk_id": "chunk_eres_d2_0340",
+        "item_number": 340,
         "category": "review",
         "english": "You need to put on a tie",
         "vietnamese": "Cậu cần phải đeo cà vạt",
@@ -3968,8 +3938,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "You need to put on a tie"
       },
       {
-        "chunk_id": "chunk_eres_d2_0344",
-        "item_number": 344,
+        "chunk_id": "chunk_eres_d2_0341",
+        "item_number": 341,
         "category": "review",
         "english": "Papaya is not a seasonal fruit",
         "vietnamese": "Đu đủ không phải là trái theo mùa",
@@ -3978,8 +3948,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Papaya is not a seasonal fruit"
       },
       {
-        "chunk_id": "chunk_eres_d2_0345",
-        "item_number": 345,
+        "chunk_id": "chunk_eres_d2_0342",
+        "item_number": 342,
         "category": "review",
         "english": "A starless night",
         "vietnamese": "Một đêm không sao",
@@ -3988,8 +3958,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "A starless night"
       },
       {
-        "chunk_id": "chunk_eres_d2_0346",
-        "item_number": 346,
+        "chunk_id": "chunk_eres_d2_0343",
+        "item_number": 343,
         "category": "review",
         "english": "Do you have medicated oil?",
         "vietnamese": "Cậu có dầu gió không?",
@@ -3998,8 +3968,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Do you have medicated oil?"
       },
       {
-        "chunk_id": "chunk_eres_d2_0347",
-        "item_number": 347,
+        "chunk_id": "chunk_eres_d2_0344",
+        "item_number": 344,
         "category": "review",
         "english": "There's a shortcut next to the car",
         "vietnamese": "Có một đường tắt kế bên cái xe hơi",
@@ -4008,8 +3978,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "There's a shortcut next to the car"
       },
       {
-        "chunk_id": "chunk_eres_d2_0348",
-        "item_number": 348,
+        "chunk_id": "chunk_eres_d2_0345",
+        "item_number": 345,
         "category": "review",
         "english": "Checked luggage",
         "vietnamese": "Hành lý ký gửi",
@@ -4018,8 +3988,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Checked luggage"
       },
       {
-        "chunk_id": "chunk_eres_d2_0349",
-        "item_number": 349,
+        "chunk_id": "chunk_eres_d2_0346",
+        "item_number": 346,
         "category": "review",
         "english": "In the middle of nowhere",
         "vietnamese": "Giữa chốn khỉ ho cò gáy",
@@ -4028,8 +3998,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "In the middle of nowhere"
       },
       {
-        "chunk_id": "chunk_eres_d2_0350",
-        "item_number": 350,
+        "chunk_id": "chunk_eres_d2_0347",
+        "item_number": 347,
         "category": "review",
         "english": "It's too risky to do that",
         "vietnamese": "Quá mạo hiểm để làm việc đó",
@@ -4038,8 +4008,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "It's too risky to do that"
       },
       {
-        "chunk_id": "chunk_eres_d2_0351",
-        "item_number": 351,
+        "chunk_id": "chunk_eres_d2_0348",
+        "item_number": 348,
         "category": "review",
         "english": "It's 10 meters away from the hall",
         "vietnamese": "Nó cách cái sảnh 10 mét",
@@ -4048,8 +4018,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "It's 10 meters away from the hall"
       },
       {
-        "chunk_id": "chunk_eres_d2_0352",
-        "item_number": 352,
+        "chunk_id": "chunk_eres_d2_0349",
+        "item_number": 349,
         "category": "review",
         "english": "If my memory serves me right,...",
         "vietnamese": "Nếu tôi nhớ không nhầm thì...",
@@ -4058,8 +4028,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "If my memory serves me right,..."
       },
       {
-        "chunk_id": "chunk_eres_d2_0353",
-        "item_number": 353,
+        "chunk_id": "chunk_eres_d2_0350",
+        "item_number": 350,
         "category": "review",
         "english": "I'm at the intersection",
         "vietnamese": "Tôi đang ở ngã tư nè",
@@ -4068,8 +4038,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm at the intersection"
       },
       {
-        "chunk_id": "chunk_eres_d2_0354",
-        "item_number": 354,
+        "chunk_id": "chunk_eres_d2_0351",
+        "item_number": 351,
         "category": "review",
         "english": "Make a right",
         "vietnamese": "Quẹo phải",
@@ -4078,8 +4048,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Make a right"
       },
       {
-        "chunk_id": "chunk_eres_d2_0355",
-        "item_number": 355,
+        "chunk_id": "chunk_eres_d2_0352",
+        "item_number": 352,
         "category": "review",
         "english": "1A national highway",
         "vietnamese": "Quốc lộ 1A",
@@ -4088,8 +4058,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "1A national highway"
       },
       {
-        "chunk_id": "chunk_eres_d2_0356",
-        "item_number": 356,
+        "chunk_id": "chunk_eres_d2_0353",
+        "item_number": 353,
         "category": "review",
         "english": "What took you so long?",
         "vietnamese": "Cậu làm gì lâu quá vậy?",
@@ -4098,8 +4068,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "What took you so long?"
       },
       {
-        "chunk_id": "chunk_eres_d2_0357",
-        "item_number": 357,
+        "chunk_id": "chunk_eres_d2_0354",
+        "item_number": 354,
         "category": "review",
         "english": "Hey, don't give me that look",
         "vietnamese": "Ê, đừng có nhìn tôi kiểu đó",
@@ -4108,8 +4078,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Hey // don't give me that look"
       },
       {
-        "chunk_id": "chunk_eres_d2_0358",
-        "item_number": 358,
+        "chunk_id": "chunk_eres_d2_0355",
+        "item_number": 355,
         "category": "review",
         "english": "No one doesn't like oversleeping",
         "vietnamese": "Không ai là không thích ngủ quên",
@@ -4118,8 +4088,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "No one doesn't like oversleeping"
       },
       {
-        "chunk_id": "chunk_eres_d2_0359",
-        "item_number": 359,
+        "chunk_id": "chunk_eres_d2_0356",
+        "item_number": 356,
         "category": "review",
         "english": "I got diarrhea",
         "vietnamese": "Tôi bị tiêu chảy",
@@ -4128,8 +4098,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I got diarrhea"
       },
       {
-        "chunk_id": "chunk_eres_d2_0360",
-        "item_number": 360,
+        "chunk_id": "chunk_eres_d2_0357",
+        "item_number": 357,
         "category": "review",
         "english": "Take the medicines",
         "vietnamese": "Uống thuốc",
@@ -4164,10 +4134,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 1,
         "category": "phrase",
         "english": "Tell me about yourself I have 18 years of experience",
-        "vietnamese": "",
-        "speaker": "Lesson",
+        "vietnamese": "Giới thiệu về bản thân - Tôi có 18 năm kinh nghiệm",
+        "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Tell me about yourself I have 18 years of experience"
+        "beat_prosody": "Tell me about yourself // I have 18 years of experience"
       },
       {
         "chunk_id": "chunk_eres_d3_0002",
@@ -4213,11 +4183,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d3_0006",
         "item_number": 6,
         "category": "slang",
-        "english": "Unfortunately / Unluckily (enough) XUI THAY",
-        "vietnamese": "",
+        "english": "Unfortunately / Unluckily (enough)",
+        "vietnamese": "Xui thay",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Unfortunately // Unluckily (enough) XUI THAY"
+        "beat_prosody": "Unfortunately // Unluckily (enough)"
       },
       {
         "chunk_id": "chunk_eres_d3_0007",
@@ -4343,11 +4313,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d3_0019",
         "item_number": 19,
         "category": "vocab",
-        "english": "Brag / show off / exaggerate / boast Khoe khoang",
-        "vietnamese": "",
+        "english": "Brag / show off / exaggerate / boast",
+        "vietnamese": "Khoe khoang",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Brag // show off // exaggerate // boast Khoe khoang"
+        "beat_prosody": "Brag // show off // exaggerate // boast"
       },
       {
         "chunk_id": "chunk_eres_d3_0020",
@@ -5164,7 +5134,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 101,
         "category": "vocab",
         "english": "Intern",
-        "vietnamese": "thực tập",
+        "vietnamese": "Thực tập",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Intern"
@@ -6424,7 +6394,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 227,
         "category": "monologue",
         "english": "with 3 years of experience managing all aspects of the accounting function",
-        "vietnamese": "với 3 năm kinh nghiệm quản lý mọi khía cạnh của công tác kế toán",
+        "vietnamese": "Với 3 năm kinh nghiệm quản lý mọi khía cạnh của công tác kế toán",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "with 3 years of experience managing all aspects of the accounting function"
@@ -6544,7 +6514,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 239,
         "category": "monologue",
         "english": "but I feel now I'm ready for the next step in my career",
-        "vietnamese": "nhưng mà giờ em cảm thấy em đã sẵn sàng cho bước tiếp theo trong sự nghiệp của mình",
+        "vietnamese": "Nhưng mà giờ em cảm thấy em đã sẵn sàng cho bước tiếp theo trong sự nghiệp của mình",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "but I feel now I'm ready for the next step in my career"
@@ -6594,7 +6564,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 244,
         "category": "monologue",
         "english": "I had a year after graduating",
-        "vietnamese": "em đã có 1 năm sau khi ra trường",
+        "vietnamese": "Em đã có 1 năm sau khi ra trường",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I had a year after graduating"
@@ -6604,7 +6574,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 245,
         "category": "monologue",
         "english": "working for a startup about e-commerce",
-        "vietnamese": "làm việc cho 1 startup về thương mại điện tử",
+        "vietnamese": "Làm việc cho 1 startup về thương mại điện tử",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "working for a startup about e-commerce"
@@ -6624,7 +6594,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 247,
         "category": "monologue",
         "english": "I was responsible for bookeeping in general",
-        "vietnamese": "em chịu trách nhiệm về quản lý sổ sách nói chung",
+        "vietnamese": "Em chịu trách nhiệm về quản lý sổ sách nói chung",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I was responsible for bookeeping in general"
@@ -6634,7 +6604,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 248,
         "category": "monologue",
         "english": "I worked so closely with finance manager",
-        "vietnamese": "em làm việc rất gần với trưởng phòng tài chính",
+        "vietnamese": "Em làm việc rất gần với trưởng phòng tài chính",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I worked so closely with finance manager"
@@ -6694,7 +6664,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 254,
         "category": "monologue",
         "english": "for a famous e-commerce platform back then, Amazon",
-        "vietnamese": "cho một sàn thương mại điện tử nổi tiếng thời đó, Amazon",
+        "vietnamese": "Cho một sàn thương mại điện tử nổi tiếng thời đó, Amazon",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "for a famous e-commerce platform back then // Amazon"
@@ -6774,7 +6744,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 262,
         "category": "monologue",
         "english": "just because I wanna meet more interesting people",
-        "vietnamese": "chỉ vì em muốn gặp thêm nhiều mấy anh chị thú vị",
+        "vietnamese": "Chỉ vì em muốn gặp thêm nhiều mấy anh chị thú vị",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "just because I wanna meet more interesting people"
@@ -6814,7 +6784,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 266,
         "category": "dialogue",
         "english": "Come on in, have a seat",
-        "vietnamese": "SH: Vô đi em, mời ngồi",
+        "vietnamese": "Vô đi em, mời ngồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Come on in // have a seat"
@@ -6824,7 +6794,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "Thanks, I'm a bit nervous",
-        "vietnamese": "T: Cám ơn, em hơi lo",
+        "vietnamese": "Cám ơn, em hơi lo",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Thanks // I'm a bit nervous"
@@ -6834,7 +6804,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "Yeah, I can see it in your face",
-        "vietnamese": "SH: Yeah, nhìn mặt em là anh hiểu rồi",
+        "vietnamese": "Yeah, nhìn mặt em là anh hiểu rồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Yeah // I can see it in your face"
@@ -6844,7 +6814,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "Alright, I'm just kidding, chewing gum?",
-        "vietnamese": "SH: Alright, anh đùa đó, singum không em?",
+        "vietnamese": "Alright, anh đùa đó, singum không em?",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Alright // I'm just kidding // chewing gum?"
@@ -6854,7 +6824,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 270,
         "category": "dialogue",
         "english": "No, thanks, I'm good",
-        "vietnamese": "T: Dạ không, cám ơn, em okay",
+        "vietnamese": "Dạ không, cám ơn, em okay",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "No // thanks // I'm good"
@@ -6864,7 +6834,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "dialogue",
         "english": "I've had a look at your CV this morning, quite impressive",
-        "vietnamese": "SH: Anh đã coi qua cái CV của em sáng nay, khá là ấn tượng",
+        "vietnamese": "Anh đã coi qua cái CV của em sáng nay, khá là ấn tượng",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "I've had a look at your CV this morning // quite impressive"
@@ -6874,7 +6844,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "dialogue",
         "english": "Hold on, there's one thing I need you to know in advance",
-        "vietnamese": "T: Dạ khoan, có một thứ em cần anh biết trước",
+        "vietnamese": "Dạ khoan, có một thứ em cần anh biết trước",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Hold on // there's one thing I need you to know in advance"
@@ -6884,7 +6854,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 273,
         "category": "dialogue",
         "english": "I'm 22 and this is the first time I've been in an interview in English",
-        "vietnamese": "T: Em 22 tuổi và đây là lần đầu tiên em tới một buổi phỏng vấn bằng tiếng Anh",
+        "vietnamese": "Em 22 tuổi và đây là lần đầu tiên em tới một buổi phỏng vấn bằng tiếng Anh",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I'm 22 and this is the first time I've been in an interview in English"
@@ -6894,7 +6864,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 274,
         "category": "dialogue",
         "english": "No worries, there's a first time for everything",
-        "vietnamese": "SH: Đừng có lo, cái gì cũng có lần đầu mà",
+        "vietnamese": "Đừng có lo, cái gì cũng có lần đầu mà",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "No worries // there's a first time for everything"
@@ -6904,7 +6874,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 275,
         "category": "dialogue",
         "english": "All you need to do is shaking that feeling off, okay?",
-        "vietnamese": "SH: Tất cả những gì em cần làm là rũ bỏ cái cảm giác đó đi, okay?",
+        "vietnamese": "Tất cả những gì em cần làm là rũ bỏ cái cảm giác đó đi, okay?",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "All you need to do is shaking that feeling off // okay?"
@@ -6914,7 +6884,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 276,
         "category": "dialogue",
         "english": "I know people say some things are better left unsaid",
-        "vietnamese": "T: Em biết là người ta hay bảo vài thứ tốt hơn là không nên nói ra",
+        "vietnamese": "Em biết là người ta hay bảo vài thứ tốt hơn là không nên nói ra",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I know people say some things are better left unsaid"
@@ -6924,7 +6894,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 277,
         "category": "dialogue",
         "english": "But hmmm, is it okay if I use broken English?",
-        "vietnamese": "T: Nhưng mà hmmm, có okay nếu em dùng tiếng Anh bồi không anh?",
+        "vietnamese": "Nhưng mà hmmm, có okay nếu em dùng tiếng Anh bồi không anh?",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "But hmmm // is it okay if I use broken English?"
@@ -6934,7 +6904,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 278,
         "category": "dialogue",
         "english": "Well, up to you, of course I'm not for that but...",
-        "vietnamese": "SH: Well, thì tùy em thôi, đương nhiên là anh không ủng hộ chuyện đó nhưng mà...",
+        "vietnamese": "Well, thì tùy em thôi, đương nhiên là anh không ủng hộ chuyện đó nhưng mà...",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Well // up to you // of course I'm not for that but..."
@@ -6944,7 +6914,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 279,
         "category": "dialogue",
         "english": "It's okay as long as I can understand your ideas",
-        "vietnamese": "SH: Nó okay miễn là anh có thể hiểu được những idea của em",
+        "vietnamese": "Nó okay miễn là anh có thể hiểu được những idea của em",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "It's okay as long as I can understand your ideas"
@@ -6954,7 +6924,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 280,
         "category": "dialogue",
         "english": "You're the last one today, anyway, take your time",
-        "vietnamese": "SH: Dù sao em cũng là người cuối buổi hôm nay rồi, cứ thong thả",
+        "vietnamese": "Dù sao em cũng là người cuối buổi hôm nay rồi, cứ thong thả",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "You're the last one today // anyway // take your time"
@@ -6964,7 +6934,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 281,
         "category": "dialogue",
         "english": "The other guys, I failed them all",
-        "vietnamese": "SH: Mấy đứa kia, anh \"quánh\" rớt hết rồi",
+        "vietnamese": "Mấy đứa kia, anh \"quánh\" rớt hết rồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "The other guys // I failed them all"
@@ -6974,7 +6944,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 282,
         "category": "dialogue",
         "english": "They kept beating around the bush",
-        "vietnamese": "SH: Tụi nó cứ vòng vo tam quốc",
+        "vietnamese": "Tụi nó cứ vòng vo tam quốc",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "They kept beating around the bush"
@@ -6984,7 +6954,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 283,
         "category": "dialogue",
         "english": "Plus they keep asking me irrelevant questions",
-        "vietnamese": "SH: Với lại tụi nó cứ hỏi anh mấy câu hỏi chả liên quan gì",
+        "vietnamese": "Với lại tụi nó cứ hỏi anh mấy câu hỏi chả liên quan gì",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Plus they keep asking me irrelevant questions"
@@ -6994,7 +6964,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 284,
         "category": "dialogue",
         "english": "Really? Shall we start, sir?",
-        "vietnamese": "T: Really? Mình bắt đầu luôn được không anh trai?",
+        "vietnamese": "Really? Mình bắt đầu luôn được không anh trai?",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Really? Shall we start // sir?"
@@ -7004,7 +6974,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 285,
         "category": "dialogue",
         "english": "I've got an idea, we'll change the game a little bit, what do you say?",
-        "vietnamese": "SH: Anh có một idea, chúng ta sẽ đổi trò chơi một chút, ý em sao?",
+        "vietnamese": "Anh có một idea, chúng ta sẽ đổi trò chơi một chút, ý em sao?",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "I've got an idea // we'll change the game a little bit // what do you say?"
@@ -7014,7 +6984,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 286,
         "category": "dialogue",
         "english": "For better or worse, I'm in",
-        "vietnamese": "T: Không biết là hên hay xui, em tham gia",
+        "vietnamese": "Không biết là hên hay xui, em tham gia",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "For better or worse // I'm in"
@@ -7024,7 +6994,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 287,
         "category": "dialogue",
         "english": "Good attitude, I'm gonna ask you just one single question",
-        "vietnamese": "SH: Thái độ tốt, anh sẽ hỏi em chỉ một câu thôi",
+        "vietnamese": "Thái độ tốt, anh sẽ hỏi em chỉ một câu thôi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Good attitude // I'm gonna ask you just one single question"
@@ -7034,7 +7004,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 288,
         "category": "dialogue",
         "english": "Go big or go home, that's it",
-        "vietnamese": "SH: Được ăn cả ngã về không, có vậy thôi",
+        "vietnamese": "Được ăn cả ngã về không, có vậy thôi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Go big or go home // that's it"
@@ -7044,7 +7014,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 289,
         "category": "dialogue",
         "english": "About your work experience and academic background,",
-        "vietnamese": "SH: Về kinh nghiệm công việc hay background học vấn của em,",
+        "vietnamese": "Về kinh nghiệm công việc hay background học vấn của em,",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "About your work experience and academic background,"
@@ -7054,7 +7024,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 290,
         "category": "dialogue",
         "english": "Whatever I need to know, I could easily find them all in your CV",
-        "vietnamese": "SH: Bất cứ thứ gì mà anh cần biết, anh đều có thể dễ dàng tìm thấy trong CV của em",
+        "vietnamese": "Bất cứ thứ gì mà anh cần biết, anh đều có thể dễ dàng tìm thấy trong CV của em",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Whatever I need to know // I could easily find them all in your CV"
@@ -7064,7 +7034,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 291,
         "category": "dialogue",
         "english": "So, you're gonna have 20 seconds to tell me one thing that is NOT in your CV",
-        "vietnamese": "SH: Cho nên, em sẽ có 20 giây để nói anh biết một thứ KHÔNG có trong CV của em",
+        "vietnamese": "Cho nên, em sẽ có 20 giây để nói anh biết một thứ KHÔNG có trong CV của em",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "So // you're gonna have 20 seconds to tell me one thing that is NOT in your CV"
@@ -7074,7 +7044,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 292,
         "category": "dialogue",
         "english": "Convince me! In other words, surprise me!",
-        "vietnamese": "SH: Hãy thuyết phục anh, nói cách khác, hãy làm anh ngạc nhiên!",
+        "vietnamese": "Hãy thuyết phục anh, nói cách khác, hãy làm anh ngạc nhiên!",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Convince me! In other words // surprise me!"
@@ -7084,7 +7054,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 293,
         "category": "dialogue",
         "english": "Wow, what a question!",
-        "vietnamese": "T: Wow, quả là một câu hỏi rất gì và này nọ!",
+        "vietnamese": "Wow, quả là một câu hỏi rất gì và này nọ!",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Wow // what a question!"
@@ -7094,7 +7064,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 294,
         "category": "dialogue",
         "english": "How come I didn't think of this kind of question before?!?",
-        "vietnamese": "T: Sao em lại có thể không nghĩ về cái kiểu câu hỏi này trước đây ta?!?",
+        "vietnamese": "Sao em lại có thể không nghĩ về cái kiểu câu hỏi này trước đây ta?!?",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "How come I didn't think of this kind of question before?!?"
@@ -7104,7 +7074,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 295,
         "category": "dialogue",
         "english": "I really love open-ended questions like this",
-        "vietnamese": "T: Em rất là thích mấy câu hỏi mở kiểu vầy",
+        "vietnamese": "Em rất là thích mấy câu hỏi mở kiểu vầy",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I really love open-ended questions like this"
@@ -7114,7 +7084,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 296,
         "category": "dialogue",
         "english": "You've got 15 seconds left",
-        "vietnamese": "SH: Em còn lại 15 giây",
+        "vietnamese": "Em còn lại 15 giây",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "You've got 15 seconds left"
@@ -7124,7 +7094,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 297,
         "category": "dialogue",
         "english": "I'm not bragging but, I've got an intangible strength that I rarely put into my CV",
-        "vietnamese": "T: Không phải em khoe chớ em có một cái sức mạnh tiềm ẩn mà em hiếm khi cho vào CV",
+        "vietnamese": "Không phải em khoe chớ em có một cái sức mạnh tiềm ẩn mà em hiếm khi cho vào CV",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I'm not bragging but // I've got an intangible strength that I rarely put into my CV"
@@ -7134,7 +7104,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 298,
         "category": "dialogue",
         "english": "I'm referring to the so-called integrity",
-        "vietnamese": "T: Em đang nói đến cái gọi là lòng chính trực",
+        "vietnamese": "Em đang nói đến cái gọi là lòng chính trực",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I'm referring to the so-called integrity"
@@ -7144,7 +7114,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 299,
         "category": "dialogue",
         "english": "Basically, in a way, we all used to have this thing",
-        "vietnamese": "T: Về cơ bản, một cách nào đó, chúng ta đều đã từng có cái thứ này",
+        "vietnamese": "Về cơ bản, một cách nào đó, chúng ta đều đã từng có cái thứ này",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Basically // in a way // we all used to have this thing"
@@ -7154,7 +7124,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 300,
         "category": "dialogue",
         "english": "Speed it up, I have a meetup for dinner with Hien Ho tonight",
-        "vietnamese": "SH: Nhanh lên chút, anh còn có cái gặp ăn tối với Hiền Hồ tối nay nữa",
+        "vietnamese": "Nhanh lên chút, anh còn có cái gặp ăn tối với Hiền Hồ tối nay nữa",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Speed it up // I have a meetup for dinner with Hien Ho tonight"
@@ -7164,7 +7134,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 301,
         "category": "dialogue",
         "english": "You've got 9 more seconds to convince me",
-        "vietnamese": "SH: Em còn lại 9 giây nữa để thuyết phục anh",
+        "vietnamese": "Em còn lại 9 giây nữa để thuyết phục anh",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "You've got 9 more seconds to convince me"
@@ -7174,7 +7144,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 302,
         "category": "dialogue",
         "english": "Okay, I've taken advantage of this special strength to generate a lot of achievements",
-        "vietnamese": "T: Okay, em đã tận dụng cái thếmạnh đặc biệt này đểtạo ra vô sốnhững thành tựu",
+        "vietnamese": "Okay, em đã tận dụng cái thếmạnh đặc biệt này đểtạo ra vô sốnhững thành tựu",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Okay // I've taken advantage of this special strength to generate a lot of achievements"
@@ -7184,7 +7154,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 303,
         "category": "dialogue",
         "english": "It urges me to do something just because that's the right thing to do",
-        "vietnamese": "T: Nó hối thúc em để làm một thứ gì đó chỉ đơn giản vì đó là điều đúng đắn để làm",
+        "vietnamese": "Nó hối thúc em để làm một thứ gì đó chỉ đơn giản vì đó là điều đúng đắn để làm",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "It urges me to do something just because that's the right thing to do"
@@ -7194,7 +7164,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 304,
         "category": "dialogue",
         "english": "No matter how small that thing was",
-        "vietnamese": "T: Bất kểcái thứđó có nhỏđến cỡnào đi nữa",
+        "vietnamese": "Bất kểcái thứđó có nhỏđến cỡnào đi nữa",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "No matter how small that thing was"
@@ -7204,7 +7174,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 305,
         "category": "dialogue",
         "english": "Time's up! Stop talking!",
-        "vietnamese": "SH: Hết giờ! Ngưng nói!",
+        "vietnamese": "Hết giờ! Ngưng nói!",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Time's up! Stop talking!"
@@ -7214,7 +7184,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 306,
         "category": "dialogue",
         "english": "Hmmm, what an interesting perspective!",
-        "vietnamese": "SH: Hmmm, quả là một quan điểm thú vị!",
+        "vietnamese": "Hmmm, quả là một quan điểm thú vị!",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Hmmm // what an interesting perspective!"
@@ -7224,7 +7194,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 307,
         "category": "dialogue",
         "english": "Do you have any specific examples for what you just said?",
-        "vietnamese": "SH: Em có cái ví dụ cụ thể nào cho những gì em vừa nói không?",
+        "vietnamese": "Em có cái ví dụ cụ thể nào cho những gì em vừa nói không?",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Do you have any specific examples for what you just said?"
@@ -7234,7 +7204,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 308,
         "category": "dialogue",
         "english": "Specifically, I once went into a meeting room with the AC was still on and the door was still open",
-        "vietnamese": "T: Cụ thể, em từng đi tới một phòng họp mà máy lạnh vẫn đang bật còn cửa thì vẫn đang mở",
+        "vietnamese": "Cụ thể, em từng đi tới một phòng họp mà máy lạnh vẫn đang bật còn cửa thì vẫn đang mở",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Specifically // I once went into a meeting room with the AC was still on and the door was still open"
@@ -7244,7 +7214,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 309,
         "category": "dialogue",
         "english": "Although at the time no one was in the room but me",
-        "vietnamese": "T: Mặc dù lúc đó chẳng có ai ở trong phòng trừ em",
+        "vietnamese": "Mặc dù lúc đó chẳng có ai ở trong phòng trừ em",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Although at the time no one was in the room but me"
@@ -7254,7 +7224,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 310,
         "category": "dialogue",
         "english": "I mean no one was looking at me",
-        "vietnamese": "T: Ý em là chẳng có ai đang nhìn em cả",
+        "vietnamese": "Ý em là chẳng có ai đang nhìn em cả",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I mean no one was looking at me"
@@ -7264,7 +7234,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 311,
         "category": "dialogue",
         "english": "I could freely walk out but I didn't do so",
-        "vietnamese": "T: Em có thể thoải mái bước ra nhưng em đã không làm như vậy",
+        "vietnamese": "Em có thể thoải mái bước ra nhưng em đã không làm như vậy",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I could freely walk out but I didn't do so"
@@ -7274,7 +7244,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 312,
         "category": "dialogue",
         "english": "Okay, good job, I think I've heard enough,",
-        "vietnamese": "SH: Okay, good job em, anh nghĩ anh đã nghe đủrồi",
+        "vietnamese": "Okay, good job em, anh nghĩ anh đã nghe đủrồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Okay // good job // I think I've heard enough,"
@@ -7790,7 +7760,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
     "day_number": 4,
     "lesson_title": "Day 4 - Free talk 1+2: INSIDE OUT",
     "lesson_type": "Emotional Expression",
-    "total_chunks": 312,
+    "total_chunks": 309,
     "categories": [
       "review",
       "dialogue",
@@ -7803,7 +7773,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 1,
         "category": "sentence",
         "english": "Just so you know, now I still don't know what his name is",
-        "vietnamese": "",
+        "vietnamese": "Nói cho cậu biết luôn, tới giờ tôi vẫn chưa biết tên anh ta là gì",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Just so you know // now I still don't know what his name is"
@@ -7813,7 +7783,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 2,
         "category": "sentence",
         "english": "It seems we have to take a detour to avoid a traffic accident",
-        "vietnamese": "",
+        "vietnamese": "Hình như chúng ta phải đi đường vòng để tránh một vụ tai nạn giao thông",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It seems we have to take a detour to avoid a traffic accident"
@@ -7823,7 +7793,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 3,
         "category": "sentence",
         "english": "Seriously, this is the first time I've been to Singapore with my family",
-        "vietnamese": "",
+        "vietnamese": "Thiệt luôn, đây là lần đầu tiên tôi đi Singapore với gia đình",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Seriously // this is the first time I've been to Singapore with my family"
@@ -7833,7 +7803,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 4,
         "category": "sentence",
         "english": "You need to put on the tie if you wanna join the event tonight",
-        "vietnamese": "",
+        "vietnamese": "Cậu cần phải thắt cà vạt nếu muốn tham gia sự kiện tối nay",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "You need to put on the tie if you wanna join the event tonight"
@@ -7843,7 +7813,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 5,
         "category": "sentence",
         "english": "It's pouring outside, how long have you been waiting here?",
-        "vietnamese": "",
+        "vietnamese": "Ngoài trời đang mưa tầm tã, cậu đã chờ ở đây bao lâu rồi?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It's pouring outside // how long have you been waiting here?"
@@ -7853,7 +7823,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 6,
         "category": "sentence",
         "english": "No wonder today I've had to see the customer twice",
-        "vietnamese": "",
+        "vietnamese": "Hèn gì hôm nay tôi đã phải gặp khách hàng tới 2 lần",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "No wonder today I've had to see the customer twice"
@@ -7863,7 +7833,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 7,
         "category": "sentence",
         "english": "You got diarrhea? What did you have this morning?",
-        "vietnamese": "",
+        "vietnamese": "Cậu bị tiêu chảy hả? Sáng nay cậu ăn gì vậy?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "You got diarrhea? What did you have this morning?"
@@ -7873,7 +7843,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 8,
         "category": "sentence",
         "english": "Seriously? Don't tell me you forgot your passport",
-        "vietnamese": "",
+        "vietnamese": "Thiệt luôn á? Đừng nói là cậu quên mang hộ chiếu rồi nha",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Seriously? Don't tell me you forgot your passport"
@@ -7883,7 +7853,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 9,
         "category": "sentence",
         "english": "How to put it? I'm not supposed to see this client?",
-        "vietnamese": "",
+        "vietnamese": "Nói sao đây? Tôi không được phép gặp khách hàng này hả?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "How to put it? I'm not supposed to see this client?"
@@ -7993,7 +7963,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 20,
         "category": "monologue",
         "english": "I'm not being funny! Don't give me that look",
-        "vietnamese": "Tao ko có đùa nha! Đừng có mà nhìn tao vậy chớ",
+        "vietnamese": "Tao không có đùa nha! Đừng có mà nhìn tao vậy chớ",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I'm not being funny! Don't give me that look"
@@ -8013,7 +7983,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 22,
         "category": "monologue",
         "english": "I only have the boarding pass and some loose change",
-        "vietnamese": "Tao chỉ có vé máy bay với một ít tiền lẻthôi",
+        "vietnamese": "Tao chỉ có vé máy bay với một ít tiền lẻ thôi",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I only have the boarding pass and some loose change"
@@ -8083,7 +8053,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 29,
         "category": "monologue",
         "english": "just use the hotel address",
-        "vietnamese": "cứ dùng cái địa chỉ khách sạn thôi",
+        "vietnamese": "Cứ dùng cái địa chỉ khách sạn thôi",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "just use the hotel address"
@@ -8093,7 +8063,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 30,
         "category": "monologue",
         "english": "It's lucky I didn't ask you to keep my passport",
-        "vietnamese": "Cũng may tao ko nhờ mày giữ cái passport tao",
+        "vietnamese": "Cũng may tao không nhờ mày giữ cái passport tao",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It's lucky I didn't ask you to keep my passport"
@@ -8143,7 +8113,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 35,
         "category": "monologue",
         "english": "What kind of airport that doesn't have a single socket!!!",
-        "vietnamese": "Sân bay cái kiểu gì mà ko có đến 1 cái ổ cắm nữa!!!",
+        "vietnamese": "Sân bay cái kiểu gì mà không có đến 1 cái ổ cắm nữa!!!",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "What kind of airport that doesn't have a single socket!!!"
@@ -8193,7 +8163,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 40,
         "category": "monologue",
         "english": "Hey, are you hungry?",
-        "vietnamese": "Ê, mày đói ko?",
+        "vietnamese": "Ê, mày đói không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Hey // are you hungry?"
@@ -8223,7 +8193,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 43,
         "category": "monologue",
         "english": "Are you carsick, seasick or anything?",
-        "vietnamese": "Mày có say xe, say sóng hay gì ko?",
+        "vietnamese": "Mày có say xe, say sóng hay gì không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Are you carsick // seasick or anything?"
@@ -8233,7 +8203,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 44,
         "category": "monologue",
         "english": "I don't know if we have to transit in Long An",
-        "vietnamese": "Tao ko biết mình có phải quá cảnh ở Long An ko nữa",
+        "vietnamese": "Tao không biết mình có phải quá cảnh ở Long An không nữa",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I don't know if we have to transit in Long An"
@@ -8263,7 +8233,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 47,
         "category": "monologue",
         "english": "going around the old temples",
-        "vietnamese": "đi lòng vòng mấy cái đền cổ cổ",
+        "vietnamese": "Đi lòng vòng mấy cái đền cổ cổ",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "going around the old temples"
@@ -8273,7 +8243,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 48,
         "category": "monologue",
         "english": "and tuktuk and the monks and the night markets",
-        "vietnamese": "rồi xe lam, mấy ông sư, rồi mấy cái chợ đêm",
+        "vietnamese": "Rồi xe lam, mấy ông sư, rồi mấy cái chợ đêm",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "and tuktuk and the monks and the night markets"
@@ -8303,7 +8273,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 51,
         "category": "monologue",
         "english": "On the plane, I really love window seats",
-        "vietnamese": "Trên máy bay, tao rất thích mấy cái chỗ ngồi cạnh cửa sổnha",
+        "vietnamese": "Trên máy bay, tao rất thích mấy cái chỗ ngồi cạnh cửa sổ nha",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "On the plane // I really love window seats"
@@ -8333,7 +8303,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 54,
         "category": "monologue",
         "english": "or we came too early?",
-        "vietnamese": "hay mình đến sớm quá?",
+        "vietnamese": "Hay mình đến sớm quá?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "or we came too early?"
@@ -8373,8 +8343,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 58,
         "category": "dialogue",
         "english": "Hey, Steve, Steve, over here",
-        "vietnamese": "R: Hey, Steve, Steve, ở bên này nè",
-        "speaker": "Roger",
+        "vietnamese": "Hey, Steve, Steve, ở bên này nè",
+        "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Hey // Steve // Steve // over here"
       },
@@ -8383,8 +8353,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 59,
         "category": "dialogue",
         "english": "Thank God you are here!",
-        "vietnamese": "R: Ơn giời mày đây rồi!",
-        "speaker": "Roger",
+        "vietnamese": "Ơn giời mày đây rồi!",
+        "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Thank God you are here!"
       },
@@ -8393,7 +8363,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 60,
         "category": "dialogue",
         "english": "What took you so long, buddy?!?",
-        "vietnamese": "R: Mày làm cái gì lâu quá vậy, mảy?!?",
+        "vietnamese": "Mày làm cái gì lâu quá vậy, mày?!?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "What took you so long // buddy?!?"
@@ -8403,7 +8373,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 61,
         "category": "dialogue",
         "english": "Sorry I'm late, I didn't mean to",
-        "vietnamese": "S: Xin lỗi tao tới trễ, tao đâu cố ý đâu",
+        "vietnamese": "Xin lỗi tao tới trễ, tao đâu cố ý đâu",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Sorry I'm late // I didn't mean to"
@@ -8413,7 +8383,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 62,
         "category": "dialogue",
         "english": "How long have you been waiting here?",
-        "vietnamese": "S: Mày chờ ở đây lâu chưa?",
+        "vietnamese": "Mày chờ ở đây lâu chưa?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "How long have you been waiting here?"
@@ -8423,7 +8393,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 63,
         "category": "dialogue",
         "english": "Long enough to finish 2 coffees",
-        "vietnamese": "R: Đủ lâu để xong 2 ly cà phê rồi nè",
+        "vietnamese": "Đủ lâu để xong 2 ly cà phê rồi nè",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Long enough to finish 2 coffees"
@@ -8433,7 +8403,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 64,
         "category": "dialogue",
         "english": "Hey, hey, hey, don't give me that look!",
-        "vietnamese": "S: Ê, ê, ê, đừng có nhìn tao dzậy nha!",
+        "vietnamese": "Ê, ê, ê, đừng có nhìn tao vậy nha!",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Hey // hey // hey // don't give me that look!"
@@ -8443,7 +8413,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 65,
         "category": "dialogue",
         "english": "Actually I didn't oversleep.",
-        "vietnamese": "S: Thực ra tao không có ngủ quên à.",
+        "vietnamese": "Thực ra tao không có ngủ quên à.",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Actually I didn't oversleep."
@@ -8453,7 +8423,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 66,
         "category": "dialogue",
         "english": "I got diarrhea. Okay?",
-        "vietnamese": "S: Tao bị tiêu chảy. Okay?",
+        "vietnamese": "Tao bị tiêu chảy. Okay?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "I got diarrhea. Okay?"
@@ -8463,7 +8433,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 67,
         "category": "dialogue",
         "english": "Just so you know, on the way here",
-        "vietnamese": "S: Nói mày biết luôn, trên đường tới đây",
+        "vietnamese": "Nói mày biết luôn, trên đường tới đây",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Just so you know // on the way here"
@@ -8473,7 +8443,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 68,
         "category": "dialogue",
         "english": "I've had to use the washroom 5 times",
-        "vietnamese": "S: Tao đã phải dùng nhà vệ sinh 5 lần rồi",
+        "vietnamese": "Tao đã phải dùng nhà vệ sinh 5 lần rồi",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "I've had to use the washroom 5 times"
@@ -8483,7 +8453,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 69,
         "category": "dialogue",
         "english": "But don't worry, I already took the medicines",
-        "vietnamese": "S: Nhưng mà đừng có lo, tao uống thuốc rồi",
+        "vietnamese": "Nhưng mà đừng có lo, tao uống thuốc rồi",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "But don't worry // I already took the medicines"
@@ -8493,7 +8463,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 70,
         "category": "dialogue",
         "english": "Wait a minute, what did you have last night?",
-        "vietnamese": "R: Khoan, tối qua mày ăn gì?",
+        "vietnamese": "Khoan, tối qua mày ăn gì?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Wait a minute // what did you have last night?"
@@ -8503,7 +8473,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 71,
         "category": "dialogue",
         "english": "Hey, don't tell me you ate the leftover rice",
-        "vietnamese": "R: Hey, đừng nói tao mày ăn cái cơm nguội nha",
+        "vietnamese": "Hey, đừng nói tao mày ăn cái cơm nguội nha",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Hey // don't tell me you ate the leftover rice"
@@ -8513,7 +8483,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 72,
         "category": "dialogue",
         "english": "What'd you mean? I'm not supposed to eat that rice???",
-        "vietnamese": "S: Là sao? Tao không có được ăn cái cơm đó hả???",
+        "vietnamese": "Là sao? Tao không có được ăn cái cơm đó hả???",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "What'd you mean? I'm not supposed to eat that rice???"
@@ -8523,7 +8493,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 73,
         "category": "dialogue",
         "english": "No, no, no, there's a lot of MSG in there!",
-        "vietnamese": "R: Nô, nô, nô, haiya, có nhiều bột ngọt ở trỏng lắm!",
+        "vietnamese": "Nô, nô, nô, haiya, có nhiều bột ngọt ở trỏng lắm!",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "No // no // no // there's a lot of MSG in there!"
@@ -8533,7 +8503,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 74,
         "category": "dialogue",
         "english": "You're allergic to MSG, right?",
-        "vietnamese": "R: Mày bị dị ứng với bột ngọt, phải không?",
+        "vietnamese": "Mày bị dị ứng với bột ngọt, phải không?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "You're allergic to MSG // right?"
@@ -8542,18 +8512,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d4_0075",
         "item_number": 75,
         "category": "dialogue",
-        "english": "Emotional damage! Now you tell me! S: Emotional damage,",
-        "vietnamese": "sao giờ mày mới nói!",
+        "english": "Emotional damage! Now you tell me!",
+        "vietnamese": "Tổn thương tâm lý ghê luôn á! Giờ mày mới nói!",
         "speaker": "S",
         "audio_url": null,
-        "beat_prosody": "Emotional damage! Now you tell me! S: Emotional damage,"
+        "beat_prosody": "Emotional damage! // Now you tell me!"
       },
       {
         "chunk_id": "chunk_eres_d4_0076",
         "item_number": 76,
         "category": "dialogue",
         "english": "Okay, okay, listen, my bad",
-        "vietnamese": "R: Okay, okay, nghe nè, lỗi tao",
+        "vietnamese": "Okay, okay, nghe nè, lỗi tao",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Okay // okay // listen // my bad"
@@ -8563,7 +8533,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 77,
         "category": "dialogue",
         "english": "To make it up to you,",
-        "vietnamese": "R: Để đền bù lại cho mày,",
+        "vietnamese": "Để đền bù lại cho mày,",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "To make it up to you,"
@@ -8572,285 +8542,255 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d4_0078",
         "item_number": 78,
         "category": "dialogue",
-        "english": "To make it up to you, R:",
-        "vietnamese": "Tao sẽ dắt mày đi hồ Xuân Hương",
-        "speaker": "R",
-        "audio_url": null,
-        "beat_prosody": "To make it up to you // R:"
-      },
-      {
-        "chunk_id": "chunk_eres_d4_0079",
-        "item_number": 79,
-        "category": "dialogue",
         "english": "I'll take you to Xuan Huong lake",
-        "vietnamese": "R: Ý mày sao?",
+        "vietnamese": "Tao sẽ dắt mày đi hồ Xuân Hương",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "I'll take you to Xuan Huong lake"
       },
       {
-        "chunk_id": "chunk_eres_d4_0080",
-        "item_number": 80,
+        "chunk_id": "chunk_eres_d4_0079",
+        "item_number": 79,
         "category": "dialogue",
         "english": "What do you say?",
-        "vietnamese": "S: Hồ Xuân Hương? Mình tới đó chi?",
+        "vietnamese": "Ý mày sao?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "What do you say?"
       },
       {
+        "chunk_id": "chunk_eres_d4_0080",
+        "item_number": 80,
+        "category": "dialogue",
+        "english": "Xuan Huong lake? We go there for what?",
+        "vietnamese": "Hồ Xuân Hương? Mình tới đó chi?",
+        "speaker": "S",
+        "audio_url": null,
+        "beat_prosody": "Xuan Huong lake? // We go there for what?"
+      },
+      {
         "chunk_id": "chunk_eres_d4_0081",
         "item_number": 81,
         "category": "dialogue",
-        "english": "Xuan Huong lake? We go there for what?",
-        "vietnamese": "R: Đương nhiên là đạp vịt rồi!",
-        "speaker": "S",
-        "audio_url": null,
-        "beat_prosody": "Xuan Huong lake? We go there for what?"
-      },
-      {
-        "chunk_id": "chunk_eres_d4_0082",
-        "item_number": 82,
-        "category": "dialogue",
         "english": "Of course, ride the duck paddle boat!",
-        "vietnamese": "S: Okay, nghe ổn đấy",
+        "vietnamese": "Đương nhiên là đạp vịt rồi!",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Of course // ride the duck paddle boat!"
       },
       {
-        "chunk_id": "chunk_eres_d4_0083",
-        "item_number": 83,
+        "chunk_id": "chunk_eres_d4_0082",
+        "item_number": 82,
         "category": "dialogue",
         "english": "Okay, sounds good",
-        "vietnamese": "S: Mày biết đường tới đó không?",
+        "vietnamese": "Okay, nghe ổn đấy",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Okay // sounds good"
       },
       {
-        "chunk_id": "chunk_eres_d4_0084",
-        "item_number": 84,
+        "chunk_id": "chunk_eres_d4_0083",
+        "item_number": 83,
         "category": "dialogue",
         "english": "Do you know the way to go there?",
-        "vietnamese": "R: Tao không chắc nhưng mà mình có Google map mà",
+        "vietnamese": "Mày biết đường tới đó không?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Do you know the way to go there?"
       },
       {
+        "chunk_id": "chunk_eres_d4_0084",
+        "item_number": 84,
+        "category": "dialogue",
+        "english": "I'm not sure but we have the Google map",
+        "vietnamese": "Tao không chắc nhưng mà mình có Google map mà",
+        "speaker": "R",
+        "audio_url": null,
+        "beat_prosody": "I'm not sure // but we have the Google map"
+      },
+      {
         "chunk_id": "chunk_eres_d4_0085",
         "item_number": 85,
         "category": "dialogue",
-        "english": "I'm not sure but we have the Google map",
-        "vietnamese": "R: Dùng điện thoại mày đi, của tao hết pin rồi",
-        "speaker": "R",
-        "audio_url": null,
-        "beat_prosody": "I'm not sure but we have the Google map"
-      },
-      {
-        "chunk_id": "chunk_eres_d4_0086",
-        "item_number": 86,
-        "category": "dialogue",
         "english": "Use your phone, mine is out of battery",
-        "vietnamese": "S: Gì? Mày mất trí hả?",
+        "vietnamese": "Dùng điện thoại mày đi, của tao hết pin rồi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Use your phone // mine is out of battery"
       },
       {
+        "chunk_id": "chunk_eres_d4_0086",
+        "item_number": 86,
+        "category": "dialogue",
+        "english": "What? Did you lose your mind???",
+        "vietnamese": "Gì? Mày mất trí hả???",
+        "speaker": "S",
+        "audio_url": null,
+        "beat_prosody": "What? // Did you lose your mind???"
+      },
+      {
         "chunk_id": "chunk_eres_d4_0087",
         "item_number": 87,
         "category": "dialogue",
-        "english": "What? Did you lose your mind??? S:",
-        "vietnamese": "Để đền bù lại cho mày,",
-        "speaker": "S",
-        "audio_url": null,
-        "beat_prosody": "What? Did you lose your mind??? S:"
-      },
-      {
-        "chunk_id": "chunk_eres_d4_0088",
-        "item_number": 88,
-        "category": "dialogue",
-        "english": "And now we're in the middle of nowhere",
-        "vietnamese": "S: Rồi giờ mình đang ở cái chỗ khỉ ho cò gáy nè",
-        "speaker": "S",
-        "audio_url": null,
-        "beat_prosody": "And now we're in the middle of nowhere"
-      },
-      {
-        "chunk_id": "chunk_eres_d4_0089",
-        "item_number": 89,
-        "category": "dialogue",
-        "english": "Relax, This is not the first time we got lost",
-        "vietnamese": "R: Bình tĩnh. Đây đâu phải lần đầu tụi mình bị lạc",
-        "speaker": "R",
-        "audio_url": null,
-        "beat_prosody": "Relax // This is not the first time we got lost"
-      },
-      {
-        "chunk_id": "chunk_eres_d4_0090",
-        "item_number": 90,
-        "category": "dialogue",
         "english": "I've got the plan",
-        "vietnamese": "R: Tao có cách rồi",
+        "vietnamese": "Tao có cách rồi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "I've got the plan"
       },
       {
-        "chunk_id": "chunk_eres_d4_0091",
-        "item_number": 91,
+        "chunk_id": "chunk_eres_d4_0088",
+        "item_number": 88,
         "category": "dialogue",
         "english": "This morning I already asked a local",
-        "vietnamese": "R: Sáng nay tao có hỏi một đứa dân địa phương rồi",
+        "vietnamese": "Sáng nay tao có hỏi một đứa dân địa phương rồi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "This morning I already asked a local"
       },
       {
-        "chunk_id": "chunk_eres_d4_0092",
-        "item_number": 92,
+        "chunk_id": "chunk_eres_d4_0089",
+        "item_number": 89,
         "category": "dialogue",
         "english": "You see that mango tree?",
-        "vietnamese": "R: Mày thấy cây xoài đó không?",
+        "vietnamese": "Mày thấy cây xoài đó không?",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "You see that mango tree?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0093",
-        "item_number": 93,
+        "chunk_id": "chunk_eres_d4_0090",
+        "item_number": 90,
         "category": "dialogue",
         "english": "There's a shortcut there",
-        "vietnamese": "R: Có một cái đường tắt ở đó",
+        "vietnamese": "Có một cái đường tắt ở đó",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "There's a shortcut there"
       },
       {
-        "chunk_id": "chunk_eres_d4_0094",
-        "item_number": 94,
+        "chunk_id": "chunk_eres_d4_0091",
+        "item_number": 91,
         "category": "dialogue",
         "english": "Are you saying we'll do the trekking now?",
-        "vietnamese": "S: Ý mày nói là giờ mình đi đường rừng á hả?",
+        "vietnamese": "Ý mày nói là giờ mình đi đường rừng á hả?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Are you saying we'll do the trekking now?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0095",
-        "item_number": 95,
+        "chunk_id": "chunk_eres_d4_0092",
+        "item_number": 92,
         "category": "dialogue",
         "english": "I don't think it's a good idea",
-        "vietnamese": "S: Tao không nghĩ đó là ý hay đâu",
+        "vietnamese": "Tao không nghĩ đó là ý hay đâu",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "I don't think it's a good idea"
       },
       {
-        "chunk_id": "chunk_eres_d4_0096",
-        "item_number": 96,
+        "chunk_id": "chunk_eres_d4_0093",
+        "item_number": 93,
         "category": "dialogue",
         "english": "It's too risky",
-        "vietnamese": "S: Nó quá là liều",
+        "vietnamese": "Nó quá là liều",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "It's too risky"
       },
       {
-        "chunk_id": "chunk_eres_d4_0097",
-        "item_number": 97,
+        "chunk_id": "chunk_eres_d4_0094",
+        "item_number": 94,
         "category": "dialogue",
         "english": "Listen, it's not that hard",
-        "vietnamese": "R: Nghe nè, nó đâu có khó đến vậy đâu",
+        "vietnamese": "Nghe nè, nó đâu có khó đến vậy đâu",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Listen // it's not that hard"
       },
       {
-        "chunk_id": "chunk_eres_d4_0098",
-        "item_number": 98,
+        "chunk_id": "chunk_eres_d4_0095",
+        "item_number": 95,
         "category": "dialogue",
         "english": "It's only 500 meters away from the main road",
-        "vietnamese": "R: Nó chỉ cách đường chính có 500 mét thôi",
+        "vietnamese": "Nó chỉ cách đường chính có 500 mét thôi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "It's only 500 meters away from the main road"
       },
       {
-        "chunk_id": "chunk_eres_d4_0099",
-        "item_number": 99,
+        "chunk_id": "chunk_eres_d4_0096",
+        "item_number": 96,
         "category": "dialogue",
         "english": "How do you know that is the main road?",
-        "vietnamese": "S: Sao mày biết đó là đường chính?",
+        "vietnamese": "Sao mày biết đó là đường chính?",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "How do you know that is the main road?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0100",
-        "item_number": 100,
+        "chunk_id": "chunk_eres_d4_0097",
+        "item_number": 97,
         "category": "dialogue",
         "english": "There's a big gas station at the intersection",
-        "vietnamese": "R: Có một cái cây xăng bự lắm ở chỗ giao nhau ấy",
+        "vietnamese": "Có một cái cây xăng bự lắm ở chỗ giao nhau ấy",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "There's a big gas station at the intersection"
       },
       {
-        "chunk_id": "chunk_eres_d4_0101",
-        "item_number": 101,
+        "chunk_id": "chunk_eres_d4_0098",
+        "item_number": 98,
         "category": "dialogue",
         "english": "If my mind serves me right",
-        "vietnamese": "R: Nếu mà tao nhớ không nhầm thì...",
+        "vietnamese": "Nếu mà tao nhớ không nhầm thì...",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "If my mind serves me right"
       },
       {
-        "chunk_id": "chunk_eres_d4_0102",
-        "item_number": 102,
+        "chunk_id": "chunk_eres_d4_0099",
+        "item_number": 99,
         "category": "dialogue",
         "english": "That is the intersection between 1A National Highway and Le Loi street",
-        "vietnamese": "R: Đó là cái chỗ giao nhau giữa QL1A với đường Lê Lợi",
+        "vietnamese": "Đó là cái chỗ giao nhau giữa QL1A với đường Lê Lợi",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "That is the intersection between 1A National Highway and Le Loi street"
       },
       {
-        "chunk_id": "chunk_eres_d4_0103",
-        "item_number": 103,
+        "chunk_id": "chunk_eres_d4_0100",
+        "item_number": 100,
         "category": "dialogue",
         "english": "When we get there, we'll make a right",
-        "vietnamese": "R: Khi mình tới đó, mình sẽ quẹo phải",
+        "vietnamese": "Khi mình tới đó, mình sẽ quẹo phải",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "When we get there // we'll make a right"
       },
       {
-        "chunk_id": "chunk_eres_d4_0104",
-        "item_number": 104,
+        "chunk_id": "chunk_eres_d4_0101",
+        "item_number": 101,
         "category": "dialogue",
         "english": "Then we'll go along the main road until we see the big lake",
-        "vietnamese": "R: Sau đó mình sẽ đi dọc theo đường chính cho đến khi mình thấy một cái hồ lớn",
+        "vietnamese": "Sau đó mình sẽ đi dọc theo đường chính cho đến khi mình thấy một cái hồ lớn",
         "speaker": "R",
         "audio_url": null,
         "beat_prosody": "Then we'll go along the main road until we see the big lake"
       },
       {
-        "chunk_id": "chunk_eres_d4_0105",
-        "item_number": 105,
+        "chunk_id": "chunk_eres_d4_0102",
+        "item_number": 102,
         "category": "dialogue",
         "english": "Okay, but I'm hungry, let's grab something to eat!",
-        "vietnamese": "S: Okay, nhưng mà tao đói rồi, mình kiếm gì ăn đi!",
+        "vietnamese": "Okay, nhưng mà tao đói rồi, mình kiếm gì ăn đi!",
         "speaker": "S",
         "audio_url": null,
         "beat_prosody": "Okay // but I'm hungry // let's grab something to eat!"
       },
       {
-        "chunk_id": "chunk_eres_d4_0106",
-        "item_number": 106,
+        "chunk_id": "chunk_eres_d4_0103",
+        "item_number": 103,
         "category": "review",
         "english": "No wonder they went to the US",
         "vietnamese": "Hèn gì họ đi Mỹ",
@@ -8859,8 +8799,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "No wonder they went to the US"
       },
       {
-        "chunk_id": "chunk_eres_d4_0107",
-        "item_number": 107,
+        "chunk_id": "chunk_eres_d4_0104",
+        "item_number": 104,
         "category": "review",
         "english": "Seriously, go ask her",
         "vietnamese": "Thiệt, đi hỏi cổ đi",
@@ -8869,8 +8809,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Seriously // go ask her"
       },
       {
-        "chunk_id": "chunk_eres_d4_0108",
-        "item_number": 108,
+        "chunk_id": "chunk_eres_d4_0105",
+        "item_number": 105,
         "category": "review",
         "english": "Sleeping bag is a bag",
         "vietnamese": "Túi ngủ là một cái túi",
@@ -8879,8 +8819,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Sleeping bag is a bag"
       },
       {
-        "chunk_id": "chunk_eres_d4_0109",
-        "item_number": 109,
+        "chunk_id": "chunk_eres_d4_0106",
+        "item_number": 106,
         "category": "review",
         "english": "Back pocket is a pocket",
         "vietnamese": "Túi sau là một cái túi",
@@ -8889,8 +8829,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Back pocket is a pocket"
       },
       {
-        "chunk_id": "chunk_eres_d4_0110",
-        "item_number": 110,
+        "chunk_id": "chunk_eres_d4_0107",
+        "item_number": 107,
         "category": "review",
         "english": "I'm the big fan of durian",
         "vietnamese": "Tui là fan ruột của sầu riêng",
@@ -8899,8 +8839,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm the big fan of durian"
       },
       {
-        "chunk_id": "chunk_eres_d4_0111",
-        "item_number": 111,
+        "chunk_id": "chunk_eres_d4_0108",
+        "item_number": 108,
         "category": "review",
         "english": "We're in the raining season",
         "vietnamese": "Ta đang ở trong mùa mưa",
@@ -8909,8 +8849,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "We're in the raining season"
       },
       {
-        "chunk_id": "chunk_eres_d4_0112",
-        "item_number": 112,
+        "chunk_id": "chunk_eres_d4_0109",
+        "item_number": 109,
         "category": "review",
         "english": "Carsick is worse than lovesick",
         "vietnamese": "Say xe còn tệ hơn thất tình",
@@ -8919,8 +8859,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Carsick is worse than lovesick"
       },
       {
-        "chunk_id": "chunk_eres_d4_0113",
-        "item_number": 113,
+        "chunk_id": "chunk_eres_d4_0110",
+        "item_number": 110,
         "category": "review",
         "english": "Rice cooker is very convenient",
         "vietnamese": "Nồi cơm điện rất là tiện",
@@ -8929,8 +8869,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Rice cooker is very convenient"
       },
       {
-        "chunk_id": "chunk_eres_d4_0114",
-        "item_number": 114,
+        "chunk_id": "chunk_eres_d4_0111",
+        "item_number": 111,
         "category": "review",
         "english": "Where do you leave my key?",
         "vietnamese": "Cậu để chìa khóa tui ở đâu vậy?",
@@ -8939,8 +8879,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Where do you leave my key?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0115",
-        "item_number": 115,
+        "chunk_id": "chunk_eres_d4_0112",
+        "item_number": 112,
         "category": "review",
         "english": "I'm allergic to boys",
         "vietnamese": "Tui dị ứng với trai",
@@ -8949,8 +8889,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm allergic to boys"
       },
       {
-        "chunk_id": "chunk_eres_d4_0116",
-        "item_number": 116,
+        "chunk_id": "chunk_eres_d4_0113",
+        "item_number": 113,
         "category": "review",
         "english": "My phone was out of battery",
         "vietnamese": "Điện thoại tui hết pin rồi",
@@ -8959,8 +8899,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "My phone was out of battery"
       },
       {
-        "chunk_id": "chunk_eres_d4_0117",
-        "item_number": 117,
+        "chunk_id": "chunk_eres_d4_0114",
+        "item_number": 114,
         "category": "review",
         "english": "We walk there, what do you say?",
         "vietnamese": "Chúng ta đi bộ đến đó, ý cậu sao?",
@@ -8969,8 +8909,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "We walk there // what do you say?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0118",
-        "item_number": 118,
+        "chunk_id": "chunk_eres_d4_0115",
+        "item_number": 115,
         "category": "review",
         "english": "Don't touch my cart",
         "vietnamese": "Đừng động vào xe đẩy của tôi",
@@ -8979,8 +8919,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Don't touch my cart"
       },
       {
-        "chunk_id": "chunk_eres_d4_0119",
-        "item_number": 119,
+        "chunk_id": "chunk_eres_d4_0116",
+        "item_number": 116,
         "category": "review",
         "english": "Are you nervous?",
         "vietnamese": "Cậu có lo không?",
@@ -8989,8 +8929,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Are you nervous?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0120",
-        "item_number": 120,
+        "chunk_id": "chunk_eres_d4_0117",
+        "item_number": 117,
         "category": "review",
         "english": "Food court is so crowded",
         "vietnamese": "Khu vực ăn uống rất là đông",
@@ -8999,8 +8939,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Food court is so crowded"
       },
       {
-        "chunk_id": "chunk_eres_d4_0121",
-        "item_number": 121,
+        "chunk_id": "chunk_eres_d4_0118",
+        "item_number": 118,
         "category": "review",
         "english": "Painkillers don't kill pain",
         "vietnamese": "Thuốc giảm đau không có giảm đau",
@@ -9009,8 +8949,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Painkillers don't kill pain"
       },
       {
-        "chunk_id": "chunk_eres_d4_0122",
-        "item_number": 122,
+        "chunk_id": "chunk_eres_d4_0119",
+        "item_number": 119,
         "category": "review",
         "english": "Socket or plug",
         "vietnamese": "Ổ cắm hoặc phích cắm",
@@ -9019,8 +8959,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Socket or plug"
       },
       {
-        "chunk_id": "chunk_eres_d4_0123",
-        "item_number": 123,
+        "chunk_id": "chunk_eres_d4_0120",
+        "item_number": 120,
         "category": "review",
         "english": "Flip flops have nothing to do with Laos",
         "vietnamese": "Dép Lào chả liên quan gì đến Lào",
@@ -9029,8 +8969,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Flip flops have nothing to do with Laos"
       },
       {
-        "chunk_id": "chunk_eres_d4_0124",
-        "item_number": 124,
+        "chunk_id": "chunk_eres_d4_0121",
+        "item_number": 121,
         "category": "review",
         "english": "Take off your shoes first",
         "vietnamese": "Cởi giày ra trước",
@@ -9039,8 +8979,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Take off your shoes first"
       },
       {
-        "chunk_id": "chunk_eres_d4_0125",
-        "item_number": 125,
+        "chunk_id": "chunk_eres_d4_0122",
+        "item_number": 122,
         "category": "review",
         "english": "What will be will be",
         "vietnamese": "Chuyện gì tới sẽ tới thôi",
@@ -9049,8 +8989,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "What will be will be"
       },
       {
-        "chunk_id": "chunk_eres_d4_0126",
-        "item_number": 126,
+        "chunk_id": "chunk_eres_d4_0123",
+        "item_number": 123,
         "category": "review",
         "english": "Misread the contract",
         "vietnamese": "Đọc nhầm hợp đồng",
@@ -9059,8 +8999,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Misread the contract"
       },
       {
-        "chunk_id": "chunk_eres_d4_0127",
-        "item_number": 127,
+        "chunk_id": "chunk_eres_d4_0124",
+        "item_number": 124,
         "category": "review",
         "english": "Ride the duck paddle boat",
         "vietnamese": "Đạp vịt",
@@ -9069,8 +9009,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Ride the duck paddle boat"
       },
       {
-        "chunk_id": "chunk_eres_d4_0128",
-        "item_number": 128,
+        "chunk_id": "chunk_eres_d4_0125",
+        "item_number": 125,
         "category": "review",
         "english": "Beware of that",
         "vietnamese": "Coi chừng cái đó",
@@ -9079,8 +9019,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Beware of that"
       },
       {
-        "chunk_id": "chunk_eres_d4_0129",
-        "item_number": 129,
+        "chunk_id": "chunk_eres_d4_0126",
+        "item_number": 126,
         "category": "review",
         "english": "Leftover rice",
         "vietnamese": "Cơm nguội",
@@ -9089,8 +9029,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Leftover rice"
       },
       {
-        "chunk_id": "chunk_eres_d4_0130",
-        "item_number": 130,
+        "chunk_id": "chunk_eres_d4_0127",
+        "item_number": 127,
         "category": "review",
         "english": "Road signs",
         "vietnamese": "Biển báo",
@@ -9099,8 +9039,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Road signs"
       },
       {
-        "chunk_id": "chunk_eres_d4_0131",
-        "item_number": 131,
+        "chunk_id": "chunk_eres_d4_0128",
+        "item_number": 128,
         "category": "review",
         "english": "Reality shows",
         "vietnamese": "Show thực tế",
@@ -9109,8 +9049,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Reality shows"
       },
       {
-        "chunk_id": "chunk_eres_d4_0132",
-        "item_number": 132,
+        "chunk_id": "chunk_eres_d4_0129",
+        "item_number": 129,
         "category": "review",
         "english": "There's no milestone",
         "vietnamese": "Không có cột cây số",
@@ -9119,8 +9059,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "There's no milestone"
       },
       {
-        "chunk_id": "chunk_eres_d4_0133",
-        "item_number": 133,
+        "chunk_id": "chunk_eres_d4_0130",
+        "item_number": 130,
         "category": "review",
         "english": "Stay away from that hotel",
         "vietnamese": "Tránh xa khỏi cái khách sạn đó",
@@ -9129,8 +9069,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Stay away from that hotel"
       },
       {
-        "chunk_id": "chunk_eres_d4_0134",
-        "item_number": 134,
+        "chunk_id": "chunk_eres_d4_0131",
+        "item_number": 131,
         "category": "review",
         "english": "War museum",
         "vietnamese": "Bảo tàng chiến tranh",
@@ -9139,8 +9079,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "War museum"
       },
       {
-        "chunk_id": "chunk_eres_d4_0135",
-        "item_number": 135,
+        "chunk_id": "chunk_eres_d4_0132",
+        "item_number": 132,
         "category": "review",
         "english": "A controversial topic",
         "vietnamese": "Một chủ đề gây tranh cãi",
@@ -9149,8 +9089,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "A controversial topic"
       },
       {
-        "chunk_id": "chunk_eres_d4_0136",
-        "item_number": 136,
+        "chunk_id": "chunk_eres_d4_0133",
+        "item_number": 133,
         "category": "review",
         "english": "Pick up at A and drop off at B",
         "vietnamese": "Đón tại A và thả xuống tại B",
@@ -9159,8 +9099,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Pick up at A and drop off at B"
       },
       {
-        "chunk_id": "chunk_eres_d4_0137",
-        "item_number": 137,
+        "chunk_id": "chunk_eres_d4_0134",
+        "item_number": 134,
         "category": "review",
         "english": "Keychain sucks",
         "vietnamese": "Móc khóa chán òm",
@@ -9169,8 +9109,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Keychain sucks"
       },
       {
-        "chunk_id": "chunk_eres_d4_0138",
-        "item_number": 138,
+        "chunk_id": "chunk_eres_d4_0135",
+        "item_number": 135,
         "category": "review",
         "english": "You need to put on a tie",
         "vietnamese": "Cậu cần phải đeo cà vạt",
@@ -9179,8 +9119,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "You need to put on a tie"
       },
       {
-        "chunk_id": "chunk_eres_d4_0139",
-        "item_number": 139,
+        "chunk_id": "chunk_eres_d4_0136",
+        "item_number": 136,
         "category": "review",
         "english": "Papaya is not a seasonal fruit",
         "vietnamese": "Đu đủ không phải là trái theo mùa",
@@ -9189,8 +9129,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Papaya is not a seasonal fruit"
       },
       {
-        "chunk_id": "chunk_eres_d4_0140",
-        "item_number": 140,
+        "chunk_id": "chunk_eres_d4_0137",
+        "item_number": 137,
         "category": "review",
         "english": "A starless night",
         "vietnamese": "Một đêm không sao",
@@ -9199,8 +9139,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "A starless night"
       },
       {
-        "chunk_id": "chunk_eres_d4_0141",
-        "item_number": 141,
+        "chunk_id": "chunk_eres_d4_0138",
+        "item_number": 138,
         "category": "review",
         "english": "Do you have medicated oil?",
         "vietnamese": "Cậu có dầu gió không?",
@@ -9209,8 +9149,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Do you have medicated oil?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0142",
-        "item_number": 142,
+        "chunk_id": "chunk_eres_d4_0139",
+        "item_number": 139,
         "category": "review",
         "english": "There's a shortcut next to the car",
         "vietnamese": "Có một đường tắt kế bên cái xe hơi",
@@ -9219,8 +9159,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "There's a shortcut next to the car"
       },
       {
-        "chunk_id": "chunk_eres_d4_0143",
-        "item_number": 143,
+        "chunk_id": "chunk_eres_d4_0140",
+        "item_number": 140,
         "category": "review",
         "english": "Checked luggage",
         "vietnamese": "Hành lý ký gửi",
@@ -9229,8 +9169,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Checked luggage"
       },
       {
-        "chunk_id": "chunk_eres_d4_0144",
-        "item_number": 144,
+        "chunk_id": "chunk_eres_d4_0141",
+        "item_number": 141,
         "category": "review",
         "english": "In the middle of nowhere",
         "vietnamese": "Giữa chốn khỉ ho cò gáy",
@@ -9239,8 +9179,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "In the middle of nowhere"
       },
       {
-        "chunk_id": "chunk_eres_d4_0145",
-        "item_number": 145,
+        "chunk_id": "chunk_eres_d4_0142",
+        "item_number": 142,
         "category": "review",
         "english": "It's too risky to do that",
         "vietnamese": "Quá mạo hiểm để làm việc đó",
@@ -9249,8 +9189,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "It's too risky to do that"
       },
       {
-        "chunk_id": "chunk_eres_d4_0146",
-        "item_number": 146,
+        "chunk_id": "chunk_eres_d4_0143",
+        "item_number": 143,
         "category": "review",
         "english": "It's 10 meters away from the hall",
         "vietnamese": "Nó cách cái sảnh 10 mét",
@@ -9259,8 +9199,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "It's 10 meters away from the hall"
       },
       {
-        "chunk_id": "chunk_eres_d4_0147",
-        "item_number": 147,
+        "chunk_id": "chunk_eres_d4_0144",
+        "item_number": 144,
         "category": "review",
         "english": "If my memory serves me right,...",
         "vietnamese": "Nếu tôi nhớ không nhầm thì...",
@@ -9269,8 +9209,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "If my memory serves me right,..."
       },
       {
-        "chunk_id": "chunk_eres_d4_0148",
-        "item_number": 148,
+        "chunk_id": "chunk_eres_d4_0145",
+        "item_number": 145,
         "category": "review",
         "english": "I'm at the intersection",
         "vietnamese": "Tôi đang ở ngã tư nè",
@@ -9279,8 +9219,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm at the intersection"
       },
       {
-        "chunk_id": "chunk_eres_d4_0149",
-        "item_number": 149,
+        "chunk_id": "chunk_eres_d4_0146",
+        "item_number": 146,
         "category": "review",
         "english": "Make a right",
         "vietnamese": "Quẹo phải",
@@ -9289,8 +9229,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Make a right"
       },
       {
-        "chunk_id": "chunk_eres_d4_0150",
-        "item_number": 150,
+        "chunk_id": "chunk_eres_d4_0147",
+        "item_number": 147,
         "category": "review",
         "english": "1A national highway",
         "vietnamese": "Quốc lộ 1A",
@@ -9299,8 +9239,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "1A national highway"
       },
       {
-        "chunk_id": "chunk_eres_d4_0151",
-        "item_number": 151,
+        "chunk_id": "chunk_eres_d4_0148",
+        "item_number": 148,
         "category": "review",
         "english": "What took you so long?",
         "vietnamese": "Cậu làm gì lâu quá vậy?",
@@ -9309,8 +9249,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "What took you so long?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0152",
-        "item_number": 152,
+        "chunk_id": "chunk_eres_d4_0149",
+        "item_number": 149,
         "category": "review",
         "english": "Hey, don't give me that look",
         "vietnamese": "Ê, đừng có nhìn tôi kiểu đó",
@@ -9319,8 +9259,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Hey // don't give me that look"
       },
       {
-        "chunk_id": "chunk_eres_d4_0153",
-        "item_number": 153,
+        "chunk_id": "chunk_eres_d4_0150",
+        "item_number": 150,
         "category": "review",
         "english": "No one doesn't like oversleeping",
         "vietnamese": "Không ai là không thích ngủ quên",
@@ -9329,8 +9269,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "No one doesn't like oversleeping"
       },
       {
-        "chunk_id": "chunk_eres_d4_0154",
-        "item_number": 154,
+        "chunk_id": "chunk_eres_d4_0151",
+        "item_number": 151,
         "category": "review",
         "english": "I got diarrhea",
         "vietnamese": "Tôi bị tiêu chảy",
@@ -9339,8 +9279,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I got diarrhea"
       },
       {
-        "chunk_id": "chunk_eres_d4_0155",
-        "item_number": 155,
+        "chunk_id": "chunk_eres_d4_0152",
+        "item_number": 152,
         "category": "review",
         "english": "Take the medicines",
         "vietnamese": "Uống thuốc",
@@ -9349,8 +9289,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Take the medicines"
       },
       {
-        "chunk_id": "chunk_eres_d4_0156",
-        "item_number": 156,
+        "chunk_id": "chunk_eres_d4_0153",
+        "item_number": 153,
         "category": "sentence",
         "english": "I had a year after graduating working for a start up about biotech",
         "vietnamese": "Tôi có một năm sau khi tốt nghiệp làm việc cho 1 start up về công nghệ sinh học",
@@ -9359,8 +9299,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I had a year after graduating working for a start up about biotech"
       },
       {
-        "chunk_id": "chunk_eres_d4_0157",
-        "item_number": 157,
+        "chunk_id": "chunk_eres_d4_0154",
+        "item_number": 154,
         "category": "sentence",
         "english": "Having said that, speaking of work, she's quite energetic and innovative",
         "vietnamese": "Nói đi thì cũng phải nói lại, nói về công việc, chị ấy khá là năng nổ và sáng tạo",
@@ -9369,8 +9309,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Having said that // speaking of work // she's quite energetic and innovative"
       },
       {
-        "chunk_id": "chunk_eres_d4_0158",
-        "item_number": 158,
+        "chunk_id": "chunk_eres_d4_0155",
+        "item_number": 155,
         "category": "sentence",
         "english": "Basically, I find risk management very hard to learn",
         "vietnamese": "Về cơ bản, tôi thấy quản trị rủi ro rất là khó để học",
@@ -9379,8 +9319,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Basically // I find risk management very hard to learn"
       },
       {
-        "chunk_id": "chunk_eres_d4_0159",
-        "item_number": 159,
+        "chunk_id": "chunk_eres_d4_0156",
+        "item_number": 156,
         "category": "sentence",
         "english": "I was forced to keep an eye on monthly balance sheets",
         "vietnamese": "Tôi bị buộc để mắt tới mấy cái bảng cân đối kế toán hàng tháng",
@@ -9389,8 +9329,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I was forced to keep an eye on monthly balance sheets"
       },
       {
-        "chunk_id": "chunk_eres_d4_0160",
-        "item_number": 160,
+        "chunk_id": "chunk_eres_d4_0157",
+        "item_number": 157,
         "category": "sentence",
         "english": "Who taught you to prepare financial statement like that?",
         "vietnamese": "Ai dạy cậu chuẩn bị báo cáo tài chính như thế này?",
@@ -9399,8 +9339,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Who taught you to prepare financial statement like that?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0161",
-        "item_number": 161,
+        "chunk_id": "chunk_eres_d4_0158",
+        "item_number": 158,
         "category": "sentence",
         "english": "I've spent the last 2 years developing a special skill used by finance experts",
         "vietnamese": "Tôi đã dành 2 năm vừa qua để phát triển một kỹ năng đặc biệt được sử dụng bởi các chuyên gia tài chính",
@@ -9409,8 +9349,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I've spent the last 2 years developing a special skill used by finance experts"
       },
       {
-        "chunk_id": "chunk_eres_d4_0162",
-        "item_number": 162,
+        "chunk_id": "chunk_eres_d4_0159",
+        "item_number": 159,
         "category": "sentence",
         "english": "Specifically, since graduating from BK University, I haven't seen him",
         "vietnamese": "Cụ thể là, từ khi tốt nghiệp khỏi DHBK, tôi không có gặp ảnh",
@@ -9419,8 +9359,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Specifically // since graduating from BK University // I haven't seen him"
       },
       {
-        "chunk_id": "chunk_eres_d4_0163",
-        "item_number": 163,
+        "chunk_id": "chunk_eres_d4_0160",
+        "item_number": 160,
         "category": "sentence",
         "english": "I'm not bragging but I've never failed in any interview for the last 5 years",
         "vietnamese": "Không phải tui khoe chớ tôi chưa bao giờ fail trong bất kỳ cái phỏng vấn nào trong vòng 5 năm qua",
@@ -9429,8 +9369,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm not bragging but I've never failed in any interview for the last 5 years"
       },
       {
-        "chunk_id": "chunk_eres_d4_0164",
-        "item_number": 164,
+        "chunk_id": "chunk_eres_d4_0161",
+        "item_number": 161,
         "category": "sentence",
         "english": "I've been doing this engineering job for more than a decade",
         "vietnamese": "Tôi đã và đang làm cái công việc kỹ sư này trong hơn 1 thập kỷ rồi",
@@ -9439,8 +9379,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I've been doing this engineering job for more than a decade"
       },
       {
-        "chunk_id": "chunk_eres_d4_0165",
-        "item_number": 165,
+        "chunk_id": "chunk_eres_d4_0162",
+        "item_number": 162,
         "category": "sentence",
         "english": "That job really excites me, so to speak",
         "vietnamese": "Cái job đó nó thực sự làm tôi phấn khích, có thể nói vậy",
@@ -9449,8 +9389,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "That job really excites me // so to speak"
       },
       {
-        "chunk_id": "chunk_eres_d4_0166",
-        "item_number": 166,
+        "chunk_id": "chunk_eres_d4_0163",
+        "item_number": 163,
         "category": "sentence",
         "english": "It might sound odd but I've learned a lot from my customers",
         "vietnamese": "Nó nghe thì có thể lạ lùng nhưng mà tôi đã học được rất nhiều từ các khách hàng của tôi",
@@ -9459,8 +9399,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "It might sound odd but I've learned a lot from my customers"
       },
       {
-        "chunk_id": "chunk_eres_d4_0167",
-        "item_number": 167,
+        "chunk_id": "chunk_eres_d4_0164",
+        "item_number": 164,
         "category": "sentence",
         "english": "No worries, there's nothing new yet, I'll keep you posted",
         "vietnamese": "Đừng lo, không có gì mới cả, có gì tôi báo cậu sau",
@@ -9469,8 +9409,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "No worries // there's nothing new yet // I'll keep you posted"
       },
       {
-        "chunk_id": "chunk_eres_d4_0168",
-        "item_number": 168,
+        "chunk_id": "chunk_eres_d4_0165",
+        "item_number": 165,
         "category": "sentence",
         "english": "Due to the reorganization of the whole sales department, I got transfered",
         "vietnamese": "Bởi vì việc tái cấu trúc toàn bộ phòng kinh doanh, tôi bị luân chuyển",
@@ -9479,8 +9419,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Due to the reorganization of the whole sales department // I got transfered"
       },
       {
-        "chunk_id": "chunk_eres_d4_0169",
-        "item_number": 169,
+        "chunk_id": "chunk_eres_d4_0166",
+        "item_number": 166,
         "category": "sentence",
         "english": "I can see it in your face, 100% you've been hiding something.",
         "vietnamese": "Nhìn mặt cậu là tui biết rồi, 100% cậu đang che giấu cái gì đó",
@@ -9489,8 +9429,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I can see it in your face // 100% you've been hiding something."
       },
       {
-        "chunk_id": "chunk_eres_d4_0170",
-        "item_number": 170,
+        "chunk_id": "chunk_eres_d4_0167",
+        "item_number": 167,
         "category": "sentence",
         "english": "Not long after that, Tommy was assigned to be in charge of purchasing",
         "vietnamese": "Không lâu sau đó, Tommy được giao phụ trách mảng mua hàng",
@@ -9499,8 +9439,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Not long after that // Tommy was assigned to be in charge of purchasing"
       },
       {
-        "chunk_id": "chunk_eres_d4_0171",
-        "item_number": 171,
+        "chunk_id": "chunk_eres_d4_0168",
+        "item_number": 168,
         "category": "sentence",
         "english": "Besides, some things are better left unsaid, you know what I'm saying?",
         "vietnamese": "Bên cạnh đó, một vài điều tốt hơn là không nên nói ra, cậu hiểu ý tôi chứ?",
@@ -9509,8 +9449,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Besides // some things are better left unsaid // you know what I'm saying?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0172",
-        "item_number": 172,
+        "chunk_id": "chunk_eres_d4_0169",
+        "item_number": 169,
         "category": "sentence",
         "english": "I'm very sad to announce that your position has just been eliminated",
         "vietnamese": "Tôi rất buồn khi phải thông báo rằng vị trí của cậu vừa mới bị loại bỏ",
@@ -9519,8 +9459,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm very sad to announce that your position has just been eliminated"
       },
       {
-        "chunk_id": "chunk_eres_d4_0173",
-        "item_number": 173,
+        "chunk_id": "chunk_eres_d4_0170",
+        "item_number": 170,
         "category": "sentence",
         "english": "I'm not for using broken English in an interview but am I allowed to do that?",
         "vietnamese": "Tôi không ủng hộ việc dùng tiếng Anh bồi trong phỏng vấn nhưng mà tôi có được phép làm chuyện đó không?",
@@ -9529,8 +9469,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm not for using broken English in an interview but am I allowed to do that?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0174",
-        "item_number": 174,
+        "chunk_id": "chunk_eres_d4_0171",
+        "item_number": 171,
         "category": "sentence",
         "english": "All you need to do is avoid beating around the bush in an interview",
         "vietnamese": "Tất cả những gì mà cậu cần làm là tránh nói vòng vo tam quốc trong buổi phỏng vấn",
@@ -9539,8 +9479,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "All you need to do is avoid beating around the bush in an interview"
       },
       {
-        "chunk_id": "chunk_eres_d4_0175",
-        "item_number": 175,
+        "chunk_id": "chunk_eres_d4_0172",
+        "item_number": 172,
         "category": "sentence",
         "english": "But over time, as we grew up, unfortunately enough, we've lost that ability",
         "vietnamese": "Nhưng theo thời gian, khi chúng ta lớn lên, thật không may, chúng ta đã mất đi cái khả năng đó",
@@ -9549,8 +9489,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "But over time // as we grew up // unfortunately enough // we've lost that ability"
       },
       {
-        "chunk_id": "chunk_eres_d4_0176",
-        "item_number": 176,
+        "chunk_id": "chunk_eres_d4_0173",
+        "item_number": 173,
         "category": "monologue",
         "english": "I'm an energetic and innovative chief accountant",
         "vietnamese": "Em là 1 kế toán trưởng năng động và sáng tạo",
@@ -9559,18 +9499,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm an energetic and innovative chief accountant"
       },
       {
-        "chunk_id": "chunk_eres_d4_0177",
-        "item_number": 177,
+        "chunk_id": "chunk_eres_d4_0174",
+        "item_number": 174,
         "category": "monologue",
         "english": "with 3 years of experience managing all aspects of the accounting function",
-        "vietnamese": "với 3 năm kinh nghiệm quản lý mọi khía cạnh của công tác kế toán",
+        "vietnamese": "Với 3 năm kinh nghiệm quản lý mọi khía cạnh của công tác kế toán",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "with 3 years of experience managing all aspects of the accounting function"
       },
       {
-        "chunk_id": "chunk_eres_d4_0178",
-        "item_number": 178,
+        "chunk_id": "chunk_eres_d4_0175",
+        "item_number": 175,
         "category": "monologue",
         "english": "Basically, I was assigned to record all the transactions",
         "vietnamese": "Về cơ bản, em được giao để record lại toàn bộ mấy cái giao dịch",
@@ -9579,8 +9519,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Basically // I was assigned to record all the transactions"
       },
       {
-        "chunk_id": "chunk_eres_d4_0179",
-        "item_number": 179,
+        "chunk_id": "chunk_eres_d4_0176",
+        "item_number": 176,
         "category": "monologue",
         "english": "Besides, I also have to keep an eye on risk management and the monthly balance sheet",
         "vietnamese": "Bên cạnh đó, em cũng phải để mắt đến quản lý rủi ro với bảng cân đối hàng tháng",
@@ -9589,8 +9529,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Besides // I also have to keep an eye on risk management and the monthly balance sheet"
       },
       {
-        "chunk_id": "chunk_eres_d4_0180",
-        "item_number": 180,
+        "chunk_id": "chunk_eres_d4_0177",
+        "item_number": 177,
         "category": "monologue",
         "english": "I've been working for a top company in VN market",
         "vietnamese": "Em đã và đang làm cho 1 công ty hàng đầu ở thị trường Việt Nam",
@@ -9599,8 +9539,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I've been working for a top company in VN market"
       },
       {
-        "chunk_id": "chunk_eres_d4_0181",
-        "item_number": 181,
+        "chunk_id": "chunk_eres_d4_0178",
+        "item_number": 178,
         "category": "monologue",
         "english": "I've spent the last 6 months developing a special skill",
         "vietnamese": "Em đã dành 6 tháng gần nhất để phát triển 1 kỹ năng đặc biệt",
@@ -9609,8 +9549,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I've spent the last 6 months developing a special skill"
       },
       {
-        "chunk_id": "chunk_eres_d4_0182",
-        "item_number": 182,
+        "chunk_id": "chunk_eres_d4_0179",
+        "item_number": 179,
         "category": "monologue",
         "english": "that is becoming a mentor for newcomers",
         "vietnamese": "Đó là trở thành mentor cho mấy đứa mới vô",
@@ -9619,8 +9559,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "that is becoming a mentor for newcomers"
       },
       {
-        "chunk_id": "chunk_eres_d4_0183",
-        "item_number": 183,
+        "chunk_id": "chunk_eres_d4_0180",
+        "item_number": 180,
         "category": "monologue",
         "english": "Specifically, I instruct them to prepare the financial statement",
         "vietnamese": "Cụ thể, em hướng dẫn bọn nó soạn báo cáo tài chính",
@@ -9629,8 +9569,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Specifically // I instruct them to prepare the financial statement"
       },
       {
-        "chunk_id": "chunk_eres_d4_0184",
-        "item_number": 184,
+        "chunk_id": "chunk_eres_d4_0181",
+        "item_number": 181,
         "category": "monologue",
         "english": "I'm not bragging but,...",
         "vietnamese": "Nói không phải khoe chớ,...",
@@ -9639,8 +9579,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm not bragging but,..."
       },
       {
-        "chunk_id": "chunk_eres_d4_0185",
-        "item_number": 185,
+        "chunk_id": "chunk_eres_d4_0182",
+        "item_number": 182,
         "category": "monologue",
         "english": "That task has brought me the man of the month award twice",
         "vietnamese": "Cái task đó đã mang về cho em danh hiệu nhân viên của tháng 2 lần",
@@ -9649,8 +9589,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "That task has brought me the man of the month award twice"
       },
       {
-        "chunk_id": "chunk_eres_d4_0186",
-        "item_number": 186,
+        "chunk_id": "chunk_eres_d4_0183",
+        "item_number": 183,
         "category": "monologue",
         "english": "I also really love managing teams, so to speak",
         "vietnamese": "Em cũng rất thích quản lý đội nhóm, có thể nói vậy",
@@ -9659,8 +9599,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I also really love managing teams // so to speak"
       },
       {
-        "chunk_id": "chunk_eres_d4_0187",
-        "item_number": 187,
+        "chunk_id": "chunk_eres_d4_0184",
+        "item_number": 184,
         "category": "monologue",
         "english": "One of my strengths is solving financial problems for corporations",
         "vietnamese": "Một trong những thế mạnh của em là giải quyết các vấn đề tài chính cho doanh nghiệp",
@@ -9669,8 +9609,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "One of my strengths is solving financial problems for corporations"
       },
       {
-        "chunk_id": "chunk_eres_d4_0188",
-        "item_number": 188,
+        "chunk_id": "chunk_eres_d4_0185",
+        "item_number": 185,
         "category": "monologue",
         "english": "Although I really like my current role",
         "vietnamese": "Dù em rất là thích vai trò hiện tại của mình",
@@ -9679,18 +9619,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Although I really like my current role"
       },
       {
-        "chunk_id": "chunk_eres_d4_0189",
-        "item_number": 189,
+        "chunk_id": "chunk_eres_d4_0186",
+        "item_number": 186,
         "category": "monologue",
         "english": "but I feel now I'm ready for the next step in my career",
-        "vietnamese": "nhưng mà giờ em cảm thấy em đã sẵn sàng cho bước tiếp theo trong sự nghiệp của mình",
+        "vietnamese": "Nhưng mà giờ em cảm thấy em đã sẵn sàng cho bước tiếp theo trong sự nghiệp của mình",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "but I feel now I'm ready for the next step in my career"
       },
       {
-        "chunk_id": "chunk_eres_d4_0190",
-        "item_number": 190,
+        "chunk_id": "chunk_eres_d4_0187",
+        "item_number": 187,
         "category": "monologue",
         "english": "Perhaps it should be a more challenging assignment",
         "vietnamese": "Có lẽ nó nên là một nhiệm vụ thử thách nhiều hơn",
@@ -9699,8 +9639,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Perhaps it should be a more challenging assignment"
       },
       {
-        "chunk_id": "chunk_eres_d4_0191",
-        "item_number": 191,
+        "chunk_id": "chunk_eres_d4_0188",
+        "item_number": 188,
         "category": "monologue",
         "english": "and this position really excites me",
         "vietnamese": "Và cái vị trí này thực sự làm em phấn khích",
@@ -9709,8 +9649,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "and this position really excites me"
       },
       {
-        "chunk_id": "chunk_eres_d4_0192",
-        "item_number": 192,
+        "chunk_id": "chunk_eres_d4_0189",
+        "item_number": 189,
         "category": "monologue",
         "english": "I've been doing this financial job for more than 4 years",
         "vietnamese": "Em đã và đang làm cái công việc tài chính này được hơn 4 năm rồi",
@@ -9719,8 +9659,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I've been doing this financial job for more than 4 years"
       },
       {
-        "chunk_id": "chunk_eres_d4_0193",
-        "item_number": 193,
+        "chunk_id": "chunk_eres_d4_0190",
+        "item_number": 190,
         "category": "monologue",
         "english": "Since graduating from University of Economics,",
         "vietnamese": "Từ khi tốt nghiệp ra khỏi đại học kinh tế,",
@@ -9729,28 +9669,28 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Since graduating from University of Economics,"
       },
       {
-        "chunk_id": "chunk_eres_d4_0194",
-        "item_number": 194,
+        "chunk_id": "chunk_eres_d4_0191",
+        "item_number": 191,
         "category": "monologue",
         "english": "I had a year after graduating",
-        "vietnamese": "em đã có 1 năm sau khi ra trường",
+        "vietnamese": "Em đã có 1 năm sau khi ra trường",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I had a year after graduating"
       },
       {
-        "chunk_id": "chunk_eres_d4_0195",
-        "item_number": 195,
+        "chunk_id": "chunk_eres_d4_0192",
+        "item_number": 192,
         "category": "monologue",
         "english": "working for a startup about e-commerce",
-        "vietnamese": "làm việc cho 1 startup về thương mại điện tử",
+        "vietnamese": "Làm việc cho 1 startup về thương mại điện tử",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "working for a startup about e-commerce"
       },
       {
-        "chunk_id": "chunk_eres_d4_0196",
-        "item_number": 196,
+        "chunk_id": "chunk_eres_d4_0193",
+        "item_number": 193,
         "category": "monologue",
         "english": "Actually, at the time,",
         "vietnamese": "Thực sự, lúc đó,",
@@ -9759,28 +9699,28 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Actually // at the time,"
       },
       {
-        "chunk_id": "chunk_eres_d4_0197",
-        "item_number": 197,
+        "chunk_id": "chunk_eres_d4_0194",
+        "item_number": 194,
         "category": "monologue",
         "english": "I was responsible for bookeeping in general",
-        "vietnamese": "em chịu trách nhiệm về quản lý sổ sách nói chung",
+        "vietnamese": "Em chịu trách nhiệm về quản lý sổ sách nói chung",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I was responsible for bookeeping in general"
       },
       {
-        "chunk_id": "chunk_eres_d4_0198",
-        "item_number": 198,
+        "chunk_id": "chunk_eres_d4_0195",
+        "item_number": 195,
         "category": "monologue",
         "english": "I worked so closely with finance manager",
-        "vietnamese": "em làm việc rất gần với trưởng phòng tài chính",
+        "vietnamese": "Em làm việc rất gần với trưởng phòng tài chính",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I worked so closely with finance manager"
       },
       {
-        "chunk_id": "chunk_eres_d4_0199",
-        "item_number": 199,
+        "chunk_id": "chunk_eres_d4_0196",
+        "item_number": 196,
         "category": "monologue",
         "english": "I remember being forced to make those like-farming posts",
         "vietnamese": "Em còn nhớ bị buộc phải làm mấy cái post câu like",
@@ -9789,8 +9729,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I remember being forced to make those like-farming posts"
       },
       {
-        "chunk_id": "chunk_eres_d4_0200",
-        "item_number": 200,
+        "chunk_id": "chunk_eres_d4_0197",
+        "item_number": 197,
         "category": "monologue",
         "english": "like, big sale, clearance sale and BOGO and stuff",
         "vietnamese": "Kiểu, sales sập sàn, sales hàng tồn, rồi mua 1 tặng 1 các kiểu",
@@ -9799,8 +9739,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "like // big sale // clearance sale and BOGO and stuff"
       },
       {
-        "chunk_id": "chunk_eres_d4_0201",
-        "item_number": 201,
+        "chunk_id": "chunk_eres_d4_0198",
+        "item_number": 198,
         "category": "monologue",
         "english": "You know what I'm saying?",
         "vietnamese": "Chị hiểu ý em không?",
@@ -9809,8 +9749,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "You know what I'm saying?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0202",
-        "item_number": 202,
+        "chunk_id": "chunk_eres_d4_0199",
+        "item_number": 199,
         "category": "monologue",
         "english": "Actually that job was a lot of fun, though",
         "vietnamese": "Thực sự dẫu vậy công việc đó rất là vui",
@@ -9819,8 +9759,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Actually that job was a lot of fun // though"
       },
       {
-        "chunk_id": "chunk_eres_d4_0203",
-        "item_number": 203,
+        "chunk_id": "chunk_eres_d4_0200",
+        "item_number": 200,
         "category": "monologue",
         "english": "Previously, I had spent 6 months working as an intern",
         "vietnamese": "Trước đó, em đã trải qua 6 tháng làm việc như 1 thực tập sinh",
@@ -9829,18 +9769,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Previously // I had spent 6 months working as an intern"
       },
       {
-        "chunk_id": "chunk_eres_d4_0204",
-        "item_number": 204,
+        "chunk_id": "chunk_eres_d4_0201",
+        "item_number": 201,
         "category": "monologue",
         "english": "for a famous e-commerce platform back then, Amazon",
-        "vietnamese": "cho một sàn thương mại điện tử nổi tiếng thời đó, Amazon",
+        "vietnamese": "Cho một sàn thương mại điện tử nổi tiếng thời đó, Amazon",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "for a famous e-commerce platform back then // Amazon"
       },
       {
-        "chunk_id": "chunk_eres_d4_0205",
-        "item_number": 205,
+        "chunk_id": "chunk_eres_d4_0202",
+        "item_number": 202,
         "category": "monologue",
         "english": "Or more accurately,",
         "vietnamese": "Hay chính xác hơn,",
@@ -9849,8 +9789,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Or more accurately,"
       },
       {
-        "chunk_id": "chunk_eres_d4_0206",
-        "item_number": 206,
+        "chunk_id": "chunk_eres_d4_0203",
+        "item_number": 203,
         "category": "monologue",
         "english": "I was assigned to be the assistant for this guy",
         "vietnamese": "Em được giao làm trợ lý cho cái anh này",
@@ -9859,8 +9799,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I was assigned to be the assistant for this guy"
       },
       {
-        "chunk_id": "chunk_eres_d4_0207",
-        "item_number": 207,
+        "chunk_id": "chunk_eres_d4_0204",
+        "item_number": 204,
         "category": "monologue",
         "english": "He's in charge of purchasing for our company",
         "vietnamese": "Ảnh phụ trách mảng mua hàng cho công ty em",
@@ -9869,8 +9809,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "He's in charge of purchasing for our company"
       },
       {
-        "chunk_id": "chunk_eres_d4_0208",
-        "item_number": 208,
+        "chunk_id": "chunk_eres_d4_0205",
+        "item_number": 205,
         "category": "monologue",
         "english": "Actually I've learned a lot from him",
         "vietnamese": "Thực sự em đã học được rất là nhiều từ ảnh",
@@ -9879,8 +9819,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Actually I've learned a lot from him"
       },
       {
-        "chunk_id": "chunk_eres_d4_0209",
-        "item_number": 209,
+        "chunk_id": "chunk_eres_d4_0206",
+        "item_number": 206,
         "category": "monologue",
         "english": "I've gotta say that was a great experience",
         "vietnamese": "Em phải nói là đó là 1 trải nghiệm tuyệt vời",
@@ -9889,8 +9829,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I've gotta say that was a great experience"
       },
       {
-        "chunk_id": "chunk_eres_d4_0210",
-        "item_number": 210,
+        "chunk_id": "chunk_eres_d4_0207",
+        "item_number": 207,
         "category": "monologue",
         "english": "Especially for a last-year student like me back then",
         "vietnamese": "Đặc biệt là cho một đứa sinh viên năm cuối như em hồi đó",
@@ -9899,8 +9839,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Especially for a last-year student like me back then"
       },
       {
-        "chunk_id": "chunk_eres_d4_0211",
-        "item_number": 211,
+        "chunk_id": "chunk_eres_d4_0208",
+        "item_number": 208,
         "category": "monologue",
         "english": "I also volunteered to work on projects outside of my role,",
         "vietnamese": "Em cũng tự nguyện làm mấy dự án ngoài vai trò của em,",
@@ -9909,18 +9849,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I also volunteered to work on projects outside of my role,"
       },
       {
-        "chunk_id": "chunk_eres_d4_0212",
-        "item_number": 212,
+        "chunk_id": "chunk_eres_d4_0209",
+        "item_number": 209,
         "category": "monologue",
         "english": "just because I wanna meet more interesting people",
-        "vietnamese": "chỉ vì em muốn gặp thêm nhiều mấy anh chị thú vị",
+        "vietnamese": "Chỉ vì em muốn gặp thêm nhiều mấy anh chị thú vị",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "just because I wanna meet more interesting people"
       },
       {
-        "chunk_id": "chunk_eres_d4_0213",
-        "item_number": 213,
+        "chunk_id": "chunk_eres_d4_0210",
+        "item_number": 210,
         "category": "monologue",
         "english": "Unfortunately enough, due to the reorganization of the whole company,",
         "vietnamese": "Tiếc thay, do cái việc cải tổ lại toàn công ty",
@@ -9929,8 +9869,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Unfortunately enough // due to the reorganization of the whole company,"
       },
       {
-        "chunk_id": "chunk_eres_d4_0214",
-        "item_number": 214,
+        "chunk_id": "chunk_eres_d4_0211",
+        "item_number": 211,
         "category": "monologue",
         "english": "my position was eliminated last July",
         "vietnamese": "Cái vị trí của em đã bị loại bỏ tháng 7 vừa rồi",
@@ -9939,8 +9879,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "my position was eliminated last July"
       },
       {
-        "chunk_id": "chunk_eres_d4_0215",
-        "item_number": 215,
+        "chunk_id": "chunk_eres_d4_0212",
+        "item_number": 212,
         "category": "monologue",
         "english": "Not long after that, I was recruited for my current position",
         "vietnamese": "Sau đó không lâu, em được tuyển vào cái vị trí hiện giờ của em đây",
@@ -9949,478 +9889,478 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Not long after that // I was recruited for my current position"
       },
       {
-        "chunk_id": "chunk_eres_d4_0216",
-        "item_number": 216,
+        "chunk_id": "chunk_eres_d4_0213",
+        "item_number": 213,
         "category": "dialogue",
         "english": "Come on in, have a seat",
-        "vietnamese": "SH: Vô đi em, mời ngồi",
+        "vietnamese": "Vô đi em, mời ngồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Come on in // have a seat"
       },
       {
-        "chunk_id": "chunk_eres_d4_0217",
-        "item_number": 217,
+        "chunk_id": "chunk_eres_d4_0214",
+        "item_number": 214,
         "category": "dialogue",
         "english": "Thanks, I'm a bit nervous",
-        "vietnamese": "T: Cám ơn, em hơi lo",
+        "vietnamese": "Cám ơn, em hơi lo",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Thanks // I'm a bit nervous"
       },
       {
-        "chunk_id": "chunk_eres_d4_0218",
-        "item_number": 218,
+        "chunk_id": "chunk_eres_d4_0215",
+        "item_number": 215,
         "category": "dialogue",
         "english": "Yeah, I can see it in your face",
-        "vietnamese": "SH: Yeah, nhìn mặt em là anh hiểu rồi",
+        "vietnamese": "Yeah, nhìn mặt em là anh hiểu rồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Yeah // I can see it in your face"
       },
       {
-        "chunk_id": "chunk_eres_d4_0219",
-        "item_number": 219,
+        "chunk_id": "chunk_eres_d4_0216",
+        "item_number": 216,
         "category": "dialogue",
         "english": "Alright, I'm just kidding, chewing gum?",
-        "vietnamese": "SH: Alright, anh đùa đó, singum không em?",
+        "vietnamese": "Alright, anh đùa đó, singum không em?",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Alright // I'm just kidding // chewing gum?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0220",
-        "item_number": 220,
+        "chunk_id": "chunk_eres_d4_0217",
+        "item_number": 217,
         "category": "dialogue",
         "english": "No, thanks, I'm good",
-        "vietnamese": "T: Dạ không, cám ơn, em okay",
+        "vietnamese": "Dạ không, cám ơn, em okay",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "No // thanks // I'm good"
       },
       {
-        "chunk_id": "chunk_eres_d4_0221",
-        "item_number": 221,
+        "chunk_id": "chunk_eres_d4_0218",
+        "item_number": 218,
         "category": "dialogue",
         "english": "I've had a look at your CV this morning, quite impressive",
-        "vietnamese": "SH: Anh đã coi qua cái CV của em sáng nay, khá là ấn tượng",
+        "vietnamese": "Anh đã coi qua cái CV của em sáng nay, khá là ấn tượng",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "I've had a look at your CV this morning // quite impressive"
       },
       {
-        "chunk_id": "chunk_eres_d4_0222",
-        "item_number": 222,
+        "chunk_id": "chunk_eres_d4_0219",
+        "item_number": 219,
         "category": "dialogue",
         "english": "Hold on, there's one thing I need you to know in advance",
-        "vietnamese": "T: Dạ khoan, có một thứ em cần anh biết trước",
+        "vietnamese": "Dạ khoan, có một thứ em cần anh biết trước",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Hold on // there's one thing I need you to know in advance"
       },
       {
-        "chunk_id": "chunk_eres_d4_0223",
-        "item_number": 223,
+        "chunk_id": "chunk_eres_d4_0220",
+        "item_number": 220,
         "category": "dialogue",
         "english": "I'm 22 and this is the first time I've been in an interview in English",
-        "vietnamese": "T: Em 22 tuổi và đây là lần đầu tiên em tới một buổi phỏng vấn bằng tiếng Anh",
+        "vietnamese": "Em 22 tuổi và đây là lần đầu tiên em tới một buổi phỏng vấn bằng tiếng Anh",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I'm 22 and this is the first time I've been in an interview in English"
       },
       {
-        "chunk_id": "chunk_eres_d4_0224",
-        "item_number": 224,
+        "chunk_id": "chunk_eres_d4_0221",
+        "item_number": 221,
         "category": "dialogue",
         "english": "No worries, there's a first time for everything",
-        "vietnamese": "SH: Đừng có lo, cái gì cũng có lần đầu mà",
+        "vietnamese": "Đừng có lo, cái gì cũng có lần đầu mà",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "No worries // there's a first time for everything"
       },
       {
-        "chunk_id": "chunk_eres_d4_0225",
-        "item_number": 225,
+        "chunk_id": "chunk_eres_d4_0222",
+        "item_number": 222,
         "category": "dialogue",
         "english": "All you need to do is shaking that feeling off, okay?",
-        "vietnamese": "SH: Tất cả những gì em cần làm là rũ bỏ cái cảm giác đó đi, okay?",
+        "vietnamese": "Tất cả những gì em cần làm là rũ bỏ cái cảm giác đó đi, okay?",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "All you need to do is shaking that feeling off // okay?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0226",
-        "item_number": 226,
+        "chunk_id": "chunk_eres_d4_0223",
+        "item_number": 223,
         "category": "dialogue",
         "english": "I know people say some things are better left unsaid",
-        "vietnamese": "T: Em biết là người ta hay bảo vài thứ tốt hơn là không nên nói ra",
+        "vietnamese": "Em biết là người ta hay bảo vài thứ tốt hơn là không nên nói ra",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I know people say some things are better left unsaid"
       },
       {
-        "chunk_id": "chunk_eres_d4_0227",
-        "item_number": 227,
+        "chunk_id": "chunk_eres_d4_0224",
+        "item_number": 224,
         "category": "dialogue",
         "english": "But hmmm, is it okay if I use broken English?",
-        "vietnamese": "T: Nhưng mà hmmm, có okay nếu em dùng tiếng Anh bồi không anh?",
+        "vietnamese": "Nhưng mà hmmm, có okay nếu em dùng tiếng Anh bồi không anh?",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "But hmmm // is it okay if I use broken English?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0228",
-        "item_number": 228,
+        "chunk_id": "chunk_eres_d4_0225",
+        "item_number": 225,
         "category": "dialogue",
         "english": "Well, up to you, of course I'm not for that but...",
-        "vietnamese": "SH: Well, thì tùy em thôi, đương nhiên là anh không ủng hộ chuyện đó nhưng mà...",
+        "vietnamese": "Well, thì tùy em thôi, đương nhiên là anh không ủng hộ chuyện đó nhưng mà...",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Well // up to you // of course I'm not for that but..."
       },
       {
-        "chunk_id": "chunk_eres_d4_0229",
-        "item_number": 229,
+        "chunk_id": "chunk_eres_d4_0226",
+        "item_number": 226,
         "category": "dialogue",
         "english": "It's okay as long as I can understand your ideas",
-        "vietnamese": "SH: Nó okay miễn là anh có thể hiểu được những idea của em",
+        "vietnamese": "Nó okay miễn là anh có thể hiểu được những idea của em",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "It's okay as long as I can understand your ideas"
       },
       {
-        "chunk_id": "chunk_eres_d4_0230",
-        "item_number": 230,
+        "chunk_id": "chunk_eres_d4_0227",
+        "item_number": 227,
         "category": "dialogue",
         "english": "You're the last one today, anyway, take your time",
-        "vietnamese": "SH: Dù sao em cũng là người cuối buổi hôm nay rồi, cứ thong thả",
+        "vietnamese": "Dù sao em cũng là người cuối buổi hôm nay rồi, cứ thong thả",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "You're the last one today // anyway // take your time"
       },
       {
-        "chunk_id": "chunk_eres_d4_0231",
-        "item_number": 231,
+        "chunk_id": "chunk_eres_d4_0228",
+        "item_number": 228,
         "category": "dialogue",
         "english": "The other guys, I failed them all",
-        "vietnamese": "SH: Mấy đứa kia, anh \"quánh\" rớt hết rồi",
+        "vietnamese": "Mấy đứa kia, anh \"quánh\" rớt hết rồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "The other guys // I failed them all"
       },
       {
-        "chunk_id": "chunk_eres_d4_0232",
-        "item_number": 232,
+        "chunk_id": "chunk_eres_d4_0229",
+        "item_number": 229,
         "category": "dialogue",
         "english": "They kept beating around the bush",
-        "vietnamese": "SH: Tụi nó cứ vòng vo tam quốc",
+        "vietnamese": "Tụi nó cứ vòng vo tam quốc",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "They kept beating around the bush"
       },
       {
-        "chunk_id": "chunk_eres_d4_0233",
-        "item_number": 233,
+        "chunk_id": "chunk_eres_d4_0230",
+        "item_number": 230,
         "category": "dialogue",
         "english": "Plus they keep asking me irrelevant questions",
-        "vietnamese": "SH: Với lại tụi nó cứ hỏi anh mấy câu hỏi chả liên quan gì",
+        "vietnamese": "Với lại tụi nó cứ hỏi anh mấy câu hỏi chả liên quan gì",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Plus they keep asking me irrelevant questions"
       },
       {
-        "chunk_id": "chunk_eres_d4_0234",
-        "item_number": 234,
+        "chunk_id": "chunk_eres_d4_0231",
+        "item_number": 231,
         "category": "dialogue",
         "english": "Really? Shall we start, sir?",
-        "vietnamese": "T: Really? Mình bắt đầu luôn được không anh trai?",
+        "vietnamese": "Really? Mình bắt đầu luôn được không anh trai?",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Really? Shall we start // sir?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0235",
-        "item_number": 235,
+        "chunk_id": "chunk_eres_d4_0232",
+        "item_number": 232,
         "category": "dialogue",
         "english": "I've got an idea, we'll change the game a little bit, what do you say?",
-        "vietnamese": "SH: Anh có một idea, chúng ta sẽ đổi trò chơi một chút, ý em sao?",
+        "vietnamese": "Anh có một idea, chúng ta sẽ đổi trò chơi một chút, ý em sao?",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "I've got an idea // we'll change the game a little bit // what do you say?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0236",
-        "item_number": 236,
+        "chunk_id": "chunk_eres_d4_0233",
+        "item_number": 233,
         "category": "dialogue",
         "english": "For better or worse, I'm in",
-        "vietnamese": "T: Không biết là hên hay xui, em tham gia",
+        "vietnamese": "Không biết là hên hay xui, em tham gia",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "For better or worse // I'm in"
       },
       {
-        "chunk_id": "chunk_eres_d4_0237",
-        "item_number": 237,
+        "chunk_id": "chunk_eres_d4_0234",
+        "item_number": 234,
         "category": "dialogue",
         "english": "Good attitude, I'm gonna ask you just one single question",
-        "vietnamese": "SH: Thái độ tốt, anh sẽ hỏi em chỉ một câu thôi",
+        "vietnamese": "Thái độ tốt, anh sẽ hỏi em chỉ một câu thôi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Good attitude // I'm gonna ask you just one single question"
       },
       {
-        "chunk_id": "chunk_eres_d4_0238",
-        "item_number": 238,
+        "chunk_id": "chunk_eres_d4_0235",
+        "item_number": 235,
         "category": "dialogue",
         "english": "Go big or go home, that's it",
-        "vietnamese": "SH: Được ăn cả ngã về không, có vậy thôi",
+        "vietnamese": "Được ăn cả ngã về không, có vậy thôi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Go big or go home // that's it"
       },
       {
-        "chunk_id": "chunk_eres_d4_0239",
-        "item_number": 239,
+        "chunk_id": "chunk_eres_d4_0236",
+        "item_number": 236,
         "category": "dialogue",
         "english": "About your work experience and academic background,",
-        "vietnamese": "SH: Về kinh nghiệm công việc hay background học vấn của em,",
+        "vietnamese": "Về kinh nghiệm công việc hay background học vấn của em,",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "About your work experience and academic background,"
       },
       {
-        "chunk_id": "chunk_eres_d4_0240",
-        "item_number": 240,
+        "chunk_id": "chunk_eres_d4_0237",
+        "item_number": 237,
         "category": "dialogue",
         "english": "Whatever I need to know, I could easily find them all in your CV",
-        "vietnamese": "SH: Bất cứ thứ gì mà anh cần biết, anh đều có thể dễ dàng tìm thấy trong CV của em",
+        "vietnamese": "Bất cứ thứ gì mà anh cần biết, anh đều có thể dễ dàng tìm thấy trong CV của em",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Whatever I need to know // I could easily find them all in your CV"
       },
       {
-        "chunk_id": "chunk_eres_d4_0241",
-        "item_number": 241,
+        "chunk_id": "chunk_eres_d4_0238",
+        "item_number": 238,
         "category": "dialogue",
         "english": "So, you're gonna have 20 seconds to tell me one thing that is NOT in your CV",
-        "vietnamese": "SH: Cho nên, em sẽ có 20 giây để nói anh biết một thứ KHÔNG có trong CV của em",
+        "vietnamese": "Cho nên, em sẽ có 20 giây để nói anh biết một thứ KHÔNG có trong CV của em",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "So // you're gonna have 20 seconds to tell me one thing that is NOT in your CV"
       },
       {
-        "chunk_id": "chunk_eres_d4_0242",
-        "item_number": 242,
+        "chunk_id": "chunk_eres_d4_0239",
+        "item_number": 239,
         "category": "dialogue",
         "english": "Convince me! In other words, surprise me!",
-        "vietnamese": "SH: Hãy thuyết phục anh, nói cách khác, hãy làm anh ngạc nhiên!",
+        "vietnamese": "Hãy thuyết phục anh, nói cách khác, hãy làm anh ngạc nhiên!",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Convince me! In other words // surprise me!"
       },
       {
-        "chunk_id": "chunk_eres_d4_0243",
-        "item_number": 243,
+        "chunk_id": "chunk_eres_d4_0240",
+        "item_number": 240,
         "category": "dialogue",
         "english": "Wow, what a question!",
-        "vietnamese": "T: Wow, quả là một câu hỏi rất gì và này nọ!",
+        "vietnamese": "Wow, quả là một câu hỏi rất gì và này nọ!",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Wow // what a question!"
       },
       {
-        "chunk_id": "chunk_eres_d4_0244",
-        "item_number": 244,
+        "chunk_id": "chunk_eres_d4_0241",
+        "item_number": 241,
         "category": "dialogue",
         "english": "How come I didn't think of this kind of question before?!?",
-        "vietnamese": "T: Sao em lại có thể không nghĩ về cái kiểu câu hỏi này trước đây ta?!?",
+        "vietnamese": "Sao em lại có thể không nghĩ về cái kiểu câu hỏi này trước đây ta?!?",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "How come I didn't think of this kind of question before?!?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0245",
-        "item_number": 245,
+        "chunk_id": "chunk_eres_d4_0242",
+        "item_number": 242,
         "category": "dialogue",
         "english": "I really love open-ended questions like this",
-        "vietnamese": "T: Em rất là thích mấy câu hỏi mở kiểu vầy",
+        "vietnamese": "Em rất là thích mấy câu hỏi mở kiểu vầy",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I really love open-ended questions like this"
       },
       {
-        "chunk_id": "chunk_eres_d4_0246",
-        "item_number": 246,
+        "chunk_id": "chunk_eres_d4_0243",
+        "item_number": 243,
         "category": "dialogue",
         "english": "You've got 15 seconds left",
-        "vietnamese": "SH: Em còn lại 15 giây",
+        "vietnamese": "Em còn lại 15 giây",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "You've got 15 seconds left"
       },
       {
-        "chunk_id": "chunk_eres_d4_0247",
-        "item_number": 247,
+        "chunk_id": "chunk_eres_d4_0244",
+        "item_number": 244,
         "category": "dialogue",
         "english": "I'm not bragging but, I've got an intangible strength that I rarely put into my CV",
-        "vietnamese": "T: Không phải em khoe chớ em có một cái sức mạnh tiềm ẩn mà em hiếm khi cho vào CV",
+        "vietnamese": "Không phải em khoe chớ em có một cái sức mạnh tiềm ẩn mà em hiếm khi cho vào CV",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I'm not bragging but // I've got an intangible strength that I rarely put into my CV"
       },
       {
-        "chunk_id": "chunk_eres_d4_0248",
-        "item_number": 248,
+        "chunk_id": "chunk_eres_d4_0245",
+        "item_number": 245,
         "category": "dialogue",
         "english": "I'm referring to the so-called integrity",
-        "vietnamese": "T: Em đang nói đến cái gọi là lòng chính trực",
+        "vietnamese": "Em đang nói đến cái gọi là lòng chính trực",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I'm referring to the so-called integrity"
       },
       {
-        "chunk_id": "chunk_eres_d4_0249",
-        "item_number": 249,
+        "chunk_id": "chunk_eres_d4_0246",
+        "item_number": 246,
         "category": "dialogue",
         "english": "Basically, in a way, we all used to have this thing",
-        "vietnamese": "T: Về cơ bản, một cách nào đó, chúng ta đều đã từng có cái thứ này",
+        "vietnamese": "Về cơ bản, một cách nào đó, chúng ta đều đã từng có cái thứ này",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Basically // in a way // we all used to have this thing"
       },
       {
-        "chunk_id": "chunk_eres_d4_0250",
-        "item_number": 250,
+        "chunk_id": "chunk_eres_d4_0247",
+        "item_number": 247,
         "category": "dialogue",
         "english": "Speed it up, I have a meetup for dinner with Hien Ho tonight",
-        "vietnamese": "SH: Nhanh lên chút, anh còn có cái gặp ăn tối với Hiền Hồ tối nay nữa",
+        "vietnamese": "Nhanh lên chút, anh còn có cái gặp ăn tối với Hiền Hồ tối nay nữa",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Speed it up // I have a meetup for dinner with Hien Ho tonight"
       },
       {
-        "chunk_id": "chunk_eres_d4_0251",
-        "item_number": 251,
+        "chunk_id": "chunk_eres_d4_0248",
+        "item_number": 248,
         "category": "dialogue",
         "english": "You've got 9 more seconds to convince me",
-        "vietnamese": "SH: Em còn lại 9 giây nữa để thuyết phục anh",
+        "vietnamese": "Em còn lại 9 giây nữa để thuyết phục anh",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "You've got 9 more seconds to convince me"
       },
       {
-        "chunk_id": "chunk_eres_d4_0252",
-        "item_number": 252,
+        "chunk_id": "chunk_eres_d4_0249",
+        "item_number": 249,
         "category": "dialogue",
         "english": "Okay, I've taken advantage of this special strength to generate a lot of achievements",
-        "vietnamese": "T: Okay, em đã tận dụng cái thếmạnh đặc biệt này đểtạo ra vô sốnhững thành tựu",
+        "vietnamese": "Okay, em đã tận dụng cái thếmạnh đặc biệt này đểtạo ra vô sốnhững thành tựu",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Okay // I've taken advantage of this special strength to generate a lot of achievements"
       },
       {
-        "chunk_id": "chunk_eres_d4_0253",
-        "item_number": 253,
+        "chunk_id": "chunk_eres_d4_0250",
+        "item_number": 250,
         "category": "dialogue",
         "english": "It urges me to do something just because that's the right thing to do",
-        "vietnamese": "T: Nó hối thúc em để làm một thứ gì đó chỉ đơn giản vì đó là điều đúng đắn để làm",
+        "vietnamese": "Nó hối thúc em để làm một thứ gì đó chỉ đơn giản vì đó là điều đúng đắn để làm",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "It urges me to do something just because that's the right thing to do"
       },
       {
-        "chunk_id": "chunk_eres_d4_0254",
-        "item_number": 254,
+        "chunk_id": "chunk_eres_d4_0251",
+        "item_number": 251,
         "category": "dialogue",
         "english": "No matter how small that thing was",
-        "vietnamese": "T: Bất kểcái thứđó có nhỏđến cỡnào đi nữa",
+        "vietnamese": "Bất kểcái thứđó có nhỏđến cỡnào đi nữa",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "No matter how small that thing was"
       },
       {
-        "chunk_id": "chunk_eres_d4_0255",
-        "item_number": 255,
+        "chunk_id": "chunk_eres_d4_0252",
+        "item_number": 252,
         "category": "dialogue",
         "english": "Time's up! Stop talking!",
-        "vietnamese": "SH: Hết giờ! Ngưng nói!",
+        "vietnamese": "Hết giờ! Ngưng nói!",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Time's up! Stop talking!"
       },
       {
-        "chunk_id": "chunk_eres_d4_0256",
-        "item_number": 256,
+        "chunk_id": "chunk_eres_d4_0253",
+        "item_number": 253,
         "category": "dialogue",
         "english": "Hmmm, what an interesting perspective!",
-        "vietnamese": "SH: Hmmm, quả là một quan điểm thú vị!",
+        "vietnamese": "Hmmm, quả là một quan điểm thú vị!",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Hmmm // what an interesting perspective!"
       },
       {
-        "chunk_id": "chunk_eres_d4_0257",
-        "item_number": 257,
+        "chunk_id": "chunk_eres_d4_0254",
+        "item_number": 254,
         "category": "dialogue",
         "english": "Do you have any specific examples for what you just said?",
-        "vietnamese": "SH: Em có cái ví dụ cụ thể nào cho những gì em vừa nói không?",
+        "vietnamese": "Em có cái ví dụ cụ thể nào cho những gì em vừa nói không?",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Do you have any specific examples for what you just said?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0258",
-        "item_number": 258,
+        "chunk_id": "chunk_eres_d4_0255",
+        "item_number": 255,
         "category": "dialogue",
         "english": "Specifically, I once went into a meeting room with the AC was still on and the door was still open",
-        "vietnamese": "T: Cụ thể, em từng đi tới một phòng họp mà máy lạnh vẫn đang bật còn cửa thì vẫn đang mở",
+        "vietnamese": "Cụ thể, em từng đi tới một phòng họp mà máy lạnh vẫn đang bật còn cửa thì vẫn đang mở",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Specifically // I once went into a meeting room with the AC was still on and the door was still open"
       },
       {
-        "chunk_id": "chunk_eres_d4_0259",
-        "item_number": 259,
+        "chunk_id": "chunk_eres_d4_0256",
+        "item_number": 256,
         "category": "dialogue",
         "english": "Although at the time no one was in the room but me",
-        "vietnamese": "T: Mặc dù lúc đó chẳng có ai ở trong phòng trừ em",
+        "vietnamese": "Mặc dù lúc đó chẳng có ai ở trong phòng trừ em",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Although at the time no one was in the room but me"
       },
       {
-        "chunk_id": "chunk_eres_d4_0260",
-        "item_number": 260,
+        "chunk_id": "chunk_eres_d4_0257",
+        "item_number": 257,
         "category": "dialogue",
         "english": "I mean no one was looking at me",
-        "vietnamese": "T: Ý em là chẳng có ai đang nhìn em cả",
+        "vietnamese": "Ý em là chẳng có ai đang nhìn em cả",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I mean no one was looking at me"
       },
       {
-        "chunk_id": "chunk_eres_d4_0261",
-        "item_number": 261,
+        "chunk_id": "chunk_eres_d4_0258",
+        "item_number": 258,
         "category": "dialogue",
         "english": "I could freely walk out but I didn't do so",
-        "vietnamese": "T: Em có thể thoải mái bước ra nhưng em đã không làm như vậy",
+        "vietnamese": "Em có thể thoải mái bước ra nhưng em đã không làm như vậy",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I could freely walk out but I didn't do so"
       },
       {
-        "chunk_id": "chunk_eres_d4_0262",
-        "item_number": 262,
+        "chunk_id": "chunk_eres_d4_0259",
+        "item_number": 259,
         "category": "dialogue",
         "english": "Okay, good job, I think I've heard enough,",
-        "vietnamese": "SH: Okay, good job em, anh nghĩ anh đã nghe đủrồi",
+        "vietnamese": "Okay, good job em, anh nghĩ anh đã nghe đủrồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Okay // good job // I think I've heard enough,"
       },
       {
-        "chunk_id": "chunk_eres_d4_0263",
-        "item_number": 263,
+        "chunk_id": "chunk_eres_d4_0260",
+        "item_number": 260,
         "category": "review",
         "english": "She's not energetic enough",
         "vietnamese": "Cổ không đủ giàu năng lượng",
@@ -10429,8 +10369,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "She's not energetic enough"
       },
       {
-        "chunk_id": "chunk_eres_d4_0264",
-        "item_number": 264,
+        "chunk_id": "chunk_eres_d4_0261",
+        "item_number": 261,
         "category": "review",
         "english": "I had 2 years of experience teaching math",
         "vietnamese": "Tôi đã có 2 năm kinh nghiệm dạy toán",
@@ -10439,8 +10379,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I had 2 years of experience teaching math"
       },
       {
-        "chunk_id": "chunk_eres_d4_0265",
-        "item_number": 265,
+        "chunk_id": "chunk_eres_d4_0262",
+        "item_number": 262,
         "category": "review",
         "english": "Cover all aspects of life",
         "vietnamese": "Bao trùm mọi khía cạnh cuộc sống",
@@ -10449,8 +10389,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Cover all aspects of life"
       },
       {
-        "chunk_id": "chunk_eres_d4_0266",
-        "item_number": 266,
+        "chunk_id": "chunk_eres_d4_0263",
+        "item_number": 263,
         "category": "review",
         "english": "Basically, life is fun!",
         "vietnamese": "Về cơ bản, đời là dzui!",
@@ -10459,8 +10399,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Basically // life is fun!"
       },
       {
-        "chunk_id": "chunk_eres_d4_0267",
-        "item_number": 267,
+        "chunk_id": "chunk_eres_d4_0264",
+        "item_number": 264,
         "category": "review",
         "english": "Record all the transactions",
         "vietnamese": "Ghi lại toàn bộ các giao dịch",
@@ -10469,8 +10409,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Record all the transactions"
       },
       {
-        "chunk_id": "chunk_eres_d4_0268",
-        "item_number": 268,
+        "chunk_id": "chunk_eres_d4_0265",
+        "item_number": 265,
         "category": "review",
         "english": "Specifically, who's in charge of this?",
         "vietnamese": "Cụ thể, ai phụ trách cái này?",
@@ -10479,8 +10419,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Specifically // who's in charge of this?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0269",
-        "item_number": 269,
+        "chunk_id": "chunk_eres_d4_0266",
+        "item_number": 266,
         "category": "review",
         "english": "The man of the year award",
         "vietnamese": "Phần thường nhân viên của năm",
@@ -10489,8 +10429,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "The man of the year award"
       },
       {
-        "chunk_id": "chunk_eres_d4_0270",
-        "item_number": 270,
+        "chunk_id": "chunk_eres_d4_0267",
+        "item_number": 267,
         "category": "review",
         "english": "I'm not bragging but I did that",
         "vietnamese": "Không phải tui khoe nhưng mà tui làm cái đó đó",
@@ -10499,8 +10439,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm not bragging but I did that"
       },
       {
-        "chunk_id": "chunk_eres_d4_0271",
-        "item_number": 271,
+        "chunk_id": "chunk_eres_d4_0268",
+        "item_number": 268,
         "category": "review",
         "english": "Shake if off, SHAKE IT OFF!",
         "vietnamese": "Rũ bỏ đi, RŨ BỎ HẾT ĐI!",
@@ -10509,8 +10449,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Shake if off // SHAKE IT OFF!"
       },
       {
-        "chunk_id": "chunk_eres_d4_0272",
-        "item_number": 272,
+        "chunk_id": "chunk_eres_d4_0269",
+        "item_number": 269,
         "category": "review",
         "english": "Monthly balance sheet",
         "vietnamese": "Bảng cân đối hàng tháng",
@@ -10519,8 +10459,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Monthly balance sheet"
       },
       {
-        "chunk_id": "chunk_eres_d4_0273",
-        "item_number": 273,
+        "chunk_id": "chunk_eres_d4_0270",
+        "item_number": 270,
         "category": "review",
         "english": "In the last 9 days, what have you learned?",
         "vietnamese": "Trong 9 ngày vừa rồi, cậu đã học được gì?",
@@ -10529,8 +10469,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "In the last 9 days // what have you learned?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0274",
-        "item_number": 274,
+        "chunk_id": "chunk_eres_d4_0271",
+        "item_number": 271,
         "category": "review",
         "english": "What excites you the most about this class?",
         "vietnamese": "Điều gì làm cậu phấn khích nhất về cái lớp này?",
@@ -10539,8 +10479,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "What excites you the most about this class?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0275",
-        "item_number": 275,
+        "chunk_id": "chunk_eres_d4_0272",
+        "item_number": 272,
         "category": "review",
         "english": "I remember telling you about that",
         "vietnamese": "Tôi nhớ đã kể với cậu về cái đó rồi mà",
@@ -10549,8 +10489,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I remember telling you about that"
       },
       {
-        "chunk_id": "chunk_eres_d4_0276",
-        "item_number": 276,
+        "chunk_id": "chunk_eres_d4_0273",
+        "item_number": 273,
         "category": "review",
         "english": "I've done the test twice",
         "vietnamese": "Tui đã làm bài test 2 lần rồi",
@@ -10559,8 +10499,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I've done the test twice"
       },
       {
-        "chunk_id": "chunk_eres_d4_0277",
-        "item_number": 277,
+        "chunk_id": "chunk_eres_d4_0274",
+        "item_number": 274,
         "category": "review",
         "english": "Bookkeeping is not easy at all",
         "vietnamese": "Lưu giữ sổ sách không có dễ chút nào",
@@ -10569,8 +10509,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Bookkeeping is not easy at all"
       },
       {
-        "chunk_id": "chunk_eres_d4_0278",
-        "item_number": 278,
+        "chunk_id": "chunk_eres_d4_0275",
+        "item_number": 275,
         "category": "review",
         "english": "I'm for like-farming posts",
         "vietnamese": "Tui ủng hộ những bài post câu like",
@@ -10579,8 +10519,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm for like-farming posts"
       },
       {
-        "chunk_id": "chunk_eres_d4_0279",
-        "item_number": 279,
+        "chunk_id": "chunk_eres_d4_0276",
+        "item_number": 276,
         "category": "review",
         "english": "I think this task is more challenging",
         "vietnamese": "Tôi nghĩ cái task này thử thách hơn",
@@ -10589,8 +10529,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I think this task is more challenging"
       },
       {
-        "chunk_id": "chunk_eres_d4_0280",
-        "item_number": 280,
+        "chunk_id": "chunk_eres_d4_0277",
+        "item_number": 277,
         "category": "review",
         "english": "Multinational corporations",
         "vietnamese": "Những doanh nghiệp đa quốc gia",
@@ -10599,8 +10539,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Multinational corporations"
       },
       {
-        "chunk_id": "chunk_eres_d4_0281",
-        "item_number": 281,
+        "chunk_id": "chunk_eres_d4_0278",
+        "item_number": 278,
         "category": "review",
         "english": "Big sales and clearance sales",
         "vietnamese": "Sales sập sàn và sales hàng tồn",
@@ -10609,8 +10549,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Big sales and clearance sales"
       },
       {
-        "chunk_id": "chunk_eres_d4_0282",
-        "item_number": 282,
+        "chunk_id": "chunk_eres_d4_0279",
+        "item_number": 279,
         "category": "review",
         "english": "Not long after that, he was promoted",
         "vietnamese": "Không lâu sau đó, ảnh được thăng chức",
@@ -10619,8 +10559,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Not long after that // he was promoted"
       },
       {
-        "chunk_id": "chunk_eres_d4_0283",
-        "item_number": 283,
+        "chunk_id": "chunk_eres_d4_0280",
+        "item_number": 280,
         "category": "review",
         "english": "You'd better have a look at that book",
         "vietnamese": "Cậu nên xem qua cuốn sách đó",
@@ -10629,8 +10569,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "You'd better have a look at that book"
       },
       {
-        "chunk_id": "chunk_eres_d4_0284",
-        "item_number": 284,
+        "chunk_id": "chunk_eres_d4_0281",
+        "item_number": 281,
         "category": "review",
         "english": "Due to the organization of the whole company",
         "vietnamese": "Vì việc tái cấu trúc lại toàn công ty",
@@ -10639,8 +10579,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Due to the organization of the whole company"
       },
       {
-        "chunk_id": "chunk_eres_d4_0285",
-        "item_number": 285,
+        "chunk_id": "chunk_eres_d4_0282",
+        "item_number": 282,
         "category": "review",
         "english": "What wrong with broken English???",
         "vietnamese": "Tiếng Anh bồi thì bị làm sao???",
@@ -10649,8 +10589,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "What wrong with broken English???"
       },
       {
-        "chunk_id": "chunk_eres_d4_0286",
-        "item_number": 286,
+        "chunk_id": "chunk_eres_d4_0283",
+        "item_number": 283,
         "category": "review",
         "english": "At the time, I was talking with Tom",
         "vietnamese": "Vào lúc đó, tôi đang nói chuyện với Tom",
@@ -10659,8 +10599,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "At the time // I was talking with Tom"
       },
       {
-        "chunk_id": "chunk_eres_d4_0287",
-        "item_number": 287,
+        "chunk_id": "chunk_eres_d4_0284",
+        "item_number": 284,
         "category": "review",
         "english": "It's getting late, shall we start?",
         "vietnamese": "Cũng trễ rồi, ta bắt đầu chứ?",
@@ -10669,8 +10609,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "It's getting late // shall we start?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0288",
-        "item_number": 288,
+        "chunk_id": "chunk_eres_d4_0285",
+        "item_number": 285,
         "category": "review",
         "english": "Your work experience is overqualified",
         "vietnamese": "Kinh nghiệm làm việc của bạn đã vượt quá tiêu chuẩn",
@@ -10679,8 +10619,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Your work experience is overqualified"
       },
       {
-        "chunk_id": "chunk_eres_d4_0289",
-        "item_number": 289,
+        "chunk_id": "chunk_eres_d4_0286",
+        "item_number": 286,
         "category": "review",
         "english": "Your academic background is a plus",
         "vietnamese": "Background học vấn của bạn là một điểm cộng",
@@ -10689,8 +10629,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Your academic background is a plus"
       },
       {
-        "chunk_id": "chunk_eres_d4_0290",
-        "item_number": 290,
+        "chunk_id": "chunk_eres_d4_0287",
+        "item_number": 287,
         "category": "review",
         "english": "Maybe we'll need to employ more",
         "vietnamese": "Có thể ta sẽ cần để tuyển thêm",
@@ -10699,8 +10639,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Maybe we'll need to employ more"
       },
       {
-        "chunk_id": "chunk_eres_d4_0291",
-        "item_number": 291,
+        "chunk_id": "chunk_eres_d4_0288",
+        "item_number": 288,
         "category": "review",
         "english": "In order to be able to convince boss,...",
         "vietnamese": "Để có thể thuyết phục được sếp,...",
@@ -10709,8 +10649,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "In order to be able to convince boss,..."
       },
       {
-        "chunk_id": "chunk_eres_d4_0292",
-        "item_number": 292,
+        "chunk_id": "chunk_eres_d4_0289",
+        "item_number": 289,
         "category": "review",
         "english": "Hey, are you nervous?",
         "vietnamese": "Ê, cậu lo không?",
@@ -10719,8 +10659,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Hey // are you nervous?"
       },
       {
-        "chunk_id": "chunk_eres_d4_0293",
-        "item_number": 293,
+        "chunk_id": "chunk_eres_d4_0290",
+        "item_number": 290,
         "category": "review",
         "english": "I like irrelevant questions",
         "vietnamese": "Tôi thích mấy câu hỏi không liên quan",
@@ -10729,8 +10669,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I like irrelevant questions"
       },
       {
-        "chunk_id": "chunk_eres_d4_0294",
-        "item_number": 294,
+        "chunk_id": "chunk_eres_d4_0291",
+        "item_number": 291,
         "category": "review",
         "english": "In other words, I never look down on others",
         "vietnamese": "Nói cách khác, tôi không bao giờ xem thường kẻ khác",
@@ -10739,8 +10679,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "In other words // I never look down on others"
       },
       {
-        "chunk_id": "chunk_eres_d4_0295",
-        "item_number": 295,
+        "chunk_id": "chunk_eres_d4_0292",
+        "item_number": 292,
         "category": "review",
         "english": "I used to see Kathy a lot",
         "vietnamese": "Tôi từng gặp Kathy rất nhiều",
@@ -10749,8 +10689,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I used to see Kathy a lot"
       },
       {
-        "chunk_id": "chunk_eres_d4_0296",
-        "item_number": 296,
+        "chunk_id": "chunk_eres_d4_0293",
+        "item_number": 293,
         "category": "review",
         "english": "Let's take advantage of this chance",
         "vietnamese": "Ta hãy tận dụng cơ hội này đi",
@@ -10759,8 +10699,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Let's take advantage of this chance"
       },
       {
-        "chunk_id": "chunk_eres_d4_0297",
-        "item_number": 297,
+        "chunk_id": "chunk_eres_d4_0294",
+        "item_number": 294,
         "category": "review",
         "english": "I love my current role",
         "vietnamese": "Tôi thích vai trò hiện tại của tôi",
@@ -10769,8 +10709,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I love my current role"
       },
       {
-        "chunk_id": "chunk_eres_d4_0298",
-        "item_number": 298,
+        "chunk_id": "chunk_eres_d4_0295",
+        "item_number": 295,
         "category": "review",
         "english": "Integrity always comes first",
         "vietnamese": "Lòng chính trực luôn là ưu tiên số 1",
@@ -10779,8 +10719,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Integrity always comes first"
       },
       {
-        "chunk_id": "chunk_eres_d4_0299",
-        "item_number": 299,
+        "chunk_id": "chunk_eres_d4_0296",
+        "item_number": 296,
         "category": "review",
         "english": "I'm referring to the comission",
         "vietnamese": "Tôi đang nói về hoa hồng",
@@ -10789,8 +10729,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm referring to the comission"
       },
       {
-        "chunk_id": "chunk_eres_d4_0300",
-        "item_number": 300,
+        "chunk_id": "chunk_eres_d4_0297",
+        "item_number": 297,
         "category": "review",
         "english": "\"Why?\" is an open-ended question",
         "vietnamese": "\"Why?\" là một câu hỏi mở",
@@ -10799,8 +10739,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "\"Why?\" is an open-ended question"
       },
       {
-        "chunk_id": "chunk_eres_d4_0301",
-        "item_number": 301,
+        "chunk_id": "chunk_eres_d4_0298",
+        "item_number": 298,
         "category": "review",
         "english": "Thanks in advance",
         "vietnamese": "Cám ơn trước nha",
@@ -10809,8 +10749,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Thanks in advance"
       },
       {
-        "chunk_id": "chunk_eres_d4_0302",
-        "item_number": 302,
+        "chunk_id": "chunk_eres_d4_0299",
+        "item_number": 299,
         "category": "review",
         "english": "Up to you, not my business",
         "vietnamese": "Tùy cậu, không phải chuyện của tôi",
@@ -10819,8 +10759,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Up to you // not my business"
       },
       {
-        "chunk_id": "chunk_eres_d4_0303",
-        "item_number": 303,
+        "chunk_id": "chunk_eres_d4_0300",
+        "item_number": 300,
         "category": "review",
         "english": "Intangible strength",
         "vietnamese": "Sức mạnh vô hình",
@@ -10829,8 +10769,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Intangible strength"
       },
       {
-        "chunk_id": "chunk_eres_d4_0304",
-        "item_number": 304,
+        "chunk_id": "chunk_eres_d4_0301",
+        "item_number": 301,
         "category": "review",
         "english": "Your work experience is not enough",
         "vietnamese": "Kinh nghiệm làm việc của bạn không đủ",
@@ -10839,8 +10779,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Your work experience is not enough"
       },
       {
-        "chunk_id": "chunk_eres_d4_0305",
-        "item_number": 305,
+        "chunk_id": "chunk_eres_d4_0302",
+        "item_number": 302,
         "category": "review",
         "english": "That is an irrelevant question",
         "vietnamese": "Đó là một câu hỏi không liên quan",
@@ -10849,8 +10789,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "That is an irrelevant question"
       },
       {
-        "chunk_id": "chunk_eres_d4_0306",
-        "item_number": 306,
+        "chunk_id": "chunk_eres_d4_0303",
+        "item_number": 303,
         "category": "review",
         "english": "Academic background is not that critical",
         "vietnamese": "Background học vấn không quan trọng đến vậy",
@@ -10859,8 +10799,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Academic background is not that critical"
       },
       {
-        "chunk_id": "chunk_eres_d4_0307",
-        "item_number": 307,
+        "chunk_id": "chunk_eres_d4_0304",
+        "item_number": 304,
         "category": "review",
         "english": "As long as you listen to me",
         "vietnamese": "Miễn là cậu nghe tôi",
@@ -10869,8 +10809,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "As long as you listen to me"
       },
       {
-        "chunk_id": "chunk_eres_d4_0308",
-        "item_number": 308,
+        "chunk_id": "chunk_eres_d4_0305",
+        "item_number": 305,
         "category": "review",
         "english": "I'm against those regulations",
         "vietnamese": "Tôi chống lại những quy định đó",
@@ -10879,8 +10819,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "I'm against those regulations"
       },
       {
-        "chunk_id": "chunk_eres_d4_0309",
-        "item_number": 309,
+        "chunk_id": "chunk_eres_d4_0306",
+        "item_number": 306,
         "category": "review",
         "english": "No rush, take your time",
         "vietnamese": "Không vội, cậu cứ từ từ",
@@ -10889,8 +10829,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "No rush // take your time"
       },
       {
-        "chunk_id": "chunk_eres_d4_0310",
-        "item_number": 310,
+        "chunk_id": "chunk_eres_d4_0307",
+        "item_number": 307,
         "category": "review",
         "english": "In a way, I don't buy it",
         "vietnamese": "Một cách nào đó, tôi không tin",
@@ -10899,8 +10839,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "In a way // I don't buy it"
       },
       {
-        "chunk_id": "chunk_eres_d4_0311",
-        "item_number": 311,
+        "chunk_id": "chunk_eres_d4_0308",
+        "item_number": 308,
         "category": "review",
         "english": "Beat around the bush",
         "vietnamese": "Vòng vo tam quốc",
@@ -10909,8 +10849,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "beat_prosody": "Beat around the bush"
       },
       {
-        "chunk_id": "chunk_eres_d4_0312",
-        "item_number": 312,
+        "chunk_id": "chunk_eres_d4_0309",
+        "item_number": 309,
         "category": "review",
         "english": "Broken English is English",
         "vietnamese": "Tiếng Anh bồi cũng là tiếng Anh",
@@ -12515,7 +12455,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 158,
         "category": "phrase",
         "english": "That's no big deal",
-        "vietnamese": "Cái đó ko phải chuyện lớn",
+        "vietnamese": "Cái đó không phải chuyện lớn",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "That's no big deal"
@@ -13194,18 +13134,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d5_0226",
         "item_number": 226,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth Alex is having a little chit-chat with his office buddy about his direct manager",
-        "vietnamese": "",
+        "english": "Alex is having a little chit-chat with his office buddy about his direct manager",
+        "vietnamese": "Alex đang trò chuyện với đồng nghiệp văn phòng về người quản lý trực tiếp của mình",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth Alex is having a little chit-chat with his office buddy about his direct manager"
+        "beat_prosody": "Alex is having a little chit-chat with his office buddy about his direct manager"
       },
       {
         "chunk_id": "chunk_eres_d5_0227",
         "item_number": 227,
         "category": "monologue",
         "english": "It looks like developed land, doesn't it?",
-        "vietnamese": "Nó trông như đất đã quy hoạch, phải ko?",
+        "vietnamese": "Nó trông như đất đã quy hoạch, phải không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It looks like developed land // doesn't it?"
@@ -13225,7 +13165,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 229,
         "category": "monologue",
         "english": "Look, I don't think this case is easy to deal with",
-        "vietnamese": "Nè, tôi ko nghĩ ca này dễ deal đâu",
+        "vietnamese": "Nè, tôi không nghĩ ca này dễ deal đâu",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Look // I don't think this case is easy to deal with"
@@ -13295,7 +13235,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 236,
         "category": "monologue",
         "english": "The truth is, I don't really get along with this guy",
-        "vietnamese": "Sự thật thì tôi ko hợp cạ với cha này lắm",
+        "vietnamese": "Sự thật thì tôi không hợp cạ với cha này lắm",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "The truth is // I don't really get along with this guy"
@@ -13335,7 +13275,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 240,
         "category": "monologue",
         "english": "Believe it or not",
-        "vietnamese": "Tin hay ko tùy,",
+        "vietnamese": "Tin hay không tùy,",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Believe it or not"
@@ -13385,7 +13325,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 245,
         "category": "monologue",
         "english": "He sent me an email without a title",
-        "vietnamese": "Ổng gửi tôi cái email mà ko có tiêu đề",
+        "vietnamese": "Ổng gửi tôi cái email mà không có tiêu đề",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "He sent me an email without a title"
@@ -13405,7 +13345,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 247,
         "category": "monologue",
         "english": "and told me to call him immediately",
-        "vietnamese": "rồi nói tôi gọi cho ổng liền",
+        "vietnamese": "Rồi nói tôi gọi cho ổng liền",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "and told me to call him immediately"
@@ -13495,7 +13435,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 256,
         "category": "monologue",
         "english": "right in front of the Board",
-        "vietnamese": "ngay trước mặt ban giám đốc",
+        "vietnamese": "Ngay trước mặt ban giám đốc",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "right in front of the Board"
@@ -13645,7 +13585,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "monologue",
         "english": "The salary was not really high but the fringe benefit was huge",
-        "vietnamese": "Lương ko cao lắm nhưng phúc lợi bên lề khủng lắm nha",
+        "vietnamese": "Lương không cao lắm nhưng phúc lợi bên lề khủng lắm nha",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "The salary was not really high but the fringe benefit was huge"
@@ -13655,7 +13595,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "monologue",
         "english": "Hey, hey, he's coming over,",
-        "vietnamese": "ê, ê, ổng đang qua,",
+        "vietnamese": "Ê, ê, ổng đang qua,",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Hey // hey // he's coming over,"
@@ -13674,551 +13614,551 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d5_0274",
         "item_number": 274,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION What would it be like if 001 & 456 were office buddies in real life?",
-        "vietnamese": "",
+        "english": "What would it be like if 001 & 456 were office buddies in real life?",
+        "vietnamese": "Sẽ ra sao nếu 001 & 456 là đồng nghiệp văn phòng ngoài đời thực?",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION What would it be like if 001 & 456 were office buddies in real life?"
+        "beat_prosody": "What would it be like if 001 & 456 were office buddies in real life?"
       },
       {
         "chunk_id": "chunk_eres_d5_0275",
         "item_number": 275,
         "category": "dialogue",
-        "english": "001 - Hi son, how have you been?",
-        "vietnamese": "001 - Chào con trai, dạo này sao rồi?",
-        "speaker": null,
+        "english": "Hi son, how have you been?",
+        "vietnamese": "Chào con trai, dạo này sao rồi?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Hi son // how have you been?"
+        "beat_prosody": "Hi son // how have you been?"
       },
       {
         "chunk_id": "chunk_eres_d5_0276",
         "item_number": 276,
         "category": "dialogue",
-        "english": "456 - Holy cow, you're still alive, old man?",
-        "vietnamese": "456 - Trời đất quỷ thần, ông còn sống hả, ông già?",
-        "speaker": null,
+        "english": "Holy cow, you're still alive, old man?",
+        "vietnamese": "Trời đất quỷ thần, ông còn sống hả, ông già?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Holy cow // you're still alive // old man?"
+        "beat_prosody": "Holy cow // you're still alive // old man?"
       },
       {
         "chunk_id": "chunk_eres_d5_0277",
         "item_number": 277,
         "category": "dialogue",
-        "english": "001 - Watch your language, I'm your new boss",
-        "vietnamese": "001 - Coi chừng cái mồm, tui là sếp mới của cậu đó nha",
-        "speaker": null,
+        "english": "Watch your language, I'm your new boss",
+        "vietnamese": "Coi chừng cái mồm, tui là sếp mới của cậu đó nha",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Watch your language // I'm your new boss"
+        "beat_prosody": "Watch your language // I'm your new boss"
       },
       {
         "chunk_id": "chunk_eres_d5_0278",
         "item_number": 278,
         "category": "dialogue",
-        "english": "456 - What do you mean \"I'm your new boss\"?",
-        "vietnamese": "456 - \"Tui là sếp mới của cậu\" là ông ý gì?",
-        "speaker": null,
+        "english": "What do you mean \"I'm your new boss\"?",
+        "vietnamese": "\"Tui là sếp mới của cậu\" là ông ý gì?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - What do you mean \"I'm your new boss\"?"
+        "beat_prosody": "What do you mean \"I'm your new boss\"?"
       },
       {
         "chunk_id": "chunk_eres_d5_0279",
         "item_number": 279,
         "category": "dialogue",
-        "english": "001 - From today forward, I'm gonna be your new line manager",
-        "vietnamese": "001 - Từ hôm nay trở đi, tui sẽ là line manager của cậu",
-        "speaker": null,
+        "english": "From today forward, I'm gonna be your new line manager",
+        "vietnamese": "Từ hôm nay trở đi, tui sẽ là line manager của cậu",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - From today forward // I'm gonna be your new line manager"
+        "beat_prosody": "From today forward // I'm gonna be your new line manager"
       },
       {
         "chunk_id": "chunk_eres_d5_0280",
         "item_number": 280,
         "category": "dialogue",
-        "english": "456 - Wow, why haven't I been told about this?",
-        "vietnamese": "456 - Wow, sao tui không có được báo về vụ này ta?",
-        "speaker": null,
+        "english": "Wow, why haven't I been told about this?",
+        "vietnamese": "Wow, sao tui không có được báo về vụ này ta?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Wow // why haven't I been told about this?"
+        "beat_prosody": "Wow // why haven't I been told about this?"
       },
       {
         "chunk_id": "chunk_eres_d5_0281",
         "item_number": 281,
         "category": "dialogue",
-        "english": "001 - That's no big deal",
-        "vietnamese": "001 - Đó đâu phải chuyện lớn",
-        "speaker": null,
+        "english": "That's no big deal",
+        "vietnamese": "Đó đâu phải chuyện lớn",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - That's no big deal"
+        "beat_prosody": "That's no big deal"
       },
       {
         "chunk_id": "chunk_eres_d5_0282",
         "item_number": 282,
         "category": "dialogue",
-        "english": "001 - Anw, any update for the Squid Game No.2 project?",
-        "vietnamese": "001 - Mà thôi, có cập nhật gì từ cái dự án Squid Game số 2 không?",
-        "speaker": null,
+        "english": "Anw, any update for the Squid Game No.2 project?",
+        "vietnamese": "Mà thôi, có cập nhật gì từ cái dự án Squid Game số 2 không?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Anw // any update for the Squid Game No.2 project?"
+        "beat_prosody": "Anw // any update for the Squid Game No.2 project?"
       },
       {
         "chunk_id": "chunk_eres_d5_0283",
         "item_number": 283,
         "category": "dialogue",
-        "english": "456 - Listen, I don't know how to put it but",
-        "vietnamese": "456 - Nghe nè, tui không biết nói sao nhưng mà",
-        "speaker": null,
+        "english": "Listen, I don't know how to put it but",
+        "vietnamese": "Nghe nè, tui không biết nói sao nhưng mà",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Listen // I don't know how to put it but"
+        "beat_prosody": "Listen // I don't know how to put it but"
       },
       {
         "chunk_id": "chunk_eres_d5_0284",
         "item_number": 284,
         "category": "dialogue",
-        "english": "456 - Actually I already sent a very long email to my ex-boss...",
-        "vietnamese": "456 - Thực ra tui đã gửi một cái email rất là dài tới ông sếp cũ của tui...",
-        "speaker": null,
+        "english": "Actually I already sent a very long email to my ex-boss...",
+        "vietnamese": "Thực ra tui đã gửi một cái email rất là dài tới ông sếp cũ của tui...",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Actually I already sent a very long email to my ex-boss..."
+        "beat_prosody": "Actually I already sent a very long email to my ex-boss..."
       },
       {
         "chunk_id": "chunk_eres_d5_0285",
         "item_number": 285,
         "category": "dialogue",
-        "english": "456 - explaining why this project is hitting a big broadblock",
-        "vietnamese": "456 - giải thích tại sao cái dự án này đang gặp phải một cái trở ngại lớn",
-        "speaker": null,
+        "english": "Explaining why this project is hitting a big broadblock",
+        "vietnamese": "Giải thích tại sao cái dự án này đang gặp phải một cái trở ngại lớn",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - explaining why this project is hitting a big broadblock"
+        "beat_prosody": "Explaining why this project is hitting a big broadblock"
       },
       {
         "chunk_id": "chunk_eres_d5_0286",
         "item_number": 286,
         "category": "dialogue",
-        "english": "456 - But he hasn't replied my email yet",
-        "vietnamese": "456 - Nhưng mà ổng vẫn chưa trả lời email tui",
-        "speaker": null,
+        "english": "But he hasn't replied my email yet",
+        "vietnamese": "Nhưng mà ổng vẫn chưa trả lời email tui",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - But he hasn't replied my email yet"
+        "beat_prosody": "But he hasn't replied my email yet"
       },
       {
         "chunk_id": "chunk_eres_d5_0287",
         "item_number": 287,
         "category": "dialogue",
-        "english": "456 - To be honest, I haven't seen him around since yesterday",
-        "vietnamese": "456 - Thiệt tình là hôm qua đến giờ tui cũng không có thấy ổng lòng vòng đây nữa",
-        "speaker": null,
+        "english": "To be honest, I haven't seen him around since yesterday",
+        "vietnamese": "Thiệt tình là hôm qua đến giờ tui cũng không có thấy ổng lòng vòng đây nữa",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - To be honest // I haven't seen him around since yesterday"
+        "beat_prosody": "To be honest // I haven't seen him around since yesterday"
       },
       {
         "chunk_id": "chunk_eres_d5_0288",
         "item_number": 288,
         "category": "dialogue",
-        "english": "001 - He's done",
-        "vietnamese": "001 - Nó done rồi",
-        "speaker": null,
+        "english": "He's done",
+        "vietnamese": "Nó done rồi",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - He's done"
+        "beat_prosody": "He's done"
       },
       {
         "chunk_id": "chunk_eres_d5_0289",
         "item_number": 289,
         "category": "dialogue",
-        "english": "456 - Sorry, he's what???",
-        "vietnamese": "456 - Ông nói sao? ổng bị làm sao???",
-        "speaker": null,
+        "english": "Sorry, he's what???",
+        "vietnamese": "Ông nói sao? ổng bị làm sao???",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Sorry // he's what???"
+        "beat_prosody": "Sorry // he's what???"
       },
       {
         "chunk_id": "chunk_eres_d5_0290",
         "item_number": 290,
         "category": "dialogue",
-        "english": "001 - Doesn't matter, that's not your business anyway",
-        "vietnamese": "001 - Không có gì, dù sao cũng không phải chuyện của cậu",
-        "speaker": null,
+        "english": "Doesn't matter, that's not your business anyway",
+        "vietnamese": "Không có gì, dù sao cũng không phải chuyện của cậu",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Doesn't matter // that's not your business anyway"
+        "beat_prosody": "Doesn't matter // that's not your business anyway"
       },
       {
         "chunk_id": "chunk_eres_d5_0291",
         "item_number": 291,
         "category": "dialogue",
-        "english": "001 - A moment ago, you said we're encountering a big roadblock",
-        "vietnamese": "001 - Mới nãy, cậu nói chúng ta đang đối đầu với một cái trở ngại lớn",
-        "speaker": null,
+        "english": "A moment ago, you said we're encountering a big roadblock",
+        "vietnamese": "Mới nãy, cậu nói chúng ta đang đối đầu với một cái trở ngại lớn",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - A moment ago // you said we're encountering a big roadblock"
+        "beat_prosody": "A moment ago // you said we're encountering a big roadblock"
       },
       {
         "chunk_id": "chunk_eres_d5_0292",
         "item_number": 292,
         "category": "dialogue",
-        "english": "001 - How big is it?",
-        "vietnamese": "001 - Lớn cỡ nào?",
-        "speaker": null,
+        "english": "How big is it?",
+        "vietnamese": "Lớn cỡ nào?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - How big is it?"
+        "beat_prosody": "How big is it?"
       },
       {
         "chunk_id": "chunk_eres_d5_0293",
         "item_number": 293,
         "category": "dialogue",
-        "english": "456 - Bottom line, it's not technically the \"size\" of the problem",
-        "vietnamese": "456 - Nói tóm lại, nó không phải nghĩa đen cái \"kích thước\" của cái vấn đề",
-        "speaker": null,
+        "english": "Bottom line, it's not technically the \"size\" of the problem",
+        "vietnamese": "Nói tóm lại, nó không phải nghĩa đen cái \"kích thước\" của cái vấn đề",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Bottom line // it's not technically the \"size\" of the problem"
+        "beat_prosody": "Bottom line // it's not technically the \"size\" of the problem"
       },
       {
         "chunk_id": "chunk_eres_d5_0294",
         "item_number": 294,
         "category": "dialogue",
-        "english": "456 - It's the money issue",
-        "vietnamese": "456 - Nó là vấn đề về tiền",
-        "speaker": null,
+        "english": "It's the money issue",
+        "vietnamese": "Nó là vấn đề về tiền",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - It's the money issue"
+        "beat_prosody": "It's the money issue"
       },
       {
         "chunk_id": "chunk_eres_d5_0295",
         "item_number": 295,
         "category": "dialogue",
-        "english": "001 - Money is no object",
-        "vietnamese": "001 - Tiền không thành vấn đề",
-        "speaker": null,
+        "english": "Money is no object",
+        "vietnamese": "Tiền không thành vấn đề",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Money is no object"
+        "beat_prosody": "Money is no object"
       },
       {
         "chunk_id": "chunk_eres_d5_0296",
         "item_number": 296,
         "category": "dialogue",
-        "english": "456 - Wait, Hello? What's with this old man?!?",
-        "vietnamese": "456 - Uả, Alo? Ông già này bị gì dzậy?!?",
-        "speaker": null,
+        "english": "Wait, Hello? What's with this old man?!?",
+        "vietnamese": "Uả, Alo? Ông già này bị gì vậy?!?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Wait // Hello? What's with this old man?!?"
+        "beat_prosody": "Wait // Hello? What's with this old man?!?"
       },
       {
         "chunk_id": "chunk_eres_d5_0297",
         "item_number": 297,
         "category": "dialogue",
-        "english": "456 - You're boss, it's easy for you to say",
-        "vietnamese": "456 - Ông là sếp, ông nói thì dễ rồi",
-        "speaker": null,
+        "english": "You're boss, it's easy for you to say",
+        "vietnamese": "Ông là sếp, ông nói thì dễ rồi",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - You're boss // it's easy for you to say"
+        "beat_prosody": "You're boss // it's easy for you to say"
       },
       {
         "chunk_id": "chunk_eres_d5_0298",
         "item_number": 298,
         "category": "dialogue",
-        "english": "456 - The thing is I can't get enough sponsors for this project",
-        "vietnamese": "456 - Cái vấn đề là tui không có lấy đủ được sponsor cho cái dự này",
-        "speaker": null,
+        "english": "The thing is I can't get enough sponsors for this project",
+        "vietnamese": "Cái vấn đề là tui không có lấy đủ được sponsor cho cái dự này",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - The thing is I can't get enough sponsors for this project"
+        "beat_prosody": "The thing is I can't get enough sponsors for this project"
       },
       {
         "chunk_id": "chunk_eres_d5_0299",
         "item_number": 299,
         "category": "dialogue",
-        "english": "456 - What am I supposed to do now?",
-        "vietnamese": "456 - Tui nên làm gì giờ đây?",
-        "speaker": null,
+        "english": "What am I supposed to do now?",
+        "vietnamese": "Tui nên làm gì giờ đây?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - What am I supposed to do now?"
+        "beat_prosody": "What am I supposed to do now?"
       },
       {
         "chunk_id": "chunk_eres_d5_0300",
         "item_number": 300,
         "category": "dialogue",
-        "english": "001 - Okay, first, I wanna make sure we’re on the same page",
-        "vietnamese": "001 - Okay, đầu tiên, tui muốn make sure là chúng ta thống nhất với nhau vài thứ",
-        "speaker": null,
+        "english": "Okay, first, I wanna make sure we’re on the same page",
+        "vietnamese": "Okay, đầu tiên, tui muốn make sure là chúng ta thống nhất với nhau vài thứ",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Okay // first // I wanna make sure we’re on the same page"
+        "beat_prosody": "Okay // first // I wanna make sure we’re on the same page"
       },
       {
         "chunk_id": "chunk_eres_d5_0301",
         "item_number": 301,
         "category": "dialogue",
-        "english": "001 - I've got 3 questions for you:",
-        "vietnamese": "001 - Tui có 3 câu hỏi cho cậu:",
-        "speaker": null,
+        "english": "I've got 3 questions for you:",
+        "vietnamese": "Tui có 3 câu hỏi cho cậu:",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - I've got 3 questions for you:"
+        "beat_prosody": "I've got 3 questions for you:"
       },
       {
         "chunk_id": "chunk_eres_d5_0302",
         "item_number": 302,
         "category": "dialogue",
-        "english": "001 - 1. Time, when do you need to get this done?",
-        "vietnamese": "001 - 1. Thời gian, khi nào thì cậu cần phải xong?",
-        "speaker": null,
+        "english": "1. Time, when do you need to get this done?",
+        "vietnamese": "1. Thời gian, khi nào thì cậu cần phải xong?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - 1. Time // when do you need to get this done?"
+        "beat_prosody": "1. Time // when do you need to get this done?"
       },
       {
         "chunk_id": "chunk_eres_d5_0303",
         "item_number": 303,
         "category": "dialogue",
-        "english": "001 - 2. Money, tell me about our financial picture",
-        "vietnamese": "001 - 2. Tiền, nói tôi nghe về bức tranh tài chính của chúng ta",
-        "speaker": null,
+        "english": "2. Money, tell me about our financial picture",
+        "vietnamese": "2. Tiền, nói tôi nghe về bức tranh tài chính của chúng ta",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - 2. Money // tell me about our financial picture"
+        "beat_prosody": "2. Money // tell me about our financial picture"
       },
       {
         "chunk_id": "chunk_eres_d5_0304",
         "item_number": 304,
         "category": "dialogue",
-        "english": "001 - 3. Human, how many people are there in your team now?",
-        "vietnamese": "001 - 3. Con người, bây giờ trong team cậu có bao nhiêu người?",
-        "speaker": null,
+        "english": "3. Human, how many people are there in your team now?",
+        "vietnamese": "3. Con người, bây giờ trong team cậu có bao nhiêu người?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - 3. Human // how many people are there in your team now?"
+        "beat_prosody": "3. Human // how many people are there in your team now?"
       },
       {
         "chunk_id": "chunk_eres_d5_0305",
         "item_number": 305,
         "category": "dialogue",
-        "english": "456 - Okay, about time, I need to get it done by Easter",
-        "vietnamese": "456 - Okay, về thời gian, tui cần phải xong trước lễ Phục Sinh",
-        "speaker": null,
+        "english": "Okay, about time, I need to get it done by Easter",
+        "vietnamese": "Okay, về thời gian, tui cần phải xong trước lễ Phục Sinh",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Okay // about time // I need to get it done by Easter"
+        "beat_prosody": "Okay // about time // I need to get it done by Easter"
       },
       {
         "chunk_id": "chunk_eres_d5_0306",
         "item_number": 306,
         "category": "dialogue",
-        "english": "456 - Which means we still have plenty of time",
-        "vietnamese": "456 - Điều đó nghĩa là chúng ta vẫn còn nhiều thời gian",
-        "speaker": null,
+        "english": "Which means we still have plenty of time",
+        "vietnamese": "Điều đó nghĩa là chúng ta vẫn còn nhiều thời gian",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Which means we still have plenty of time"
+        "beat_prosody": "Which means we still have plenty of time"
       },
       {
         "chunk_id": "chunk_eres_d5_0307",
         "item_number": 307,
         "category": "dialogue",
-        "english": "456 - About people, if you give me one more IT developer,",
-        "vietnamese": "456 - Về con người, nếu ông cho tui thêm một đứa lập trình IT,",
-        "speaker": null,
+        "english": "About people, if you give me one more IT developer,",
+        "vietnamese": "Về con người, nếu ông cho tui thêm một đứa lập trình IT,",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - About people // if you give me one more IT developer,"
+        "beat_prosody": "About people // if you give me one more IT developer,"
       },
       {
         "chunk_id": "chunk_eres_d5_0308",
         "item_number": 308,
         "category": "dialogue",
-        "english": "456 - I think it's good to go",
-        "vietnamese": "456 - Tui nghĩ sẽ ổn để tiến hành",
-        "speaker": null,
+        "english": "I think it's good to go",
+        "vietnamese": "Tui nghĩ sẽ ổn để tiến hành",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - I think it's good to go"
+        "beat_prosody": "I think it's good to go"
       },
       {
         "chunk_id": "chunk_eres_d5_0309",
         "item_number": 309,
         "category": "dialogue",
-        "english": "456 - And more importantly, at the end of the day",
-        "vietnamese": "456 - Và quan trọng hơn, suy cho cùng",
-        "speaker": null,
+        "english": "And more importantly, at the end of the day",
+        "vietnamese": "Và quan trọng hơn, suy cho cùng",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - And more importantly // at the end of the day"
+        "beat_prosody": "And more importantly // at the end of the day"
       },
       {
         "chunk_id": "chunk_eres_d5_0310",
         "item_number": 310,
         "category": "dialogue",
-        "english": "456 - Like I said, everything boils down to money",
-        "vietnamese": "456 - Như tui đã nói, mọi thứ đều quy về tiền cả thôi",
-        "speaker": null,
+        "english": "Like I said, everything boils down to money",
+        "vietnamese": "Như tui đã nói, mọi thứ đều quy về tiền cả thôi",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Like I said // everything boils down to money"
+        "beat_prosody": "Like I said // everything boils down to money"
       },
       {
         "chunk_id": "chunk_eres_d5_0311",
         "item_number": 311,
         "category": "dialogue",
-        "english": "001 - Okay, I hear you",
-        "vietnamese": "001 - Okay, tui nghe hiểu những gì cậu nói",
-        "speaker": null,
+        "english": "Okay, I hear you",
+        "vietnamese": "Okay, tui nghe hiểu những gì cậu nói",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Okay // I hear you"
+        "beat_prosody": "Okay // I hear you"
       },
       {
         "chunk_id": "chunk_eres_d5_0312",
         "item_number": 312,
         "category": "dialogue",
-        "english": "001 - I get the picture now",
-        "vietnamese": "001 - Giờ tui hiểu bức tranh rồi",
-        "speaker": null,
+        "english": "I get the picture now",
+        "vietnamese": "Giờ tui hiểu bức tranh rồi",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - I get the picture now"
+        "beat_prosody": "I get the picture now"
       },
       {
         "chunk_id": "chunk_eres_d5_0313",
         "item_number": 313,
         "category": "dialogue",
-        "english": "001 - So, from where I stand",
-        "vietnamese": "001 - Cho nên, từ góc độ của tui",
-        "speaker": null,
+        "english": "So, from where I stand",
+        "vietnamese": "Cho nên, từ góc độ của tui",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - So // from where I stand"
+        "beat_prosody": "So // from where I stand"
       },
       {
         "chunk_id": "chunk_eres_d5_0314",
         "item_number": 314,
         "category": "dialogue",
-        "english": "001 - Because this event will be like a reality show",
-        "vietnamese": "001 - Bởi vì cái event này sẽ như là một cái show thực tế",
-        "speaker": null,
+        "english": "Because this event will be like a reality show",
+        "vietnamese": "Bởi vì cái event này sẽ như là một cái show thực tế",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Because this event will be like a reality show"
+        "beat_prosody": "Because this event will be like a reality show"
       },
       {
         "chunk_id": "chunk_eres_d5_0315",
         "item_number": 315,
         "category": "dialogue",
-        "english": "001 - I would say our top priority is gonna be...",
-        "vietnamese": "001 - Tui sẽ nói là ưu tiên hàng đầu của chúng ta sẽ là...",
-        "speaker": null,
+        "english": "I would say our top priority is gonna be...",
+        "vietnamese": "Tui sẽ nói là ưu tiên hàng đầu của chúng ta sẽ là...",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - I would say our top priority is gonna be..."
+        "beat_prosody": "I would say our top priority is gonna be..."
       },
       {
         "chunk_id": "chunk_eres_d5_0316",
         "item_number": 316,
         "category": "dialogue",
-        "english": "001 - the engagement of the players",
-        "vietnamese": "001 - Cái sự gắn kết của những người chơi",
-        "speaker": null,
+        "english": "The engagement of the players",
+        "vietnamese": "Cái sự gắn kết của những người chơi",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - the engagement of the players"
+        "beat_prosody": "The engagement of the players"
       },
       {
         "chunk_id": "chunk_eres_d5_0317",
         "item_number": 317,
         "category": "dialogue",
-        "english": "001 - Bottom line, it doesn't need to be a low-cost event",
-        "vietnamese": "001 - Tóm lại, nó không cần phải là một cái event giá rẻ",
-        "speaker": null,
+        "english": "Bottom line, it doesn't need to be a low-cost event",
+        "vietnamese": "Tóm lại, nó không cần phải là một cái event giá rẻ",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Bottom line // it doesn't need to be a low-cost event"
+        "beat_prosody": "Bottom line // it doesn't need to be a low-cost event"
       },
       {
         "chunk_id": "chunk_eres_d5_0318",
         "item_number": 318,
         "category": "dialogue",
-        "english": "456 - Well said, but where can I get that kind of money???",
-        "vietnamese": "456 - Nói hay lắm, nhưng mà tui lấy đâu ra số tiền đó đây???",
-        "speaker": null,
+        "english": "Well said, but where can I get that kind of money???",
+        "vietnamese": "Nói hay lắm, nhưng mà tui lấy đâu ra số tiền đó đây???",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Well said // but where can I get that kind of money???"
+        "beat_prosody": "Well said // but where can I get that kind of money???"
       },
       {
         "chunk_id": "chunk_eres_d5_0319",
         "item_number": 319,
         "category": "dialogue",
-        "english": "001 - Take it easy, would you?",
-        "vietnamese": "001 - Bình tĩnh, được chưa?",
-        "speaker": null,
+        "english": "Take it easy, would you?",
+        "vietnamese": "Bình tĩnh, được chưa?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Take it easy // would you?"
+        "beat_prosody": "Take it easy // would you?"
       },
       {
         "chunk_id": "chunk_eres_d5_0320",
         "item_number": 320,
         "category": "dialogue",
-        "english": "001 - Show me your potential sponsors list",
-        "vietnamese": "001 - Cho tui coi cái danh sách sponsor của cậu",
-        "speaker": null,
+        "english": "Show me your potential sponsors list",
+        "vietnamese": "Cho tui coi cái danh sách sponsor của cậu",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Show me your potential sponsors list"
+        "beat_prosody": "Show me your potential sponsors list"
       },
       {
         "chunk_id": "chunk_eres_d5_0321",
         "item_number": 321,
         "category": "dialogue",
-        "english": "456 - Here you are, page 2, the left column",
-        "vietnamese": "456 - Đây, trang 2, cái cột bên trái",
-        "speaker": null,
+        "english": "Here you are, page 2, the left column",
+        "vietnamese": "Đây, trang 2, cái cột bên trái",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Here you are // page 2 // the left column"
+        "beat_prosody": "Here you are // page 2 // the left column"
       },
       {
         "chunk_id": "chunk_eres_d5_0322",
         "item_number": 322,
         "category": "dialogue",
-        "english": "456 - Actually I have reached out to a half of that",
-        "vietnamese": "456 - Thực ra tui đã reach tới một nửa trong số đó",
-        "speaker": null,
+        "english": "Actually I have reached out to a half of that",
+        "vietnamese": "Thực ra tui đã reach tới một nửa trong số đó",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Actually I have reached out to a half of that"
+        "beat_prosody": "Actually I have reached out to a half of that"
       },
       {
         "chunk_id": "chunk_eres_d5_0323",
         "item_number": 323,
         "category": "dialogue",
-        "english": "456 - All negative results",
-        "vietnamese": "456 - Toàn là kết quảxấu",
-        "speaker": null,
+        "english": "All negative results",
+        "vietnamese": "Toàn là kết quảxấu",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - All negative results"
+        "beat_prosody": "All negative results"
       },
       {
         "chunk_id": "chunk_eres_d5_0324",
         "item_number": 324,
         "category": "dialogue",
-        "english": "001 - I see, I'll give you a name",
-        "vietnamese": "001 - Tui hiểu rồi, tui sẽ cho cậu một cái tên",
-        "speaker": null,
+        "english": "I see, I'll give you a name",
+        "vietnamese": "Tui hiểu rồi, tui sẽ cho cậu một cái tên",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - I see // I'll give you a name"
+        "beat_prosody": "I see // I'll give you a name"
       },
       {
         "chunk_id": "chunk_eres_d5_0325",
         "item_number": 325,
         "category": "dialogue",
-        "english": "001 - But you have to give him a call yourself",
-        "vietnamese": "001 - Nhưng mà cậu phải tự gọi cho ổng",
-        "speaker": null,
+        "english": "But you have to give him a call yourself",
+        "vietnamese": "Nhưng mà cậu phải tự gọi cho ổng",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - But you have to give him a call yourself"
+        "beat_prosody": "But you have to give him a call yourself"
       },
       {
         "chunk_id": "chunk_eres_d5_0326",
         "item_number": 326,
         "category": "dialogue",
-        "english": "001 - You can tell him I sent you",
-        "vietnamese": "001 - Cậu có thể nói ổng là tui giới thiệu cậu qua",
-        "speaker": null,
+        "english": "You can tell him I sent you",
+        "vietnamese": "Cậu có thể nói ổng là tui giới thiệu cậu qua",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - You can tell him I sent you"
+        "beat_prosody": "You can tell him I sent you"
       },
       {
         "chunk_id": "chunk_eres_d5_0327",
         "item_number": 327,
         "category": "dialogue",
-        "english": "001 - That's all I can do for you, see ya later",
-        "vietnamese": "001 - Đó là tất cả những gì mà tui có thể làm cho cậu, gặp cậu sau",
-        "speaker": null,
+        "english": "That's all I can do for you, see ya later",
+        "vietnamese": "Đó là tất cả những gì mà tui có thể làm cho cậu, gặp cậu sau",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - That's all I can do for you // see ya later"
+        "beat_prosody": "That's all I can do for you // see ya later"
       },
       {
         "chunk_id": "chunk_eres_d5_0328",
         "item_number": 328,
         "category": "dialogue",
-        "english": "001 - Parking fee here is very costly, 9k for a bike",
-        "vietnamese": "001 - Phí giữ xe ở đây mắc lắm, chiếc xe đạp 9 ngàn",
-        "speaker": null,
+        "english": "Parking fee here is very costly, 9k for a bike",
+        "vietnamese": "Phí giữ xe ở đây mắc lắm, chiếc xe đạp 9 ngàn",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Parking fee here is very costly // 9k for a bike"
+        "beat_prosody": "Parking fee here is very costly // 9k for a bike"
       },
       {
         "chunk_id": "chunk_eres_d5_0329",
@@ -14325,7 +14265,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 339,
         "category": "review",
         "english": "Competent & incompetent",
-        "vietnamese": "Có năng lực & ko có năng lực",
+        "vietnamese": "Có năng lực & không có năng lực",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Competent & incompetent"
@@ -15486,11 +15426,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d6_0075",
         "item_number": 75,
         "category": "vocab",
-        "english": "55 hundred / 5 thousand 5 hundred 5500",
-        "vietnamese": "",
+        "english": "55 hundred / 5 thousand 5 hundred",
+        "vietnamese": "5500",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "55 hundred // 5 thousand 5 hundred 5500"
+        "beat_prosody": "55 hundred // 5 thousand 5 hundred"
       },
       {
         "chunk_id": "chunk_eres_d6_0076",
@@ -16966,11 +16906,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d6_0223",
         "item_number": 223,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth It appears that Miki's been struggling with her Excel lately. She had to call Morgan, her ex.",
-        "vietnamese": "",
+        "english": "It appears that Miki's been struggling with her Excel lately. She had to call Morgan, her ex.",
+        "vietnamese": "Có vẻ dạo này Miki đang chật vật với file Excel, cô ấy phải gọi cho Morgan, người yêu cũ của mình",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth It appears that Miki's been struggling with her Excel lately. She had to call Morgan // her ex."
+        "beat_prosody": "It appears that Miki's been struggling with her Excel lately. She had to call Morgan // her ex."
       },
       {
         "chunk_id": "chunk_eres_d6_0224",
@@ -17346,19 +17286,19 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d6_0261",
         "item_number": 261,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION They say \"A friend in need is a friend indeed\" and I'm talking about Putin.",
-        "vietnamese": "",
+        "english": "They say \"A friend in need is a friend indeed\" and I'm talking about Putin.",
+        "vietnamese": "Người ta nói \"Bạn trong lúc hoạn nạn mới là bạn thật sự\" và tôi đang nói về Putin",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION They say \"A friend in need is a friend indeed\" and I'm talking about Putin."
+        "beat_prosody": "They say \"A friend in need is a friend indeed\" and I'm talking about Putin."
       },
       {
         "chunk_id": "chunk_eres_d6_0262",
         "item_number": 262,
         "category": "dialogue",
         "english": "Hey, why the long face?",
-        "vietnamese": "P: Ê, sao mặt đưa đám vậy?",
-        "speaker": "Putin",
+        "vietnamese": "Ê, sao mặt đưa đám vậy?",
+        "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Hey // why the long face?"
       },
@@ -17367,8 +17307,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 263,
         "category": "dialogue",
         "english": "Sorry to bother you at this hour but you know I suck at Excel.",
-        "vietnamese": "Z: Xin lỗi làm phiền ông giờ này nhưng mà ông biết tui cùi Excel lắm.",
-        "speaker": "Zalenski",
+        "vietnamese": "Xin lỗi làm phiền ông giờ này nhưng mà ông biết tui cùi Excel lắm.",
+        "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Sorry to bother you at this hour but you know I suck at Excel."
       },
@@ -17377,7 +17317,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 264,
         "category": "dialogue",
         "english": "Don't say that, what friends are for?",
-        "vietnamese": "P: Đừng có nói vậy chớ, bạn bè để làm gì?",
+        "vietnamese": "Đừng có nói vậy chớ, bạn bè để làm gì?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Don't say that // what friends are for?"
@@ -17387,7 +17327,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 265,
         "category": "dialogue",
         "english": "OK, listen, this is not really a new problem.",
-        "vietnamese": "P: OK, nghe nè, cái này thực ra chả phải vấn đề mới mẻ gì.",
+        "vietnamese": "OK, nghe nè, cái này thực ra chả phải vấn đề mới mẻ gì.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "OK // listen // this is not really a new problem."
@@ -17397,7 +17337,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 266,
         "category": "dialogue",
         "english": "What's wrong with it, anyway?",
-        "vietnamese": "Z: Nhưng mà nó bị gì vậy?",
+        "vietnamese": "Nhưng mà nó bị gì vậy?",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "What's wrong with it // anyway?"
@@ -17407,7 +17347,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "Let me do a quick check.",
-        "vietnamese": "P: Để tui check nhanh cái.",
+        "vietnamese": "Để tui check nhanh cái.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Let me do a quick check."
@@ -17417,7 +17357,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "Don't worry, these things happen.",
-        "vietnamese": "P: Đừng có lo, mấy chuyện như này như cơm bữa ấy mà.",
+        "vietnamese": "Đừng có lo, mấy chuyện như này như cơm bữa ấy mà.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Don't worry // these things happen."
@@ -17427,7 +17367,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "Nine times out of ten Excel users will have to experience annoying situations like these.",
-        "vietnamese": "P: Hết 9 trên 10 lần mấy người dùng Excel sẽ phải trải qua những cái tình thế phiền phức như vầy.",
+        "vietnamese": "Hết 9 trên 10 lần mấy người dùng Excel sẽ phải trải qua những cái tình thế phiền phức như vầy.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Nine times out of ten Excel users will have to experience annoying situations like these."
@@ -17437,7 +17377,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 270,
         "category": "dialogue",
         "english": "Anyway there's nothing to worry about.",
-        "vietnamese": "P: Mà dù sao ông cũng đừng có lo.",
+        "vietnamese": "Mà dù sao ông cũng đừng có lo.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Anyway there's nothing to worry about."
@@ -17447,7 +17387,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "dialogue",
         "english": "You're good at Excel, it's easy for you to say!",
-        "vietnamese": "Z: Ông giỏi Excel, ông nói thì dễ rồi!",
+        "vietnamese": "Ông giỏi Excel, ông nói thì dễ rồi!",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "You're good at Excel // it's easy for you to say!"
@@ -17457,7 +17397,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "dialogue",
         "english": "If 6am tomorrow I don't have the financial report for my boss,",
-        "vietnamese": "Z: Nếu 6h sáng mai tui mà không có cái báo cáo tài chính cho sếp tui,",
+        "vietnamese": "Nếu 6h sáng mai tui mà không có cái báo cáo tài chính cho sếp tui,",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "If 6am tomorrow I don't have the financial report for my boss,"
@@ -17467,7 +17407,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 273,
         "category": "dialogue",
         "english": "He's surely gonna kill me, really!",
-        "vietnamese": "Z: Chắc chắn là ổng cạo đầu tui luôn, thiệt!",
+        "vietnamese": "Chắc chắn là ổng cạo đầu tui luôn, thiệt!",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "He's surely gonna kill me // really!"
@@ -17477,7 +17417,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 274,
         "category": "dialogue",
         "english": "Alright, alright, alright, but don't push me, OK?",
-        "vietnamese": "P: Được rồi, được rồi, được rồi, nhưng mà ông đừng có hối tui, OK?",
+        "vietnamese": "Được rồi, được rồi, được rồi, nhưng mà ông đừng có hối tui, OK?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Alright // alright // alright // but don't push me // OK?"
@@ -17487,7 +17427,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 275,
         "category": "dialogue",
         "english": "In times like these, the most important thing to do is stay calm.",
-        "vietnamese": "P: Trong mấy cái lúc như vầy á, cái điều quan trọng nhất là giữ bình tĩnh.",
+        "vietnamese": "Trong mấy cái lúc như vầy á, cái điều quan trọng nhất là giữ bình tĩnh.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "In times like these // the most important thing to do is stay calm."
@@ -17497,7 +17437,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 276,
         "category": "dialogue",
         "english": "Here, you click options in the menu on the left. See?",
-        "vietnamese": "P: Đây, ông click vào options trong cái menu ở bên trái. Thấy không?",
+        "vietnamese": "Đây, ông click vào options trong cái menu ở bên trái. Thấy không?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Here // you click options in the menu on the left. See?"
@@ -17507,7 +17447,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 277,
         "category": "dialogue",
         "english": "Then you scroll it down, wait, select manual in the corner.",
-        "vietnamese": "P: Sau đó ông lăn nó xuống, khoan, chọn cái manual trong góc á.",
+        "vietnamese": "Sau đó ông lăn nó xuống, khoan, chọn cái manual trong góc á.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Then you scroll it down // wait // select manual in the corner."
@@ -17517,7 +17457,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 278,
         "category": "dialogue",
         "english": "Hold on, hold on, too fast, way too fast, dude.",
-        "vietnamese": "Z: Khoan, khoan, nhanh quá, nhanh quá, cha.",
+        "vietnamese": "Khoan, khoan, nhanh quá, nhanh quá, cha.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Hold on // hold on // too fast // way too fast // dude."
@@ -17527,7 +17467,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 279,
         "category": "dialogue",
         "english": "You've lost me right there.",
-        "vietnamese": "Z: Ngay chỗ đó ông nói tui hông hiểu gì hết.",
+        "vietnamese": "Ngay chỗ đó ông nói tui hông hiểu gì hết.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "You've lost me right there."
@@ -17537,7 +17477,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 280,
         "category": "dialogue",
         "english": "Come on, don't give me that look.",
-        "vietnamese": "Z: Thôi mà, đừng có nhìn tui vậy chớ.",
+        "vietnamese": "Thôi mà, đừng có nhìn tui vậy chớ.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Come on // don't give me that look."
@@ -17547,7 +17487,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 281,
         "category": "dialogue",
         "english": "You know I'm famous for computer illiteracy, don't you?",
-        "vietnamese": "Z: Ông biết tui nổi tiếng mù máy tính mà, phải không?",
+        "vietnamese": "Ông biết tui nổi tiếng mù máy tính mà, phải không?",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "You know I'm famous for computer illiteracy // don't you?"
@@ -17557,7 +17497,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 282,
         "category": "dialogue",
         "english": "The next time you come here, you'd better buy me 2 coffee. OK?",
-        "vietnamese": "P: Lần sau ông qua đây, ông tốt hơn là nên mua tui 2 ly café đi, OK?",
+        "vietnamese": "Lần sau ông qua đây, ông tốt hơn là nên mua tui 2 ly café đi, OK?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "The next time you come here // you'd better buy me 2 coffee. OK?"
@@ -17567,7 +17507,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 283,
         "category": "dialogue",
         "english": "Okay, deal!",
-        "vietnamese": "Z: Okay, chốt!",
+        "vietnamese": "Okay, chốt!",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Okay // deal!"
@@ -17577,7 +17517,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 284,
         "category": "dialogue",
         "english": "\"Just 2 cups of coffee, big deal!\" (Zelensky thought to himself)",
-        "vietnamese": "Z: \"Có 2 ly café mà làm thấy ghê!\" (Zelensky nghĩ bụng)",
+        "vietnamese": "\"Có 2 ly café mà làm thấy ghê!\" (Zelensky nghĩ bụng)",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "\"Just 2 cups of coffee // big deal!\" (Zelensky thought to himself)"
@@ -17587,7 +17527,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 285,
         "category": "dialogue",
         "english": "Look, you see that little button on the right?",
-        "vietnamese": "P: Nhìn nè, ông thấy cái nút nhỏ nhỏbên phải đó không?",
+        "vietnamese": "Nhìn nè, ông thấy cái nút nhỏ nhỏbên phải đó không?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Look // you see that little button on the right?"
@@ -17597,7 +17537,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 286,
         "category": "dialogue",
         "english": "No, no, no, no, that big X is Close button, dude!",
-        "vietnamese": "P: Không, không, không, không, cái nút X bự đó là nút tắt, cha ơi!",
+        "vietnamese": "Không, không, không, không, cái nút X bự đó là nút tắt, cha ơi!",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "No // no // no // no // that big X is Close button // dude!"
@@ -17607,7 +17547,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 287,
         "category": "dialogue",
         "english": "Hey, did you attend the Computer class back in high school???",
-        "vietnamese": "P: Ê, ông có học lớp vi tính hồi xưa cấp 3 không vậy???",
+        "vietnamese": "Ê, ông có học lớp vi tính hồi xưa cấp 3 không vậy???",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Hey // did you attend the Computer class back in high school???"
@@ -17617,7 +17557,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 288,
         "category": "dialogue",
         "english": "Stop complaining, 2 more bobas, okay???",
-        "vietnamese": "Z: Thôi đừng có càm ràm nữa, cho thêm 2 ly trà sữa, được chưa???",
+        "vietnamese": "Thôi đừng có càm ràm nữa, cho thêm 2 ly trà sữa, được chưa???",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Stop complaining // 2 more bobas // okay???"
@@ -17627,7 +17567,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 289,
         "category": "dialogue",
         "english": "Told you I suck at Excel.",
-        "vietnamese": "Z: Đã bảo ông tui cùi Excel mà.",
+        "vietnamese": "Đã bảo ông tui cùi Excel mà.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Told you I suck at Excel."
@@ -17637,7 +17577,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 290,
         "category": "dialogue",
         "english": "Focus, zoom in, now you see that?",
-        "vietnamese": "P: Tập trung nè, zoom vô, rồi giờ ông thấy cái đó chưa?",
+        "vietnamese": "Tập trung nè, zoom vô, rồi giờ ông thấy cái đó chưa?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Focus // zoom in // now you see that?"
@@ -17647,7 +17587,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 291,
         "category": "dialogue",
         "english": "That's right, click on that.",
-        "vietnamese": "P: Đúng oy, click vô cái đó.",
+        "vietnamese": "Đúng oy, click vô cái đó.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "That's right // click on that."
@@ -17657,7 +17597,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 292,
         "category": "dialogue",
         "english": "Done, there you have it.",
-        "vietnamese": "P: Xong, có vậy thôi đó.",
+        "vietnamese": "Xong, có vậy thôi đó.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Done // there you have it."
@@ -17667,7 +17607,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 293,
         "category": "dialogue",
         "english": "Actually you can always use this way to reduce the calculation time.",
-        "vietnamese": "P: Thực ra lúc nào ông cũng có thể dùng cách này để giảm cái thời gian tính toán lại.",
+        "vietnamese": "Thực ra lúc nào ông cũng có thể dùng cách này để giảm cái thời gian tính toán lại.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Actually you can always use this way to reduce the calculation time."
@@ -17677,7 +17617,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 294,
         "category": "dialogue",
         "english": "This will prevent all your formulas from being recalculated every time you change something.",
-        "vietnamese": "P: Cái này sẽ ngăn chặn toàn bộ công thức của ông bị tính toán lại mỗi khi ông thay đổi cái gì đó.",
+        "vietnamese": "Cái này sẽ ngăn chặn toàn bộ công thức của ông bị tính toán lại mỗi khi ông thay đổi cái gì đó.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "This will prevent all your formulas from being recalculated every time you change something."
@@ -17687,7 +17627,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 295,
         "category": "dialogue",
         "english": "Hmmm, I get it",
-        "vietnamese": "Z: Hmmm, tui hiểu rồi.",
+        "vietnamese": "Hmmm, tui hiểu rồi.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Hmmm // I get it"
@@ -17697,7 +17637,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 296,
         "category": "dialogue",
         "english": "It's quite complicated to me, though.",
-        "vietnamese": "Z: Nhưng mà dù sao nó vẫn khá là phức tạp với tui.",
+        "vietnamese": "Nhưng mà dù sao nó vẫn khá là phức tạp với tui.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "It's quite complicated to me // though."
@@ -17707,7 +17647,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 297,
         "category": "dialogue",
         "english": "Is there any shorter way for me?",
-        "vietnamese": "Z: Có cách nào ngắn gọn hơn cho tui không?",
+        "vietnamese": "Có cách nào ngắn gọn hơn cho tui không?",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Is there any shorter way for me?"
@@ -17717,7 +17657,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 298,
         "category": "dialogue",
         "english": "Please, everybody knows you're Excel guru.",
-        "vietnamese": "Z: Đi mà, ai cũng biết ông là bậc thầy Excel mà.",
+        "vietnamese": "Đi mà, ai cũng biết ông là bậc thầy Excel mà.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Please // everybody knows you're Excel guru."
@@ -17727,7 +17667,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 299,
         "category": "dialogue",
         "english": "I'm afraid not, we'll see.",
-        "vietnamese": "P: Tui e là không, mà để coi.",
+        "vietnamese": "Tui e là không, mà để coi.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "I'm afraid not // we'll see."
@@ -17737,7 +17677,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 300,
         "category": "dialogue",
         "english": "Hold on, which version of Excel are you using?",
-        "vietnamese": "P: Mà khoan, ông đang dùng Excel version nào vậy?",
+        "vietnamese": "Mà khoan, ông đang dùng Excel version nào vậy?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Hold on // which version of Excel are you using?"
@@ -17747,7 +17687,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 301,
         "category": "dialogue",
         "english": "2016, maybe, I'm not sure anyway.",
-        "vietnamese": "Z: 2016, chắc vậy, mà tui cũng không chắc nữa.",
+        "vietnamese": "2016, chắc vậy, mà tui cũng không chắc nữa.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "2016 // maybe // I'm not sure anyway."
@@ -17757,7 +17697,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 302,
         "category": "dialogue",
         "english": "That one is now obsolete.",
-        "vietnamese": "P: Cái đó nó lỗi thời rồi.",
+        "vietnamese": "Cái đó nó lỗi thời rồi.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "That one is now obsolete."
@@ -17767,7 +17707,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 303,
         "category": "dialogue",
         "english": "Actually your Excel needs to be updated every three years.",
-        "vietnamese": "P: Thực ra Excel của ông cần phải được update mỗi ba năm.",
+        "vietnamese": "Thực ra Excel của ông cần phải được update mỗi ba năm.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Actually your Excel needs to be updated every three years."
@@ -17777,7 +17717,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 304,
         "category": "dialogue",
         "english": "Why your financial report is always super long?",
-        "vietnamese": "P: Mà sao báo cáo tài chính của ông lúc nào cũng dài thòong vậy?",
+        "vietnamese": "Mà sao báo cáo tài chính của ông lúc nào cũng dài thòong vậy?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Why your financial report is always super long?"
@@ -17787,7 +17727,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 305,
         "category": "dialogue",
         "english": "If you don't mind me asking.",
-        "vietnamese": "P: Nếu ông không ngại tui hỏi.",
+        "vietnamese": "Nếu ông không ngại tui hỏi.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "If you don't mind me asking."
@@ -17797,7 +17737,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 306,
         "category": "dialogue",
         "english": "Lemme check, what??? More than 5500 rows!",
-        "vietnamese": "P: Để tui check thử coi, gì??? Hơn 5500 hàng!",
+        "vietnamese": "Để tui check thử coi, gì??? Hơn 5500 hàng!",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Lemme check // what??? More than 5500 rows!"
@@ -17807,7 +17747,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 307,
         "category": "dialogue",
         "english": "No wonder it always takes more than half an hour just to calculate.",
-        "vietnamese": "P: Hèn gì lúc nào nó cũng ngốn hơn nửa tiếng chỉ để tính thôi đó.",
+        "vietnamese": "Hèn gì lúc nào nó cũng ngốn hơn nửa tiếng chỉ để tính thôi đó.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "No wonder it always takes more than half an hour just to calculate."
@@ -17816,18 +17756,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d6_0308",
         "item_number": 308,
         "category": "dialogue",
-        "english": "Uhmmm, there's a thing I didn't tell you before Z: Uhmmm,",
-        "vietnamese": "có một chuyện tui chưa có nói ông trước đây.",
+        "english": "Uhmmm, there's a thing I didn't tell you before",
+        "vietnamese": "Có một chuyện tui chưa có nói ông trước đây.",
         "speaker": "Z",
         "audio_url": null,
-        "beat_prosody": "Uhmmm // there's a thing I didn't tell you before Z: Uhmmm,"
+        "beat_prosody": "Uhmmm // there's a thing I didn't tell you before"
       },
       {
         "chunk_id": "chunk_eres_d6_0309",
         "item_number": 309,
         "category": "dialogue",
         "english": "Actually I was told to create a lot of rows like that to try to evade taxes.",
-        "vietnamese": "Z: Thực ra tui được dặn tạo ra nhiều dòng như vậy là để cố gắng trốn thuế.",
+        "vietnamese": "Thực ra tui được dặn tạo ra nhiều dòng như vậy là để cố gắng trốn thuế.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Actually I was told to create a lot of rows like that to try to evade taxes."
@@ -18555,18 +18495,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d7_0021",
         "item_number": 21,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth Alex is having a little chit-chat with his office buddy about his direct manager",
-        "vietnamese": "",
+        "english": "Alex is having a little chit-chat with his office buddy about his direct manager",
+        "vietnamese": "Alex đang trò chuyện với đồng nghiệp văn phòng về người quản lý trực tiếp của mình",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth Alex is having a little chit-chat with his office buddy about his direct manager"
+        "beat_prosody": "Alex is having a little chit-chat with his office buddy about his direct manager"
       },
       {
         "chunk_id": "chunk_eres_d7_0022",
         "item_number": 22,
         "category": "monologue",
         "english": "It looks like developed land, doesn't it?",
-        "vietnamese": "Nó trông như đất đã quy hoạch, phải ko?",
+        "vietnamese": "Nó trông như đất đã quy hoạch, phải không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It looks like developed land // doesn't it?"
@@ -18586,7 +18526,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 24,
         "category": "monologue",
         "english": "Look, I don't think this case is easy to deal with",
-        "vietnamese": "Nè, tôi ko nghĩ ca này dễ deal đâu",
+        "vietnamese": "Nè, tôi không nghĩ ca này dễ deal đâu",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Look // I don't think this case is easy to deal with"
@@ -18656,7 +18596,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 31,
         "category": "monologue",
         "english": "The truth is, I don't really get along with this guy",
-        "vietnamese": "Sự thật thì tôi ko hợp cạ với cha này lắm",
+        "vietnamese": "Sự thật thì tôi không hợp cạ với cha này lắm",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "The truth is // I don't really get along with this guy"
@@ -18696,7 +18636,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 35,
         "category": "monologue",
         "english": "Believe it or not",
-        "vietnamese": "Tin hay ko tùy,",
+        "vietnamese": "Tin hay không tùy,",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Believe it or not"
@@ -18746,7 +18686,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 40,
         "category": "monologue",
         "english": "He sent me an email without a title",
-        "vietnamese": "Ổng gửi tôi cái email mà ko có tiêu đề",
+        "vietnamese": "Ổng gửi tôi cái email mà không có tiêu đề",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "He sent me an email without a title"
@@ -18766,7 +18706,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 42,
         "category": "monologue",
         "english": "and told me to call him immediately",
-        "vietnamese": "rồi nói tôi gọi cho ổng liền",
+        "vietnamese": "Rồi nói tôi gọi cho ổng liền",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "and told me to call him immediately"
@@ -18856,7 +18796,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 51,
         "category": "monologue",
         "english": "right in front of the Board",
-        "vietnamese": "ngay trước mặt ban giám đốc",
+        "vietnamese": "Ngay trước mặt ban giám đốc",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "right in front of the Board"
@@ -19006,7 +18946,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 66,
         "category": "monologue",
         "english": "The salary was not really high but the fringe benefit was huge",
-        "vietnamese": "Lương ko cao lắm nhưng phúc lợi bên lề khủng lắm nha",
+        "vietnamese": "Lương không cao lắm nhưng phúc lợi bên lề khủng lắm nha",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "The salary was not really high but the fringe benefit was huge"
@@ -19016,7 +18956,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 67,
         "category": "monologue",
         "english": "Hey, hey, he's coming over,",
-        "vietnamese": "ê, ê, ổng đang qua,",
+        "vietnamese": "Ê, ê, ổng đang qua,",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Hey // hey // he's coming over,"
@@ -19035,551 +18975,551 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d7_0069",
         "item_number": 69,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION What would it be like if 001 & 456 were office buddies in real life?",
-        "vietnamese": "",
+        "english": "What would it be like if 001 & 456 were office buddies in real life?",
+        "vietnamese": "Sẽ ra sao nếu 001 & 456 là đồng nghiệp văn phòng ngoài đời thực?",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION What would it be like if 001 & 456 were office buddies in real life?"
+        "beat_prosody": "What would it be like if 001 & 456 were office buddies in real life?"
       },
       {
         "chunk_id": "chunk_eres_d7_0070",
         "item_number": 70,
         "category": "dialogue",
-        "english": "001 - Hi son, how have you been?",
-        "vietnamese": "001 - Chào con trai, dạo này sao rồi?",
-        "speaker": null,
+        "english": "Hi son, how have you been?",
+        "vietnamese": "Chào con trai, dạo này sao rồi?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Hi son // how have you been?"
+        "beat_prosody": "Hi son // how have you been?"
       },
       {
         "chunk_id": "chunk_eres_d7_0071",
         "item_number": 71,
         "category": "dialogue",
-        "english": "456 - Holy cow, you're still alive, old man?",
-        "vietnamese": "456 - Trời đất quỷ thần, ông còn sống hả, ông già?",
-        "speaker": null,
+        "english": "Holy cow, you're still alive, old man?",
+        "vietnamese": "Trời đất quỷ thần, ông còn sống hả, ông già?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Holy cow // you're still alive // old man?"
+        "beat_prosody": "Holy cow // you're still alive // old man?"
       },
       {
         "chunk_id": "chunk_eres_d7_0072",
         "item_number": 72,
         "category": "dialogue",
-        "english": "001 - Watch your language, I'm your new boss",
-        "vietnamese": "001 - Coi chừng cái mồm, tui là sếp mới của cậu đó nha",
-        "speaker": null,
+        "english": "Watch your language, I'm your new boss",
+        "vietnamese": "Coi chừng cái mồm, tui là sếp mới của cậu đó nha",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Watch your language // I'm your new boss"
+        "beat_prosody": "Watch your language // I'm your new boss"
       },
       {
         "chunk_id": "chunk_eres_d7_0073",
         "item_number": 73,
         "category": "dialogue",
-        "english": "456 - What do you mean \"I'm your new boss\"?",
-        "vietnamese": "456 - \"Tui là sếp mới của cậu\" là ông ý gì?",
-        "speaker": null,
+        "english": "What do you mean \"I'm your new boss\"?",
+        "vietnamese": "\"Tui là sếp mới của cậu\" là ông ý gì?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - What do you mean \"I'm your new boss\"?"
+        "beat_prosody": "What do you mean \"I'm your new boss\"?"
       },
       {
         "chunk_id": "chunk_eres_d7_0074",
         "item_number": 74,
         "category": "dialogue",
-        "english": "001 - From today forward, I'm gonna be your new line manager",
-        "vietnamese": "001 - Từ hôm nay trở đi, tui sẽ là line manager của cậu",
-        "speaker": null,
+        "english": "From today forward, I'm gonna be your new line manager",
+        "vietnamese": "Từ hôm nay trở đi, tui sẽ là line manager của cậu",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - From today forward // I'm gonna be your new line manager"
+        "beat_prosody": "From today forward // I'm gonna be your new line manager"
       },
       {
         "chunk_id": "chunk_eres_d7_0075",
         "item_number": 75,
         "category": "dialogue",
-        "english": "456 - Wow, why haven't I been told about this?",
-        "vietnamese": "456 - Wow, sao tui không có được báo về vụ này ta?",
-        "speaker": null,
+        "english": "Wow, why haven't I been told about this?",
+        "vietnamese": "Wow, sao tui không có được báo về vụ này ta?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Wow // why haven't I been told about this?"
+        "beat_prosody": "Wow // why haven't I been told about this?"
       },
       {
         "chunk_id": "chunk_eres_d7_0076",
         "item_number": 76,
         "category": "dialogue",
-        "english": "001 - That's no big deal",
-        "vietnamese": "001 - Đó đâu phải chuyện lớn",
-        "speaker": null,
+        "english": "That's no big deal",
+        "vietnamese": "Đó đâu phải chuyện lớn",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - That's no big deal"
+        "beat_prosody": "That's no big deal"
       },
       {
         "chunk_id": "chunk_eres_d7_0077",
         "item_number": 77,
         "category": "dialogue",
-        "english": "001 - Anw, any update for the Squid Game No.2 project?",
-        "vietnamese": "001 - Mà thôi, có cập nhật gì từ cái dự án Squid Game số 2 không?",
-        "speaker": null,
+        "english": "Anw, any update for the Squid Game No.2 project?",
+        "vietnamese": "Mà thôi, có cập nhật gì từ cái dự án Squid Game số 2 không?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Anw // any update for the Squid Game No.2 project?"
+        "beat_prosody": "Anw // any update for the Squid Game No.2 project?"
       },
       {
         "chunk_id": "chunk_eres_d7_0078",
         "item_number": 78,
         "category": "dialogue",
-        "english": "456 - Listen, I don't know how to put it but",
-        "vietnamese": "456 - Nghe nè, tui không biết nói sao nhưng mà",
-        "speaker": null,
+        "english": "Listen, I don't know how to put it but",
+        "vietnamese": "Nghe nè, tui không biết nói sao nhưng mà",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Listen // I don't know how to put it but"
+        "beat_prosody": "Listen // I don't know how to put it but"
       },
       {
         "chunk_id": "chunk_eres_d7_0079",
         "item_number": 79,
         "category": "dialogue",
-        "english": "456 - Actually I already sent a very long email to my ex-boss...",
-        "vietnamese": "456 - Thực ra tui đã gửi một cái email rất là dài tới ông sếp cũ của tui...",
-        "speaker": null,
+        "english": "Actually I already sent a very long email to my ex-boss...",
+        "vietnamese": "Thực ra tui đã gửi một cái email rất là dài tới ông sếp cũ của tui...",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Actually I already sent a very long email to my ex-boss..."
+        "beat_prosody": "Actually I already sent a very long email to my ex-boss..."
       },
       {
         "chunk_id": "chunk_eres_d7_0080",
         "item_number": 80,
         "category": "dialogue",
-        "english": "456 - explaining why this project is hitting a big broadblock",
-        "vietnamese": "456 - giải thích tại sao cái dự án này đang gặp phải một cái trở ngại lớn",
-        "speaker": null,
+        "english": "Explaining why this project is hitting a big broadblock",
+        "vietnamese": "Giải thích tại sao cái dự án này đang gặp phải một cái trở ngại lớn",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - explaining why this project is hitting a big broadblock"
+        "beat_prosody": "Explaining why this project is hitting a big broadblock"
       },
       {
         "chunk_id": "chunk_eres_d7_0081",
         "item_number": 81,
         "category": "dialogue",
-        "english": "456 - But he hasn't replied my email yet",
-        "vietnamese": "456 - Nhưng mà ổng vẫn chưa trả lời email tui",
-        "speaker": null,
+        "english": "But he hasn't replied my email yet",
+        "vietnamese": "Nhưng mà ổng vẫn chưa trả lời email tui",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - But he hasn't replied my email yet"
+        "beat_prosody": "But he hasn't replied my email yet"
       },
       {
         "chunk_id": "chunk_eres_d7_0082",
         "item_number": 82,
         "category": "dialogue",
-        "english": "456 - To be honest, I haven't seen him around since yesterday",
-        "vietnamese": "456 - Thiệt tình là hôm qua đến giờ tui cũng không có thấy ổng lòng vòng đây nữa",
-        "speaker": null,
+        "english": "To be honest, I haven't seen him around since yesterday",
+        "vietnamese": "Thiệt tình là hôm qua đến giờ tui cũng không có thấy ổng lòng vòng đây nữa",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - To be honest // I haven't seen him around since yesterday"
+        "beat_prosody": "To be honest // I haven't seen him around since yesterday"
       },
       {
         "chunk_id": "chunk_eres_d7_0083",
         "item_number": 83,
         "category": "dialogue",
-        "english": "001 - He's done",
-        "vietnamese": "001 - Nó done rồi",
-        "speaker": null,
+        "english": "He's done",
+        "vietnamese": "Nó done rồi",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - He's done"
+        "beat_prosody": "He's done"
       },
       {
         "chunk_id": "chunk_eres_d7_0084",
         "item_number": 84,
         "category": "dialogue",
-        "english": "456 - Sorry, he's what???",
-        "vietnamese": "456 - Ông nói sao? ổng bị làm sao???",
-        "speaker": null,
+        "english": "Sorry, he's what???",
+        "vietnamese": "Ông nói sao? ổng bị làm sao???",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Sorry // he's what???"
+        "beat_prosody": "Sorry // he's what???"
       },
       {
         "chunk_id": "chunk_eres_d7_0085",
         "item_number": 85,
         "category": "dialogue",
-        "english": "001 - Doesn't matter, that's not your business anyway",
-        "vietnamese": "001 - Không có gì, dù sao cũng không phải chuyện của cậu",
-        "speaker": null,
+        "english": "Doesn't matter, that's not your business anyway",
+        "vietnamese": "Không có gì, dù sao cũng không phải chuyện của cậu",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Doesn't matter // that's not your business anyway"
+        "beat_prosody": "Doesn't matter // that's not your business anyway"
       },
       {
         "chunk_id": "chunk_eres_d7_0086",
         "item_number": 86,
         "category": "dialogue",
-        "english": "001 - A moment ago, you said we're encountering a big roadblock",
-        "vietnamese": "001 - Mới nãy, cậu nói chúng ta đang đối đầu với một cái trở ngại lớn",
-        "speaker": null,
+        "english": "A moment ago, you said we're encountering a big roadblock",
+        "vietnamese": "Mới nãy, cậu nói chúng ta đang đối đầu với một cái trở ngại lớn",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - A moment ago // you said we're encountering a big roadblock"
+        "beat_prosody": "A moment ago // you said we're encountering a big roadblock"
       },
       {
         "chunk_id": "chunk_eres_d7_0087",
         "item_number": 87,
         "category": "dialogue",
-        "english": "001 - How big is it?",
-        "vietnamese": "001 - Lớn cỡ nào?",
-        "speaker": null,
+        "english": "How big is it?",
+        "vietnamese": "Lớn cỡ nào?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - How big is it?"
+        "beat_prosody": "How big is it?"
       },
       {
         "chunk_id": "chunk_eres_d7_0088",
         "item_number": 88,
         "category": "dialogue",
-        "english": "456 - Bottom line, it's not technically the \"size\" of the problem",
-        "vietnamese": "456 - Nói tóm lại, nó không phải nghĩa đen cái \"kích thước\" của cái vấn đề",
-        "speaker": null,
+        "english": "Bottom line, it's not technically the \"size\" of the problem",
+        "vietnamese": "Nói tóm lại, nó không phải nghĩa đen cái \"kích thước\" của cái vấn đề",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Bottom line // it's not technically the \"size\" of the problem"
+        "beat_prosody": "Bottom line // it's not technically the \"size\" of the problem"
       },
       {
         "chunk_id": "chunk_eres_d7_0089",
         "item_number": 89,
         "category": "dialogue",
-        "english": "456 - It's the money issue",
-        "vietnamese": "456 - Nó là vấn đề về tiền",
-        "speaker": null,
+        "english": "It's the money issue",
+        "vietnamese": "Nó là vấn đề về tiền",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - It's the money issue"
+        "beat_prosody": "It's the money issue"
       },
       {
         "chunk_id": "chunk_eres_d7_0090",
         "item_number": 90,
         "category": "dialogue",
-        "english": "001 - Money is no object",
-        "vietnamese": "001 - Tiền không thành vấn đề",
-        "speaker": null,
+        "english": "Money is no object",
+        "vietnamese": "Tiền không thành vấn đề",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Money is no object"
+        "beat_prosody": "Money is no object"
       },
       {
         "chunk_id": "chunk_eres_d7_0091",
         "item_number": 91,
         "category": "dialogue",
-        "english": "456 - Wait, Hello? What's with this old man?!?",
-        "vietnamese": "456 - Uả, Alo? Ông già này bị gì dzậy?!?",
-        "speaker": null,
+        "english": "Wait, Hello? What's with this old man?!?",
+        "vietnamese": "Uả, Alo? Ông già này bị gì vậy?!?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Wait // Hello? What's with this old man?!?"
+        "beat_prosody": "Wait // Hello? What's with this old man?!?"
       },
       {
         "chunk_id": "chunk_eres_d7_0092",
         "item_number": 92,
         "category": "dialogue",
-        "english": "456 - You're boss, it's easy for you to say",
-        "vietnamese": "456 - Ông là sếp, ông nói thì dễ rồi",
-        "speaker": null,
+        "english": "You're boss, it's easy for you to say",
+        "vietnamese": "Ông là sếp, ông nói thì dễ rồi",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - You're boss // it's easy for you to say"
+        "beat_prosody": "You're boss // it's easy for you to say"
       },
       {
         "chunk_id": "chunk_eres_d7_0093",
         "item_number": 93,
         "category": "dialogue",
-        "english": "456 - The thing is I can't get enough sponsors for this project",
-        "vietnamese": "456 - Cái vấn đề là tui không có lấy đủ được sponsor cho cái dự này",
-        "speaker": null,
+        "english": "The thing is I can't get enough sponsors for this project",
+        "vietnamese": "Cái vấn đề là tui không có lấy đủ được sponsor cho cái dự này",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - The thing is I can't get enough sponsors for this project"
+        "beat_prosody": "The thing is I can't get enough sponsors for this project"
       },
       {
         "chunk_id": "chunk_eres_d7_0094",
         "item_number": 94,
         "category": "dialogue",
-        "english": "456 - What am I supposed to do now?",
-        "vietnamese": "456 - Tui nên làm gì giờ đây?",
-        "speaker": null,
+        "english": "What am I supposed to do now?",
+        "vietnamese": "Tui nên làm gì giờ đây?",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - What am I supposed to do now?"
+        "beat_prosody": "What am I supposed to do now?"
       },
       {
         "chunk_id": "chunk_eres_d7_0095",
         "item_number": 95,
         "category": "dialogue",
-        "english": "001 - Okay, first, I wanna make sure we’re on the same page",
-        "vietnamese": "001 - Okay, đầu tiên, tui muốn make sure là chúng ta thống nhất với nhau vài thứ",
-        "speaker": null,
+        "english": "Okay, first, I wanna make sure we’re on the same page",
+        "vietnamese": "Okay, đầu tiên, tui muốn make sure là chúng ta thống nhất với nhau vài thứ",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Okay // first // I wanna make sure we’re on the same page"
+        "beat_prosody": "Okay // first // I wanna make sure we’re on the same page"
       },
       {
         "chunk_id": "chunk_eres_d7_0096",
         "item_number": 96,
         "category": "dialogue",
-        "english": "001 - I've got 3 questions for you:",
-        "vietnamese": "001 - Tui có 3 câu hỏi cho cậu:",
-        "speaker": null,
+        "english": "I've got 3 questions for you:",
+        "vietnamese": "Tui có 3 câu hỏi cho cậu:",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - I've got 3 questions for you:"
+        "beat_prosody": "I've got 3 questions for you:"
       },
       {
         "chunk_id": "chunk_eres_d7_0097",
         "item_number": 97,
         "category": "dialogue",
-        "english": "001 - 1. Time, when do you need to get this done?",
-        "vietnamese": "001 - 1. Thời gian, khi nào thì cậu cần phải xong?",
-        "speaker": null,
+        "english": "1. Time, when do you need to get this done?",
+        "vietnamese": "1. Thời gian, khi nào thì cậu cần phải xong?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - 1. Time // when do you need to get this done?"
+        "beat_prosody": "1. Time // when do you need to get this done?"
       },
       {
         "chunk_id": "chunk_eres_d7_0098",
         "item_number": 98,
         "category": "dialogue",
-        "english": "001 - 2. Money, tell me about our financial picture",
-        "vietnamese": "001 - 2. Tiền, nói tôi nghe về bức tranh tài chính của chúng ta",
-        "speaker": null,
+        "english": "2. Money, tell me about our financial picture",
+        "vietnamese": "2. Tiền, nói tôi nghe về bức tranh tài chính của chúng ta",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - 2. Money // tell me about our financial picture"
+        "beat_prosody": "2. Money // tell me about our financial picture"
       },
       {
         "chunk_id": "chunk_eres_d7_0099",
         "item_number": 99,
         "category": "dialogue",
-        "english": "001 - 3. Human, how many people are there in your team now?",
-        "vietnamese": "001 - 3. Con người, bây giờ trong team cậu có bao nhiêu người?",
-        "speaker": null,
+        "english": "3. Human, how many people are there in your team now?",
+        "vietnamese": "3. Con người, bây giờ trong team cậu có bao nhiêu người?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - 3. Human // how many people are there in your team now?"
+        "beat_prosody": "3. Human // how many people are there in your team now?"
       },
       {
         "chunk_id": "chunk_eres_d7_0100",
         "item_number": 100,
         "category": "dialogue",
-        "english": "456 - Okay, about time, I need to get it done by Easter",
-        "vietnamese": "456 - Okay, về thời gian, tui cần phải xong trước lễ Phục Sinh",
-        "speaker": null,
+        "english": "Okay, about time, I need to get it done by Easter",
+        "vietnamese": "Okay, về thời gian, tui cần phải xong trước lễ Phục Sinh",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Okay // about time // I need to get it done by Easter"
+        "beat_prosody": "Okay // about time // I need to get it done by Easter"
       },
       {
         "chunk_id": "chunk_eres_d7_0101",
         "item_number": 101,
         "category": "dialogue",
-        "english": "456 - Which means we still have plenty of time",
-        "vietnamese": "456 - Điều đó nghĩa là chúng ta vẫn còn nhiều thời gian",
-        "speaker": null,
+        "english": "Which means we still have plenty of time",
+        "vietnamese": "Điều đó nghĩa là chúng ta vẫn còn nhiều thời gian",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Which means we still have plenty of time"
+        "beat_prosody": "Which means we still have plenty of time"
       },
       {
         "chunk_id": "chunk_eres_d7_0102",
         "item_number": 102,
         "category": "dialogue",
-        "english": "456 - About people, if you give me one more IT developer,",
-        "vietnamese": "456 - Về con người, nếu ông cho tui thêm một đứa lập trình IT,",
-        "speaker": null,
+        "english": "About people, if you give me one more IT developer,",
+        "vietnamese": "Về con người, nếu ông cho tui thêm một đứa lập trình IT,",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - About people // if you give me one more IT developer,"
+        "beat_prosody": "About people // if you give me one more IT developer,"
       },
       {
         "chunk_id": "chunk_eres_d7_0103",
         "item_number": 103,
         "category": "dialogue",
-        "english": "456 - I think it's good to go",
-        "vietnamese": "456 - Tui nghĩ sẽ ổn để tiến hành",
-        "speaker": null,
+        "english": "I think it's good to go",
+        "vietnamese": "Tui nghĩ sẽ ổn để tiến hành",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - I think it's good to go"
+        "beat_prosody": "I think it's good to go"
       },
       {
         "chunk_id": "chunk_eres_d7_0104",
         "item_number": 104,
         "category": "dialogue",
-        "english": "456 - And more importantly, at the end of the day",
-        "vietnamese": "456 - Và quan trọng hơn, suy cho cùng",
-        "speaker": null,
+        "english": "And more importantly, at the end of the day",
+        "vietnamese": "Và quan trọng hơn, suy cho cùng",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - And more importantly // at the end of the day"
+        "beat_prosody": "And more importantly // at the end of the day"
       },
       {
         "chunk_id": "chunk_eres_d7_0105",
         "item_number": 105,
         "category": "dialogue",
-        "english": "456 - Like I said, everything boils down to money",
-        "vietnamese": "456 - Như tui đã nói, mọi thứ đều quy về tiền cả thôi",
-        "speaker": null,
+        "english": "Like I said, everything boils down to money",
+        "vietnamese": "Như tui đã nói, mọi thứ đều quy về tiền cả thôi",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Like I said // everything boils down to money"
+        "beat_prosody": "Like I said // everything boils down to money"
       },
       {
         "chunk_id": "chunk_eres_d7_0106",
         "item_number": 106,
         "category": "dialogue",
-        "english": "001 - Okay, I hear you",
-        "vietnamese": "001 - Okay, tui nghe hiểu những gì cậu nói",
-        "speaker": null,
+        "english": "Okay, I hear you",
+        "vietnamese": "Okay, tui nghe hiểu những gì cậu nói",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Okay // I hear you"
+        "beat_prosody": "Okay // I hear you"
       },
       {
         "chunk_id": "chunk_eres_d7_0107",
         "item_number": 107,
         "category": "dialogue",
-        "english": "001 - I get the picture now",
-        "vietnamese": "001 - Giờ tui hiểu bức tranh rồi",
-        "speaker": null,
+        "english": "I get the picture now",
+        "vietnamese": "Giờ tui hiểu bức tranh rồi",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - I get the picture now"
+        "beat_prosody": "I get the picture now"
       },
       {
         "chunk_id": "chunk_eres_d7_0108",
         "item_number": 108,
         "category": "dialogue",
-        "english": "001 - So, from where I stand",
-        "vietnamese": "001 - Cho nên, từ góc độ của tui",
-        "speaker": null,
+        "english": "So, from where I stand",
+        "vietnamese": "Cho nên, từ góc độ của tui",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - So // from where I stand"
+        "beat_prosody": "So // from where I stand"
       },
       {
         "chunk_id": "chunk_eres_d7_0109",
         "item_number": 109,
         "category": "dialogue",
-        "english": "001 - Because this event will be like a reality show",
-        "vietnamese": "001 - Bởi vì cái event này sẽ như là một cái show thực tế",
-        "speaker": null,
+        "english": "Because this event will be like a reality show",
+        "vietnamese": "Bởi vì cái event này sẽ như là một cái show thực tế",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Because this event will be like a reality show"
+        "beat_prosody": "Because this event will be like a reality show"
       },
       {
         "chunk_id": "chunk_eres_d7_0110",
         "item_number": 110,
         "category": "dialogue",
-        "english": "001 - I would say our top priority is gonna be...",
-        "vietnamese": "001 - Tui sẽ nói là ưu tiên hàng đầu của chúng ta sẽ là...",
-        "speaker": null,
+        "english": "I would say our top priority is gonna be...",
+        "vietnamese": "Tui sẽ nói là ưu tiên hàng đầu của chúng ta sẽ là...",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - I would say our top priority is gonna be..."
+        "beat_prosody": "I would say our top priority is gonna be..."
       },
       {
         "chunk_id": "chunk_eres_d7_0111",
         "item_number": 111,
         "category": "dialogue",
-        "english": "001 - the engagement of the players",
-        "vietnamese": "001 - Cái sự gắn kết của những người chơi",
-        "speaker": null,
+        "english": "The engagement of the players",
+        "vietnamese": "Cái sự gắn kết của những người chơi",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - the engagement of the players"
+        "beat_prosody": "The engagement of the players"
       },
       {
         "chunk_id": "chunk_eres_d7_0112",
         "item_number": 112,
         "category": "dialogue",
-        "english": "001 - Bottom line, it doesn't need to be a low-cost event",
-        "vietnamese": "001 - Tóm lại, nó không cần phải là một cái event giá rẻ",
-        "speaker": null,
+        "english": "Bottom line, it doesn't need to be a low-cost event",
+        "vietnamese": "Tóm lại, nó không cần phải là một cái event giá rẻ",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Bottom line // it doesn't need to be a low-cost event"
+        "beat_prosody": "Bottom line // it doesn't need to be a low-cost event"
       },
       {
         "chunk_id": "chunk_eres_d7_0113",
         "item_number": 113,
         "category": "dialogue",
-        "english": "456 - Well said, but where can I get that kind of money???",
-        "vietnamese": "456 - Nói hay lắm, nhưng mà tui lấy đâu ra số tiền đó đây???",
-        "speaker": null,
+        "english": "Well said, but where can I get that kind of money???",
+        "vietnamese": "Nói hay lắm, nhưng mà tui lấy đâu ra số tiền đó đây???",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Well said // but where can I get that kind of money???"
+        "beat_prosody": "Well said // but where can I get that kind of money???"
       },
       {
         "chunk_id": "chunk_eres_d7_0114",
         "item_number": 114,
         "category": "dialogue",
-        "english": "001 - Take it easy, would you?",
-        "vietnamese": "001 - Bình tĩnh, được chưa?",
-        "speaker": null,
+        "english": "Take it easy, would you?",
+        "vietnamese": "Bình tĩnh, được chưa?",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Take it easy // would you?"
+        "beat_prosody": "Take it easy // would you?"
       },
       {
         "chunk_id": "chunk_eres_d7_0115",
         "item_number": 115,
         "category": "dialogue",
-        "english": "001 - Show me your potential sponsors list",
-        "vietnamese": "001 - Cho tui coi cái danh sách sponsor của cậu",
-        "speaker": null,
+        "english": "Show me your potential sponsors list",
+        "vietnamese": "Cho tui coi cái danh sách sponsor của cậu",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Show me your potential sponsors list"
+        "beat_prosody": "Show me your potential sponsors list"
       },
       {
         "chunk_id": "chunk_eres_d7_0116",
         "item_number": 116,
         "category": "dialogue",
-        "english": "456 - Here you are, page 2, the left column",
-        "vietnamese": "456 - Đây, trang 2, cái cột bên trái",
-        "speaker": null,
+        "english": "Here you are, page 2, the left column",
+        "vietnamese": "Đây, trang 2, cái cột bên trái",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Here you are // page 2 // the left column"
+        "beat_prosody": "Here you are // page 2 // the left column"
       },
       {
         "chunk_id": "chunk_eres_d7_0117",
         "item_number": 117,
         "category": "dialogue",
-        "english": "456 - Actually I have reached out to a half of that",
-        "vietnamese": "456 - Thực ra tui đã reach tới một nửa trong số đó",
-        "speaker": null,
+        "english": "Actually I have reached out to a half of that",
+        "vietnamese": "Thực ra tui đã reach tới một nửa trong số đó",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - Actually I have reached out to a half of that"
+        "beat_prosody": "Actually I have reached out to a half of that"
       },
       {
         "chunk_id": "chunk_eres_d7_0118",
         "item_number": 118,
         "category": "dialogue",
-        "english": "456 - All negative results",
-        "vietnamese": "456 - Toàn là kết quảxấu",
-        "speaker": null,
+        "english": "All negative results",
+        "vietnamese": "Toàn là kết quảxấu",
+        "speaker": "456",
         "audio_url": null,
-        "beat_prosody": "456 - All negative results"
+        "beat_prosody": "All negative results"
       },
       {
         "chunk_id": "chunk_eres_d7_0119",
         "item_number": 119,
         "category": "dialogue",
-        "english": "001 - I see, I'll give you a name",
-        "vietnamese": "001 - Tui hiểu rồi, tui sẽ cho cậu một cái tên",
-        "speaker": null,
+        "english": "I see, I'll give you a name",
+        "vietnamese": "Tui hiểu rồi, tui sẽ cho cậu một cái tên",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - I see // I'll give you a name"
+        "beat_prosody": "I see // I'll give you a name"
       },
       {
         "chunk_id": "chunk_eres_d7_0120",
         "item_number": 120,
         "category": "dialogue",
-        "english": "001 - But you have to give him a call yourself",
-        "vietnamese": "001 - Nhưng mà cậu phải tự gọi cho ổng",
-        "speaker": null,
+        "english": "But you have to give him a call yourself",
+        "vietnamese": "Nhưng mà cậu phải tự gọi cho ổng",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - But you have to give him a call yourself"
+        "beat_prosody": "But you have to give him a call yourself"
       },
       {
         "chunk_id": "chunk_eres_d7_0121",
         "item_number": 121,
         "category": "dialogue",
-        "english": "001 - You can tell him I sent you",
-        "vietnamese": "001 - Cậu có thể nói ổng là tui giới thiệu cậu qua",
-        "speaker": null,
+        "english": "You can tell him I sent you",
+        "vietnamese": "Cậu có thể nói ổng là tui giới thiệu cậu qua",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - You can tell him I sent you"
+        "beat_prosody": "You can tell him I sent you"
       },
       {
         "chunk_id": "chunk_eres_d7_0122",
         "item_number": 122,
         "category": "dialogue",
-        "english": "001 - That's all I can do for you, see ya later",
-        "vietnamese": "001 - Đó là tất cả những gì mà tui có thể làm cho cậu, gặp cậu sau",
-        "speaker": null,
+        "english": "That's all I can do for you, see ya later",
+        "vietnamese": "Đó là tất cả những gì mà tui có thể làm cho cậu, gặp cậu sau",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - That's all I can do for you // see ya later"
+        "beat_prosody": "That's all I can do for you // see ya later"
       },
       {
         "chunk_id": "chunk_eres_d7_0123",
         "item_number": 123,
         "category": "dialogue",
-        "english": "001 - Parking fee here is very costly, 9k for a bike",
-        "vietnamese": "001 - Phí giữ xe ở đây mắc lắm, chiếc xe đạp 9 ngàn",
-        "speaker": null,
+        "english": "Parking fee here is very costly, 9k for a bike",
+        "vietnamese": "Phí giữ xe ở đây mắc lắm, chiếc xe đạp 9 ngàn",
+        "speaker": "001",
         "audio_url": null,
-        "beat_prosody": "001 - Parking fee here is very costly // 9k for a bike"
+        "beat_prosody": "Parking fee here is very costly // 9k for a bike"
       },
       {
         "chunk_id": "chunk_eres_d7_0124",
@@ -19686,7 +19626,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 134,
         "category": "review",
         "english": "Competent & incompetent",
-        "vietnamese": "Có năng lực & ko có năng lực",
+        "vietnamese": "Có năng lực & không có năng lực",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Competent & incompetent"
@@ -20285,11 +20225,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d7_0194",
         "item_number": 194,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth It appears that Miki's been struggling with her Excel lately. She had to call Morgan, her ex.",
-        "vietnamese": "",
+        "english": "It appears that Miki's been struggling with her Excel lately. She had to call Morgan, her ex.",
+        "vietnamese": "Có vẻ dạo này Miki đang chật vật với file Excel, cô ấy phải gọi cho Morgan, người yêu cũ của mình",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth It appears that Miki's been struggling with her Excel lately. She had to call Morgan // her ex."
+        "beat_prosody": "It appears that Miki's been struggling with her Excel lately. She had to call Morgan // her ex."
       },
       {
         "chunk_id": "chunk_eres_d7_0195",
@@ -20665,19 +20605,19 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d7_0232",
         "item_number": 232,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION They say \"A friend in need is a friend indeed\" and I'm talking about Putin.",
-        "vietnamese": "",
+        "english": "They say \"A friend in need is a friend indeed\" and I'm talking about Putin.",
+        "vietnamese": "Người ta nói \"Bạn trong lúc hoạn nạn mới là bạn thật sự\" và tôi đang nói về Putin",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION They say \"A friend in need is a friend indeed\" and I'm talking about Putin."
+        "beat_prosody": "They say \"A friend in need is a friend indeed\" and I'm talking about Putin."
       },
       {
         "chunk_id": "chunk_eres_d7_0233",
         "item_number": 233,
         "category": "dialogue",
         "english": "Hey, why the long face?",
-        "vietnamese": "P: Ê, sao mặt đưa đám vậy?",
-        "speaker": "Putin",
+        "vietnamese": "Ê, sao mặt đưa đám vậy?",
+        "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Hey // why the long face?"
       },
@@ -20686,8 +20626,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 234,
         "category": "dialogue",
         "english": "Sorry to bother you at this hour but you know I suck at Excel.",
-        "vietnamese": "Z: Xin lỗi làm phiền ông giờ này nhưng mà ông biết tui cùi Excel lắm.",
-        "speaker": "Zalenski",
+        "vietnamese": "Xin lỗi làm phiền ông giờ này nhưng mà ông biết tui cùi Excel lắm.",
+        "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Sorry to bother you at this hour but you know I suck at Excel."
       },
@@ -20696,7 +20636,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 235,
         "category": "dialogue",
         "english": "Don't say that, what friends are for?",
-        "vietnamese": "P: Đừng có nói vậy chớ, bạn bè để làm gì?",
+        "vietnamese": "Đừng có nói vậy chớ, bạn bè để làm gì?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Don't say that // what friends are for?"
@@ -20706,7 +20646,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 236,
         "category": "dialogue",
         "english": "OK, listen, this is not really a new problem.",
-        "vietnamese": "P: OK, nghe nè, cái này thực ra chả phải vấn đề mới mẻ gì.",
+        "vietnamese": "OK, nghe nè, cái này thực ra chả phải vấn đề mới mẻ gì.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "OK // listen // this is not really a new problem."
@@ -20716,7 +20656,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 237,
         "category": "dialogue",
         "english": "What's wrong with it, anyway?",
-        "vietnamese": "Z: Nhưng mà nó bị gì vậy?",
+        "vietnamese": "Nhưng mà nó bị gì vậy?",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "What's wrong with it // anyway?"
@@ -20726,7 +20666,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 238,
         "category": "dialogue",
         "english": "Let me do a quick check.",
-        "vietnamese": "P: Để tui check nhanh cái.",
+        "vietnamese": "Để tui check nhanh cái.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Let me do a quick check."
@@ -20736,7 +20676,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 239,
         "category": "dialogue",
         "english": "Don't worry, these things happen.",
-        "vietnamese": "P: Đừng có lo, mấy chuyện như này như cơm bữa ấy mà.",
+        "vietnamese": "Đừng có lo, mấy chuyện như này như cơm bữa ấy mà.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Don't worry // these things happen."
@@ -20746,7 +20686,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 240,
         "category": "dialogue",
         "english": "Nine times out of ten Excel users will have to experience annoying situations like these.",
-        "vietnamese": "P: Hết 9 trên 10 lần mấy người dùng Excel sẽ phải trải qua những cái tình thế phiền phức như vầy.",
+        "vietnamese": "Hết 9 trên 10 lần mấy người dùng Excel sẽ phải trải qua những cái tình thế phiền phức như vầy.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Nine times out of ten Excel users will have to experience annoying situations like these."
@@ -20756,7 +20696,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 241,
         "category": "dialogue",
         "english": "Anyway there's nothing to worry about.",
-        "vietnamese": "P: Mà dù sao ông cũng đừng có lo.",
+        "vietnamese": "Mà dù sao ông cũng đừng có lo.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Anyway there's nothing to worry about."
@@ -20766,7 +20706,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 242,
         "category": "dialogue",
         "english": "You're good at Excel, it's easy for you to say!",
-        "vietnamese": "Z: Ông giỏi Excel, ông nói thì dễ rồi!",
+        "vietnamese": "Ông giỏi Excel, ông nói thì dễ rồi!",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "You're good at Excel // it's easy for you to say!"
@@ -20776,7 +20716,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 243,
         "category": "dialogue",
         "english": "If 6am tomorrow I don't have the financial report for my boss,",
-        "vietnamese": "Z: Nếu 6h sáng mai tui mà không có cái báo cáo tài chính cho sếp tui,",
+        "vietnamese": "Nếu 6h sáng mai tui mà không có cái báo cáo tài chính cho sếp tui,",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "If 6am tomorrow I don't have the financial report for my boss,"
@@ -20786,7 +20726,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 244,
         "category": "dialogue",
         "english": "He's surely gonna kill me, really!",
-        "vietnamese": "Z: Chắc chắn là ổng cạo đầu tui luôn, thiệt!",
+        "vietnamese": "Chắc chắn là ổng cạo đầu tui luôn, thiệt!",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "He's surely gonna kill me // really!"
@@ -20796,7 +20736,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 245,
         "category": "dialogue",
         "english": "Alright, alright, alright, but don't push me, OK?",
-        "vietnamese": "P: Được rồi, được rồi, được rồi, nhưng mà ông đừng có hối tui, OK?",
+        "vietnamese": "Được rồi, được rồi, được rồi, nhưng mà ông đừng có hối tui, OK?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Alright // alright // alright // but don't push me // OK?"
@@ -20806,7 +20746,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 246,
         "category": "dialogue",
         "english": "In times like these, the most important thing to do is stay calm.",
-        "vietnamese": "P: Trong mấy cái lúc như vầy á, cái điều quan trọng nhất là giữ bình tĩnh.",
+        "vietnamese": "Trong mấy cái lúc như vầy á, cái điều quan trọng nhất là giữ bình tĩnh.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "In times like these // the most important thing to do is stay calm."
@@ -20816,7 +20756,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 247,
         "category": "dialogue",
         "english": "Here, you click options in the menu on the left. See?",
-        "vietnamese": "P: Đây, ông click vào options trong cái menu ở bên trái. Thấy không?",
+        "vietnamese": "Đây, ông click vào options trong cái menu ở bên trái. Thấy không?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Here // you click options in the menu on the left. See?"
@@ -20826,7 +20766,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 248,
         "category": "dialogue",
         "english": "Then you scroll it down, wait, select manual in the corner.",
-        "vietnamese": "P: Sau đó ông lăn nó xuống, khoan, chọn cái manual trong góc á.",
+        "vietnamese": "Sau đó ông lăn nó xuống, khoan, chọn cái manual trong góc á.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Then you scroll it down // wait // select manual in the corner."
@@ -20836,7 +20776,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 249,
         "category": "dialogue",
         "english": "Hold on, hold on, too fast, way too fast, dude.",
-        "vietnamese": "Z: Khoan, khoan, nhanh quá, nhanh quá, cha.",
+        "vietnamese": "Khoan, khoan, nhanh quá, nhanh quá, cha.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Hold on // hold on // too fast // way too fast // dude."
@@ -20846,7 +20786,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 250,
         "category": "dialogue",
         "english": "You've lost me right there.",
-        "vietnamese": "Z: Ngay chỗ đó ông nói tui hông hiểu gì hết.",
+        "vietnamese": "Ngay chỗ đó ông nói tui hông hiểu gì hết.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "You've lost me right there."
@@ -20856,7 +20796,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 251,
         "category": "dialogue",
         "english": "Come on, don't give me that look.",
-        "vietnamese": "Z: Thôi mà, đừng có nhìn tui vậy chớ.",
+        "vietnamese": "Thôi mà, đừng có nhìn tui vậy chớ.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Come on // don't give me that look."
@@ -20866,7 +20806,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 252,
         "category": "dialogue",
         "english": "You know I'm famous for computer illiteracy, don't you?",
-        "vietnamese": "Z: Ông biết tui nổi tiếng mù máy tính mà, phải không?",
+        "vietnamese": "Ông biết tui nổi tiếng mù máy tính mà, phải không?",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "You know I'm famous for computer illiteracy // don't you?"
@@ -20876,7 +20816,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 253,
         "category": "dialogue",
         "english": "The next time you come here, you'd better buy me 2 coffee. OK?",
-        "vietnamese": "P: Lần sau ông qua đây, ông tốt hơn là nên mua tui 2 ly café đi, OK?",
+        "vietnamese": "Lần sau ông qua đây, ông tốt hơn là nên mua tui 2 ly café đi, OK?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "The next time you come here // you'd better buy me 2 coffee. OK?"
@@ -20886,7 +20826,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 254,
         "category": "dialogue",
         "english": "Okay, deal!",
-        "vietnamese": "Z: Okay, chốt!",
+        "vietnamese": "Okay, chốt!",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Okay // deal!"
@@ -20896,7 +20836,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 255,
         "category": "dialogue",
         "english": "\"Just 2 cups of coffee, big deal!\" (Zelensky thought to himself)",
-        "vietnamese": "Z: \"Có 2 ly café mà làm thấy ghê!\" (Zelensky nghĩ bụng)",
+        "vietnamese": "\"Có 2 ly café mà làm thấy ghê!\" (Zelensky nghĩ bụng)",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "\"Just 2 cups of coffee // big deal!\" (Zelensky thought to himself)"
@@ -20906,7 +20846,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 256,
         "category": "dialogue",
         "english": "Look, you see that little button on the right?",
-        "vietnamese": "P: Nhìn nè, ông thấy cái nút nhỏ nhỏbên phải đó không?",
+        "vietnamese": "Nhìn nè, ông thấy cái nút nhỏ nhỏbên phải đó không?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Look // you see that little button on the right?"
@@ -20916,7 +20856,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 257,
         "category": "dialogue",
         "english": "No, no, no, no, that big X is Close button, dude!",
-        "vietnamese": "P: Không, không, không, không, cái nút X bự đó là nút tắt, cha ơi!",
+        "vietnamese": "Không, không, không, không, cái nút X bự đó là nút tắt, cha ơi!",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "No // no // no // no // that big X is Close button // dude!"
@@ -20926,7 +20866,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 258,
         "category": "dialogue",
         "english": "Hey, did you attend the Computer class back in high school???",
-        "vietnamese": "P: Ê, ông có học lớp vi tính hồi xưa cấp 3 không vậy???",
+        "vietnamese": "Ê, ông có học lớp vi tính hồi xưa cấp 3 không vậy???",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Hey // did you attend the Computer class back in high school???"
@@ -20936,7 +20876,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 259,
         "category": "dialogue",
         "english": "Stop complaining, 2 more bobas, okay???",
-        "vietnamese": "Z: Thôi đừng có càm ràm nữa, cho thêm 2 ly trà sữa, được chưa???",
+        "vietnamese": "Thôi đừng có càm ràm nữa, cho thêm 2 ly trà sữa, được chưa???",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Stop complaining // 2 more bobas // okay???"
@@ -20946,7 +20886,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 260,
         "category": "dialogue",
         "english": "Told you I suck at Excel.",
-        "vietnamese": "Z: Đã bảo ông tui cùi Excel mà.",
+        "vietnamese": "Đã bảo ông tui cùi Excel mà.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Told you I suck at Excel."
@@ -20956,7 +20896,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 261,
         "category": "dialogue",
         "english": "Focus, zoom in, now you see that?",
-        "vietnamese": "P: Tập trung nè, zoom vô, rồi giờ ông thấy cái đó chưa?",
+        "vietnamese": "Tập trung nè, zoom vô, rồi giờ ông thấy cái đó chưa?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Focus // zoom in // now you see that?"
@@ -20966,7 +20906,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 262,
         "category": "dialogue",
         "english": "That's right, click on that.",
-        "vietnamese": "P: Đúng oy, click vô cái đó.",
+        "vietnamese": "Đúng oy, click vô cái đó.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "That's right // click on that."
@@ -20976,7 +20916,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 263,
         "category": "dialogue",
         "english": "Done, there you have it.",
-        "vietnamese": "P: Xong, có vậy thôi đó.",
+        "vietnamese": "Xong, có vậy thôi đó.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Done // there you have it."
@@ -20986,7 +20926,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 264,
         "category": "dialogue",
         "english": "Actually you can always use this way to reduce the calculation time.",
-        "vietnamese": "P: Thực ra lúc nào ông cũng có thể dùng cách này để giảm cái thời gian tính toán lại.",
+        "vietnamese": "Thực ra lúc nào ông cũng có thể dùng cách này để giảm cái thời gian tính toán lại.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Actually you can always use this way to reduce the calculation time."
@@ -20996,7 +20936,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 265,
         "category": "dialogue",
         "english": "This will prevent all your formulas from being recalculated every time you change something.",
-        "vietnamese": "P: Cái này sẽ ngăn chặn toàn bộ công thức của ông bị tính toán lại mỗi khi ông thay đổi cái gì đó.",
+        "vietnamese": "Cái này sẽ ngăn chặn toàn bộ công thức của ông bị tính toán lại mỗi khi ông thay đổi cái gì đó.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "This will prevent all your formulas from being recalculated every time you change something."
@@ -21006,7 +20946,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 266,
         "category": "dialogue",
         "english": "Hmmm, I get it",
-        "vietnamese": "Z: Hmmm, tui hiểu rồi.",
+        "vietnamese": "Hmmm, tui hiểu rồi.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Hmmm // I get it"
@@ -21016,7 +20956,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "It's quite complicated to me, though.",
-        "vietnamese": "Z: Nhưng mà dù sao nó vẫn khá là phức tạp với tui.",
+        "vietnamese": "Nhưng mà dù sao nó vẫn khá là phức tạp với tui.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "It's quite complicated to me // though."
@@ -21026,7 +20966,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "Is there any shorter way for me?",
-        "vietnamese": "Z: Có cách nào ngắn gọn hơn cho tui không?",
+        "vietnamese": "Có cách nào ngắn gọn hơn cho tui không?",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Is there any shorter way for me?"
@@ -21036,7 +20976,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "Please, everybody knows you're Excel guru.",
-        "vietnamese": "Z: Đi mà, ai cũng biết ông là bậc thầy Excel mà.",
+        "vietnamese": "Đi mà, ai cũng biết ông là bậc thầy Excel mà.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Please // everybody knows you're Excel guru."
@@ -21046,7 +20986,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 270,
         "category": "dialogue",
         "english": "I'm afraid not, we'll see.",
-        "vietnamese": "P: Tui e là không, mà để coi.",
+        "vietnamese": "Tui e là không, mà để coi.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "I'm afraid not // we'll see."
@@ -21056,7 +20996,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "dialogue",
         "english": "Hold on, which version of Excel are you using?",
-        "vietnamese": "P: Mà khoan, ông đang dùng Excel version nào vậy?",
+        "vietnamese": "Mà khoan, ông đang dùng Excel version nào vậy?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Hold on // which version of Excel are you using?"
@@ -21066,7 +21006,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "dialogue",
         "english": "2016, maybe, I'm not sure anyway.",
-        "vietnamese": "Z: 2016, chắc vậy, mà tui cũng không chắc nữa.",
+        "vietnamese": "2016, chắc vậy, mà tui cũng không chắc nữa.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "2016 // maybe // I'm not sure anyway."
@@ -21076,7 +21016,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 273,
         "category": "dialogue",
         "english": "That one is now obsolete.",
-        "vietnamese": "P: Cái đó nó lỗi thời rồi.",
+        "vietnamese": "Cái đó nó lỗi thời rồi.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "That one is now obsolete."
@@ -21086,7 +21026,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 274,
         "category": "dialogue",
         "english": "Actually your Excel needs to be updated every three years.",
-        "vietnamese": "P: Thực ra Excel của ông cần phải được update mỗi ba năm.",
+        "vietnamese": "Thực ra Excel của ông cần phải được update mỗi ba năm.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Actually your Excel needs to be updated every three years."
@@ -21096,7 +21036,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 275,
         "category": "dialogue",
         "english": "Why your financial report is always super long?",
-        "vietnamese": "P: Mà sao báo cáo tài chính của ông lúc nào cũng dài thòong vậy?",
+        "vietnamese": "Mà sao báo cáo tài chính của ông lúc nào cũng dài thòong vậy?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Why your financial report is always super long?"
@@ -21106,7 +21046,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 276,
         "category": "dialogue",
         "english": "If you don't mind me asking.",
-        "vietnamese": "P: Nếu ông không ngại tui hỏi.",
+        "vietnamese": "Nếu ông không ngại tui hỏi.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "If you don't mind me asking."
@@ -21116,7 +21056,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 277,
         "category": "dialogue",
         "english": "Lemme check, what??? More than 5500 rows!",
-        "vietnamese": "P: Để tui check thử coi, gì??? Hơn 5500 hàng!",
+        "vietnamese": "Để tui check thử coi, gì??? Hơn 5500 hàng!",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Lemme check // what??? More than 5500 rows!"
@@ -21126,7 +21066,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 278,
         "category": "dialogue",
         "english": "No wonder it always takes more than half an hour just to calculate.",
-        "vietnamese": "P: Hèn gì lúc nào nó cũng ngốn hơn nửa tiếng chỉ để tính thôi đó.",
+        "vietnamese": "Hèn gì lúc nào nó cũng ngốn hơn nửa tiếng chỉ để tính thôi đó.",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "No wonder it always takes more than half an hour just to calculate."
@@ -21135,18 +21075,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d7_0279",
         "item_number": 279,
         "category": "dialogue",
-        "english": "Uhmmm, there's a thing I didn't tell you before Z: Uhmmm,",
-        "vietnamese": "có một chuyện tui chưa có nói ông trước đây.",
+        "english": "Uhmmm, there's a thing I didn't tell you before",
+        "vietnamese": "Có một chuyện tui chưa có nói ông trước đây.",
         "speaker": "Z",
         "audio_url": null,
-        "beat_prosody": "Uhmmm // there's a thing I didn't tell you before Z: Uhmmm,"
+        "beat_prosody": "Uhmmm // there's a thing I didn't tell you before"
       },
       {
         "chunk_id": "chunk_eres_d7_0280",
         "item_number": 280,
         "category": "dialogue",
         "english": "Actually I was told to create a lot of rows like that to try to evade taxes.",
-        "vietnamese": "Z: Thực ra tui được dặn tạo ra nhiều dòng như vậy là để cố gắng trốn thuế.",
+        "vietnamese": "Thực ra tui được dặn tạo ra nhiều dòng như vậy là để cố gắng trốn thuế.",
         "speaker": "Z",
         "audio_url": null,
         "beat_prosody": "Actually I was told to create a lot of rows like that to try to evade taxes."
@@ -23887,11 +23827,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d8_0222",
         "item_number": 222,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth",
-        "vietnamese": "",
+        "english": "Reflexes: Context & Back and Forth",
+        "vietnamese": "Phản xạ: Nghe ngữ cảnh & Hỏi đáp",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth"
+        "beat_prosody": "Reflexes: Context & Back and Forth"
       },
       {
         "chunk_id": "chunk_eres_d8_0223",
@@ -24387,481 +24327,481 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d8_0272",
         "item_number": 272,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION Uncle Roger & Steven He got lost in Dalat, in the middle of the pass...",
-        "vietnamese": "",
+        "english": "Uncle Roger & Steven He got lost in Dalat, in the middle of the pass...",
+        "vietnamese": "Uncle Roger & Steven He bị lạc ở Đà Lạt, ngay giữa lưng chừng đèo...",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION Uncle Roger & Steven He got lost in Dalat // in the middle of the pass..."
+        "beat_prosody": "Uncle Roger & Steven He got lost in Dalat // in the middle of the pass..."
       },
       {
         "chunk_id": "chunk_eres_d8_0273",
         "item_number": 273,
         "category": "dialogue",
-        "english": "Tracey - Hey, are you that famous Nemo in the cartoon?",
-        "vietnamese": "Tracey - Hey, cậu là cái con Nemo nổi tiếng trong hoạt hình phải không?",
-        "speaker": null,
+        "english": "Hey, are you that famous Nemo in the cartoon?",
+        "vietnamese": "Hey, cậu là cái con Nemo nổi tiếng trong hoạt hình phải không?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "Tracey - Hey // are you that famous Nemo in the cartoon?"
+        "beat_prosody": "Hey // are you that famous Nemo in the cartoon?"
       },
       {
         "chunk_id": "chunk_eres_d8_0274",
         "item_number": 274,
         "category": "dialogue",
-        "english": "Nemo - Hi ma'am, you see my dad around here?",
-        "vietnamese": "Nemo - Hi thím, thím thấy ba tui lòng vòng đây không?",
-        "speaker": null,
+        "english": "Hi ma'am, you see my dad around here?",
+        "vietnamese": "Hi thím, thím thấy ba tui lòng vòng đây không?",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "Nemo - Hi ma'am // you see my dad around here?"
+        "beat_prosody": "Hi ma'am // you see my dad around here?"
       },
       {
         "chunk_id": "chunk_eres_d8_0275",
         "item_number": 275,
         "category": "dialogue",
-        "english": "N - I've been looking for him since morning",
-        "vietnamese": "N - Tui đang tìm ổng sáng giờ",
-        "speaker": null,
+        "english": "I've been looking for him since morning",
+        "vietnamese": "Tui đang tìm ổng sáng giờ",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - I've been looking for him since morning"
+        "beat_prosody": "I've been looking for him since morning"
       },
       {
         "chunk_id": "chunk_eres_d8_0276",
         "item_number": 276,
         "category": "dialogue",
-        "english": "N - He told me he was having a group interview somewhere in the Indian sea",
-        "vietnamese": "N - Ổng bảo tui ổng có một buổi phỏng vấn nhóm đâu đó bên Ấn Độ dương",
-        "speaker": null,
+        "english": "He told me he was having a group interview somewhere in the Indian sea",
+        "vietnamese": "Ổng bảo tui ổng có một buổi phỏng vấn nhóm đâu đó bên Ấn Độ dương",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - He told me he was having a group interview somewhere in the Indian sea"
+        "beat_prosody": "He told me he was having a group interview somewhere in the Indian sea"
       },
       {
         "chunk_id": "chunk_eres_d8_0277",
         "item_number": 277,
         "category": "dialogue",
-        "english": "T - Wait, what you said? Indian sea?",
-        "vietnamese": "T - Khoan, cậu nói gì? Ấn Độ dương hả?",
-        "speaker": null,
+        "english": "Wait, what you said? Indian sea?",
+        "vietnamese": "Khoan, cậu nói gì? Ấn Độ dương hả?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Wait // what you said? Indian sea?"
+        "beat_prosody": "Wait // what you said? Indian sea?"
       },
       {
         "chunk_id": "chunk_eres_d8_0278",
         "item_number": 278,
         "category": "dialogue",
-        "english": "T - You must have misheard him,",
-        "vietnamese": "T - Chắc cậu nghe nhầm ổng rồi,",
-        "speaker": null,
+        "english": "You must have misheard him,",
+        "vietnamese": "Chắc cậu nghe nhầm ổng rồi,",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - You must have misheard him,"
+        "beat_prosody": "You must have misheard him,"
       },
       {
         "chunk_id": "chunk_eres_d8_0279",
         "item_number": 279,
         "category": "dialogue",
-        "english": "T - I'm sure he didn't say that,",
-        "vietnamese": "T - Tui chắc chắn ổng không có nói vậy,",
-        "speaker": null,
+        "english": "I'm sure he didn't say that,",
+        "vietnamese": "Tui chắc chắn ổng không có nói vậy,",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - I'm sure he didn't say that,"
+        "beat_prosody": "I'm sure he didn't say that,"
       },
       {
         "chunk_id": "chunk_eres_d8_0280",
         "item_number": 280,
         "category": "dialogue",
-        "english": "T - By the way, why you're here, dear?",
-        "vietnamese": "T - Mà, sao lại ở đây, cưng?",
-        "speaker": null,
+        "english": "By the way, why you're here, dear?",
+        "vietnamese": "Mà, sao lại ở đây, cưng?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - By the way // why you're here // dear?"
+        "beat_prosody": "By the way // why you're here // dear?"
       },
       {
         "chunk_id": "chunk_eres_d8_0281",
         "item_number": 281,
         "category": "dialogue",
-        "english": "T - This is 19th floor, Sonatus building, Shopee's pantry area",
-        "vietnamese": "T - Đây là lầu 19, tòa nhà Sonatus, khu vực Pantry của Shopee mà",
-        "speaker": null,
+        "english": "This is 19th floor, Sonatus building, Shopee's pantry area",
+        "vietnamese": "Đây là lầu 19, tòa nhà Sonatus, khu vực Pantry của Shopee mà",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - This is 19th floor // Sonatus building // Shopee's pantry area"
+        "beat_prosody": "This is 19th floor // Sonatus building // Shopee's pantry area"
       },
       {
         "chunk_id": "chunk_eres_d8_0282",
         "item_number": 282,
         "category": "dialogue",
-        "english": "T - You know what I mean?",
-        "vietnamese": "T - Cậu hiểu ý tui không?",
-        "speaker": null,
+        "english": "You know what I mean?",
+        "vietnamese": "Cậu hiểu ý tui không?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - You know what I mean?"
+        "beat_prosody": "You know what I mean?"
       },
       {
         "chunk_id": "chunk_eres_d8_0283",
         "item_number": 283,
         "category": "dialogue",
-        "english": "N - Hold on, you just said \"Shopee\"?",
-        "vietnamese": "N - Khoan, thím vừa bảo \"Shopee\" hả?",
-        "speaker": null,
+        "english": "Hold on, you just said \"Shopee\"?",
+        "vietnamese": "Khoan, thím vừa bảo \"Shopee\" hả?",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Hold on // you just said \"Shopee\"?"
+        "beat_prosody": "Hold on // you just said \"Shopee\"?"
       },
       {
         "chunk_id": "chunk_eres_d8_0284",
         "item_number": 284,
         "category": "dialogue",
-        "english": "N - That rings a bell!",
-        "vietnamese": "N - Cái đó nghe quen lắm nha!",
-        "speaker": null,
+        "english": "That rings a bell!",
+        "vietnamese": "Cái đó nghe quen lắm nha!",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - That rings a bell!"
+        "beat_prosody": "That rings a bell!"
       },
       {
         "chunk_id": "chunk_eres_d8_0285",
         "item_number": 285,
         "category": "dialogue",
-        "english": "N - Lately my dad has been singing an odd song",
-        "vietnamese": "N - Dạo gần đây ba tui ổng đang ca một cái bài rất kỳ lạ",
-        "speaker": null,
+        "english": "Lately my dad has been singing an odd song",
+        "vietnamese": "Dạo gần đây ba tui ổng đang ca một cái bài rất kỳ lạ",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Lately my dad has been singing an odd song"
+        "beat_prosody": "Lately my dad has been singing an odd song"
       },
       {
         "chunk_id": "chunk_eres_d8_0286",
         "item_number": 286,
         "category": "dialogue",
-        "english": "T - Wow, you know our lucky song??? Quite catchy, right?",
-        "vietnamese": "T - Wow, cậu biết cả bài hát phong thủy của bọn này hả??? Khá là bắt tai, phải không?",
-        "speaker": null,
+        "english": "Wow, you know our lucky song??? Quite catchy, right?",
+        "vietnamese": "Wow, cậu biết cả bài hát phong thủy của bọn này hả??? Khá là bắt tai, phải không?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Wow // you know our lucky song??? Quite catchy // right?"
+        "beat_prosody": "Wow // you know our lucky song??? Quite catchy // right?"
       },
       {
         "chunk_id": "chunk_eres_d8_0287",
         "item_number": 287,
         "category": "dialogue",
-        "english": "T - Okay, I'm on the way to the client meeting, so I'll be brief",
-        "vietnamese": "T - Okay, Chị đang trên đường qua họp khách hàng, nên chị sẽ ngắn gọn",
-        "speaker": null,
+        "english": "Okay, I'm on the way to the client meeting, so I'll be brief",
+        "vietnamese": "Okay, Chị đang trên đường qua họp khách hàng, nên chị sẽ ngắn gọn",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Okay // I'm on the way to the client meeting // so I'll be brief"
+        "beat_prosody": "Okay // I'm on the way to the client meeting // so I'll be brief"
       },
       {
         "chunk_id": "chunk_eres_d8_0288",
         "item_number": 288,
         "category": "dialogue",
-        "english": "T - I believe I ran into your dad this morning in the elevator",
-        "vietnamese": "T - Chị tin chị có đụng phải ba em sáng nay trong thang máy",
-        "speaker": null,
+        "english": "I believe I ran into your dad this morning in the elevator",
+        "vietnamese": "Chị tin chị có đụng phải ba em sáng nay trong thang máy",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - I believe I ran into your dad this morning in the elevator"
+        "beat_prosody": "I believe I ran into your dad this morning in the elevator"
       },
       {
         "chunk_id": "chunk_eres_d8_0289",
         "item_number": 289,
         "category": "dialogue",
-        "english": "T - He said he wanna become a professional BD",
-        "vietnamese": "T - Ổng bảo ổng muốn trở thành một BD chuyên nghiệp",
-        "speaker": null,
+        "english": "He said he wanna become a professional BD",
+        "vietnamese": "Ổng bảo ổng muốn trở thành một BD chuyên nghiệp",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - He said he wanna become a professional BD"
+        "beat_prosody": "He said he wanna become a professional BD"
       },
       {
         "chunk_id": "chunk_eres_d8_0290",
         "item_number": 290,
         "category": "dialogue",
-        "english": "T - It seemed he wanna learn more about the check-out flow",
-        "vietnamese": "T - Có vẻ như ổng muốn học về quy trình thanh toán",
-        "speaker": null,
+        "english": "It seemed he wanna learn more about the check-out flow",
+        "vietnamese": "Có vẻ như ổng muốn học về quy trình thanh toán",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - It seemed he wanna learn more about the check-out flow"
+        "beat_prosody": "It seemed he wanna learn more about the check-out flow"
       },
       {
         "chunk_id": "chunk_eres_d8_0291",
         "item_number": 291,
         "category": "dialogue",
-        "english": "N - No way, it doesn't sound like my daddy at all!",
-        "vietnamese": "N - Làm gì có chuyện đó, nghe chả giống tía em gì cả!",
-        "speaker": null,
+        "english": "No way, it doesn't sound like my daddy at all!",
+        "vietnamese": "Làm gì có chuyện đó, nghe chả giống tía em gì cả!",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - No way // it doesn't sound like my daddy at all!"
+        "beat_prosody": "No way // it doesn't sound like my daddy at all!"
       },
       {
         "chunk_id": "chunk_eres_d8_0292",
         "item_number": 292,
         "category": "dialogue",
-        "english": "N - My dad is not that numerate to become a BD!",
-        "vietnamese": "N - Tía em ổng đâu có giỏi số đến vậy để thành một BD!",
-        "speaker": null,
+        "english": "My dad is not that numerate to become a BD!",
+        "vietnamese": "Tía em ổng đâu có giỏi số đến vậy để thành một BD!",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - My dad is not that numerate to become a BD!"
+        "beat_prosody": "My dad is not that numerate to become a BD!"
       },
       {
         "chunk_id": "chunk_eres_d8_0293",
         "item_number": 293,
         "category": "dialogue",
-        "english": "N - You must have mistaken him for someone else",
-        "vietnamese": "N - Chắc là chị nhầm ổng với người khác rồi",
-        "speaker": null,
+        "english": "You must have mistaken him for someone else",
+        "vietnamese": "Chắc là chị nhầm ổng với người khác rồi",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - You must have mistaken him for someone else"
+        "beat_prosody": "You must have mistaken him for someone else"
       },
       {
         "chunk_id": "chunk_eres_d8_0294",
         "item_number": 294,
         "category": "dialogue",
-        "english": "N - Trust me, metrics are just not his things",
-        "vietnamese": "N - Tin em đi, mấy thông số đo không phải sở thích của ổng đâu",
-        "speaker": null,
+        "english": "Trust me, metrics are just not his things",
+        "vietnamese": "Tin em đi, mấy thông số đo không phải sở thích của ổng đâu",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Trust me // metrics are just not his things"
+        "beat_prosody": "Trust me // metrics are just not his things"
       },
       {
         "chunk_id": "chunk_eres_d8_0295",
         "item_number": 295,
         "category": "dialogue",
-        "english": "N - He even can not tell the difference between churn rate and retention rate",
-        "vietnamese": "N - Ổng thậm chí còn không thể nói được điểm khác biệt giữa churn rate với retention rate mà",
-        "speaker": null,
+        "english": "He even can not tell the difference between churn rate and retention rate",
+        "vietnamese": "Ổng thậm chí còn không thể nói được điểm khác biệt giữa churn rate với retention rate mà",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - He even can not tell the difference between churn rate and retention rate"
+        "beat_prosody": "He even can not tell the difference between churn rate and retention rate"
       },
       {
         "chunk_id": "chunk_eres_d8_0296",
         "item_number": 296,
         "category": "dialogue",
-        "english": "N - Plus my dad sucks at closing deals, really!",
-        "vietnamese": "N - Với lại tía em ổng dở chốt deal lắm, thiệt!",
-        "speaker": null,
+        "english": "Plus my dad sucks at closing deals, really!",
+        "vietnamese": "Với lại tía em ổng dở chốt deal lắm, thiệt!",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Plus my dad sucks at closing deals // really!"
+        "beat_prosody": "Plus my dad sucks at closing deals // really!"
       },
       {
         "chunk_id": "chunk_eres_d8_0297",
         "item_number": 297,
         "category": "dialogue",
-        "english": "N - I think my dad prefers a position in logistics",
-        "vietnamese": "N - Em nghĩ tía em ổng thích một vị trí bên logistics hơn ấy chị",
-        "speaker": null,
+        "english": "I think my dad prefers a position in logistics",
+        "vietnamese": "Em nghĩ tía em ổng thích một vị trí bên logistics hơn ấy chị",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - I think my dad prefers a position in logistics"
+        "beat_prosody": "I think my dad prefers a position in logistics"
       },
       {
         "chunk_id": "chunk_eres_d8_0298",
         "item_number": 298,
         "category": "dialogue",
-        "english": "T - Uh huh? Has he ever been in a delivery rejection situation before?",
-        "vietnamese": "T - Uh huh? Ổng có bao giờ ở vào trong cảnh bị bom hàng trước đây chưa?",
-        "speaker": null,
+        "english": "Uh huh? Has he ever been in a delivery rejection situation before?",
+        "vietnamese": "Uh huh? Ổng có bao giờ ở vào trong cảnh bị bom hàng trước đây chưa?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Uh huh? Has he ever been in a delivery rejection situation before?"
+        "beat_prosody": "Uh huh? Has he ever been in a delivery rejection situation before?"
       },
       {
         "chunk_id": "chunk_eres_d8_0299",
         "item_number": 299,
         "category": "dialogue",
-        "english": "N - Tell me about it, that situation is almost inevitable",
-        "vietnamese": "N - Chứ còn gì nữa, tình cảnh đó là gần như không thể tránh khỏi rồi",
-        "speaker": null,
+        "english": "Tell me about it, that situation is almost inevitable",
+        "vietnamese": "Chứ còn gì nữa, tình cảnh đó là gần như không thể tránh khỏi rồi",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Tell me about it // that situation is almost inevitable"
+        "beat_prosody": "Tell me about it // that situation is almost inevitable"
       },
       {
         "chunk_id": "chunk_eres_d8_0300",
         "item_number": 300,
         "category": "dialogue",
-        "english": "N - Believe it or not, 3 years ago,",
-        "vietnamese": "N - Chị tin hay không thì tùy, 3 năm trước,",
-        "speaker": null,
+        "english": "Believe it or not, 3 years ago,",
+        "vietnamese": "Chị tin hay không thì tùy, 3 năm trước,",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Believe it or not // 3 years ago,"
+        "beat_prosody": "Believe it or not // 3 years ago,"
       },
       {
         "chunk_id": "chunk_eres_d8_0301",
         "item_number": 301,
         "category": "dialogue",
-        "english": "N - He once shipped a sunscreen kit all the way to Africa",
-        "vietnamese": "N - Ổng có lần ship một bộ kem chống nắng qua tận Châu Phi",
-        "speaker": null,
+        "english": "He once shipped a sunscreen kit all the way to Africa",
+        "vietnamese": "Ổng có lần ship một bộ kem chống nắng qua tận Châu Phi",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - He once shipped a sunscreen kit all the way to Africa"
+        "beat_prosody": "He once shipped a sunscreen kit all the way to Africa"
       },
       {
         "chunk_id": "chunk_eres_d8_0302",
         "item_number": 302,
         "category": "dialogue",
-        "english": "T - Lemme stop you right there",
-        "vietnamese": "T - Cho chị ngắt lời em ngay đó",
-        "speaker": null,
+        "english": "Lemme stop you right there",
+        "vietnamese": "Cho chị ngắt lời em ngay đó",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Lemme stop you right there"
+        "beat_prosody": "Lemme stop you right there"
       },
       {
         "chunk_id": "chunk_eres_d8_0303",
         "item_number": 303,
         "category": "dialogue",
-        "english": "T - Everyone knows that Africa is still an undeliverable area",
-        "vietnamese": "T - Ai ai cũng biết Châu Phi nó vẫn là một khu vực không thể giao hàng mà",
-        "speaker": null,
+        "english": "Everyone knows that Africa is still an undeliverable area",
+        "vietnamese": "Ai ai cũng biết Châu Phi nó vẫn là một khu vực không thể giao hàng mà",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Everyone knows that Africa is still an undeliverable area"
+        "beat_prosody": "Everyone knows that Africa is still an undeliverable area"
       },
       {
         "chunk_id": "chunk_eres_d8_0304",
         "item_number": 304,
         "category": "dialogue",
-        "english": "T - There's not many banks there that could help you perform a transaction",
-        "vietnamese": "T - Đâu có nhiều ngân hàng bên đó có thể giúp em thực hiện một giao dịch",
-        "speaker": null,
+        "english": "There's not many banks there that could help you perform a transaction",
+        "vietnamese": "Đâu có nhiều ngân hàng bên đó có thể giúp em thực hiện một giao dịch",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - There's not many banks there that could help you perform a transaction"
+        "beat_prosody": "There's not many banks there that could help you perform a transaction"
       },
       {
         "chunk_id": "chunk_eres_d8_0305",
         "item_number": 305,
         "category": "dialogue",
-        "english": "N - You bet! I didn't say anything about banks or digital wallet",
-        "vietnamese": "N - Chính xác! Em đâu có nói gì về ngân hàng hay ví điện tử gì đâu",
-        "speaker": null,
+        "english": "You bet! I didn't say anything about banks or digital wallet",
+        "vietnamese": "Chính xác! Em đâu có nói gì về ngân hàng hay ví điện tử gì đâu",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - You bet! I didn't say anything about banks or digital wallet"
+        "beat_prosody": "You bet! I didn't say anything about banks or digital wallet"
       },
       {
         "chunk_id": "chunk_eres_d8_0306",
         "item_number": 306,
         "category": "dialogue",
-        "english": "T - Then what you're gonna use to pay?",
-        "vietnamese": "T - Thế em sẽ dùng cái gì để thanh toán?",
-        "speaker": null,
+        "english": "Then what you're gonna use to pay?",
+        "vietnamese": "Thế em sẽ dùng cái gì để thanh toán?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Then what you're gonna use to pay?"
+        "beat_prosody": "Then what you're gonna use to pay?"
       },
       {
         "chunk_id": "chunk_eres_d8_0307",
         "item_number": 307,
         "category": "dialogue",
-        "english": "N - In case like this, I guess COD might be the best solution",
-        "vietnamese": "N - Trong trường hợp này, em đoán COD có thể là giải pháp tốt nhất",
-        "speaker": null,
+        "english": "In case like this, I guess COD might be the best solution",
+        "vietnamese": "Trong trường hợp này, em đoán COD có thể là giải pháp tốt nhất",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - In case like this // I guess COD might be the best solution"
+        "beat_prosody": "In case like this // I guess COD might be the best solution"
       },
       {
         "chunk_id": "chunk_eres_d8_0308",
         "item_number": 308,
         "category": "dialogue",
-        "english": "T - Point is, how can your dad deal with border congestion?",
-        "vietnamese": "T - Vấn đề là sao tía em có thể deal được với tắt nghẽn biên giới chứ?",
-        "speaker": null,
+        "english": "Point is, how can your dad deal with border congestion?",
+        "vietnamese": "Vấn đề là sao tía em có thể deal được với tắt nghẽn biên giới chứ?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Point is // how can your dad deal with border congestion?"
+        "beat_prosody": "Point is // how can your dad deal with border congestion?"
       },
       {
         "chunk_id": "chunk_eres_d8_0309",
         "item_number": 309,
         "category": "dialogue",
-        "english": "N - No idea but this is not his first time",
-        "vietnamese": "N - Chả biết nhưng mà đây không phải lần đầu của ổng",
-        "speaker": null,
+        "english": "No idea but this is not his first time",
+        "vietnamese": "Chả biết nhưng mà đây không phải lần đầu của ổng",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - No idea but this is not his first time"
+        "beat_prosody": "No idea but this is not his first time"
       },
       {
         "chunk_id": "chunk_eres_d8_0310",
         "item_number": 310,
         "category": "dialogue",
-        "english": "T - Okay, you mean your dad always takes initiative to troubleshoot like this?",
-        "vietnamese": "T - Okay, ý em là ba em ổng luôn chủ động để giải quyết vấn đề kiểu vầy à?",
-        "speaker": null,
+        "english": "Okay, you mean your dad always takes initiative to troubleshoot like this?",
+        "vietnamese": "Okay, ý em là ba em ổng luôn chủ động để giải quyết vấn đề kiểu vầy à?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Okay // you mean your dad always takes initiative to troubleshoot like this?"
+        "beat_prosody": "Okay // you mean your dad always takes initiative to troubleshoot like this?"
       },
       {
         "chunk_id": "chunk_eres_d8_0311",
         "item_number": 311,
         "category": "dialogue",
-        "english": "N - Yeah, he's one of the best shippers I've ever seen in my life",
-        "vietnamese": "N - Yeah, ổng là một trong những shipper đỉnh nhất em từng thấy trong đời luôn ấy",
-        "speaker": null,
+        "english": "Yeah, he's one of the best shippers I've ever seen in my life",
+        "vietnamese": "Yeah, ổng là một trong những shipper đỉnh nhất em từng thấy trong đời luôn ấy",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Yeah // he's one of the best shippers I've ever seen in my life"
+        "beat_prosody": "Yeah // he's one of the best shippers I've ever seen in my life"
       },
       {
         "chunk_id": "chunk_eres_d8_0312",
         "item_number": 312,
         "category": "dialogue",
-        "english": "N - Let me put it this way",
-        "vietnamese": "N - Để em nói vầy đi",
-        "speaker": null,
+        "english": "Let me put it this way",
+        "vietnamese": "Để em nói vầy đi",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Let me put it this way"
+        "beat_prosody": "Let me put it this way"
       },
       {
         "chunk_id": "chunk_eres_d8_0313",
         "item_number": 313,
         "category": "dialogue",
-        "english": "N - It's not a good idea to let him become a BD",
-        "vietnamese": "N - Để cho ổng làm BD không phải là ý hay đâu",
-        "speaker": null,
+        "english": "It's not a good idea to let him become a BD",
+        "vietnamese": "Để cho ổng làm BD không phải là ý hay đâu",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - It's not a good idea to let him become a BD"
+        "beat_prosody": "It's not a good idea to let him become a BD"
       },
       {
         "chunk_id": "chunk_eres_d8_0314",
         "item_number": 314,
         "category": "dialogue",
-        "english": "T - Really? Is he good at inventory management?",
-        "vietnamese": "T - Vậy hả? Ổng có giỏi quản lý hàng hóa không?",
-        "speaker": null,
+        "english": "Really? Is he good at inventory management?",
+        "vietnamese": "Vậy hả? Ổng có giỏi quản lý hàng hóa không?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Really? Is he good at inventory management?"
+        "beat_prosody": "Really? Is he good at inventory management?"
       },
       {
         "chunk_id": "chunk_eres_d8_0315",
         "item_number": 315,
         "category": "dialogue",
-        "english": "T - Actually we've been performing mass recruitment for Shopee Xpress team",
-        "vietnamese": "T - Thực ra bọn chị đang tuyển hàng loạt cho cái đội Shopee Xpress",
-        "speaker": null,
+        "english": "Actually we've been performing mass recruitment for Shopee Xpress team",
+        "vietnamese": "Thực ra bọn chị đang tuyển hàng loạt cho cái đội Shopee Xpress",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Actually we've been performing mass recruitment for Shopee Xpress team"
+        "beat_prosody": "Actually we've been performing mass recruitment for Shopee Xpress team"
       },
       {
         "chunk_id": "chunk_eres_d8_0316",
         "item_number": 316,
         "category": "dialogue",
-        "english": "T - What concerns me the most right now is delivery time",
-        "vietnamese": "T - Cái điều làm chị băn khoăn nhất lúc này chính là thời gian giao hàng",
-        "speaker": null,
+        "english": "What concerns me the most right now is delivery time",
+        "vietnamese": "Cái điều làm chị băn khoăn nhất lúc này chính là thời gian giao hàng",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - What concerns me the most right now is delivery time"
+        "beat_prosody": "What concerns me the most right now is delivery time"
       },
       {
         "chunk_id": "chunk_eres_d8_0317",
         "item_number": 317,
         "category": "dialogue",
-        "english": "N - You mean how to shorten the delivery time?",
-        "vietnamese": "N - Ý chị là làm sao để giảm thời gian giao hàng phải không?",
-        "speaker": null,
+        "english": "You mean how to shorten the delivery time?",
+        "vietnamese": "Ý chị là làm sao để giảm thời gian giao hàng phải không?",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - You mean how to shorten the delivery time?"
+        "beat_prosody": "You mean how to shorten the delivery time?"
       },
       {
         "chunk_id": "chunk_eres_d8_0318",
         "item_number": 318,
         "category": "dialogue",
-        "english": "T - You bet, I gotta go, see you around",
-        "vietnamese": "T - Chính xác, thôi chị phải đi đây, gặp nhóc sau",
-        "speaker": null,
+        "english": "You bet, I gotta go, see you around",
+        "vietnamese": "Chính xác, thôi chị phải đi đây, gặp nhóc sau",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - You bet // I gotta go // see you around"
+        "beat_prosody": "You bet // I gotta go // see you around"
       },
       {
         "chunk_id": "chunk_eres_d8_0319",
         "item_number": 319,
         "category": "dialogue",
-        "english": "T - \"It's odd, how come I talked to a fish today???\"",
-        "vietnamese": "T - \"Kỳ lạ, sao hôm nay mình lại nói chuyện với một con cá nhỉ???\"",
-        "speaker": null,
+        "english": "\"It's odd, how come I talked to a fish today???\"",
+        "vietnamese": "\"Kỳ lạ, sao hôm nay mình lại nói chuyện với một con cá nhỉ???\"",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - \"It's odd // how come I talked to a fish today???\""
+        "beat_prosody": "\"It's odd // how come I talked to a fish today???\""
       },
       {
         "chunk_id": "chunk_eres_d8_0320",
@@ -25390,10 +25330,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 1,
         "category": "phrase",
         "english": "S- marketing What a mind-blowing idea!",
-        "vietnamese": "",
-        "speaker": "Lesson",
+        "vietnamese": "Smarketing - Đúng là một ý tưởng bùng nổ!",
+        "speaker": null,
         "audio_url": null,
-        "beat_prosody": "S- marketing What a mind-blowing idea!"
+        "beat_prosody": "S- marketing // What a mind-blowing idea!"
       },
       {
         "chunk_id": "chunk_eres_d9_0002",
@@ -25719,11 +25659,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d9_0034",
         "item_number": 34,
         "category": "vocab",
-        "english": "While... / meanwhile,... Trong khi...",
-        "vietnamese": "",
+        "english": "While... / meanwhile,...",
+        "vietnamese": "Trong khi...",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "While... // meanwhile,... Trong khi..."
+        "beat_prosody": "While... // meanwhile,..."
       },
       {
         "chunk_id": "chunk_eres_d9_0035",
@@ -25819,11 +25759,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d9_0044",
         "item_number": 44,
         "category": "vocab",
-        "english": "Fly to Kuala Lumpur Bay sang Kuala Lumpur",
-        "vietnamese": "",
+        "english": "Fly to Kuala Lumpur",
+        "vietnamese": "Bay sang Kuala Lumpur",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Fly to Kuala Lumpur Bay sang Kuala Lumpur"
+        "beat_prosody": "Fly to Kuala Lumpur"
       },
       {
         "chunk_id": "chunk_eres_d9_0045",
@@ -27550,7 +27490,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 217,
         "category": "sentence",
         "english": "I don't know how to put it but I don't really know about the current trends",
-        "vietnamese": "Tui ko biết nói sao nhưng mà tui không thực sự biết về những xu hướng hiện tại",
+        "vietnamese": "Tui không biết nói sao nhưng mà tui không thực sự biết về những xu hướng hiện tại",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I don't know how to put it but I don't really know about the current trends"
@@ -27629,11 +27569,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d9_0225",
         "item_number": 225,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth In terms of pricing, what would you say about Starbucks if you're a marketer?",
-        "vietnamese": "",
+        "english": "In terms of pricing, what would you say about Starbucks if you're a marketer?",
+        "vietnamese": "Về mặt định giá, bạn sẽ nói gì về Starbucks nếu bạn là một marketer?",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth In terms of pricing // what would you say about Starbucks if you're a marketer?"
+        "beat_prosody": "In terms of pricing // what would you say about Starbucks if you're a marketer?"
       },
       {
         "chunk_id": "chunk_eres_d9_0226",
@@ -28029,19 +27969,19 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d9_0265",
         "item_number": 265,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION In the metaverse, if Bill Gates happened to become Mark Zuckerberg's boss, what would it be like?",
-        "vietnamese": "",
+        "english": "In the metaverse, if Bill Gates happened to become Mark Zuckerberg's boss, what would it be like?",
+        "vietnamese": "Trong metaverse, nếu Bill Gates tình cờ trở thành sếp của Mark Zuckerberg thì sẽ như thế nào?",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION In the metaverse // if Bill Gates happened to become Mark Zuckerberg's boss // what would it be like?"
+        "beat_prosody": "In the metaverse // if Bill Gates happened to become Mark Zuckerberg's boss // what would it be like?"
       },
       {
         "chunk_id": "chunk_eres_d9_0266",
         "item_number": 266,
         "category": "dialogue",
         "english": "Hello, may I speak to Mark?",
-        "vietnamese": "Bill: Alo, cho tôi nói chuyện với Mark được không?",
-        "speaker": "Bill",
+        "vietnamese": "Alo, cho tôi nói chuyện với Mark được không?",
+        "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Hello // may I speak to Mark?"
       },
@@ -28050,8 +27990,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "Hi boss, it's me, what's up?",
-        "vietnamese": "Mark: Hi sếp, em đây, có gì không?",
-        "speaker": "Mark",
+        "vietnamese": "Hi sếp, em đây, có gì không?",
+        "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Hi boss // it's me // what's up?"
       },
@@ -28060,7 +28000,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "Not much, sorry to call you at this hour",
-        "vietnamese": "B: Cũng không có gì nhiều, xin lỗi vì gọi cậu giờ này",
+        "vietnamese": "Cũng không có gì nhiều, xin lỗi vì gọi cậu giờ này",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Not much // sorry to call you at this hour"
@@ -28070,7 +28010,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "Are you available to talk now?",
-        "vietnamese": "B: Giờ cậu có tiện nói chuyện không?",
+        "vietnamese": "Giờ cậu có tiện nói chuyện không?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Are you available to talk now?"
@@ -28080,7 +28020,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 270,
         "category": "dialogue",
         "english": "I'm okay, you're so strange today",
-        "vietnamese": "M: Em okay, nay sếp lạ vậy?",
+        "vietnamese": "Em okay, nay sếp lạ vậy?",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I'm okay // you're so strange today"
@@ -28090,7 +28030,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "dialogue",
         "english": "Really? I'm on vacation in Con Dao",
-        "vietnamese": "B: Vậy hả? Tôi đang nghỉ mát ở Côn Đảo",
+        "vietnamese": "Vậy hả? Tôi đang nghỉ mát ở Côn Đảo",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Really? I'm on vacation in Con Dao"
@@ -28100,7 +28040,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "dialogue",
         "english": "Quick question, who’s handled the packaging design this time?",
-        "vietnamese": "B: Hỏi nhanh cái, đứa nào lo cái thiết kế bao bì lần này vậy?",
+        "vietnamese": "Hỏi nhanh cái, đứa nào lo cái thiết kế bao bì lần này vậy?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Quick question // who’s handled the packaging design this time?"
@@ -28110,7 +28050,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 273,
         "category": "dialogue",
         "english": "If my memory serves me right,",
-        "vietnamese": "M: Nếu em nhớ không nhầm thì...",
+        "vietnamese": "Nếu em nhớ không nhầm thì...",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "If my memory serves me right,"
@@ -28120,7 +28060,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 274,
         "category": "dialogue",
         "english": "I has assigned this task to Steve",
-        "vietnamese": "M: Em đã giao cái task này cho thằng Steve",
+        "vietnamese": "Em đã giao cái task này cho thằng Steve",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I has assigned this task to Steve"
@@ -28130,7 +28070,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 275,
         "category": "dialogue",
         "english": "Well, I got bad news for him then",
-        "vietnamese": "B: Ý chà, vậy thì tôi có tin xấu cho nó rồi",
+        "vietnamese": "Ý chà, vậy thì tôi có tin xấu cho nó rồi",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Well // I got bad news for him then"
@@ -28140,7 +28080,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 276,
         "category": "dialogue",
         "english": "At first, actually I planned to do that myself",
-        "vietnamese": "M: Lúc đầu, thật ra em tính tự làm",
+        "vietnamese": "Lúc đầu, thật ra em tính tự làm",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "At first // actually I planned to do that myself"
@@ -28150,7 +28090,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 277,
         "category": "dialogue",
         "english": "But then, there was some minor issues with our agency in Thailand",
-        "vietnamese": "M: Nhưng mà sau đó, có vài vấn đề nhỏ với agency của mình ở bên Thái",
+        "vietnamese": "Nhưng mà sau đó, có vài vấn đề nhỏ với agency của mình ở bên Thái",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "But then // there was some minor issues with our agency in Thailand"
@@ -28160,7 +28100,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 278,
         "category": "dialogue",
         "english": "That's why I had to fly to Bangkok urgently last Monday",
-        "vietnamese": "M: Đó là lý do em phải bay gấp qua Bangkok thứ 2 tuần trước",
+        "vietnamese": "Đó là lý do em phải bay gấp qua Bangkok thứ 2 tuần trước",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "That's why I had to fly to Bangkok urgently last Monday"
@@ -28170,7 +28110,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 279,
         "category": "dialogue",
         "english": "Mark, I don't know how to put it but...",
-        "vietnamese": "B: Mark, tôi không biết nói sao nhưng mà...",
+        "vietnamese": "Mark, tôi không biết nói sao nhưng mà...",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Mark // I don't know how to put it but..."
@@ -28180,7 +28120,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 280,
         "category": "dialogue",
         "english": "Okay, lemme get this straight,",
-        "vietnamese": "B: Okay, thôi để tôi nói thẳng nha",
+        "vietnamese": "Okay, thôi để tôi nói thẳng nha",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Okay // lemme get this straight,"
@@ -28190,7 +28130,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 281,
         "category": "dialogue",
         "english": "I don't know if he told you yet but...",
-        "vietnamese": "B: Tôi không biết liệu nó có nói cậu chưa nhưng mà...",
+        "vietnamese": "Tôi không biết liệu nó có nói cậu chưa nhưng mà...",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "I don't know if he told you yet but..."
@@ -28200,7 +28140,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 282,
         "category": "dialogue",
         "english": "He went three times over the budget",
-        "vietnamese": "B: Nó đã vượt ngân sách gấp 3 lần",
+        "vietnamese": "Nó đã vượt ngân sách gấp 3 lần",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "He went three times over the budget"
@@ -28210,7 +28150,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 283,
         "category": "dialogue",
         "english": "Wait, wait, wait, lemme explain",
-        "vietnamese": "M: Khoan, khoan, khoan, cho em giải thích cái",
+        "vietnamese": "Khoan, khoan, khoan, cho em giải thích cái",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Wait // wait // wait // lemme explain"
@@ -28220,7 +28160,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 284,
         "category": "dialogue",
         "english": "Our products this time were designed for niche market, right?",
-        "vietnamese": "M: Mấy cái sản phẩm lần này của mình được design cho thị trường ngách mà, phải không?",
+        "vietnamese": "Mấy cái sản phẩm lần này của mình được design cho thị trường ngách mà, phải không?",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Our products this time were designed for niche market // right?"
@@ -28230,7 +28170,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 285,
         "category": "dialogue",
         "english": "Keep going",
-        "vietnamese": "B: Cứ nói tiếp",
+        "vietnamese": "Cứ nói tiếp",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Keep going"
@@ -28240,7 +28180,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 286,
         "category": "dialogue",
         "english": "So, our strategy is gonna be exclusive distribution",
-        "vietnamese": "M: Cho nên, chiến lược của mình sẽ là phân phối độc quyền",
+        "vietnamese": "Cho nên, chiến lược của mình sẽ là phân phối độc quyền",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "So // our strategy is gonna be exclusive distribution"
@@ -28250,7 +28190,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 287,
         "category": "dialogue",
         "english": "Not intensive distribution",
-        "vietnamese": "M: Chứ không phải phân phối đại trà",
+        "vietnamese": "Chứ không phải phân phối đại trà",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Not intensive distribution"
@@ -28260,7 +28200,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 288,
         "category": "dialogue",
         "english": "I think of course the cost will get a little bit higher",
-        "vietnamese": "M: Em nghĩ tất nhiên là giá sẽ hơi cao hơn một tẹo",
+        "vietnamese": "Em nghĩ tất nhiên là giá sẽ hơi cao hơn một tẹo",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I think of course the cost will get a little bit higher"
@@ -28270,7 +28210,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 289,
         "category": "dialogue",
         "english": "Keep it short, Mark, I don’t have all day",
-        "vietnamese": "B: Ngắn gọn thôi, Mark, tôi không có rảnh cả ngày đâu",
+        "vietnamese": "Ngắn gọn thôi, Mark, tôi không có rảnh cả ngày đâu",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Keep it short // Mark // I don’t have all day"
@@ -28280,7 +28220,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 290,
         "category": "dialogue",
         "english": "Then lemme finish,",
-        "vietnamese": "M: Thì để em nói xong đã,",
+        "vietnamese": "Thì để em nói xong đã,",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Then lemme finish,"
@@ -28290,7 +28230,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 291,
         "category": "dialogue",
         "english": "Purchasing power at the moment is not strong enough",
-        "vietnamese": "M: Sức mua ở thời điểm hiện tại không có đủ mạnh",
+        "vietnamese": "Sức mua ở thời điểm hiện tại không có đủ mạnh",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Purchasing power at the moment is not strong enough"
@@ -28300,7 +28240,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 292,
         "category": "dialogue",
         "english": "The point is I want you to increase market coverage. Okay?",
-        "vietnamese": "B: Cái vấn đề là tôi muốn cậu tăng cái độ phủ thị trường lên. Okay?",
+        "vietnamese": "Cái vấn đề là tôi muốn cậu tăng cái độ phủ thị trường lên. Okay?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "The point is I want you to increase market coverage. Okay?"
@@ -28310,7 +28250,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 293,
         "category": "dialogue",
         "english": "Nooo, I don't think so, this is door-to-door sales",
-        "vietnamese": "M: Nôôô, em không nghĩ vậy, cái này là tiếp thị đến từng nhà mà",
+        "vietnamese": "Nôôô, em không nghĩ vậy, cái này là tiếp thị đến từng nhà mà",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Nooo // I don't think so // this is door-to-door sales"
@@ -28320,7 +28260,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 294,
         "category": "dialogue",
         "english": "Uh huh, what’s the difference???",
-        "vietnamese": "B: Oh hớ, có gì khác nhau?",
+        "vietnamese": "Oh hớ, có gì khác nhau?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Uh huh // what’s the difference???"
@@ -28330,7 +28270,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 295,
         "category": "dialogue",
         "english": "It is, very different, I’m talking about word of mouth",
-        "vietnamese": "M: Có chớ, rất là khác, em đang nói về truyền miệng nha",
+        "vietnamese": "Có chớ, rất là khác, em đang nói về truyền miệng nha",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "It is // very different // I’m talking about word of mouth"
@@ -28340,7 +28280,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 296,
         "category": "dialogue",
         "english": "Hold on, do you know what’s our long-term target?",
-        "vietnamese": "B: Khoan, cậu có biết mục tiêu dài hạn của chúng ta là gì không?",
+        "vietnamese": "Khoan, cậu có biết mục tiêu dài hạn của chúng ta là gì không?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Hold on // do you know what’s our long-term target?"
@@ -28350,7 +28290,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 297,
         "category": "dialogue",
         "english": "Of course I know, We wanna make marketable products",
-        "vietnamese": "M: Đương nhiên là em biết, chúng ta muốn tạo ra những sản phẩm bán được",
+        "vietnamese": "Đương nhiên là em biết, chúng ta muốn tạo ra những sản phẩm bán được",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Of course I know // We wanna make marketable products"
@@ -28360,7 +28300,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 298,
         "category": "dialogue",
         "english": "Okay, good. Have you finished the break-even analysis yet?",
-        "vietnamese": "B: Okay, good. Cậu xong cái phân tích điểm hòa vốn chưa?",
+        "vietnamese": "Okay, good. Cậu xong cái phân tích điểm hòa vốn chưa?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Okay // good. Have you finished the break-even analysis yet?"
@@ -28370,7 +28310,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 299,
         "category": "dialogue",
         "english": "Not yet, boss, please give me 2 more days",
-        "vietnamese": "M: Dạ chưa sếp, cho em thêm 2 ngày đi",
+        "vietnamese": "Dạ chưa sếp, cho em thêm 2 ngày đi",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Not yet // boss // please give me 2 more days"
@@ -28380,7 +28320,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 300,
         "category": "dialogue",
         "english": "I promise I will pinpoint the root cause",
-        "vietnamese": "M: Em hứa em sẽ chỉ ra cái nguyên nhân gốc rễ",
+        "vietnamese": "Em hứa em sẽ chỉ ra cái nguyên nhân gốc rễ",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I promise I will pinpoint the root cause"
@@ -28390,7 +28330,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 301,
         "category": "dialogue",
         "english": "Rest assured! We won’t have to withdraw the products",
-        "vietnamese": "M: Yên chí! Chúng ta sẽ không phải thu hồi sản phẩm đâu",
+        "vietnamese": "Yên chí! Chúng ta sẽ không phải thu hồi sản phẩm đâu",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Rest assured! We won’t have to withdraw the products"
@@ -28400,7 +28340,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 302,
         "category": "dialogue",
         "english": "Okay, sure, I know you’re an expert at this",
-        "vietnamese": "B: Okay, sure, tôi biết cậu là chuyên gia trong vụ này mà",
+        "vietnamese": "Okay, sure, tôi biết cậu là chuyên gia trong vụ này mà",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Okay // sure // I know you’re an expert at this"
@@ -28410,7 +28350,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 303,
         "category": "dialogue",
         "english": "I’ll let you handle this",
-        "vietnamese": "B: Tôi sẽ để cậu xử lý vụ này",
+        "vietnamese": "Tôi sẽ để cậu xử lý vụ này",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "I’ll let you handle this"
@@ -28420,7 +28360,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 304,
         "category": "dialogue",
         "english": "Do you want me to apply digital wallet?",
-        "vietnamese": "M: Sếp có muốn em áp dụng ví điện tử không?",
+        "vietnamese": "Sếp có muốn em áp dụng ví điện tử không?",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Do you want me to apply digital wallet?"
@@ -28430,7 +28370,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 305,
         "category": "dialogue",
         "english": "Good idea, I'll leave that to you",
-        "vietnamese": "B: Good idea, tôi sẽ để cậu quyết định",
+        "vietnamese": "Good idea, tôi sẽ để cậu quyết định",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Good idea // I'll leave that to you"
@@ -28440,7 +28380,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 306,
         "category": "dialogue",
         "english": "What worries me now is the shipping time",
-        "vietnamese": "B: Cái điều làm tôi lo lắng bây giờ là thời gian giao hàng",
+        "vietnamese": "Cái điều làm tôi lo lắng bây giờ là thời gian giao hàng",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "What worries me now is the shipping time"
@@ -28450,7 +28390,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 307,
         "category": "dialogue",
         "english": "Not to mention issuing an invoice will take much time",
-        "vietnamese": "B: Chưa kể đến việc xuất hóa đơn đỏ sẽ mất rất là nhiều thời gian",
+        "vietnamese": "Chưa kể đến việc xuất hóa đơn đỏ sẽ mất rất là nhiều thời gian",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Not to mention issuing an invoice will take much time"
@@ -28460,7 +28400,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 308,
         "category": "dialogue",
         "english": "But not many walk-in customers are willing to pay $1000 dollars for this product",
-        "vietnamese": "B: Nhưng chẳng có mấy khách vãng lai sẵn lòng trả $1000 cho cái sản phẩm này",
+        "vietnamese": "Nhưng chẳng có mấy khách vãng lai sẵn lòng trả $1000 cho cái sản phẩm này",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "But not many walk-in customers are willing to pay $1000 dollars for this product"
@@ -28470,7 +28410,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 309,
         "category": "dialogue",
         "english": "I know but we have already used all the marketing tactics we know",
-        "vietnamese": "M: Em biết nhưng mà chúng ta đã dùng hết mấy cái mánh marketing mà chúng ta biết rồi",
+        "vietnamese": "Em biết nhưng mà chúng ta đã dùng hết mấy cái mánh marketing mà chúng ta biết rồi",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I know but we have already used all the marketing tactics we know"
@@ -28480,7 +28420,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 310,
         "category": "dialogue",
         "english": "Boss, what do you think about this potential market?",
-        "vietnamese": "M: Sếp, sếp nghĩ sao về cái thị trường tiềm năng này?",
+        "vietnamese": "Sếp, sếp nghĩ sao về cái thị trường tiềm năng này?",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Boss // what do you think about this potential market?"
@@ -28490,7 +28430,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 311,
         "category": "dialogue",
         "english": "I don’t wanna use the word “unfair competition”",
-        "vietnamese": "B: Tôi không có muốn dùng cái từ \"cạnh tranh không lành mạnh\"",
+        "vietnamese": "Tôi không có muốn dùng cái từ \"cạnh tranh không lành mạnh\"",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "I don’t wanna use the word “unfair competition”"
@@ -28500,7 +28440,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 312,
         "category": "dialogue",
         "english": "But it seems we’re facing (with) what we fear the most",
-        "vietnamese": "B: Nhưng có vẻ như chúng ta đang đối mặt với cái điều mà chúng ta sợ nhất",
+        "vietnamese": "Nhưng có vẻ như chúng ta đang đối mặt với cái điều mà chúng ta sợ nhất",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "But it seems we’re facing (with) what we fear the most"
@@ -28510,7 +28450,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 313,
         "category": "dialogue",
         "english": "Okay, boss, I got it, let’s see",
-        "vietnamese": "M: Okay, sếp, em hiểu rồi, để coi sao",
+        "vietnamese": "Okay, sếp, em hiểu rồi, để coi sao",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Okay // boss // I got it // let’s see"
@@ -29228,11 +29168,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d10_0020",
         "item_number": 20,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth",
-        "vietnamese": "",
+        "english": "Reflexes: Context & Back and Forth",
+        "vietnamese": "Phản xạ: Nghe ngữ cảnh & Hỏi đáp",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth"
+        "beat_prosody": "Reflexes: Context & Back and Forth"
       },
       {
         "chunk_id": "chunk_eres_d10_0021",
@@ -29728,481 +29668,481 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d10_0070",
         "item_number": 70,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION Uncle Roger & Steven He got lost in Dalat, in the middle of the pass...",
-        "vietnamese": "",
+        "english": "Uncle Roger & Steven He got lost in Dalat, in the middle of the pass...",
+        "vietnamese": "Uncle Roger & Steven He bị lạc ở Đà Lạt, ngay giữa lưng chừng đèo...",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION Uncle Roger & Steven He got lost in Dalat // in the middle of the pass..."
+        "beat_prosody": "Uncle Roger & Steven He got lost in Dalat // in the middle of the pass..."
       },
       {
         "chunk_id": "chunk_eres_d10_0071",
         "item_number": 71,
         "category": "dialogue",
-        "english": "Tracey - Hey, are you that famous Nemo in the cartoon?",
-        "vietnamese": "Tracey - Hey, cậu là cái con Nemo nổi tiếng trong hoạt hình phải không?",
-        "speaker": null,
+        "english": "Hey, are you that famous Nemo in the cartoon?",
+        "vietnamese": "Hey, cậu là cái con Nemo nổi tiếng trong hoạt hình phải không?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "Tracey - Hey // are you that famous Nemo in the cartoon?"
+        "beat_prosody": "Hey // are you that famous Nemo in the cartoon?"
       },
       {
         "chunk_id": "chunk_eres_d10_0072",
         "item_number": 72,
         "category": "dialogue",
-        "english": "Nemo - Hi ma'am, you see my dad around here?",
-        "vietnamese": "Nemo - Hi thím, thím thấy ba tui lòng vòng đây không?",
-        "speaker": null,
+        "english": "Hi ma'am, you see my dad around here?",
+        "vietnamese": "Hi thím, thím thấy ba tui lòng vòng đây không?",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "Nemo - Hi ma'am // you see my dad around here?"
+        "beat_prosody": "Hi ma'am // you see my dad around here?"
       },
       {
         "chunk_id": "chunk_eres_d10_0073",
         "item_number": 73,
         "category": "dialogue",
-        "english": "N - I've been looking for him since morning",
-        "vietnamese": "N - Tui đang tìm ổng sáng giờ",
-        "speaker": null,
+        "english": "I've been looking for him since morning",
+        "vietnamese": "Tui đang tìm ổng sáng giờ",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - I've been looking for him since morning"
+        "beat_prosody": "I've been looking for him since morning"
       },
       {
         "chunk_id": "chunk_eres_d10_0074",
         "item_number": 74,
         "category": "dialogue",
-        "english": "N - He told me he was having a group interview somewhere in the Indian sea",
-        "vietnamese": "N - Ổng bảo tui ổng có một buổi phỏng vấn nhóm đâu đó bên Ấn Độ dương",
-        "speaker": null,
+        "english": "He told me he was having a group interview somewhere in the Indian sea",
+        "vietnamese": "Ổng bảo tui ổng có một buổi phỏng vấn nhóm đâu đó bên Ấn Độ dương",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - He told me he was having a group interview somewhere in the Indian sea"
+        "beat_prosody": "He told me he was having a group interview somewhere in the Indian sea"
       },
       {
         "chunk_id": "chunk_eres_d10_0075",
         "item_number": 75,
         "category": "dialogue",
-        "english": "T - Wait, what you said? Indian sea?",
-        "vietnamese": "T - Khoan, cậu nói gì? Ấn Độ dương hả?",
-        "speaker": null,
+        "english": "Wait, what you said? Indian sea?",
+        "vietnamese": "Khoan, cậu nói gì? Ấn Độ dương hả?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Wait // what you said? Indian sea?"
+        "beat_prosody": "Wait // what you said? Indian sea?"
       },
       {
         "chunk_id": "chunk_eres_d10_0076",
         "item_number": 76,
         "category": "dialogue",
-        "english": "T - You must have misheard him,",
-        "vietnamese": "T - Chắc cậu nghe nhầm ổng rồi,",
-        "speaker": null,
+        "english": "You must have misheard him,",
+        "vietnamese": "Chắc cậu nghe nhầm ổng rồi,",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - You must have misheard him,"
+        "beat_prosody": "You must have misheard him,"
       },
       {
         "chunk_id": "chunk_eres_d10_0077",
         "item_number": 77,
         "category": "dialogue",
-        "english": "T - I'm sure he didn't say that,",
-        "vietnamese": "T - Tui chắc chắn ổng không có nói vậy,",
-        "speaker": null,
+        "english": "I'm sure he didn't say that,",
+        "vietnamese": "Tui chắc chắn ổng không có nói vậy,",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - I'm sure he didn't say that,"
+        "beat_prosody": "I'm sure he didn't say that,"
       },
       {
         "chunk_id": "chunk_eres_d10_0078",
         "item_number": 78,
         "category": "dialogue",
-        "english": "T - By the way, why you're here, dear?",
-        "vietnamese": "T - Mà, sao lại ở đây, cưng?",
-        "speaker": null,
+        "english": "By the way, why you're here, dear?",
+        "vietnamese": "Mà, sao lại ở đây, cưng?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - By the way // why you're here // dear?"
+        "beat_prosody": "By the way // why you're here // dear?"
       },
       {
         "chunk_id": "chunk_eres_d10_0079",
         "item_number": 79,
         "category": "dialogue",
-        "english": "T - This is 19th floor, Sonatus building, Shopee's pantry area",
-        "vietnamese": "T - Đây là lầu 19, tòa nhà Sonatus, khu vực Pantry của Shopee mà",
-        "speaker": null,
+        "english": "This is 19th floor, Sonatus building, Shopee's pantry area",
+        "vietnamese": "Đây là lầu 19, tòa nhà Sonatus, khu vực Pantry của Shopee mà",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - This is 19th floor // Sonatus building // Shopee's pantry area"
+        "beat_prosody": "This is 19th floor // Sonatus building // Shopee's pantry area"
       },
       {
         "chunk_id": "chunk_eres_d10_0080",
         "item_number": 80,
         "category": "dialogue",
-        "english": "T - You know what I mean?",
-        "vietnamese": "T - Cậu hiểu ý tui không?",
-        "speaker": null,
+        "english": "You know what I mean?",
+        "vietnamese": "Cậu hiểu ý tui không?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - You know what I mean?"
+        "beat_prosody": "You know what I mean?"
       },
       {
         "chunk_id": "chunk_eres_d10_0081",
         "item_number": 81,
         "category": "dialogue",
-        "english": "N - Hold on, you just said \"Shopee\"?",
-        "vietnamese": "N - Khoan, thím vừa bảo \"Shopee\" hả?",
-        "speaker": null,
+        "english": "Hold on, you just said \"Shopee\"?",
+        "vietnamese": "Khoan, thím vừa bảo \"Shopee\" hả?",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Hold on // you just said \"Shopee\"?"
+        "beat_prosody": "Hold on // you just said \"Shopee\"?"
       },
       {
         "chunk_id": "chunk_eres_d10_0082",
         "item_number": 82,
         "category": "dialogue",
-        "english": "N - That rings a bell!",
-        "vietnamese": "N - Cái đó nghe quen lắm nha!",
-        "speaker": null,
+        "english": "That rings a bell!",
+        "vietnamese": "Cái đó nghe quen lắm nha!",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - That rings a bell!"
+        "beat_prosody": "That rings a bell!"
       },
       {
         "chunk_id": "chunk_eres_d10_0083",
         "item_number": 83,
         "category": "dialogue",
-        "english": "N - Lately my dad has been singing an odd song",
-        "vietnamese": "N - Dạo gần đây ba tui ổng đang ca một cái bài rất kỳ lạ",
-        "speaker": null,
+        "english": "Lately my dad has been singing an odd song",
+        "vietnamese": "Dạo gần đây ba tui ổng đang ca một cái bài rất kỳ lạ",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Lately my dad has been singing an odd song"
+        "beat_prosody": "Lately my dad has been singing an odd song"
       },
       {
         "chunk_id": "chunk_eres_d10_0084",
         "item_number": 84,
         "category": "dialogue",
-        "english": "T - Wow, you know our lucky song??? Quite catchy, right?",
-        "vietnamese": "T - Wow, cậu biết cả bài hát phong thủy của bọn này hả??? Khá là bắt tai, phải không?",
-        "speaker": null,
+        "english": "Wow, you know our lucky song??? Quite catchy, right?",
+        "vietnamese": "Wow, cậu biết cả bài hát phong thủy của bọn này hả??? Khá là bắt tai, phải không?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Wow // you know our lucky song??? Quite catchy // right?"
+        "beat_prosody": "Wow // you know our lucky song??? Quite catchy // right?"
       },
       {
         "chunk_id": "chunk_eres_d10_0085",
         "item_number": 85,
         "category": "dialogue",
-        "english": "T - Okay, I'm on the way to the client meeting, so I'll be brief",
-        "vietnamese": "T - Okay, Chị đang trên đường qua họp khách hàng, nên chị sẽ ngắn gọn",
-        "speaker": null,
+        "english": "Okay, I'm on the way to the client meeting, so I'll be brief",
+        "vietnamese": "Okay, Chị đang trên đường qua họp khách hàng, nên chị sẽ ngắn gọn",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Okay // I'm on the way to the client meeting // so I'll be brief"
+        "beat_prosody": "Okay // I'm on the way to the client meeting // so I'll be brief"
       },
       {
         "chunk_id": "chunk_eres_d10_0086",
         "item_number": 86,
         "category": "dialogue",
-        "english": "T - I believe I ran into your dad this morning in the elevator",
-        "vietnamese": "T - Chị tin chị có đụng phải ba em sáng nay trong thang máy",
-        "speaker": null,
+        "english": "I believe I ran into your dad this morning in the elevator",
+        "vietnamese": "Chị tin chị có đụng phải ba em sáng nay trong thang máy",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - I believe I ran into your dad this morning in the elevator"
+        "beat_prosody": "I believe I ran into your dad this morning in the elevator"
       },
       {
         "chunk_id": "chunk_eres_d10_0087",
         "item_number": 87,
         "category": "dialogue",
-        "english": "T - He said he wanna become a professional BD",
-        "vietnamese": "T - Ổng bảo ổng muốn trở thành một BD chuyên nghiệp",
-        "speaker": null,
+        "english": "He said he wanna become a professional BD",
+        "vietnamese": "Ổng bảo ổng muốn trở thành một BD chuyên nghiệp",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - He said he wanna become a professional BD"
+        "beat_prosody": "He said he wanna become a professional BD"
       },
       {
         "chunk_id": "chunk_eres_d10_0088",
         "item_number": 88,
         "category": "dialogue",
-        "english": "T - It seemed he wanna learn more about the check-out flow",
-        "vietnamese": "T - Có vẻ như ổng muốn học về quy trình thanh toán",
-        "speaker": null,
+        "english": "It seemed he wanna learn more about the check-out flow",
+        "vietnamese": "Có vẻ như ổng muốn học về quy trình thanh toán",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - It seemed he wanna learn more about the check-out flow"
+        "beat_prosody": "It seemed he wanna learn more about the check-out flow"
       },
       {
         "chunk_id": "chunk_eres_d10_0089",
         "item_number": 89,
         "category": "dialogue",
-        "english": "N - No way, it doesn't sound like my daddy at all!",
-        "vietnamese": "N - Làm gì có chuyện đó, nghe chả giống tía em gì cả!",
-        "speaker": null,
+        "english": "No way, it doesn't sound like my daddy at all!",
+        "vietnamese": "Làm gì có chuyện đó, nghe chả giống tía em gì cả!",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - No way // it doesn't sound like my daddy at all!"
+        "beat_prosody": "No way // it doesn't sound like my daddy at all!"
       },
       {
         "chunk_id": "chunk_eres_d10_0090",
         "item_number": 90,
         "category": "dialogue",
-        "english": "N - My dad is not that numerate to become a BD!",
-        "vietnamese": "N - Tía em ổng đâu có giỏi số đến vậy để thành một BD!",
-        "speaker": null,
+        "english": "My dad is not that numerate to become a BD!",
+        "vietnamese": "Tía em ổng đâu có giỏi số đến vậy để thành một BD!",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - My dad is not that numerate to become a BD!"
+        "beat_prosody": "My dad is not that numerate to become a BD!"
       },
       {
         "chunk_id": "chunk_eres_d10_0091",
         "item_number": 91,
         "category": "dialogue",
-        "english": "N - You must have mistaken him for someone else",
-        "vietnamese": "N - Chắc là chị nhầm ổng với người khác rồi",
-        "speaker": null,
+        "english": "You must have mistaken him for someone else",
+        "vietnamese": "Chắc là chị nhầm ổng với người khác rồi",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - You must have mistaken him for someone else"
+        "beat_prosody": "You must have mistaken him for someone else"
       },
       {
         "chunk_id": "chunk_eres_d10_0092",
         "item_number": 92,
         "category": "dialogue",
-        "english": "N - Trust me, metrics are just not his things",
-        "vietnamese": "N - Tin em đi, mấy thông số đo không phải sở thích của ổng đâu",
-        "speaker": null,
+        "english": "Trust me, metrics are just not his things",
+        "vietnamese": "Tin em đi, mấy thông số đo không phải sở thích của ổng đâu",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Trust me // metrics are just not his things"
+        "beat_prosody": "Trust me // metrics are just not his things"
       },
       {
         "chunk_id": "chunk_eres_d10_0093",
         "item_number": 93,
         "category": "dialogue",
-        "english": "N - He even can not tell the difference between churn rate and retention rate",
-        "vietnamese": "N - Ổng thậm chí còn không thể nói được điểm khác biệt giữa churn rate với retention rate mà",
-        "speaker": null,
+        "english": "He even can not tell the difference between churn rate and retention rate",
+        "vietnamese": "Ổng thậm chí còn không thể nói được điểm khác biệt giữa churn rate với retention rate mà",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - He even can not tell the difference between churn rate and retention rate"
+        "beat_prosody": "He even can not tell the difference between churn rate and retention rate"
       },
       {
         "chunk_id": "chunk_eres_d10_0094",
         "item_number": 94,
         "category": "dialogue",
-        "english": "N - Plus my dad sucks at closing deals, really!",
-        "vietnamese": "N - Với lại tía em ổng dở chốt deal lắm, thiệt!",
-        "speaker": null,
+        "english": "Plus my dad sucks at closing deals, really!",
+        "vietnamese": "Với lại tía em ổng dở chốt deal lắm, thiệt!",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Plus my dad sucks at closing deals // really!"
+        "beat_prosody": "Plus my dad sucks at closing deals // really!"
       },
       {
         "chunk_id": "chunk_eres_d10_0095",
         "item_number": 95,
         "category": "dialogue",
-        "english": "N - I think my dad prefers a position in logistics",
-        "vietnamese": "N - Em nghĩ tía em ổng thích một vị trí bên logistics hơn ấy chị",
-        "speaker": null,
+        "english": "I think my dad prefers a position in logistics",
+        "vietnamese": "Em nghĩ tía em ổng thích một vị trí bên logistics hơn ấy chị",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - I think my dad prefers a position in logistics"
+        "beat_prosody": "I think my dad prefers a position in logistics"
       },
       {
         "chunk_id": "chunk_eres_d10_0096",
         "item_number": 96,
         "category": "dialogue",
-        "english": "T - Uh huh? Has he ever been in a delivery rejection situation before?",
-        "vietnamese": "T - Uh huh? Ổng có bao giờ ở vào trong cảnh bị bom hàng trước đây chưa?",
-        "speaker": null,
+        "english": "Uh huh? Has he ever been in a delivery rejection situation before?",
+        "vietnamese": "Uh huh? Ổng có bao giờ ở vào trong cảnh bị bom hàng trước đây chưa?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Uh huh? Has he ever been in a delivery rejection situation before?"
+        "beat_prosody": "Uh huh? Has he ever been in a delivery rejection situation before?"
       },
       {
         "chunk_id": "chunk_eres_d10_0097",
         "item_number": 97,
         "category": "dialogue",
-        "english": "N - Tell me about it, that situation is almost inevitable",
-        "vietnamese": "N - Chứ còn gì nữa, tình cảnh đó là gần như không thể tránh khỏi rồi",
-        "speaker": null,
+        "english": "Tell me about it, that situation is almost inevitable",
+        "vietnamese": "Chứ còn gì nữa, tình cảnh đó là gần như không thể tránh khỏi rồi",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Tell me about it // that situation is almost inevitable"
+        "beat_prosody": "Tell me about it // that situation is almost inevitable"
       },
       {
         "chunk_id": "chunk_eres_d10_0098",
         "item_number": 98,
         "category": "dialogue",
-        "english": "N - Believe it or not, 3 years ago,",
-        "vietnamese": "N - Chị tin hay không thì tùy, 3 năm trước,",
-        "speaker": null,
+        "english": "Believe it or not, 3 years ago,",
+        "vietnamese": "Chị tin hay không thì tùy, 3 năm trước,",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Believe it or not // 3 years ago,"
+        "beat_prosody": "Believe it or not // 3 years ago,"
       },
       {
         "chunk_id": "chunk_eres_d10_0099",
         "item_number": 99,
         "category": "dialogue",
-        "english": "N - He once shipped a sunscreen kit all the way to Africa",
-        "vietnamese": "N - Ổng có lần ship một bộ kem chống nắng qua tận Châu Phi",
-        "speaker": null,
+        "english": "He once shipped a sunscreen kit all the way to Africa",
+        "vietnamese": "Ổng có lần ship một bộ kem chống nắng qua tận Châu Phi",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - He once shipped a sunscreen kit all the way to Africa"
+        "beat_prosody": "He once shipped a sunscreen kit all the way to Africa"
       },
       {
         "chunk_id": "chunk_eres_d10_0100",
         "item_number": 100,
         "category": "dialogue",
-        "english": "T - Lemme stop you right there",
-        "vietnamese": "T - Cho chị ngắt lời em ngay đó",
-        "speaker": null,
+        "english": "Lemme stop you right there",
+        "vietnamese": "Cho chị ngắt lời em ngay đó",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Lemme stop you right there"
+        "beat_prosody": "Lemme stop you right there"
       },
       {
         "chunk_id": "chunk_eres_d10_0101",
         "item_number": 101,
         "category": "dialogue",
-        "english": "T - Everyone knows that Africa is still an undeliverable area",
-        "vietnamese": "T - Ai ai cũng biết Châu Phi nó vẫn là một khu vực không thể giao hàng mà",
-        "speaker": null,
+        "english": "Everyone knows that Africa is still an undeliverable area",
+        "vietnamese": "Ai ai cũng biết Châu Phi nó vẫn là một khu vực không thể giao hàng mà",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Everyone knows that Africa is still an undeliverable area"
+        "beat_prosody": "Everyone knows that Africa is still an undeliverable area"
       },
       {
         "chunk_id": "chunk_eres_d10_0102",
         "item_number": 102,
         "category": "dialogue",
-        "english": "T - There's not many banks there that could help you perform a transaction",
-        "vietnamese": "T - Đâu có nhiều ngân hàng bên đó có thể giúp em thực hiện một giao dịch",
-        "speaker": null,
+        "english": "There's not many banks there that could help you perform a transaction",
+        "vietnamese": "Đâu có nhiều ngân hàng bên đó có thể giúp em thực hiện một giao dịch",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - There's not many banks there that could help you perform a transaction"
+        "beat_prosody": "There's not many banks there that could help you perform a transaction"
       },
       {
         "chunk_id": "chunk_eres_d10_0103",
         "item_number": 103,
         "category": "dialogue",
-        "english": "N - You bet! I didn't say anything about banks or digital wallet",
-        "vietnamese": "N - Chính xác! Em đâu có nói gì về ngân hàng hay ví điện tử gì đâu",
-        "speaker": null,
+        "english": "You bet! I didn't say anything about banks or digital wallet",
+        "vietnamese": "Chính xác! Em đâu có nói gì về ngân hàng hay ví điện tử gì đâu",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - You bet! I didn't say anything about banks or digital wallet"
+        "beat_prosody": "You bet! I didn't say anything about banks or digital wallet"
       },
       {
         "chunk_id": "chunk_eres_d10_0104",
         "item_number": 104,
         "category": "dialogue",
-        "english": "T - Then what you're gonna use to pay?",
-        "vietnamese": "T - Thế em sẽ dùng cái gì để thanh toán?",
-        "speaker": null,
+        "english": "Then what you're gonna use to pay?",
+        "vietnamese": "Thế em sẽ dùng cái gì để thanh toán?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Then what you're gonna use to pay?"
+        "beat_prosody": "Then what you're gonna use to pay?"
       },
       {
         "chunk_id": "chunk_eres_d10_0105",
         "item_number": 105,
         "category": "dialogue",
-        "english": "N - In case like this, I guess COD might be the best solution",
-        "vietnamese": "N - Trong trường hợp này, em đoán COD có thể là giải pháp tốt nhất",
-        "speaker": null,
+        "english": "In case like this, I guess COD might be the best solution",
+        "vietnamese": "Trong trường hợp này, em đoán COD có thể là giải pháp tốt nhất",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - In case like this // I guess COD might be the best solution"
+        "beat_prosody": "In case like this // I guess COD might be the best solution"
       },
       {
         "chunk_id": "chunk_eres_d10_0106",
         "item_number": 106,
         "category": "dialogue",
-        "english": "T - Point is, how can your dad deal with border congestion?",
-        "vietnamese": "T - Vấn đề là sao tía em có thể deal được với tắt nghẽn biên giới chứ?",
-        "speaker": null,
+        "english": "Point is, how can your dad deal with border congestion?",
+        "vietnamese": "Vấn đề là sao tía em có thể deal được với tắt nghẽn biên giới chứ?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Point is // how can your dad deal with border congestion?"
+        "beat_prosody": "Point is // how can your dad deal with border congestion?"
       },
       {
         "chunk_id": "chunk_eres_d10_0107",
         "item_number": 107,
         "category": "dialogue",
-        "english": "N - No idea but this is not his first time",
-        "vietnamese": "N - Chả biết nhưng mà đây không phải lần đầu của ổng",
-        "speaker": null,
+        "english": "No idea but this is not his first time",
+        "vietnamese": "Chả biết nhưng mà đây không phải lần đầu của ổng",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - No idea but this is not his first time"
+        "beat_prosody": "No idea but this is not his first time"
       },
       {
         "chunk_id": "chunk_eres_d10_0108",
         "item_number": 108,
         "category": "dialogue",
-        "english": "T - Okay, you mean your dad always takes initiative to troubleshoot like this?",
-        "vietnamese": "T - Okay, ý em là ba em ổng luôn chủ động để giải quyết vấn đề kiểu vầy à?",
-        "speaker": null,
+        "english": "Okay, you mean your dad always takes initiative to troubleshoot like this?",
+        "vietnamese": "Okay, ý em là ba em ổng luôn chủ động để giải quyết vấn đề kiểu vầy à?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Okay // you mean your dad always takes initiative to troubleshoot like this?"
+        "beat_prosody": "Okay // you mean your dad always takes initiative to troubleshoot like this?"
       },
       {
         "chunk_id": "chunk_eres_d10_0109",
         "item_number": 109,
         "category": "dialogue",
-        "english": "N - Yeah, he's one of the best shippers I've ever seen in my life",
-        "vietnamese": "N - Yeah, ổng là một trong những shipper đỉnh nhất em từng thấy trong đời luôn ấy",
-        "speaker": null,
+        "english": "Yeah, he's one of the best shippers I've ever seen in my life",
+        "vietnamese": "Yeah, ổng là một trong những shipper đỉnh nhất em từng thấy trong đời luôn ấy",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Yeah // he's one of the best shippers I've ever seen in my life"
+        "beat_prosody": "Yeah // he's one of the best shippers I've ever seen in my life"
       },
       {
         "chunk_id": "chunk_eres_d10_0110",
         "item_number": 110,
         "category": "dialogue",
-        "english": "N - Let me put it this way",
-        "vietnamese": "N - Để em nói vầy đi",
-        "speaker": null,
+        "english": "Let me put it this way",
+        "vietnamese": "Để em nói vầy đi",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - Let me put it this way"
+        "beat_prosody": "Let me put it this way"
       },
       {
         "chunk_id": "chunk_eres_d10_0111",
         "item_number": 111,
         "category": "dialogue",
-        "english": "N - It's not a good idea to let him become a BD",
-        "vietnamese": "N - Để cho ổng làm BD không phải là ý hay đâu",
-        "speaker": null,
+        "english": "It's not a good idea to let him become a BD",
+        "vietnamese": "Để cho ổng làm BD không phải là ý hay đâu",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - It's not a good idea to let him become a BD"
+        "beat_prosody": "It's not a good idea to let him become a BD"
       },
       {
         "chunk_id": "chunk_eres_d10_0112",
         "item_number": 112,
         "category": "dialogue",
-        "english": "T - Really? Is he good at inventory management?",
-        "vietnamese": "T - Vậy hả? Ổng có giỏi quản lý hàng hóa không?",
-        "speaker": null,
+        "english": "Really? Is he good at inventory management?",
+        "vietnamese": "Vậy hả? Ổng có giỏi quản lý hàng hóa không?",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Really? Is he good at inventory management?"
+        "beat_prosody": "Really? Is he good at inventory management?"
       },
       {
         "chunk_id": "chunk_eres_d10_0113",
         "item_number": 113,
         "category": "dialogue",
-        "english": "T - Actually we've been performing mass recruitment for Shopee Xpress team",
-        "vietnamese": "T - Thực ra bọn chị đang tuyển hàng loạt cho cái đội Shopee Xpress",
-        "speaker": null,
+        "english": "Actually we've been performing mass recruitment for Shopee Xpress team",
+        "vietnamese": "Thực ra bọn chị đang tuyển hàng loạt cho cái đội Shopee Xpress",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - Actually we've been performing mass recruitment for Shopee Xpress team"
+        "beat_prosody": "Actually we've been performing mass recruitment for Shopee Xpress team"
       },
       {
         "chunk_id": "chunk_eres_d10_0114",
         "item_number": 114,
         "category": "dialogue",
-        "english": "T - What concerns me the most right now is delivery time",
-        "vietnamese": "T - Cái điều làm chị băn khoăn nhất lúc này chính là thời gian giao hàng",
-        "speaker": null,
+        "english": "What concerns me the most right now is delivery time",
+        "vietnamese": "Cái điều làm chị băn khoăn nhất lúc này chính là thời gian giao hàng",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - What concerns me the most right now is delivery time"
+        "beat_prosody": "What concerns me the most right now is delivery time"
       },
       {
         "chunk_id": "chunk_eres_d10_0115",
         "item_number": 115,
         "category": "dialogue",
-        "english": "N - You mean how to shorten the delivery time?",
-        "vietnamese": "N - Ý chị là làm sao để giảm thời gian giao hàng phải không?",
-        "speaker": null,
+        "english": "You mean how to shorten the delivery time?",
+        "vietnamese": "Ý chị là làm sao để giảm thời gian giao hàng phải không?",
+        "speaker": "Nemo",
         "audio_url": null,
-        "beat_prosody": "N - You mean how to shorten the delivery time?"
+        "beat_prosody": "You mean how to shorten the delivery time?"
       },
       {
         "chunk_id": "chunk_eres_d10_0116",
         "item_number": 116,
         "category": "dialogue",
-        "english": "T - You bet, I gotta go, see you around",
-        "vietnamese": "T - Chính xác, thôi chị phải đi đây, gặp nhóc sau",
-        "speaker": null,
+        "english": "You bet, I gotta go, see you around",
+        "vietnamese": "Chính xác, thôi chị phải đi đây, gặp nhóc sau",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - You bet // I gotta go // see you around"
+        "beat_prosody": "You bet // I gotta go // see you around"
       },
       {
         "chunk_id": "chunk_eres_d10_0117",
         "item_number": 117,
         "category": "dialogue",
-        "english": "T - \"It's odd, how come I talked to a fish today???\"",
-        "vietnamese": "T - \"Kỳ lạ, sao hôm nay mình lại nói chuyện với một con cá nhỉ???\"",
-        "speaker": null,
+        "english": "\"It's odd, how come I talked to a fish today???\"",
+        "vietnamese": "\"Kỳ lạ, sao hôm nay mình lại nói chuyện với một con cá nhỉ???\"",
+        "speaker": "Tracy",
         "audio_url": null,
-        "beat_prosody": "T - \"It's odd // how come I talked to a fish today???\""
+        "beat_prosody": "\"It's odd // how come I talked to a fish today???\""
       },
       {
         "chunk_id": "chunk_eres_d10_0118",
@@ -30819,7 +30759,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 179,
         "category": "sentence",
         "english": "I don't know how to put it but I don't really know about the current trends",
-        "vietnamese": "Tui ko biết nói sao nhưng mà tui không thực sự biết về những xu hướng hiện tại",
+        "vietnamese": "Tui không biết nói sao nhưng mà tui không thực sự biết về những xu hướng hiện tại",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I don't know how to put it but I don't really know about the current trends"
@@ -30898,11 +30838,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d10_0187",
         "item_number": 187,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth In terms of pricing, what would you say about Starbucks if you're a marketer?",
-        "vietnamese": "",
+        "english": "In terms of pricing, what would you say about Starbucks if you're a marketer?",
+        "vietnamese": "Về mặt định giá, bạn sẽ nói gì về Starbucks nếu bạn là một marketer?",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth In terms of pricing // what would you say about Starbucks if you're a marketer?"
+        "beat_prosody": "In terms of pricing // what would you say about Starbucks if you're a marketer?"
       },
       {
         "chunk_id": "chunk_eres_d10_0188",
@@ -31298,19 +31238,19 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d10_0227",
         "item_number": 227,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION In the metaverse, if Bill Gates happened to become Mark Zuckerberg's boss, what would it be like?",
-        "vietnamese": "",
+        "english": "In the metaverse, if Bill Gates happened to become Mark Zuckerberg's boss, what would it be like?",
+        "vietnamese": "Trong metaverse, nếu Bill Gates tình cờ trở thành sếp của Mark Zuckerberg thì sẽ như thế nào?",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION In the metaverse // if Bill Gates happened to become Mark Zuckerberg's boss // what would it be like?"
+        "beat_prosody": "In the metaverse // if Bill Gates happened to become Mark Zuckerberg's boss // what would it be like?"
       },
       {
         "chunk_id": "chunk_eres_d10_0228",
         "item_number": 228,
         "category": "dialogue",
         "english": "Hello, may I speak to Mark?",
-        "vietnamese": "Bill: Alo, cho tôi nói chuyện với Mark được không?",
-        "speaker": "Bill",
+        "vietnamese": "Alo, cho tôi nói chuyện với Mark được không?",
+        "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Hello // may I speak to Mark?"
       },
@@ -31319,8 +31259,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 229,
         "category": "dialogue",
         "english": "Hi boss, it's me, what's up?",
-        "vietnamese": "Mark: Hi sếp, em đây, có gì không?",
-        "speaker": "Mark",
+        "vietnamese": "Hi sếp, em đây, có gì không?",
+        "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Hi boss // it's me // what's up?"
       },
@@ -31329,7 +31269,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 230,
         "category": "dialogue",
         "english": "Not much, sorry to call you at this hour",
-        "vietnamese": "B: Cũng không có gì nhiều, xin lỗi vì gọi cậu giờ này",
+        "vietnamese": "Cũng không có gì nhiều, xin lỗi vì gọi cậu giờ này",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Not much // sorry to call you at this hour"
@@ -31339,7 +31279,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 231,
         "category": "dialogue",
         "english": "Are you available to talk now?",
-        "vietnamese": "B: Giờ cậu có tiện nói chuyện không?",
+        "vietnamese": "Giờ cậu có tiện nói chuyện không?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Are you available to talk now?"
@@ -31349,7 +31289,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 232,
         "category": "dialogue",
         "english": "I'm okay, you're so strange today",
-        "vietnamese": "M: Em okay, nay sếp lạ vậy?",
+        "vietnamese": "Em okay, nay sếp lạ vậy?",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I'm okay // you're so strange today"
@@ -31359,7 +31299,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 233,
         "category": "dialogue",
         "english": "Really? I'm on vacation in Con Dao",
-        "vietnamese": "B: Vậy hả? Tôi đang nghỉ mát ở Côn Đảo",
+        "vietnamese": "Vậy hả? Tôi đang nghỉ mát ở Côn Đảo",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Really? I'm on vacation in Con Dao"
@@ -31369,7 +31309,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 234,
         "category": "dialogue",
         "english": "Quick question, who’s handled the packaging design this time?",
-        "vietnamese": "B: Hỏi nhanh cái, đứa nào lo cái thiết kế bao bì lần này vậy?",
+        "vietnamese": "Hỏi nhanh cái, đứa nào lo cái thiết kế bao bì lần này vậy?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Quick question // who’s handled the packaging design this time?"
@@ -31379,7 +31319,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 235,
         "category": "dialogue",
         "english": "If my memory serves me right,",
-        "vietnamese": "M: Nếu em nhớ không nhầm thì...",
+        "vietnamese": "Nếu em nhớ không nhầm thì...",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "If my memory serves me right,"
@@ -31389,7 +31329,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 236,
         "category": "dialogue",
         "english": "I has assigned this task to Steve",
-        "vietnamese": "M: Em đã giao cái task này cho thằng Steve",
+        "vietnamese": "Em đã giao cái task này cho thằng Steve",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I has assigned this task to Steve"
@@ -31399,7 +31339,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 237,
         "category": "dialogue",
         "english": "Well, I got bad news for him then",
-        "vietnamese": "B: Ý chà, vậy thì tôi có tin xấu cho nó rồi",
+        "vietnamese": "Ý chà, vậy thì tôi có tin xấu cho nó rồi",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Well // I got bad news for him then"
@@ -31409,7 +31349,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 238,
         "category": "dialogue",
         "english": "At first, actually I planned to do that myself",
-        "vietnamese": "M: Lúc đầu, thật ra em tính tự làm",
+        "vietnamese": "Lúc đầu, thật ra em tính tự làm",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "At first // actually I planned to do that myself"
@@ -31419,7 +31359,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 239,
         "category": "dialogue",
         "english": "But then, there was some minor issues with our agency in Thailand",
-        "vietnamese": "M: Nhưng mà sau đó, có vài vấn đề nhỏ với agency của mình ở bên Thái",
+        "vietnamese": "Nhưng mà sau đó, có vài vấn đề nhỏ với agency của mình ở bên Thái",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "But then // there was some minor issues with our agency in Thailand"
@@ -31429,7 +31369,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 240,
         "category": "dialogue",
         "english": "That's why I had to fly to Bangkok urgently last Monday",
-        "vietnamese": "M: Đó là lý do em phải bay gấp qua Bangkok thứ 2 tuần trước",
+        "vietnamese": "Đó là lý do em phải bay gấp qua Bangkok thứ 2 tuần trước",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "That's why I had to fly to Bangkok urgently last Monday"
@@ -31439,7 +31379,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 241,
         "category": "dialogue",
         "english": "Mark, I don't know how to put it but...",
-        "vietnamese": "B: Mark, tôi không biết nói sao nhưng mà...",
+        "vietnamese": "Mark, tôi không biết nói sao nhưng mà...",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Mark // I don't know how to put it but..."
@@ -31449,7 +31389,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 242,
         "category": "dialogue",
         "english": "Okay, lemme get this straight,",
-        "vietnamese": "B: Okay, thôi để tôi nói thẳng nha",
+        "vietnamese": "Okay, thôi để tôi nói thẳng nha",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Okay // lemme get this straight,"
@@ -31459,7 +31399,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 243,
         "category": "dialogue",
         "english": "I don't know if he told you yet but...",
-        "vietnamese": "B: Tôi không biết liệu nó có nói cậu chưa nhưng mà...",
+        "vietnamese": "Tôi không biết liệu nó có nói cậu chưa nhưng mà...",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "I don't know if he told you yet but..."
@@ -31469,7 +31409,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 244,
         "category": "dialogue",
         "english": "He went three times over the budget",
-        "vietnamese": "B: Nó đã vượt ngân sách gấp 3 lần",
+        "vietnamese": "Nó đã vượt ngân sách gấp 3 lần",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "He went three times over the budget"
@@ -31479,7 +31419,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 245,
         "category": "dialogue",
         "english": "Wait, wait, wait, lemme explain",
-        "vietnamese": "M: Khoan, khoan, khoan, cho em giải thích cái",
+        "vietnamese": "Khoan, khoan, khoan, cho em giải thích cái",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Wait // wait // wait // lemme explain"
@@ -31489,7 +31429,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 246,
         "category": "dialogue",
         "english": "Our products this time were designed for niche market, right?",
-        "vietnamese": "M: Mấy cái sản phẩm lần này của mình được design cho thị trường ngách mà, phải không?",
+        "vietnamese": "Mấy cái sản phẩm lần này của mình được design cho thị trường ngách mà, phải không?",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Our products this time were designed for niche market // right?"
@@ -31499,7 +31439,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 247,
         "category": "dialogue",
         "english": "Keep going",
-        "vietnamese": "B: Cứ nói tiếp",
+        "vietnamese": "Cứ nói tiếp",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Keep going"
@@ -31509,7 +31449,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 248,
         "category": "dialogue",
         "english": "So, our strategy is gonna be exclusive distribution",
-        "vietnamese": "M: Cho nên, chiến lược của mình sẽ là phân phối độc quyền",
+        "vietnamese": "Cho nên, chiến lược của mình sẽ là phân phối độc quyền",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "So // our strategy is gonna be exclusive distribution"
@@ -31519,7 +31459,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 249,
         "category": "dialogue",
         "english": "Not intensive distribution",
-        "vietnamese": "M: Chứ không phải phân phối đại trà",
+        "vietnamese": "Chứ không phải phân phối đại trà",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Not intensive distribution"
@@ -31529,7 +31469,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 250,
         "category": "dialogue",
         "english": "I think of course the cost will get a little bit higher",
-        "vietnamese": "M: Em nghĩ tất nhiên là giá sẽ hơi cao hơn một tẹo",
+        "vietnamese": "Em nghĩ tất nhiên là giá sẽ hơi cao hơn một tẹo",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I think of course the cost will get a little bit higher"
@@ -31539,7 +31479,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 251,
         "category": "dialogue",
         "english": "Keep it short, Mark, I don’t have all day",
-        "vietnamese": "B: Ngắn gọn thôi, Mark, tôi không có rảnh cả ngày đâu",
+        "vietnamese": "Ngắn gọn thôi, Mark, tôi không có rảnh cả ngày đâu",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Keep it short // Mark // I don’t have all day"
@@ -31549,7 +31489,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 252,
         "category": "dialogue",
         "english": "Then lemme finish,",
-        "vietnamese": "M: Thì để em nói xong đã,",
+        "vietnamese": "Thì để em nói xong đã,",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Then lemme finish,"
@@ -31559,7 +31499,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 253,
         "category": "dialogue",
         "english": "Purchasing power at the moment is not strong enough",
-        "vietnamese": "M: Sức mua ở thời điểm hiện tại không có đủ mạnh",
+        "vietnamese": "Sức mua ở thời điểm hiện tại không có đủ mạnh",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Purchasing power at the moment is not strong enough"
@@ -31569,7 +31509,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 254,
         "category": "dialogue",
         "english": "The point is I want you to increase market coverage. Okay?",
-        "vietnamese": "B: Cái vấn đề là tôi muốn cậu tăng cái độ phủ thị trường lên. Okay?",
+        "vietnamese": "Cái vấn đề là tôi muốn cậu tăng cái độ phủ thị trường lên. Okay?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "The point is I want you to increase market coverage. Okay?"
@@ -31579,7 +31519,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 255,
         "category": "dialogue",
         "english": "Nooo, I don't think so, this is door-to-door sales",
-        "vietnamese": "M: Nôôô, em không nghĩ vậy, cái này là tiếp thị đến từng nhà mà",
+        "vietnamese": "Nôôô, em không nghĩ vậy, cái này là tiếp thị đến từng nhà mà",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Nooo // I don't think so // this is door-to-door sales"
@@ -31589,7 +31529,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 256,
         "category": "dialogue",
         "english": "Uh huh, what’s the difference???",
-        "vietnamese": "B: Oh hớ, có gì khác nhau?",
+        "vietnamese": "Oh hớ, có gì khác nhau?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Uh huh // what’s the difference???"
@@ -31599,7 +31539,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 257,
         "category": "dialogue",
         "english": "It is, very different, I’m talking about word of mouth",
-        "vietnamese": "M: Có chớ, rất là khác, em đang nói về truyền miệng nha",
+        "vietnamese": "Có chớ, rất là khác, em đang nói về truyền miệng nha",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "It is // very different // I’m talking about word of mouth"
@@ -31609,7 +31549,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 258,
         "category": "dialogue",
         "english": "Hold on, do you know what’s our long-term target?",
-        "vietnamese": "B: Khoan, cậu có biết mục tiêu dài hạn của chúng ta là gì không?",
+        "vietnamese": "Khoan, cậu có biết mục tiêu dài hạn của chúng ta là gì không?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Hold on // do you know what’s our long-term target?"
@@ -31619,7 +31559,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 259,
         "category": "dialogue",
         "english": "Of course I know, We wanna make marketable products",
-        "vietnamese": "M: Đương nhiên là em biết, chúng ta muốn tạo ra những sản phẩm bán được",
+        "vietnamese": "Đương nhiên là em biết, chúng ta muốn tạo ra những sản phẩm bán được",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Of course I know // We wanna make marketable products"
@@ -31629,7 +31569,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 260,
         "category": "dialogue",
         "english": "Okay, good. Have you finished the break-even analysis yet?",
-        "vietnamese": "B: Okay, good. Cậu xong cái phân tích điểm hòa vốn chưa?",
+        "vietnamese": "Okay, good. Cậu xong cái phân tích điểm hòa vốn chưa?",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Okay // good. Have you finished the break-even analysis yet?"
@@ -31639,7 +31579,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 261,
         "category": "dialogue",
         "english": "Not yet, boss, please give me 2 more days",
-        "vietnamese": "M: Dạ chưa sếp, cho em thêm 2 ngày đi",
+        "vietnamese": "Dạ chưa sếp, cho em thêm 2 ngày đi",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Not yet // boss // please give me 2 more days"
@@ -31649,7 +31589,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 262,
         "category": "dialogue",
         "english": "I promise I will pinpoint the root cause",
-        "vietnamese": "M: Em hứa em sẽ chỉ ra cái nguyên nhân gốc rễ",
+        "vietnamese": "Em hứa em sẽ chỉ ra cái nguyên nhân gốc rễ",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I promise I will pinpoint the root cause"
@@ -31659,7 +31599,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 263,
         "category": "dialogue",
         "english": "Rest assured! We won’t have to withdraw the products",
-        "vietnamese": "M: Yên chí! Chúng ta sẽ không phải thu hồi sản phẩm đâu",
+        "vietnamese": "Yên chí! Chúng ta sẽ không phải thu hồi sản phẩm đâu",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Rest assured! We won’t have to withdraw the products"
@@ -31669,7 +31609,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 264,
         "category": "dialogue",
         "english": "Okay, sure, I know you’re an expert at this",
-        "vietnamese": "B: Okay, sure, tôi biết cậu là chuyên gia trong vụ này mà",
+        "vietnamese": "Okay, sure, tôi biết cậu là chuyên gia trong vụ này mà",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Okay // sure // I know you’re an expert at this"
@@ -31679,7 +31619,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 265,
         "category": "dialogue",
         "english": "I’ll let you handle this",
-        "vietnamese": "B: Tôi sẽ để cậu xử lý vụ này",
+        "vietnamese": "Tôi sẽ để cậu xử lý vụ này",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "I’ll let you handle this"
@@ -31689,7 +31629,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 266,
         "category": "dialogue",
         "english": "Do you want me to apply digital wallet?",
-        "vietnamese": "M: Sếp có muốn em áp dụng ví điện tử không?",
+        "vietnamese": "Sếp có muốn em áp dụng ví điện tử không?",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Do you want me to apply digital wallet?"
@@ -31699,7 +31639,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "Good idea, I'll leave that to you",
-        "vietnamese": "B: Good idea, tôi sẽ để cậu quyết định",
+        "vietnamese": "Good idea, tôi sẽ để cậu quyết định",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Good idea // I'll leave that to you"
@@ -31709,7 +31649,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "What worries me now is the shipping time",
-        "vietnamese": "B: Cái điều làm tôi lo lắng bây giờ là thời gian giao hàng",
+        "vietnamese": "Cái điều làm tôi lo lắng bây giờ là thời gian giao hàng",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "What worries me now is the shipping time"
@@ -31719,7 +31659,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "Not to mention issuing an invoice will take much time",
-        "vietnamese": "B: Chưa kể đến việc xuất hóa đơn đỏ sẽ mất rất là nhiều thời gian",
+        "vietnamese": "Chưa kể đến việc xuất hóa đơn đỏ sẽ mất rất là nhiều thời gian",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "Not to mention issuing an invoice will take much time"
@@ -31729,7 +31669,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 270,
         "category": "dialogue",
         "english": "But not many walk-in customers are willing to pay $1000 dollars for this product",
-        "vietnamese": "B: Nhưng chẳng có mấy khách vãng lai sẵn lòng trả $1000 cho cái sản phẩm này",
+        "vietnamese": "Nhưng chẳng có mấy khách vãng lai sẵn lòng trả $1000 cho cái sản phẩm này",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "But not many walk-in customers are willing to pay $1000 dollars for this product"
@@ -31739,7 +31679,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "dialogue",
         "english": "I know but we have already used all the marketing tactics we know",
-        "vietnamese": "M: Em biết nhưng mà chúng ta đã dùng hết mấy cái mánh marketing mà chúng ta biết rồi",
+        "vietnamese": "Em biết nhưng mà chúng ta đã dùng hết mấy cái mánh marketing mà chúng ta biết rồi",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I know but we have already used all the marketing tactics we know"
@@ -31749,7 +31689,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "dialogue",
         "english": "Boss, what do you think about this potential market?",
-        "vietnamese": "M: Sếp, sếp nghĩ sao về cái thị trường tiềm năng này?",
+        "vietnamese": "Sếp, sếp nghĩ sao về cái thị trường tiềm năng này?",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Boss // what do you think about this potential market?"
@@ -31759,7 +31699,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 273,
         "category": "dialogue",
         "english": "I don’t wanna use the word “unfair competition”",
-        "vietnamese": "B: Tôi không có muốn dùng cái từ \"cạnh tranh không lành mạnh\"",
+        "vietnamese": "Tôi không có muốn dùng cái từ \"cạnh tranh không lành mạnh\"",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "I don’t wanna use the word “unfair competition”"
@@ -31769,7 +31709,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 274,
         "category": "dialogue",
         "english": "But it seems we’re facing (with) what we fear the most",
-        "vietnamese": "B: Nhưng có vẻ như chúng ta đang đối mặt với cái điều mà chúng ta sợ nhất",
+        "vietnamese": "Nhưng có vẻ như chúng ta đang đối mặt với cái điều mà chúng ta sợ nhất",
         "speaker": "B",
         "audio_url": null,
         "beat_prosody": "But it seems we’re facing (with) what we fear the most"
@@ -31779,7 +31719,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 275,
         "category": "dialogue",
         "english": "Okay, boss, I got it, let’s see",
-        "vietnamese": "M: Okay, sếp, em hiểu rồi, để coi sao",
+        "vietnamese": "Okay, sếp, em hiểu rồi, để coi sao",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Okay // boss // I got it // let’s see"
@@ -32590,11 +32530,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d11_0029",
         "item_number": 29,
         "category": "vocab",
-        "english": "iphone sales Doanh thu iphone",
-        "vietnamese": "",
+        "english": "iPhone sales",
+        "vietnamese": "Doanh thu iPhone",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "iphone sales Doanh thu iphone"
+        "beat_prosody": "iPhone sales"
       },
       {
         "chunk_id": "chunk_eres_d11_0030",
@@ -32610,11 +32550,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d11_0031",
         "item_number": 31,
         "category": "vocab",
-        "english": "29.75% 29.75%",
-        "vietnamese": "",
+        "english": "29.75%",
+        "vietnamese": "29.75%",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "29.75% 29.75%"
+        "beat_prosody": "29.75%"
       },
       {
         "chunk_id": "chunk_eres_d11_0032",
@@ -32710,11 +32650,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d11_0041",
         "item_number": 41,
         "category": "vocab",
-        "english": "$1,400 $1,400",
-        "vietnamese": "",
+        "english": "$1,400",
+        "vietnamese": "$1,400",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "$1,400 $1,400"
+        "beat_prosody": "$1,400"
       },
       {
         "chunk_id": "chunk_eres_d11_0042",
@@ -33301,7 +33241,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 100,
         "category": "vocab",
         "english": "Shut down",
-        "vietnamese": "đóng cửa",
+        "vietnamese": "Đóng cửa",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Shut down"
@@ -34550,11 +34490,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d11_0225",
         "item_number": 225,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth Katherine happened to come to Vietnam to make a 2-minute pitch for the new project in Binh Duong",
-        "vietnamese": "",
+        "english": "Katherine happened to come to Vietnam to make a 2-minute pitch for the new project in Binh Duong",
+        "vietnamese": "Katherine tình cờ đến Việt Nam để thuyết trình 2 phút cho dự án mới ở Bình Dương",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth Katherine happened to come to Vietnam to make a 2-minute pitch for the new project in Binh Duong"
+        "beat_prosody": "Katherine happened to come to Vietnam to make a 2-minute pitch for the new project in Binh Duong"
       },
       {
         "chunk_id": "chunk_eres_d11_0226",
@@ -34930,18 +34870,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d11_0263",
         "item_number": 263,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION Mr. Vuong - Trung Nguyen - Katherine accidentally show up in the Shark Tank Vietnam season 5",
-        "vietnamese": "",
+        "english": "Mr. Vuong, Trung Nguyen, and Katherine accidentally show up in the Shark Tank Vietnam season 5",
+        "vietnamese": "Ông Vượng, Trung Nguyên, Katherine tình cờ xuất hiện tại Shark Tank Việt Nam mùa 5",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION Mr. Vuong - Trung Nguyen - Katherine accidentally show up in the Shark Tank Vietnam season 5"
+        "beat_prosody": "Mr. Vuong, Trung Nguyen, and Katherine accidentally show up in the Shark Tank Vietnam season 5"
       },
       {
         "chunk_id": "chunk_eres_d11_0264",
         "item_number": 264,
         "category": "dialogue",
         "english": "Hi Sharks, I've done my presentation, before I pass it on to my CEO",
-        "vietnamese": "K: Chào các sharks, tôi đã trình bày xong phần của mình, trước khi nhường lời lại cho CEO của tôi",
+        "vietnamese": "Chào các sharks, tôi đã trình bày xong phần của mình, trước khi nhường lời lại cho CEO của tôi",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Hi Sharks // I've done my presentation // before I pass it on to my CEO"
@@ -34951,7 +34891,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 265,
         "category": "dialogue",
         "english": "If you have any questions for me, please go ahead",
-        "vietnamese": "K: Nếu các bạn có bất kỳ câu hỏi nào cho tôi, xin cứ tự nhiên",
+        "vietnamese": "Nếu các bạn có bất kỳ câu hỏi nào cho tôi, xin cứ tự nhiên",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "If you have any questions for me // please go ahead"
@@ -34961,7 +34901,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 266,
         "category": "dialogue",
         "english": "First off, I've gotta say I was impressed by your presentation",
-        "vietnamese": "TN: Đầu tiên, tôi phải nói là tôi rất là bị ấn tượng bởi cái bài thuyết trình của cô",
+        "vietnamese": "Đầu tiên, tôi phải nói là tôi rất là bị ấn tượng bởi cái bài thuyết trình của cô",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "First off // I've gotta say I was impressed by your presentation"
@@ -34971,7 +34911,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "I'm still thinking, Mr. Vuong, you can go first",
-        "vietnamese": "TN: Tôi đang suy nghĩ, anh Vượng, anh có thể hỏi trước",
+        "vietnamese": "Tôi đang suy nghĩ, anh Vượng, anh có thể hỏi trước",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I'm still thinking // Mr. Vuong // you can go first"
@@ -34981,7 +34921,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "Katherine, could you go back to the line chart in slide 11?",
-        "vietnamese": "V: Katherine, cô có thể quay lại cái biểu đồ đường thẳng ở slide 11 không?",
+        "vietnamese": "Katherine, cô có thể quay lại cái biểu đồ đường thẳng ở slide 11 không?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Katherine // could you go back to the line chart in slide 11?"
@@ -34991,7 +34931,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "To be honest, my 1st impression looking at this chart was not really good",
-        "vietnamese": "V: Nói thật thì, cái ấn tượng đầu của tôi nhìn vào cái chart này không được tốt cho lắm",
+        "vietnamese": "Nói thật thì, cái ấn tượng đầu của tôi nhìn vào cái chart này không được tốt cho lắm",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "To be honest // my 1st impression looking at this chart was not really good"
@@ -35001,7 +34941,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 270,
         "category": "dialogue",
         "english": "Uh huh, may I ask you why?",
-        "vietnamese": "K: Uh huh, tôi có thể hỏi tại sao được không?",
+        "vietnamese": "Uh huh, tôi có thể hỏi tại sao được không?",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Uh huh // may I ask you why?"
@@ -35011,7 +34951,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "dialogue",
         "english": "First, It shocked me that Samsung has been constantly outperforming Apple throughout a decade",
-        "vietnamese": "V: Trước hết, tôi bị sốc khi Samsung đã và đang liên tục perform tốt hơn Apple trong suốt một thập kỷ",
+        "vietnamese": "Trước hết, tôi bị sốc khi Samsung đã và đang liên tục perform tốt hơn Apple trong suốt một thập kỷ",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "First // It shocked me that Samsung has been constantly outperforming Apple throughout a decade"
@@ -35021,7 +34961,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "dialogue",
         "english": "I don't think Samsung stands a chance of winning this game in the long run",
-        "vietnamese": "TN: Tôi không nghĩ là Samsung có cửa để thắng cái game này về lâu về dài",
+        "vietnamese": "Tôi không nghĩ là Samsung có cửa để thắng cái game này về lâu về dài",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I don't think Samsung stands a chance of winning this game in the long run"
@@ -35031,7 +34971,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 273,
         "category": "dialogue",
         "english": "But what is being shown on the screen is true",
-        "vietnamese": "TN: Nhưng mà những gì đang được show trên màn hình thì là đúng",
+        "vietnamese": "Nhưng mà những gì đang được show trên màn hình thì là đúng",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "But what is being shown on the screen is true"
@@ -35041,7 +34981,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 274,
         "category": "dialogue",
         "english": "I'll give you that",
-        "vietnamese": "TN: Cái đó thì tôi đồng ý với anh",
+        "vietnamese": "Cái đó thì tôi đồng ý với anh",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I'll give you that"
@@ -35051,7 +34991,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 275,
         "category": "dialogue",
         "english": "Excuse me, Mr. TN, could you go into details, please?",
-        "vietnamese": "K: Xin lỗi ông Trung Nguyên, ông có thể nói chi tiết hơn được không?",
+        "vietnamese": "Xin lỗi ông Trung Nguyên, ông có thể nói chi tiết hơn được không?",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Excuse me // Mr. TN // could you go into details // please?"
@@ -35061,7 +35001,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 276,
         "category": "dialogue",
         "english": "I'm well aware of the fact that...",
-        "vietnamese": "TN: Tôi ý thức rõ được cái sự thật rằng...",
+        "vietnamese": "Tôi ý thức rõ được cái sự thật rằng...",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I'm well aware of the fact that..."
@@ -35071,7 +35011,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 277,
         "category": "dialogue",
         "english": "It took Samsung double time to be where they are now",
-        "vietnamese": "TN: Samsung cần double thời gian để tới được cái nơi mà nó ở bây giờ",
+        "vietnamese": "Samsung cần double thời gian để tới được cái nơi mà nó ở bây giờ",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "It took Samsung double time to be where they are now"
@@ -35081,7 +35021,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 278,
         "category": "dialogue",
         "english": "Hold on, I also noticed that Apple has dethroned Samsung 2 times in 2017. Why?",
-        "vietnamese": "V: Chờ chút, tôi cũng nhận ra rằng Apple đã soán ngôi Samsung 2 lần trong năm 2017. Why?",
+        "vietnamese": "Chờ chút, tôi cũng nhận ra rằng Apple đã soán ngôi Samsung 2 lần trong năm 2017. Why?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Hold on // I also noticed that Apple has dethroned Samsung 2 times in 2017. Why?"
@@ -35091,7 +35031,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 279,
         "category": "dialogue",
         "english": "To be accurate, 3 times",
-        "vietnamese": "K: Nói cho chính xác thì, 3 lần",
+        "vietnamese": "Nói cho chính xác thì, 3 lần",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "To be accurate // 3 times"
@@ -35101,7 +35041,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 280,
         "category": "dialogue",
         "english": "Right, the first time occured somewhere in the end of 2011",
-        "vietnamese": "V: Đúng rồi, lần thứ nhất xảy ra đâu đó vào cuối năm 2011",
+        "vietnamese": "Đúng rồi, lần thứ nhất xảy ra đâu đó vào cuối năm 2011",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Right // the first time occured somewhere in the end of 2011"
@@ -35111,7 +35051,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 281,
         "category": "dialogue",
         "english": "Is it because of the launch of iphone 8?",
-        "vietnamese": "TN: Nó có phải là vì cái việc tung ra iphone 8 không?",
+        "vietnamese": "Nó có phải là vì cái việc tung ra iphone 8 không?",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Is it because of the launch of iphone 8?"
@@ -35121,7 +35061,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 282,
         "category": "dialogue",
         "english": "No, I personally believe this event is caused by the recall of Galaxy Note 7",
-        "vietnamese": "V: Không, bản thân tôi tin rằng sự kiện này là do cái việc thu hồi Galaxy Note 7",
+        "vietnamese": "Không, bản thân tôi tin rằng sự kiện này là do cái việc thu hồi Galaxy Note 7",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "No // I personally believe this event is caused by the recall of Galaxy Note 7"
@@ -35131,7 +35071,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 283,
         "category": "dialogue",
         "english": "Yes, because of this, Samsung has dropped to 2nd place for the 3rd time in the decade",
-        "vietnamese": "K: Phải, vì cái vụ này, Samsung đã rớt xuống vị trí thứ hai lần thứ ba trong một thập kỷ",
+        "vietnamese": "Phải, vì cái vụ này, Samsung đã rớt xuống vị trí thứ hai lần thứ ba trong một thập kỷ",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Yes // because of this // Samsung has dropped to 2nd place for the 3rd time in the decade"
@@ -35141,7 +35081,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 284,
         "category": "dialogue",
         "english": "Really? No wonder their sales plunged by 10% at the end of the chart",
-        "vietnamese": "TN: Vậy hả? Hèn gì doanh số của họ đã tụt dốc đi 10% ở cuối cái chart",
+        "vietnamese": "Vậy hả? Hèn gì doanh số của họ đã tụt dốc đi 10% ở cuối cái chart",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Really? No wonder their sales plunged by 10% at the end of the chart"
@@ -35151,7 +35091,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 285,
         "category": "dialogue",
         "english": "Having said that, that's a pity",
-        "vietnamese": "V: Nói đi thì cũng phải nói lại, thật là tiếc",
+        "vietnamese": "Nói đi thì cũng phải nói lại, thật là tiếc",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Having said that // that's a pity"
@@ -35161,7 +35101,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 286,
         "category": "dialogue",
         "english": "This line of product was really cool back then, I had 4 of them",
-        "vietnamese": "V: Cái dòng sản phẩm này rất là cool hồi đó luôn, tôi có 4 cái",
+        "vietnamese": "Cái dòng sản phẩm này rất là cool hồi đó luôn, tôi có 4 cái",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "This line of product was really cool back then // I had 4 of them"
@@ -35171,7 +35111,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 287,
         "category": "dialogue",
         "english": "I admit that I used to be a big fan of the Galaxy Note series",
-        "vietnamese": "V: Tôi thừa nhận rằng tôi từng là fan ruột của cái dòng Galaxy Note",
+        "vietnamese": "Tôi thừa nhận rằng tôi từng là fan ruột của cái dòng Galaxy Note",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "I admit that I used to be a big fan of the Galaxy Note series"
@@ -35181,7 +35121,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 288,
         "category": "dialogue",
         "english": "Word on the street is that...",
-        "vietnamese": "TN: Ở ngoài đường người ta đồn rằng...",
+        "vietnamese": "Ở ngoài đường người ta đồn rằng...",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Word on the street is that..."
@@ -35191,7 +35131,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 289,
         "category": "dialogue",
         "english": "This serious trouble originated from the faulty battery",
-        "vietnamese": "TN: Cái vấn đề nghiêm trọng này bắt nguồn từ cục pin bị lỗi",
+        "vietnamese": "Cái vấn đề nghiêm trọng này bắt nguồn từ cục pin bị lỗi",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "This serious trouble originated from the faulty battery"
@@ -35201,7 +35141,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 290,
         "category": "dialogue",
         "english": "Yeah, I once read about this in a Korean newspaper",
-        "vietnamese": "V: Yeah, tôi có lần đọc về cái vụ này trong một tờ báo Hàn Quốc",
+        "vietnamese": "Yeah, tôi có lần đọc về cái vụ này trong một tờ báo Hàn Quốc",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Yeah // I once read about this in a Korean newspaper"
@@ -35211,7 +35151,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 291,
         "category": "dialogue",
         "english": "it was overheating and even caught fire very easily while charging",
-        "vietnamese": "V: Nó bị quá nhiệt rồi thậm chí rất là dễ bắt lửa trong lúc đang sạc",
+        "vietnamese": "Nó bị quá nhiệt rồi thậm chí rất là dễ bắt lửa trong lúc đang sạc",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "it was overheating and even caught fire very easily while charging"
@@ -35221,7 +35161,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 292,
         "category": "dialogue",
         "english": "Yes, Samsung has made it clear that you should stop using it and return it ASAP",
-        "vietnamese": "K: Phải, Samsung đã nói rất là rõ ràng rằng bạn nên dừng sử dụng và gửi trả nó lại càng sớm càng tốt",
+        "vietnamese": "Phải, Samsung đã nói rất là rõ ràng rằng bạn nên dừng sử dụng và gửi trả nó lại càng sớm càng tốt",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Yes // Samsung has made it clear that you should stop using it and return it ASAP"
@@ -35231,7 +35171,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 293,
         "category": "dialogue",
         "english": "I heard that 85% of US customers chose to return the phone in exchange for a different Galaxy phone",
-        "vietnamese": "TN: Tôi nghe bảo 85% khách hàng Mỹ đã chọn return lại để đổi lấy một cái điện thoại Galaxy khác",
+        "vietnamese": "Tôi nghe bảo 85% khách hàng Mỹ đã chọn return lại để đổi lấy một cái điện thoại Galaxy khác",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I heard that 85% of US customers chose to return the phone in exchange for a different Galaxy phone"
@@ -35241,7 +35181,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 294,
         "category": "dialogue",
         "english": "Okay guys, back to the chart on the screen, please",
-        "vietnamese": "V: Được rồi mọi người, quay trở lại cái biểu đồ trên màn hình đi",
+        "vietnamese": "Được rồi mọi người, quay trở lại cái biểu đồ trên màn hình đi",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Okay guys // back to the chart on the screen // please"
@@ -35251,7 +35191,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 295,
         "category": "dialogue",
         "english": "I wonder why the blue line rocketted to more than 80 million in 2013?",
-        "vietnamese": "V: Tôi thắc mắc là tại sao cái đường màu xanh lại tăng vọt lên tới hơn 80 triệu trong năm 2013?",
+        "vietnamese": "Tôi thắc mắc là tại sao cái đường màu xanh lại tăng vọt lên tới hơn 80 triệu trong năm 2013?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "I wonder why the blue line rocketted to more than 80 million in 2013?"
@@ -35261,7 +35201,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 296,
         "category": "dialogue",
         "english": "I think the legendary Galaxy S4 must be the reason here",
-        "vietnamese": "TN: Tôi nghĩ cái con Galaxy S4 huyền thoại chắc hẳn là lý do ở đây",
+        "vietnamese": "Tôi nghĩ cái con Galaxy S4 huyền thoại chắc hẳn là lý do ở đây",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I think the legendary Galaxy S4 must be the reason here"
@@ -35271,7 +35211,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 297,
         "category": "dialogue",
         "english": "Interesting, I also notice that...",
-        "vietnamese": "TN: Interesting, tôi cũng để ý rằng...",
+        "vietnamese": "Interesting, tôi cũng để ý rằng...",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Interesting // I also notice that..."
@@ -35281,7 +35221,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 298,
         "category": "dialogue",
         "english": "Apple's revenue always hit the bottom in the middle of the year. You guys see that?",
-        "vietnamese": "TN: Doanh số Apple luôn chạm đáy vào cái đoạn giữa năm. Mọi người thấy không?",
+        "vietnamese": "Doanh số Apple luôn chạm đáy vào cái đoạn giữa năm. Mọi người thấy không?",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Apple's revenue always hit the bottom in the middle of the year. You guys see that?"
@@ -35291,7 +35231,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 299,
         "category": "dialogue",
         "english": "Good observation, Mr. TN, pretty much every year",
-        "vietnamese": "V: Quan sát tốt đó, anh Trung Nguyên, gần như là mỗi năm",
+        "vietnamese": "Quan sát tốt đó, anh Trung Nguyên, gần như là mỗi năm",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Good observation // Mr. TN // pretty much every year"
@@ -35301,7 +35241,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 300,
         "category": "dialogue",
         "english": "I believe it's because of our release calendar",
-        "vietnamese": "K: Tôi tin rằng đó là vì cái lịch ra mắt sản phẩm của bọn tôi",
+        "vietnamese": "Tôi tin rằng đó là vì cái lịch ra mắt sản phẩm của bọn tôi",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "I believe it's because of our release calendar"
@@ -35311,7 +35251,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 301,
         "category": "dialogue",
         "english": "We usually launch our new model in late September or early October",
-        "vietnamese": "K: Chúng tôi luôn tung ra mẫu mới vào cuối tháng 9 hay đầu tháng 10",
+        "vietnamese": "Chúng tôi luôn tung ra mẫu mới vào cuối tháng 9 hay đầu tháng 10",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "We usually launch our new model in late September or early October"
@@ -35321,7 +35261,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 302,
         "category": "dialogue",
         "english": "Wait a minute, something doesn't add up here",
-        "vietnamese": "V: Khoan khoan, có cái gì đó không hợp lý ở đây",
+        "vietnamese": "Khoan khoan, có cái gì đó không hợp lý ở đây",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Wait a minute // something doesn't add up here"
@@ -35331,7 +35271,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 303,
         "category": "dialogue",
         "english": "It boggles my mind, what is your real motivation when you choose Binh Duong?",
-        "vietnamese": "V: Nó làm tôi hơi rối não, cái động lực thật sự của các bạn là gì khi chọn Bình Dương?",
+        "vietnamese": "Nó làm tôi hơi rối não, cái động lực thật sự của các bạn là gì khi chọn Bình Dương?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "It boggles my mind // what is your real motivation when you choose Binh Duong?"
@@ -35341,7 +35281,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 304,
         "category": "dialogue",
         "english": "I mean, what attracts Apple to invest into Vietnam market at the moment?",
-        "vietnamese": "V: Ý tôi là, cái gì thu hút Apple đầu tư vào thị trường Việt Nam ở thời điểm hiện tại?",
+        "vietnamese": "Ý tôi là, cái gì thu hút Apple đầu tư vào thị trường Việt Nam ở thời điểm hiện tại?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "I mean // what attracts Apple to invest into Vietnam market at the moment?"
@@ -35351,7 +35291,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 305,
         "category": "dialogue",
         "english": "It's way too obvious, labor cost",
-        "vietnamese": "TN: Nó quá là rõ ràng, chi phí nhân công",
+        "vietnamese": "Nó quá là rõ ràng, chi phí nhân công",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "It's way too obvious // labor cost"
@@ -35361,7 +35301,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 306,
         "category": "dialogue",
         "english": "Smartphone market is a mature market",
-        "vietnamese": "TN: Thị trường smartphone là một thị trường đã phát triển",
+        "vietnamese": "Thị trường smartphone là một thị trường đã phát triển",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Smartphone market is a mature market"
@@ -35371,7 +35311,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 307,
         "category": "dialogue",
         "english": "There's nothing really new in this market anymore",
-        "vietnamese": "TN: Không có thứ gì thật sự là mới trong cái thị trường này nữa",
+        "vietnamese": "Không có thứ gì thật sự là mới trong cái thị trường này nữa",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "There's nothing really new in this market anymore"
@@ -35381,7 +35321,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 308,
         "category": "dialogue",
         "english": "Okay, but to run a factory in China, what is your annual operating costs?",
-        "vietnamese": "V: Okay, nhưng mà để chạy một cái nhà máy ở TQ, chi phí vận hành hàng năm của các bạn là bao nhiêu?",
+        "vietnamese": "Okay, nhưng mà để chạy một cái nhà máy ở TQ, chi phí vận hành hàng năm của các bạn là bao nhiêu?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Okay // but to run a factory in China // what is your annual operating costs?"
@@ -35391,7 +35331,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 309,
         "category": "dialogue",
         "english": "To answer this question, I'll show you a line chart in the last slide",
-        "vietnamese": "K: Để trả lời cho câu hỏi này, tôi sẽ cho ông xem cái line chart ở slide cuối",
+        "vietnamese": "Để trả lời cho câu hỏi này, tôi sẽ cho ông xem cái line chart ở slide cuối",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "To answer this question // I'll show you a line chart in the last slide"
@@ -35401,7 +35341,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 310,
         "category": "dialogue",
         "english": "At first glance, I can see most of your operating costs come from machinery and equipment. Right?",
-        "vietnamese": "V: Thoạt nhìn, tôi có thể thấy là hầu hết chi phí vận hành của các bạn đến từ máy móc và trang thiết bị. Đúng không?",
+        "vietnamese": "Thoạt nhìn, tôi có thể thấy là hầu hết chi phí vận hành của các bạn đến từ máy móc và trang thiết bị. Đúng không?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "At first glance // I can see most of your operating costs come from machinery and equipment. Right?"
@@ -35411,7 +35351,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 311,
         "category": "dialogue",
         "english": "But I believe the real pain points originated from the supply chain shortage",
-        "vietnamese": "TN: Nhưng mà tôi tin rằng cái nỗi đau thật sự bắt nguồn từ sự cạn kiệt chuỗi cung ứng",
+        "vietnamese": "Nhưng mà tôi tin rằng cái nỗi đau thật sự bắt nguồn từ sự cạn kiệt chuỗi cung ứng",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "But I believe the real pain points originated from the supply chain shortage"
@@ -35421,7 +35361,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 312,
         "category": "dialogue",
         "english": "Yes, due to COVID pandemic, Chinese goverment has shut down a lot of our factories in Shanghai",
-        "vietnamese": "K: Đúng, do đại dịch COVID, chính phủ TQ đã đóng cửa rất nhiều nhà máy của chúng tôi ở Thượng Hải",
+        "vietnamese": "Đúng, do đại dịch COVID, chính phủ TQ đã đóng cửa rất nhiều nhà máy của chúng tôi ở Thượng Hải",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Yes // due to COVID pandemic // Chinese goverment has shut down a lot of our factories in Shanghai"
@@ -35431,7 +35371,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 313,
         "category": "dialogue",
         "english": "I see, but I don't think I can be much of a help in this project. So, I'm out.",
-        "vietnamese": "V: Tôi hiểu rồi, nhưng mà tôi không nghĩ là tôi có thể giúp được gì nhiều trong cái dự án này. Cho nên, tôi xin rút",
+        "vietnamese": "Tôi hiểu rồi, nhưng mà tôi không nghĩ là tôi có thể giúp được gì nhiều trong cái dự án này. Cho nên, tôi xin rút",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "I see // but I don't think I can be much of a help in this project. So // I'm out."
@@ -38033,7 +37973,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 209,
         "category": "sentence",
         "english": "Hold on, I thought boss will conduct the interview directly? Khoan,",
-        "vietnamese": "tôi tưởng sếp sẽ thực hiện phỏng vấn trực tiếp chứ?",
+        "vietnamese": "Tôi tưởng sếp sẽ thực hiện phỏng vấn trực tiếp chứ?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Hold on // I thought boss will conduct the interview directly? Khoan,"
@@ -38172,11 +38112,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d12_0223",
         "item_number": 223,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth Miwako is making a phone call to Teo regarding his resume",
-        "vietnamese": "",
+        "english": "Miwako is making a phone call to Teo regarding his resume",
+        "vietnamese": "Miwako đang gọi điện thoại cho Tèo về hồ sơ xin việc của cậu ấy",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth Miwako is making a phone call to Teo regarding his resume"
+        "beat_prosody": "Miwako is making a phone call to Teo regarding his resume"
       },
       {
         "chunk_id": "chunk_eres_d12_0224",
@@ -38433,7 +38373,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 249,
         "category": "monologue",
         "english": "The content of the game will be kept confidential until the interview day",
-        "vietnamese": "Nội dung trò chơi sẽ dc giữ bí mật đến buổi PV",
+        "vietnamese": "Nội dung trò chơi sẽ được giữ bí mật đến buổi PV",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "The content of the game will be kept confidential until the interview day"
@@ -38513,7 +38453,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 257,
         "category": "monologue",
         "english": "I'm sorry but I can not share those information regarding salary with you at the moment",
-        "vietnamese": "Chị rất tiếc nhưng chị ko thể chia sẻ các thông tin về salary với em lúc này được",
+        "vietnamese": "Chị rất tiếc nhưng chị không thể chia sẻ các thông tin về salary với em lúc này được",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I'm sorry but I can not share those information regarding salary with you at the moment"
@@ -38582,19 +38522,19 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d12_0264",
         "item_number": 264,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION Dutch Lady is on the phone handling a complaint from Mr. Tho...",
-        "vietnamese": "",
+        "english": "Dutch Lady is on the phone handling a complaint from Mr. Tho...",
+        "vietnamese": "Cô Gái Hà Lan đang nghe điện thoại xử lý khiếu nại từ ông Thọ...",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION Dutch Lady is on the phone handling a complaint from Mr. Tho..."
+        "beat_prosody": "Dutch Lady is on the phone handling a complaint from Mr. Tho..."
       },
       {
         "chunk_id": "chunk_eres_d12_0265",
         "item_number": 265,
         "category": "dialogue",
         "english": "Hello, thanks for calling Vinamilk",
-        "vietnamese": "DL: Alô, cám ơn đã gọi đến Vinamilk",
-        "speaker": null,
+        "vietnamese": "Alô, cám ơn đã gọi đến Vinamilk",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Hello // thanks for calling Vinamilk"
       },
@@ -38603,8 +38543,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 266,
         "category": "dialogue",
         "english": "I'm Dutch Lady, how may I help you, sir?",
-        "vietnamese": "DL: Em là Dutch Lady, em có thể giúp được gì cho anh ạ?",
-        "speaker": null,
+        "vietnamese": "Em là Dutch Lady, em có thể giúp được gì cho anh ạ?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "I'm Dutch Lady // how may I help you // sir?"
       },
@@ -38613,8 +38553,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "Hello, HELLO? Can you hear me okay?",
-        "vietnamese": "T: Alo, ALO? Cô nghe tôi okay không?",
-        "speaker": null,
+        "vietnamese": "Alo, ALO? Cô nghe tôi okay không?",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Hello // HELLO? Can you hear me okay?"
       },
@@ -38623,8 +38563,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "Actually I wanna pick up where we left off yesterday",
-        "vietnamese": "T: Thật ra tôi muốn nói tiếp cái chỗ hôm qua mà ta dừng lại ấy",
-        "speaker": null,
+        "vietnamese": "Thật ra tôi muốn nói tiếp cái chỗ hôm qua mà ta dừng lại ấy",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Actually I wanna pick up where we left off yesterday"
       },
@@ -38633,8 +38573,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "Yesterday I did call but my problems haven't been solved yet",
-        "vietnamese": "T: Hôm qua tôi có gọi nhưng mà vấn đề của tôi vẫn chưa được giải quyết",
-        "speaker": null,
+        "vietnamese": "Hôm qua tôi có gọi nhưng mà vấn đề của tôi vẫn chưa được giải quyết",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Yesterday I did call but my problems haven't been solved yet"
       },
@@ -38643,8 +38583,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 270,
         "category": "dialogue",
         "english": "Sorry, first and foremost, may I have your name, sir?",
-        "vietnamese": "DL: Sorry, đầu tiên và trên hết, cho em xin tên anh được chứ ạ?",
-        "speaker": null,
+        "vietnamese": "Sorry, đầu tiên và trên hết, cho em xin tên anh được chứ ạ?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Sorry // first and foremost // may I have your name // sir?"
       },
@@ -38653,8 +38593,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "dialogue",
         "english": "I need to check on the system to know who talked to you yesterday",
-        "vietnamese": "DL: Em cần check trên hệ thống để biết ai đã nói chuyện với anh hôm qua",
-        "speaker": null,
+        "vietnamese": "Em cần check trên hệ thống để biết ai đã nói chuyện với anh hôm qua",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "I need to check on the system to know who talked to you yesterday"
       },
@@ -38663,8 +38603,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "dialogue",
         "english": "My name is Tho, Phuoc Loc Tho, I made a phonecall around 11 pm, you can check",
-        "vietnamese": "T: Anh tên Thọ, Phuoc Loc Tho, anh gọi khoảng 11h tối, em có thể kiểm tra",
-        "speaker": null,
+        "vietnamese": "Anh tên Thọ, Phuoc Loc Tho, anh gọi khoảng 11h tối, em có thể kiểm tra",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "My name is Tho // Phuoc Loc Tho // I made a phonecall around 11 pm // you can check"
       },
@@ -38673,8 +38613,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 273,
         "category": "dialogue",
         "english": "Please hold the line for a while, if you don't mind",
-        "vietnamese": "DL: Xin anh giữ máy một chút nha, nếu anh không phiền",
-        "speaker": null,
+        "vietnamese": "Xin anh giữ máy một chút nha, nếu anh không phiền",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Please hold the line for a while // if you don't mind"
       },
@@ -38683,8 +38623,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 274,
         "category": "dialogue",
         "english": "Actually you don't need to check, dear",
-        "vietnamese": "T: Thật ra em không cần check đâu, cưng",
-        "speaker": null,
+        "vietnamese": "Thật ra em không cần check đâu, cưng",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Actually you don't need to check // dear"
       },
@@ -38693,8 +38633,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 275,
         "category": "dialogue",
         "english": "There're totally 3 things that took me all afternoon to think about",
-        "vietnamese": "T: Có tổng cộng 3 điều mà làm anh tốn cả buổi chiều để nghĩ về",
-        "speaker": null,
+        "vietnamese": "Có tổng cộng 3 điều mà làm anh tốn cả buổi chiều để nghĩ về",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "There're totally 3 things that took me all afternoon to think about"
       },
@@ -38703,8 +38643,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 276,
         "category": "dialogue",
         "english": "First, I thought I bought myself a big box of condensed milk",
-        "vietnamese": "T: Thứ nhất, anh nghĩ anh đã mua cho mình một thùng sữa đặc to",
-        "speaker": null,
+        "vietnamese": "Thứ nhất, anh nghĩ anh đã mua cho mình một thùng sữa đặc to",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "First // I thought I bought myself a big box of condensed milk"
       },
@@ -38713,8 +38653,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 277,
         "category": "dialogue",
         "english": "But turned out condensed milk was not condensed at all",
-        "vietnamese": "T: nhưng hóa ra sữa đặc lại không đặc chút nào",
-        "speaker": null,
+        "vietnamese": "Nhưng hóa ra sữa đặc lại không đặc chút nào",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "But turned out condensed milk was not condensed at all"
       },
@@ -38723,8 +38663,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 278,
         "category": "dialogue",
         "english": "Sorry but I'm not sure I get what you mean",
-        "vietnamese": "DL: Xin lỗi nhưng em không chắc em hiểu ý anh cho lắm",
-        "speaker": null,
+        "vietnamese": "Xin lỗi nhưng em không chắc em hiểu ý anh cho lắm",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Sorry but I'm not sure I get what you mean"
       },
@@ -38733,8 +38673,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 279,
         "category": "dialogue",
         "english": "When I opened that up and looked inside, it was out of my expectation",
-        "vietnamese": "T: Khi mà anh khui nó ra rồi nhìn vô bên trong, nó vượt quá mong đợi của anh luôn",
-        "speaker": null,
+        "vietnamese": "Khi mà anh khui nó ra rồi nhìn vô bên trong, nó vượt quá mong đợi của anh luôn",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "When I opened that up and looked inside // it was out of my expectation"
       },
@@ -38743,8 +38683,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 280,
         "category": "dialogue",
         "english": "Sorry to interrupt you right there but...",
-        "vietnamese": "DL: Xin lỗi cắt ngang lời anh ngay đó nhưng mà ...",
-        "speaker": null,
+        "vietnamese": "Xin lỗi cắt ngang lời anh ngay đó nhưng mà ...",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Sorry to interrupt you right there but..."
       },
@@ -38753,8 +38693,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 281,
         "category": "dialogue",
         "english": "What is your definition of expectation?",
-        "vietnamese": "DL: Cái định nghĩa của anh về sự mong đợi là cái gì vậy?",
-        "speaker": null,
+        "vietnamese": "Cái định nghĩa của anh về sự mong đợi là cái gì vậy?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "What is your definition of expectation?"
       },
@@ -38763,8 +38703,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 282,
         "category": "dialogue",
         "english": "I don't know but I expect condensed milk will be a lot more condensed",
-        "vietnamese": "T: Anh không biết nhưng mà anh mong đợi sữa đặc thì phải đặc hơn rất là nhiều",
-        "speaker": null,
+        "vietnamese": "Anh không biết nhưng mà anh mong đợi sữa đặc thì phải đặc hơn rất là nhiều",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I don't know but I expect condensed milk will be a lot more condensed"
       },
@@ -38773,8 +38713,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 283,
         "category": "dialogue",
         "english": "Okay, I hear what you're saying, thank for your valuable comments on this",
-        "vietnamese": "DL: Okay, em nghe thì hiểu những gì anh đang nói, cám ơn anh vì những lời comment đáng giá cho vấn đề này",
-        "speaker": null,
+        "vietnamese": "Okay, em nghe thì hiểu những gì anh đang nói, cám ơn anh vì những lời comment đáng giá cho vấn đề này",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Okay // I hear what you're saying // thank for your valuable comments on this"
       },
@@ -38783,8 +38723,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 284,
         "category": "dialogue",
         "english": "I think I'll pass it down to R&D team",
-        "vietnamese": "DL: Em nghĩ em sẽ pass nó xuống cho team R&D",
-        "speaker": null,
+        "vietnamese": "Em nghĩ em sẽ pass nó xuống cho team R&D",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "I think I'll pass it down to R&D team"
       },
@@ -38793,8 +38733,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 285,
         "category": "dialogue",
         "english": "Okay, next, I know the thing I'm about to tell you might sound a bit ridiculous",
-        "vietnamese": "T: Okay, tiếp theo, anh biết là cái điều anh sắp nói em nghe có thể khá là buồn cười",
-        "speaker": null,
+        "vietnamese": "Okay, tiếp theo, anh biết là cái điều anh sắp nói em nghe có thể khá là buồn cười",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Okay // next // I know the thing I'm about to tell you might sound a bit ridiculous"
       },
@@ -38803,8 +38743,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 286,
         "category": "dialogue",
         "english": "Ridiculous??? Hold on, I knew what you were gonna say",
-        "vietnamese": "DL: Buồn cười? Khoan, em biết anh sắp nói gì nè",
-        "speaker": null,
+        "vietnamese": "Buồn cười? Khoan, em biết anh sắp nói gì nè",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Ridiculous??? Hold on // I knew what you were gonna say"
       },
@@ -38813,8 +38753,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 287,
         "category": "dialogue",
         "english": "You're gonna tell me sth about packaging, right?",
-        "vietnamese": "DL: Anh tính nói em cái gì đó về đóng gói đúng không?",
-        "speaker": null,
+        "vietnamese": "Anh tính nói em cái gì đó về đóng gói đúng không?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "You're gonna tell me sth about packaging // right?"
       },
@@ -38823,8 +38763,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 288,
         "category": "dialogue",
         "english": "Holy cow, you're such a mind reader, dear",
-        "vietnamese": "T: Trời đất ơi, em đi guốc trong bụng anh rồi, cưng",
-        "speaker": null,
+        "vietnamese": "Trời đất ơi, em đi guốc trong bụng anh rồi, cưng",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Holy cow // you're such a mind reader // dear"
       },
@@ -38833,8 +38773,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 289,
         "category": "dialogue",
         "english": "This morning, the moment my wife opened the box,",
-        "vietnamese": "T: Sáng nay, cái lúc mà bà vợ anh bả khui cái thùng ra",
-        "speaker": null,
+        "vietnamese": "Sáng nay, cái lúc mà bà vợ anh bả khui cái thùng ra",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "This morning // the moment my wife opened the box,"
       },
@@ -38843,8 +38783,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 290,
         "category": "dialogue",
         "english": "She looked daggers at me, then she went, like",
-        "vietnamese": "T: Bả nhìn anh với ánh mắt hình viên đạn, rồi bả nói kiểu",
-        "speaker": null,
+        "vietnamese": "Bả nhìn anh với ánh mắt hình viên đạn, rồi bả nói kiểu",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "She looked daggers at me // then she went // like"
       },
@@ -38853,8 +38793,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 291,
         "category": "dialogue",
         "english": "\"Hey, old man, you got no hair and you bought this much shampoo for what?\"",
-        "vietnamese": "T: \"Ê ông già, ông không có tóc mà mua chi nhiều dầu gọi dzầy?\"",
-        "speaker": null,
+        "vietnamese": "\"Ê ông già, ông không có tóc mà mua chi nhiều dầu gọi dzầy?\"",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "\"Hey // old man // you got no hair and you bought this much shampoo for what?\""
       },
@@ -38863,8 +38803,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 292,
         "category": "dialogue",
         "english": "I feel you, thank you for your sharing, though",
-        "vietnamese": "DL: Em hiểu mà, dù sao cũng cám ơn anh đã chia sẻ",
-        "speaker": null,
+        "vietnamese": "Em hiểu mà, dù sao cũng cám ơn anh đã chia sẻ",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "I feel you // thank you for your sharing // though"
       },
@@ -38873,8 +38813,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 293,
         "category": "dialogue",
         "english": "Actually recently, we've received a lot of complaints about the new packaging design",
-        "vietnamese": "DL: thật ra dạo này, bọn em nhận rất nhiều lời complain về cái thiết kế bao bì mới",
-        "speaker": null,
+        "vietnamese": "Thật ra dạo này, bọn em nhận rất nhiều lời complain về cái thiết kế bao bì mới",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Actually recently // we've received a lot of complaints about the new packaging design"
       },
@@ -38883,8 +38823,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 294,
         "category": "dialogue",
         "english": "Most of the time, they said it looks quite identical with a single-use shampoo sachet",
-        "vietnamese": "DL: Hầu hết mọi lúc, họ đều nói nó trông gần như y hệt một bịch dầu gọi dùng 1 lần ấy",
-        "speaker": null,
+        "vietnamese": "Hầu hết mọi lúc, họ đều nói nó trông gần như y hệt một bịch dầu gọi dùng 1 lần ấy",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Most of the time // they said it looks quite identical with a single-use shampoo sachet"
       },
@@ -38893,8 +38833,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 295,
         "category": "dialogue",
         "english": "Actually it's not really an issue, you know",
-        "vietnamese": "T: Thật ra, cái đó nó không hẳn là một vấn đề, em cũng biết rồi đó",
-        "speaker": null,
+        "vietnamese": "Thật ra, cái đó nó không hẳn là một vấn đề, em cũng biết rồi đó",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Actually it's not really an issue // you know"
       },
@@ -38903,8 +38843,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 296,
         "category": "dialogue",
         "english": "I know packaging's got nothing to do with product quality",
-        "vietnamese": "T: Anh biết bao bì thì có liên quan gì đến chất lượng sản phẩm đâu",
-        "speaker": null,
+        "vietnamese": "Anh biết bao bì thì có liên quan gì đến chất lượng sản phẩm đâu",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I know packaging's got nothing to do with product quality"
       },
@@ -38913,8 +38853,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 297,
         "category": "dialogue",
         "english": "No, no, no, your feedback means a lot to us, really!",
-        "vietnamese": "DL: Ko, ko, ko, phản hồi của anh rất là có ý nghĩa với bên em, thiệt!",
-        "speaker": null,
+        "vietnamese": "Không, không, không, phản hồi của anh rất là có ý nghĩa với bên em, thiệt!",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "No // no // no // your feedback means a lot to us // really!"
       },
@@ -38923,8 +38863,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 298,
         "category": "dialogue",
         "english": "Thank you for bringing this to our attention",
-        "vietnamese": "DL: Cám ơn anh đã làm bọn em để ý đến cái này",
-        "speaker": null,
+        "vietnamese": "Cám ơn anh đã làm bọn em để ý đến cái này",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Thank you for bringing this to our attention"
       },
@@ -38933,8 +38873,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 299,
         "category": "dialogue",
         "english": "As you already know, during the course of 46 years",
-        "vietnamese": "DL: Như anh cũng biết rồi, trong suốt 46 năm",
-        "speaker": null,
+        "vietnamese": "Như anh cũng biết rồi, trong suốt 46 năm",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "As you already know // during the course of 46 years"
       },
@@ -38943,8 +38883,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 300,
         "category": "dialogue",
         "english": "The number of our loyal customers has been increasing steadily",
-        "vietnamese": "DL: Số khách hàng trung thành của bọn em đã và đang tăng dần lên một cách ổn định",
-        "speaker": null,
+        "vietnamese": "Số khách hàng trung thành của bọn em đã và đang tăng dần lên một cách ổn định",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "The number of our loyal customers has been increasing steadily"
       },
@@ -38953,8 +38893,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 301,
         "category": "dialogue",
         "english": "Because very often, to meet market demand",
-        "vietnamese": "DL: Bời vì thường thì, để thỏa mãn nhu cầu thị trường",
-        "speaker": null,
+        "vietnamese": "Bời vì thường thì, để thỏa mãn nhu cầu thị trường",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Because very often // to meet market demand"
       },
@@ -38963,8 +38903,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 302,
         "category": "dialogue",
         "english": "we put a lot of effort to find out on-trend flavors",
-        "vietnamese": "DL: Bọn em đã bỏ rất nhiều nỗ lực để tìm ra những cái mùi vị đang hợp với xu hướng",
-        "speaker": null,
+        "vietnamese": "Bọn em đã bỏ rất nhiều nỗ lực để tìm ra những cái mùi vị đang hợp với xu hướng",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "we put a lot of effort to find out on-trend flavors"
       },
@@ -38973,8 +38913,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 303,
         "category": "dialogue",
         "english": "and then try to innovate the flavors of our products",
-        "vietnamese": "DL: Rồi sau đó cố gắng cải tiến mùi vị các sản phẩm của mình",
-        "speaker": null,
+        "vietnamese": "Rồi sau đó cố gắng cải tiến mùi vị các sản phẩm của mình",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "and then try to innovate the flavors of our products"
       },
@@ -38983,8 +38923,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 304,
         "category": "dialogue",
         "english": "Totally! I believe flavors are very important to dairy products",
-        "vietnamese": "T: Chắc hẳn là vậy! Anh tin mùi vị rất là quan trọng đối với các sản phẩm về sữa",
-        "speaker": null,
+        "vietnamese": "Chắc hẳn là vậy! Anh tin mùi vị rất là quan trọng đối với các sản phẩm về sữa",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Totally! I believe flavors are very important to dairy products"
       },
@@ -38993,8 +38933,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 305,
         "category": "dialogue",
         "english": "Hold on, now that you mention it",
-        "vietnamese": "T: Mà khoan, sẵn tiện em nhắc đến cái vụ đó",
-        "speaker": null,
+        "vietnamese": "Mà khoan, sẵn tiện em nhắc đến cái vụ đó",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Hold on // now that you mention it"
       },
@@ -39003,8 +38943,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 306,
         "category": "dialogue",
         "english": "Speaking of flavor, I'm not sure your new one is a breakthrough",
-        "vietnamese": "T: Nói về mùi vị nha, anh không chắc cái vị mới của bọn em là một bước đột phá đâu nhé",
-        "speaker": null,
+        "vietnamese": "Nói về mùi vị nha, anh không chắc cái vị mới của bọn em là một bước đột phá đâu nhé",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Speaking of flavor // I'm not sure your new one is a breakthrough"
       },
@@ -39013,8 +38953,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 307,
         "category": "dialogue",
         "english": "Sorry, could you tell me more about this?",
-        "vietnamese": "DL: Sorry, anh nói em thêm về cái này được không?",
-        "speaker": null,
+        "vietnamese": "Sorry, anh nói em thêm về cái này được không?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Sorry // could you tell me more about this?"
       },
@@ -39023,8 +38963,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 308,
         "category": "dialogue",
         "english": "I don't mean to be rude but it tastes, like... dishwater",
-        "vietnamese": "T: Anh không có ý chê bai nhưng mà nó có vị, kiểu... nhạt như nước ốc ấy",
-        "speaker": null,
+        "vietnamese": "Anh không có ý chê bai nhưng mà nó có vị, kiểu... nhạt như nước ốc ấy",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I don't mean to be rude but it tastes // like... dishwater"
       },
@@ -39033,8 +38973,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 309,
         "category": "dialogue",
         "english": "Hmm... lemme see if I have this right",
-        "vietnamese": "DL: Hmmmm để em xem liệu em có đang hiểu đúng vấn đề hay là không nhé",
-        "speaker": null,
+        "vietnamese": "Hmmmm để em xem liệu em có đang hiểu đúng vấn đề hay là không nhé",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Hmm... lemme see if I have this right"
       },
@@ -39043,8 +38983,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 310,
         "category": "dialogue",
         "english": "You're telling me that you simply don't like our new flavor. Right?",
-        "vietnamese": "DL: Ý anh đang muốn nói em là anh đơn giản chỉ là không thích cái vị mới của bọn em. Đúng không?",
-        "speaker": null,
+        "vietnamese": "Ý anh đang muốn nói em là anh đơn giản chỉ là không thích cái vị mới của bọn em. Đúng không?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "You're telling me that you simply don't like our new flavor. Right?"
       },
@@ -39053,8 +38993,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 311,
         "category": "dialogue",
         "english": "Okay, as an immediate solution, I'll ship to you a new box tomorrow",
-        "vietnamese": "DL: Okay, giải pháp tức thời của em, em sẽ ship cho anh một thùng mới ngày mai",
-        "speaker": null,
+        "vietnamese": "Okay, giải pháp tức thời của em, em sẽ ship cho anh một thùng mới ngày mai",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Okay // as an immediate solution // I'll ship to you a new box tomorrow"
       },
@@ -39063,8 +39003,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 312,
         "category": "dialogue",
         "english": "Hmmm, you know what? It doesn't matter, actually yesterday your coworker really pissed me off",
-        "vietnamese": "T: Hmmm, em biết sao không? Chuyện này cũng chẳng có gì. Thật ra hôm qua đồng nghiệp của em nó làm anh bực mình quá",
-        "speaker": null,
+        "vietnamese": "Hmmm, em biết sao không? Chuyện này cũng chẳng có gì. Thật ra hôm qua đồng nghiệp của em nó làm anh bực mình quá",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Hmmm // you know what? It doesn't matter // actually yesterday your coworker really pissed me off"
       },
@@ -39073,8 +39013,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 313,
         "category": "dialogue",
         "english": "But today it was really different talking to you. That's it, have a nice day",
-        "vietnamese": "T: Nhưng mà hôm nay rất là khác khi nói chuyện với em. Vậy thôi, chúc em một ngày vui vẻ nha",
-        "speaker": null,
+        "vietnamese": "Nhưng mà hôm nay rất là khác khi nói chuyện với em. Vậy thôi, chúc em một ngày vui vẻ nha",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "But today it was really different talking to you. That's it // have a nice day"
       },
@@ -39801,11 +39741,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d13_0021",
         "item_number": 21,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth Katherine happened to come to Vietnam to make a 2-minute pitch for the new project in Binh Duong",
-        "vietnamese": "",
+        "english": "Katherine happened to come to Vietnam to make a 2-minute pitch for the new project in Binh Duong",
+        "vietnamese": "Katherine tình cờ đến Việt Nam để thuyết trình 2 phút cho dự án mới ở Bình Dương",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth Katherine happened to come to Vietnam to make a 2-minute pitch for the new project in Binh Duong"
+        "beat_prosody": "Katherine happened to come to Vietnam to make a 2-minute pitch for the new project in Binh Duong"
       },
       {
         "chunk_id": "chunk_eres_d13_0022",
@@ -40181,18 +40121,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d13_0059",
         "item_number": 59,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION Mr. Vuong - Trung Nguyen - Katherine accidentally show up in the Shark Tank Vietnam season 5",
-        "vietnamese": "",
+        "english": "Mr. Vuong, Trung Nguyen, and Katherine accidentally show up in the Shark Tank Vietnam season 5",
+        "vietnamese": "Ông Vượng, Trung Nguyên, Katherine tình cờ xuất hiện tại Shark Tank Việt Nam mùa 5",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION Mr. Vuong - Trung Nguyen - Katherine accidentally show up in the Shark Tank Vietnam season 5"
+        "beat_prosody": "Mr. Vuong, Trung Nguyen, and Katherine accidentally show up in the Shark Tank Vietnam season 5"
       },
       {
         "chunk_id": "chunk_eres_d13_0060",
         "item_number": 60,
         "category": "dialogue",
         "english": "Hi Sharks, I've done my presentation, before I pass it on to my CEO",
-        "vietnamese": "K: Chào các sharks, tôi đã trình bày xong phần của mình, trước khi nhường lời lại cho CEO của tôi",
+        "vietnamese": "Chào các sharks, tôi đã trình bày xong phần của mình, trước khi nhường lời lại cho CEO của tôi",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Hi Sharks // I've done my presentation // before I pass it on to my CEO"
@@ -40202,7 +40142,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 61,
         "category": "dialogue",
         "english": "If you have any questions for me, please go ahead",
-        "vietnamese": "K: Nếu các bạn có bất kỳ câu hỏi nào cho tôi, xin cứ tự nhiên",
+        "vietnamese": "Nếu các bạn có bất kỳ câu hỏi nào cho tôi, xin cứ tự nhiên",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "If you have any questions for me // please go ahead"
@@ -40212,7 +40152,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 62,
         "category": "dialogue",
         "english": "First off, I've gotta say I was impressed by your presentation",
-        "vietnamese": "TN: Đầu tiên, tôi phải nói là tôi rất là bị ấn tượng bởi cái bài thuyết trình của cô",
+        "vietnamese": "Đầu tiên, tôi phải nói là tôi rất là bị ấn tượng bởi cái bài thuyết trình của cô",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "First off // I've gotta say I was impressed by your presentation"
@@ -40222,7 +40162,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 63,
         "category": "dialogue",
         "english": "I'm still thinking, Mr. Vuong, you can go first",
-        "vietnamese": "TN: Tôi đang suy nghĩ, anh Vượng, anh có thể hỏi trước",
+        "vietnamese": "Tôi đang suy nghĩ, anh Vượng, anh có thể hỏi trước",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I'm still thinking // Mr. Vuong // you can go first"
@@ -40232,7 +40172,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 64,
         "category": "dialogue",
         "english": "Katherine, could you go back to the line chart in slide 11?",
-        "vietnamese": "V: Katherine, cô có thể quay lại cái biểu đồ đường thẳng ở slide 11 không?",
+        "vietnamese": "Katherine, cô có thể quay lại cái biểu đồ đường thẳng ở slide 11 không?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Katherine // could you go back to the line chart in slide 11?"
@@ -40242,7 +40182,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 65,
         "category": "dialogue",
         "english": "To be honest, my 1st impression looking at this chart was not really good",
-        "vietnamese": "V: Nói thật thì, cái ấn tượng đầu của tôi nhìn vào cái chart này không được tốt cho lắm",
+        "vietnamese": "Nói thật thì, cái ấn tượng đầu của tôi nhìn vào cái chart này không được tốt cho lắm",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "To be honest // my 1st impression looking at this chart was not really good"
@@ -40252,7 +40192,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 66,
         "category": "dialogue",
         "english": "Uh huh, may I ask you why?",
-        "vietnamese": "K: Uh huh, tôi có thể hỏi tại sao được không?",
+        "vietnamese": "Uh huh, tôi có thể hỏi tại sao được không?",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Uh huh // may I ask you why?"
@@ -40262,7 +40202,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 67,
         "category": "dialogue",
         "english": "First, It shocked me that Samsung has been constantly outperforming Apple throughout a decade",
-        "vietnamese": "V: Trước hết, tôi bị sốc khi Samsung đã và đang liên tục perform tốt hơn Apple trong suốt một thập kỷ",
+        "vietnamese": "Trước hết, tôi bị sốc khi Samsung đã và đang liên tục perform tốt hơn Apple trong suốt một thập kỷ",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "First // It shocked me that Samsung has been constantly outperforming Apple throughout a decade"
@@ -40272,7 +40212,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 68,
         "category": "dialogue",
         "english": "I don't think Samsung stands a chance of winning this game in the long run",
-        "vietnamese": "TN: Tôi không nghĩ là Samsung có cửa để thắng cái game này về lâu về dài",
+        "vietnamese": "Tôi không nghĩ là Samsung có cửa để thắng cái game này về lâu về dài",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I don't think Samsung stands a chance of winning this game in the long run"
@@ -40282,7 +40222,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 69,
         "category": "dialogue",
         "english": "But what is being shown on the screen is true",
-        "vietnamese": "TN: Nhưng mà những gì đang được show trên màn hình thì là đúng",
+        "vietnamese": "Nhưng mà những gì đang được show trên màn hình thì là đúng",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "But what is being shown on the screen is true"
@@ -40292,7 +40232,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 70,
         "category": "dialogue",
         "english": "I'll give you that",
-        "vietnamese": "TN: Cái đó thì tôi đồng ý với anh",
+        "vietnamese": "Cái đó thì tôi đồng ý với anh",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I'll give you that"
@@ -40302,7 +40242,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 71,
         "category": "dialogue",
         "english": "Excuse me, Mr. TN, could you go into details, please?",
-        "vietnamese": "K: Xin lỗi ông Trung Nguyên, ông có thể nói chi tiết hơn được không?",
+        "vietnamese": "Xin lỗi ông Trung Nguyên, ông có thể nói chi tiết hơn được không?",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Excuse me // Mr. TN // could you go into details // please?"
@@ -40312,7 +40252,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 72,
         "category": "dialogue",
         "english": "I'm well aware of the fact that...",
-        "vietnamese": "TN: Tôi ý thức rõ được cái sự thật rằng...",
+        "vietnamese": "Tôi ý thức rõ được cái sự thật rằng...",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I'm well aware of the fact that..."
@@ -40322,7 +40262,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 73,
         "category": "dialogue",
         "english": "It took Samsung double time to be where they are now",
-        "vietnamese": "TN: Samsung cần double thời gian để tới được cái nơi mà nó ở bây giờ",
+        "vietnamese": "Samsung cần double thời gian để tới được cái nơi mà nó ở bây giờ",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "It took Samsung double time to be where they are now"
@@ -40332,7 +40272,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 74,
         "category": "dialogue",
         "english": "Hold on, I also noticed that Apple has dethroned Samsung 2 times in 2017. Why?",
-        "vietnamese": "V: Chờ chút, tôi cũng nhận ra rằng Apple đã soán ngôi Samsung 2 lần trong năm 2017. Why?",
+        "vietnamese": "Chờ chút, tôi cũng nhận ra rằng Apple đã soán ngôi Samsung 2 lần trong năm 2017. Why?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Hold on // I also noticed that Apple has dethroned Samsung 2 times in 2017. Why?"
@@ -40342,7 +40282,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 75,
         "category": "dialogue",
         "english": "To be accurate, 3 times",
-        "vietnamese": "K: Nói cho chính xác thì, 3 lần",
+        "vietnamese": "Nói cho chính xác thì, 3 lần",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "To be accurate // 3 times"
@@ -40352,7 +40292,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 76,
         "category": "dialogue",
         "english": "Right, the first time occured somewhere in the end of 2011",
-        "vietnamese": "V: Đúng rồi, lần thứ nhất xảy ra đâu đó vào cuối năm 2011",
+        "vietnamese": "Đúng rồi, lần thứ nhất xảy ra đâu đó vào cuối năm 2011",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Right // the first time occured somewhere in the end of 2011"
@@ -40362,7 +40302,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 77,
         "category": "dialogue",
         "english": "Is it because of the launch of iphone 8?",
-        "vietnamese": "TN: Nó có phải là vì cái việc tung ra iphone 8 không?",
+        "vietnamese": "Nó có phải là vì cái việc tung ra iphone 8 không?",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Is it because of the launch of iphone 8?"
@@ -40372,7 +40312,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 78,
         "category": "dialogue",
         "english": "No, I personally believe this event is caused by the recall of Galaxy Note 7",
-        "vietnamese": "V: Không, bản thân tôi tin rằng sự kiện này là do cái việc thu hồi Galaxy Note 7",
+        "vietnamese": "Không, bản thân tôi tin rằng sự kiện này là do cái việc thu hồi Galaxy Note 7",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "No // I personally believe this event is caused by the recall of Galaxy Note 7"
@@ -40382,7 +40322,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 79,
         "category": "dialogue",
         "english": "Yes, because of this, Samsung has dropped to 2nd place for the 3rd time in the decade",
-        "vietnamese": "K: Phải, vì cái vụ này, Samsung đã rớt xuống vị trí thứ hai lần thứ ba trong một thập kỷ",
+        "vietnamese": "Phải, vì cái vụ này, Samsung đã rớt xuống vị trí thứ hai lần thứ ba trong một thập kỷ",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Yes // because of this // Samsung has dropped to 2nd place for the 3rd time in the decade"
@@ -40392,7 +40332,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 80,
         "category": "dialogue",
         "english": "Really? No wonder their sales plunged by 10% at the end of the chart",
-        "vietnamese": "TN: Vậy hả? Hèn gì doanh số của họ đã tụt dốc đi 10% ở cuối cái chart",
+        "vietnamese": "Vậy hả? Hèn gì doanh số của họ đã tụt dốc đi 10% ở cuối cái chart",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Really? No wonder their sales plunged by 10% at the end of the chart"
@@ -40402,7 +40342,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 81,
         "category": "dialogue",
         "english": "Having said that, that's a pity",
-        "vietnamese": "V: Nói đi thì cũng phải nói lại, thật là tiếc",
+        "vietnamese": "Nói đi thì cũng phải nói lại, thật là tiếc",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Having said that // that's a pity"
@@ -40412,7 +40352,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 82,
         "category": "dialogue",
         "english": "This line of product was really cool back then, I had 4 of them",
-        "vietnamese": "V: Cái dòng sản phẩm này rất là cool hồi đó luôn, tôi có 4 cái",
+        "vietnamese": "Cái dòng sản phẩm này rất là cool hồi đó luôn, tôi có 4 cái",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "This line of product was really cool back then // I had 4 of them"
@@ -40422,7 +40362,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 83,
         "category": "dialogue",
         "english": "I admit that I used to be a big fan of the Galaxy Note series",
-        "vietnamese": "V: Tôi thừa nhận rằng tôi từng là fan ruột của cái dòng Galaxy Note",
+        "vietnamese": "Tôi thừa nhận rằng tôi từng là fan ruột của cái dòng Galaxy Note",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "I admit that I used to be a big fan of the Galaxy Note series"
@@ -40432,7 +40372,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 84,
         "category": "dialogue",
         "english": "Word on the street is that...",
-        "vietnamese": "TN: Ở ngoài đường người ta đồn rằng...",
+        "vietnamese": "Ở ngoài đường người ta đồn rằng...",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Word on the street is that..."
@@ -40442,7 +40382,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 85,
         "category": "dialogue",
         "english": "This serious trouble originated from the faulty battery",
-        "vietnamese": "TN: Cái vấn đề nghiêm trọng này bắt nguồn từ cục pin bị lỗi",
+        "vietnamese": "Cái vấn đề nghiêm trọng này bắt nguồn từ cục pin bị lỗi",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "This serious trouble originated from the faulty battery"
@@ -40452,7 +40392,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 86,
         "category": "dialogue",
         "english": "Yeah, I once read about this in a Korean newspaper",
-        "vietnamese": "V: Yeah, tôi có lần đọc về cái vụ này trong một tờ báo Hàn Quốc",
+        "vietnamese": "Yeah, tôi có lần đọc về cái vụ này trong một tờ báo Hàn Quốc",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Yeah // I once read about this in a Korean newspaper"
@@ -40462,7 +40402,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 87,
         "category": "dialogue",
         "english": "it was overheating and even caught fire very easily while charging",
-        "vietnamese": "V: Nó bị quá nhiệt rồi thậm chí rất là dễ bắt lửa trong lúc đang sạc",
+        "vietnamese": "Nó bị quá nhiệt rồi thậm chí rất là dễ bắt lửa trong lúc đang sạc",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "it was overheating and even caught fire very easily while charging"
@@ -40472,7 +40412,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 88,
         "category": "dialogue",
         "english": "Yes, Samsung has made it clear that you should stop using it and return it ASAP",
-        "vietnamese": "K: Phải, Samsung đã nói rất là rõ ràng rằng bạn nên dừng sử dụng và gửi trả nó lại càng sớm càng tốt",
+        "vietnamese": "Phải, Samsung đã nói rất là rõ ràng rằng bạn nên dừng sử dụng và gửi trả nó lại càng sớm càng tốt",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Yes // Samsung has made it clear that you should stop using it and return it ASAP"
@@ -40482,7 +40422,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 89,
         "category": "dialogue",
         "english": "I heard that 85% of US customers chose to return the phone in exchange for a different Galaxy phone",
-        "vietnamese": "TN: Tôi nghe bảo 85% khách hàng Mỹ đã chọn return lại để đổi lấy một cái điện thoại Galaxy khác",
+        "vietnamese": "Tôi nghe bảo 85% khách hàng Mỹ đã chọn return lại để đổi lấy một cái điện thoại Galaxy khác",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I heard that 85% of US customers chose to return the phone in exchange for a different Galaxy phone"
@@ -40492,7 +40432,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 90,
         "category": "dialogue",
         "english": "Okay guys, back to the chart on the screen, please",
-        "vietnamese": "V: Được rồi mọi người, quay trở lại cái biểu đồ trên màn hình đi",
+        "vietnamese": "Được rồi mọi người, quay trở lại cái biểu đồ trên màn hình đi",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Okay guys // back to the chart on the screen // please"
@@ -40502,7 +40442,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 91,
         "category": "dialogue",
         "english": "I wonder why the blue line rocketted to more than 80 million in 2013?",
-        "vietnamese": "V: Tôi thắc mắc là tại sao cái đường màu xanh lại tăng vọt lên tới hơn 80 triệu trong năm 2013?",
+        "vietnamese": "Tôi thắc mắc là tại sao cái đường màu xanh lại tăng vọt lên tới hơn 80 triệu trong năm 2013?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "I wonder why the blue line rocketted to more than 80 million in 2013?"
@@ -40512,7 +40452,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 92,
         "category": "dialogue",
         "english": "I think the legendary Galaxy S4 must be the reason here",
-        "vietnamese": "TN: Tôi nghĩ cái con Galaxy S4 huyền thoại chắc hẳn là lý do ở đây",
+        "vietnamese": "Tôi nghĩ cái con Galaxy S4 huyền thoại chắc hẳn là lý do ở đây",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "I think the legendary Galaxy S4 must be the reason here"
@@ -40522,7 +40462,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 93,
         "category": "dialogue",
         "english": "Interesting, I also notice that...",
-        "vietnamese": "TN: Interesting, tôi cũng để ý rằng...",
+        "vietnamese": "Interesting, tôi cũng để ý rằng...",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Interesting // I also notice that..."
@@ -40532,7 +40472,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 94,
         "category": "dialogue",
         "english": "Apple's revenue always hit the bottom in the middle of the year. You guys see that?",
-        "vietnamese": "TN: Doanh số Apple luôn chạm đáy vào cái đoạn giữa năm. Mọi người thấy không?",
+        "vietnamese": "Doanh số Apple luôn chạm đáy vào cái đoạn giữa năm. Mọi người thấy không?",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Apple's revenue always hit the bottom in the middle of the year. You guys see that?"
@@ -40542,7 +40482,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 95,
         "category": "dialogue",
         "english": "Good observation, Mr. TN, pretty much every year",
-        "vietnamese": "V: Quan sát tốt đó, anh Trung Nguyên, gần như là mỗi năm",
+        "vietnamese": "Quan sát tốt đó, anh Trung Nguyên, gần như là mỗi năm",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Good observation // Mr. TN // pretty much every year"
@@ -40552,7 +40492,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 96,
         "category": "dialogue",
         "english": "I believe it's because of our release calendar",
-        "vietnamese": "K: Tôi tin rằng đó là vì cái lịch ra mắt sản phẩm của bọn tôi",
+        "vietnamese": "Tôi tin rằng đó là vì cái lịch ra mắt sản phẩm của bọn tôi",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "I believe it's because of our release calendar"
@@ -40562,7 +40502,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 97,
         "category": "dialogue",
         "english": "We usually launch our new model in late September or early October",
-        "vietnamese": "K: Chúng tôi luôn tung ra mẫu mới vào cuối tháng 9 hay đầu tháng 10",
+        "vietnamese": "Chúng tôi luôn tung ra mẫu mới vào cuối tháng 9 hay đầu tháng 10",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "We usually launch our new model in late September or early October"
@@ -40572,7 +40512,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 98,
         "category": "dialogue",
         "english": "Wait a minute, something doesn't add up here",
-        "vietnamese": "V: Khoan khoan, có cái gì đó không hợp lý ở đây",
+        "vietnamese": "Khoan khoan, có cái gì đó không hợp lý ở đây",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Wait a minute // something doesn't add up here"
@@ -40582,7 +40522,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 99,
         "category": "dialogue",
         "english": "It boggles my mind, what is your real motivation when you choose Binh Duong?",
-        "vietnamese": "V: Nó làm tôi hơi rối não, cái động lực thật sự của các bạn là gì khi chọn Bình Dương?",
+        "vietnamese": "Nó làm tôi hơi rối não, cái động lực thật sự của các bạn là gì khi chọn Bình Dương?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "It boggles my mind // what is your real motivation when you choose Binh Duong?"
@@ -40592,7 +40532,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 100,
         "category": "dialogue",
         "english": "I mean, what attracts Apple to invest into Vietnam market at the moment?",
-        "vietnamese": "V: Ý tôi là, cái gì thu hút Apple đầu tư vào thị trường Việt Nam ở thời điểm hiện tại?",
+        "vietnamese": "Ý tôi là, cái gì thu hút Apple đầu tư vào thị trường Việt Nam ở thời điểm hiện tại?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "I mean // what attracts Apple to invest into Vietnam market at the moment?"
@@ -40602,7 +40542,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 101,
         "category": "dialogue",
         "english": "It's way too obvious, labor cost",
-        "vietnamese": "TN: Nó quá là rõ ràng, chi phí nhân công",
+        "vietnamese": "Nó quá là rõ ràng, chi phí nhân công",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "It's way too obvious // labor cost"
@@ -40612,7 +40552,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 102,
         "category": "dialogue",
         "english": "Smartphone market is a mature market",
-        "vietnamese": "TN: Thị trường smartphone là một thị trường đã phát triển",
+        "vietnamese": "Thị trường smartphone là một thị trường đã phát triển",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "Smartphone market is a mature market"
@@ -40622,7 +40562,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 103,
         "category": "dialogue",
         "english": "There's nothing really new in this market anymore",
-        "vietnamese": "TN: Không có thứ gì thật sự là mới trong cái thị trường này nữa",
+        "vietnamese": "Không có thứ gì thật sự là mới trong cái thị trường này nữa",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "There's nothing really new in this market anymore"
@@ -40632,7 +40572,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 104,
         "category": "dialogue",
         "english": "Okay, but to run a factory in China, what is your annual operating costs?",
-        "vietnamese": "V: Okay, nhưng mà để chạy một cái nhà máy ở TQ, chi phí vận hành hàng năm của các bạn là bao nhiêu?",
+        "vietnamese": "Okay, nhưng mà để chạy một cái nhà máy ở TQ, chi phí vận hành hàng năm của các bạn là bao nhiêu?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "Okay // but to run a factory in China // what is your annual operating costs?"
@@ -40642,7 +40582,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 105,
         "category": "dialogue",
         "english": "To answer this question, I'll show you a line chart in the last slide",
-        "vietnamese": "K: Để trả lời cho câu hỏi này, tôi sẽ cho ông xem cái line chart ở slide cuối",
+        "vietnamese": "Để trả lời cho câu hỏi này, tôi sẽ cho ông xem cái line chart ở slide cuối",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "To answer this question // I'll show you a line chart in the last slide"
@@ -40652,7 +40592,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 106,
         "category": "dialogue",
         "english": "At first glance, I can see most of your operating costs come from machinery and equipment. Right?",
-        "vietnamese": "V: Thoạt nhìn, tôi có thể thấy là hầu hết chi phí vận hành của các bạn đến từ máy móc và trang thiết bị. Đúng không?",
+        "vietnamese": "Thoạt nhìn, tôi có thể thấy là hầu hết chi phí vận hành của các bạn đến từ máy móc và trang thiết bị. Đúng không?",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "At first glance // I can see most of your operating costs come from machinery and equipment. Right?"
@@ -40662,7 +40602,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 107,
         "category": "dialogue",
         "english": "But I believe the real pain points originated from the supply chain shortage",
-        "vietnamese": "TN: Nhưng mà tôi tin rằng cái nỗi đau thật sự bắt nguồn từ sự cạn kiệt chuỗi cung ứng",
+        "vietnamese": "Nhưng mà tôi tin rằng cái nỗi đau thật sự bắt nguồn từ sự cạn kiệt chuỗi cung ứng",
         "speaker": "TN",
         "audio_url": null,
         "beat_prosody": "But I believe the real pain points originated from the supply chain shortage"
@@ -40672,7 +40612,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 108,
         "category": "dialogue",
         "english": "Yes, due to COVID pandemic, Chinese goverment has shut down a lot of our factories in Shanghai",
-        "vietnamese": "K: Đúng, do đại dịch COVID, chính phủ TQ đã đóng cửa rất nhiều nhà máy của chúng tôi ở Thượng Hải",
+        "vietnamese": "Đúng, do đại dịch COVID, chính phủ TQ đã đóng cửa rất nhiều nhà máy của chúng tôi ở Thượng Hải",
         "speaker": "K",
         "audio_url": null,
         "beat_prosody": "Yes // due to COVID pandemic // Chinese goverment has shut down a lot of our factories in Shanghai"
@@ -40682,7 +40622,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 109,
         "category": "dialogue",
         "english": "I see, but I don't think I can be much of a help in this project. So, I'm out.",
-        "vietnamese": "V: Tôi hiểu rồi, nhưng mà tôi không nghĩ là tôi có thể giúp được gì nhiều trong cái dự án này. Cho nên, tôi xin rút",
+        "vietnamese": "Tôi hiểu rồi, nhưng mà tôi không nghĩ là tôi có thể giúp được gì nhiều trong cái dự án này. Cho nên, tôi xin rút",
         "speaker": "V",
         "audio_url": null,
         "beat_prosody": "I see // but I don't think I can be much of a help in this project. So // I'm out."
@@ -41242,7 +41182,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 165,
         "category": "sentence",
         "english": "Hold on, I thought boss will conduct the interview directly? Khoan,",
-        "vietnamese": "tôi tưởng sếp sẽ thực hiện phỏng vấn trực tiếp chứ?",
+        "vietnamese": "Tôi tưởng sếp sẽ thực hiện phỏng vấn trực tiếp chứ?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Hold on // I thought boss will conduct the interview directly? Khoan,"
@@ -41381,11 +41321,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d13_0179",
         "item_number": 179,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth Miwako is making a phone call to Teo regarding his resume",
-        "vietnamese": "",
+        "english": "Miwako is making a phone call to Teo regarding his resume",
+        "vietnamese": "Miwako đang gọi điện thoại cho Tèo về hồ sơ xin việc của cậu ấy",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth Miwako is making a phone call to Teo regarding his resume"
+        "beat_prosody": "Miwako is making a phone call to Teo regarding his resume"
       },
       {
         "chunk_id": "chunk_eres_d13_0180",
@@ -41642,7 +41582,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 205,
         "category": "monologue",
         "english": "The content of the game will be kept confidential until the interview day",
-        "vietnamese": "Nội dung trò chơi sẽ dc giữ bí mật đến buổi PV",
+        "vietnamese": "Nội dung trò chơi sẽ được giữ bí mật đến buổi PV",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "The content of the game will be kept confidential until the interview day"
@@ -41722,7 +41662,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 213,
         "category": "monologue",
         "english": "I'm sorry but I can not share those information regarding salary with you at the moment",
-        "vietnamese": "Chị rất tiếc nhưng chị ko thể chia sẻ các thông tin về salary với em lúc này được",
+        "vietnamese": "Chị rất tiếc nhưng chị không thể chia sẻ các thông tin về salary với em lúc này được",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I'm sorry but I can not share those information regarding salary with you at the moment"
@@ -41791,19 +41731,19 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d13_0220",
         "item_number": 220,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION Dutch Lady is on the phone handling a complaint from Mr. Tho...",
-        "vietnamese": "",
+        "english": "Dutch Lady is on the phone handling a complaint from Mr. Tho...",
+        "vietnamese": "Cô Gái Hà Lan đang nghe điện thoại xử lý khiếu nại từ ông Thọ...",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION Dutch Lady is on the phone handling a complaint from Mr. Tho..."
+        "beat_prosody": "Dutch Lady is on the phone handling a complaint from Mr. Tho..."
       },
       {
         "chunk_id": "chunk_eres_d13_0221",
         "item_number": 221,
         "category": "dialogue",
         "english": "Hello, thanks for calling Vinamilk",
-        "vietnamese": "DL: Alô, cám ơn đã gọi đến Vinamilk",
-        "speaker": null,
+        "vietnamese": "Alô, cám ơn đã gọi đến Vinamilk",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Hello // thanks for calling Vinamilk"
       },
@@ -41812,8 +41752,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 222,
         "category": "dialogue",
         "english": "I'm Dutch Lady, how may I help you, sir?",
-        "vietnamese": "DL: Em là Dutch Lady, em có thể giúp được gì cho anh ạ?",
-        "speaker": null,
+        "vietnamese": "Em là Dutch Lady, em có thể giúp được gì cho anh ạ?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "I'm Dutch Lady // how may I help you // sir?"
       },
@@ -41822,8 +41762,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 223,
         "category": "dialogue",
         "english": "Hello, HELLO? Can you hear me okay?",
-        "vietnamese": "T: Alo, ALO? Cô nghe tôi okay không?",
-        "speaker": null,
+        "vietnamese": "Alo, ALO? Cô nghe tôi okay không?",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Hello // HELLO? Can you hear me okay?"
       },
@@ -41832,8 +41772,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 224,
         "category": "dialogue",
         "english": "Actually I wanna pick up where we left off yesterday",
-        "vietnamese": "T: Thật ra tôi muốn nói tiếp cái chỗ hôm qua mà ta dừng lại ấy",
-        "speaker": null,
+        "vietnamese": "Thật ra tôi muốn nói tiếp cái chỗ hôm qua mà ta dừng lại ấy",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Actually I wanna pick up where we left off yesterday"
       },
@@ -41842,8 +41782,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 225,
         "category": "dialogue",
         "english": "Yesterday I did call but my problems haven't been solved yet",
-        "vietnamese": "T: Hôm qua tôi có gọi nhưng mà vấn đề của tôi vẫn chưa được giải quyết",
-        "speaker": null,
+        "vietnamese": "Hôm qua tôi có gọi nhưng mà vấn đề của tôi vẫn chưa được giải quyết",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Yesterday I did call but my problems haven't been solved yet"
       },
@@ -41852,8 +41792,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 226,
         "category": "dialogue",
         "english": "Sorry, first and foremost, may I have your name, sir?",
-        "vietnamese": "DL: Sorry, đầu tiên và trên hết, cho em xin tên anh được chứ ạ?",
-        "speaker": null,
+        "vietnamese": "Sorry, đầu tiên và trên hết, cho em xin tên anh được chứ ạ?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Sorry // first and foremost // may I have your name // sir?"
       },
@@ -41862,8 +41802,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 227,
         "category": "dialogue",
         "english": "I need to check on the system to know who talked to you yesterday",
-        "vietnamese": "DL: Em cần check trên hệ thống để biết ai đã nói chuyện với anh hôm qua",
-        "speaker": null,
+        "vietnamese": "Em cần check trên hệ thống để biết ai đã nói chuyện với anh hôm qua",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "I need to check on the system to know who talked to you yesterday"
       },
@@ -41872,8 +41812,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 228,
         "category": "dialogue",
         "english": "My name is Tho, Phuoc Loc Tho, I made a phonecall around 11 pm, you can check",
-        "vietnamese": "T: Anh tên Thọ, Phuoc Loc Tho, anh gọi khoảng 11h tối, em có thể kiểm tra",
-        "speaker": null,
+        "vietnamese": "Anh tên Thọ, Phuoc Loc Tho, anh gọi khoảng 11h tối, em có thể kiểm tra",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "My name is Tho // Phuoc Loc Tho // I made a phonecall around 11 pm // you can check"
       },
@@ -41882,8 +41822,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 229,
         "category": "dialogue",
         "english": "Please hold the line for a while, if you don't mind",
-        "vietnamese": "DL: Xin anh giữ máy một chút nha, nếu anh không phiền",
-        "speaker": null,
+        "vietnamese": "Xin anh giữ máy một chút nha, nếu anh không phiền",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Please hold the line for a while // if you don't mind"
       },
@@ -41892,8 +41832,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 230,
         "category": "dialogue",
         "english": "Actually you don't need to check, dear",
-        "vietnamese": "T: Thật ra em không cần check đâu, cưng",
-        "speaker": null,
+        "vietnamese": "Thật ra em không cần check đâu, cưng",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Actually you don't need to check // dear"
       },
@@ -41902,8 +41842,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 231,
         "category": "dialogue",
         "english": "There're totally 3 things that took me all afternoon to think about",
-        "vietnamese": "T: Có tổng cộng 3 điều mà làm anh tốn cả buổi chiều để nghĩ về",
-        "speaker": null,
+        "vietnamese": "Có tổng cộng 3 điều mà làm anh tốn cả buổi chiều để nghĩ về",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "There're totally 3 things that took me all afternoon to think about"
       },
@@ -41912,8 +41852,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 232,
         "category": "dialogue",
         "english": "First, I thought I bought myself a big box of condensed milk",
-        "vietnamese": "T: Thứ nhất, anh nghĩ anh đã mua cho mình một thùng sữa đặc to",
-        "speaker": null,
+        "vietnamese": "Thứ nhất, anh nghĩ anh đã mua cho mình một thùng sữa đặc to",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "First // I thought I bought myself a big box of condensed milk"
       },
@@ -41922,8 +41862,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 233,
         "category": "dialogue",
         "english": "But turned out condensed milk was not condensed at all",
-        "vietnamese": "T: nhưng hóa ra sữa đặc lại không đặc chút nào",
-        "speaker": null,
+        "vietnamese": "Nhưng hóa ra sữa đặc lại không đặc chút nào",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "But turned out condensed milk was not condensed at all"
       },
@@ -41932,8 +41872,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 234,
         "category": "dialogue",
         "english": "Sorry but I'm not sure I get what you mean",
-        "vietnamese": "DL: Xin lỗi nhưng em không chắc em hiểu ý anh cho lắm",
-        "speaker": null,
+        "vietnamese": "Xin lỗi nhưng em không chắc em hiểu ý anh cho lắm",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Sorry but I'm not sure I get what you mean"
       },
@@ -41942,8 +41882,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 235,
         "category": "dialogue",
         "english": "When I opened that up and looked inside, it was out of my expectation",
-        "vietnamese": "T: Khi mà anh khui nó ra rồi nhìn vô bên trong, nó vượt quá mong đợi của anh luôn",
-        "speaker": null,
+        "vietnamese": "Khi mà anh khui nó ra rồi nhìn vô bên trong, nó vượt quá mong đợi của anh luôn",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "When I opened that up and looked inside // it was out of my expectation"
       },
@@ -41952,8 +41892,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 236,
         "category": "dialogue",
         "english": "Sorry to interrupt you right there but...",
-        "vietnamese": "DL: Xin lỗi cắt ngang lời anh ngay đó nhưng mà ...",
-        "speaker": null,
+        "vietnamese": "Xin lỗi cắt ngang lời anh ngay đó nhưng mà ...",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Sorry to interrupt you right there but..."
       },
@@ -41962,8 +41902,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 237,
         "category": "dialogue",
         "english": "What is your definition of expectation?",
-        "vietnamese": "DL: Cái định nghĩa của anh về sự mong đợi là cái gì vậy?",
-        "speaker": null,
+        "vietnamese": "Cái định nghĩa của anh về sự mong đợi là cái gì vậy?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "What is your definition of expectation?"
       },
@@ -41972,8 +41912,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 238,
         "category": "dialogue",
         "english": "I don't know but I expect condensed milk will be a lot more condensed",
-        "vietnamese": "T: Anh không biết nhưng mà anh mong đợi sữa đặc thì phải đặc hơn rất là nhiều",
-        "speaker": null,
+        "vietnamese": "Anh không biết nhưng mà anh mong đợi sữa đặc thì phải đặc hơn rất là nhiều",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I don't know but I expect condensed milk will be a lot more condensed"
       },
@@ -41982,8 +41922,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 239,
         "category": "dialogue",
         "english": "Okay, I hear what you're saying, thank for your valuable comments on this",
-        "vietnamese": "DL: Okay, em nghe thì hiểu những gì anh đang nói, cám ơn anh vì những lời comment đáng giá cho vấn đề này",
-        "speaker": null,
+        "vietnamese": "Okay, em nghe thì hiểu những gì anh đang nói, cám ơn anh vì những lời comment đáng giá cho vấn đề này",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Okay // I hear what you're saying // thank for your valuable comments on this"
       },
@@ -41992,8 +41932,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 240,
         "category": "dialogue",
         "english": "I think I'll pass it down to R&D team",
-        "vietnamese": "DL: Em nghĩ em sẽ pass nó xuống cho team R&D",
-        "speaker": null,
+        "vietnamese": "Em nghĩ em sẽ pass nó xuống cho team R&D",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "I think I'll pass it down to R&D team"
       },
@@ -42002,8 +41942,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 241,
         "category": "dialogue",
         "english": "Okay, next, I know the thing I'm about to tell you might sound a bit ridiculous",
-        "vietnamese": "T: Okay, tiếp theo, anh biết là cái điều anh sắp nói em nghe có thể khá là buồn cười",
-        "speaker": null,
+        "vietnamese": "Okay, tiếp theo, anh biết là cái điều anh sắp nói em nghe có thể khá là buồn cười",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Okay // next // I know the thing I'm about to tell you might sound a bit ridiculous"
       },
@@ -42012,8 +41952,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 242,
         "category": "dialogue",
         "english": "Ridiculous??? Hold on, I knew what you were gonna say",
-        "vietnamese": "DL: Buồn cười? Khoan, em biết anh sắp nói gì nè",
-        "speaker": null,
+        "vietnamese": "Buồn cười? Khoan, em biết anh sắp nói gì nè",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Ridiculous??? Hold on // I knew what you were gonna say"
       },
@@ -42022,8 +41962,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 243,
         "category": "dialogue",
         "english": "You're gonna tell me sth about packaging, right?",
-        "vietnamese": "DL: Anh tính nói em cái gì đó về đóng gói đúng không?",
-        "speaker": null,
+        "vietnamese": "Anh tính nói em cái gì đó về đóng gói đúng không?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "You're gonna tell me sth about packaging // right?"
       },
@@ -42032,8 +41972,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 244,
         "category": "dialogue",
         "english": "Holy cow, you're such a mind reader, dear",
-        "vietnamese": "T: Trời đất ơi, em đi guốc trong bụng anh rồi, cưng",
-        "speaker": null,
+        "vietnamese": "Trời đất ơi, em đi guốc trong bụng anh rồi, cưng",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Holy cow // you're such a mind reader // dear"
       },
@@ -42042,8 +41982,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 245,
         "category": "dialogue",
         "english": "This morning, the moment my wife opened the box,",
-        "vietnamese": "T: Sáng nay, cái lúc mà bà vợ anh bả khui cái thùng ra",
-        "speaker": null,
+        "vietnamese": "Sáng nay, cái lúc mà bà vợ anh bả khui cái thùng ra",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "This morning // the moment my wife opened the box,"
       },
@@ -42052,8 +41992,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 246,
         "category": "dialogue",
         "english": "She looked daggers at me, then she went, like",
-        "vietnamese": "T: Bả nhìn anh với ánh mắt hình viên đạn, rồi bả nói kiểu",
-        "speaker": null,
+        "vietnamese": "Bả nhìn anh với ánh mắt hình viên đạn, rồi bả nói kiểu",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "She looked daggers at me // then she went // like"
       },
@@ -42062,8 +42002,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 247,
         "category": "dialogue",
         "english": "\"Hey, old man, you got no hair and you bought this much shampoo for what?\"",
-        "vietnamese": "T: \"Ê ông già, ông không có tóc mà mua chi nhiều dầu gọi dzầy?\"",
-        "speaker": null,
+        "vietnamese": "\"Ê ông già, ông không có tóc mà mua chi nhiều dầu gọi dzầy?\"",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "\"Hey // old man // you got no hair and you bought this much shampoo for what?\""
       },
@@ -42072,8 +42012,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 248,
         "category": "dialogue",
         "english": "I feel you, thank you for your sharing, though",
-        "vietnamese": "DL: Em hiểu mà, dù sao cũng cám ơn anh đã chia sẻ",
-        "speaker": null,
+        "vietnamese": "Em hiểu mà, dù sao cũng cám ơn anh đã chia sẻ",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "I feel you // thank you for your sharing // though"
       },
@@ -42082,8 +42022,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 249,
         "category": "dialogue",
         "english": "Actually recently, we've received a lot of complaints about the new packaging design",
-        "vietnamese": "DL: thật ra dạo này, bọn em nhận rất nhiều lời complain về cái thiết kế bao bì mới",
-        "speaker": null,
+        "vietnamese": "Thật ra dạo này, bọn em nhận rất nhiều lời complain về cái thiết kế bao bì mới",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Actually recently // we've received a lot of complaints about the new packaging design"
       },
@@ -42092,8 +42032,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 250,
         "category": "dialogue",
         "english": "Most of the time, they said it looks quite identical with a single-use shampoo sachet",
-        "vietnamese": "DL: Hầu hết mọi lúc, họ đều nói nó trông gần như y hệt một bịch dầu gọi dùng 1 lần ấy",
-        "speaker": null,
+        "vietnamese": "Hầu hết mọi lúc, họ đều nói nó trông gần như y hệt một bịch dầu gọi dùng 1 lần ấy",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Most of the time // they said it looks quite identical with a single-use shampoo sachet"
       },
@@ -42102,8 +42042,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 251,
         "category": "dialogue",
         "english": "Actually it's not really an issue, you know",
-        "vietnamese": "T: Thật ra, cái đó nó không hẳn là một vấn đề, em cũng biết rồi đó",
-        "speaker": null,
+        "vietnamese": "Thật ra, cái đó nó không hẳn là một vấn đề, em cũng biết rồi đó",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Actually it's not really an issue // you know"
       },
@@ -42112,8 +42052,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 252,
         "category": "dialogue",
         "english": "I know packaging's got nothing to do with product quality",
-        "vietnamese": "T: Anh biết bao bì thì có liên quan gì đến chất lượng sản phẩm đâu",
-        "speaker": null,
+        "vietnamese": "Anh biết bao bì thì có liên quan gì đến chất lượng sản phẩm đâu",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I know packaging's got nothing to do with product quality"
       },
@@ -42122,8 +42062,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 253,
         "category": "dialogue",
         "english": "No, no, no, your feedback means a lot to us, really!",
-        "vietnamese": "DL: Ko, ko, ko, phản hồi của anh rất là có ý nghĩa với bên em, thiệt!",
-        "speaker": null,
+        "vietnamese": "Không, không, không, phản hồi của anh rất là có ý nghĩa với bên em, thiệt!",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "No // no // no // your feedback means a lot to us // really!"
       },
@@ -42132,8 +42072,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 254,
         "category": "dialogue",
         "english": "Thank you for bringing this to our attention",
-        "vietnamese": "DL: Cám ơn anh đã làm bọn em để ý đến cái này",
-        "speaker": null,
+        "vietnamese": "Cám ơn anh đã làm bọn em để ý đến cái này",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Thank you for bringing this to our attention"
       },
@@ -42142,8 +42082,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 255,
         "category": "dialogue",
         "english": "As you already know, during the course of 46 years",
-        "vietnamese": "DL: Như anh cũng biết rồi, trong suốt 46 năm",
-        "speaker": null,
+        "vietnamese": "Như anh cũng biết rồi, trong suốt 46 năm",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "As you already know // during the course of 46 years"
       },
@@ -42152,8 +42092,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 256,
         "category": "dialogue",
         "english": "The number of our loyal customers has been increasing steadily",
-        "vietnamese": "DL: Số khách hàng trung thành của bọn em đã và đang tăng dần lên một cách ổn định",
-        "speaker": null,
+        "vietnamese": "Số khách hàng trung thành của bọn em đã và đang tăng dần lên một cách ổn định",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "The number of our loyal customers has been increasing steadily"
       },
@@ -42162,8 +42102,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 257,
         "category": "dialogue",
         "english": "Because very often, to meet market demand",
-        "vietnamese": "DL: Bời vì thường thì, để thỏa mãn nhu cầu thị trường",
-        "speaker": null,
+        "vietnamese": "Bời vì thường thì, để thỏa mãn nhu cầu thị trường",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Because very often // to meet market demand"
       },
@@ -42172,8 +42112,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 258,
         "category": "dialogue",
         "english": "we put a lot of effort to find out on-trend flavors",
-        "vietnamese": "DL: Bọn em đã bỏ rất nhiều nỗ lực để tìm ra những cái mùi vị đang hợp với xu hướng",
-        "speaker": null,
+        "vietnamese": "Bọn em đã bỏ rất nhiều nỗ lực để tìm ra những cái mùi vị đang hợp với xu hướng",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "we put a lot of effort to find out on-trend flavors"
       },
@@ -42182,8 +42122,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 259,
         "category": "dialogue",
         "english": "and then try to innovate the flavors of our products",
-        "vietnamese": "DL: Rồi sau đó cố gắng cải tiến mùi vị các sản phẩm của mình",
-        "speaker": null,
+        "vietnamese": "Rồi sau đó cố gắng cải tiến mùi vị các sản phẩm của mình",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "and then try to innovate the flavors of our products"
       },
@@ -42192,8 +42132,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 260,
         "category": "dialogue",
         "english": "Totally! I believe flavors are very important to dairy products",
-        "vietnamese": "T: Chắc hẳn là vậy! Anh tin mùi vị rất là quan trọng đối với các sản phẩm về sữa",
-        "speaker": null,
+        "vietnamese": "Chắc hẳn là vậy! Anh tin mùi vị rất là quan trọng đối với các sản phẩm về sữa",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Totally! I believe flavors are very important to dairy products"
       },
@@ -42202,8 +42142,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 261,
         "category": "dialogue",
         "english": "Hold on, now that you mention it",
-        "vietnamese": "T: Mà khoan, sẵn tiện em nhắc đến cái vụ đó",
-        "speaker": null,
+        "vietnamese": "Mà khoan, sẵn tiện em nhắc đến cái vụ đó",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Hold on // now that you mention it"
       },
@@ -42212,8 +42152,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 262,
         "category": "dialogue",
         "english": "Speaking of flavor, I'm not sure your new one is a breakthrough",
-        "vietnamese": "T: Nói về mùi vị nha, anh không chắc cái vị mới của bọn em là một bước đột phá đâu nhé",
-        "speaker": null,
+        "vietnamese": "Nói về mùi vị nha, anh không chắc cái vị mới của bọn em là một bước đột phá đâu nhé",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Speaking of flavor // I'm not sure your new one is a breakthrough"
       },
@@ -42222,8 +42162,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 263,
         "category": "dialogue",
         "english": "Sorry, could you tell me more about this?",
-        "vietnamese": "DL: Sorry, anh nói em thêm về cái này được không?",
-        "speaker": null,
+        "vietnamese": "Sorry, anh nói em thêm về cái này được không?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Sorry // could you tell me more about this?"
       },
@@ -42232,8 +42172,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 264,
         "category": "dialogue",
         "english": "I don't mean to be rude but it tastes, like... dishwater",
-        "vietnamese": "T: Anh không có ý chê bai nhưng mà nó có vị, kiểu... nhạt như nước ốc ấy",
-        "speaker": null,
+        "vietnamese": "Anh không có ý chê bai nhưng mà nó có vị, kiểu... nhạt như nước ốc ấy",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "I don't mean to be rude but it tastes // like... dishwater"
       },
@@ -42242,8 +42182,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 265,
         "category": "dialogue",
         "english": "Hmm... lemme see if I have this right",
-        "vietnamese": "DL: Hmmmm để em xem liệu em có đang hiểu đúng vấn đề hay là không nhé",
-        "speaker": null,
+        "vietnamese": "Hmmmm để em xem liệu em có đang hiểu đúng vấn đề hay là không nhé",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Hmm... lemme see if I have this right"
       },
@@ -42252,8 +42192,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 266,
         "category": "dialogue",
         "english": "You're telling me that you simply don't like our new flavor. Right?",
-        "vietnamese": "DL: Ý anh đang muốn nói em là anh đơn giản chỉ là không thích cái vị mới của bọn em. Đúng không?",
-        "speaker": null,
+        "vietnamese": "Ý anh đang muốn nói em là anh đơn giản chỉ là không thích cái vị mới của bọn em. Đúng không?",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "You're telling me that you simply don't like our new flavor. Right?"
       },
@@ -42262,8 +42202,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "Okay, as an immediate solution, I'll ship to you a new box tomorrow",
-        "vietnamese": "DL: Okay, giải pháp tức thời của em, em sẽ ship cho anh một thùng mới ngày mai",
-        "speaker": null,
+        "vietnamese": "Okay, giải pháp tức thời của em, em sẽ ship cho anh một thùng mới ngày mai",
+        "speaker": "DL",
         "audio_url": null,
         "beat_prosody": "Okay // as an immediate solution // I'll ship to you a new box tomorrow"
       },
@@ -42272,8 +42212,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "Hmmm, you know what? It doesn't matter, actually yesterday your coworker really pissed me off",
-        "vietnamese": "T: Hmmm, em biết sao không? Chuyện này cũng chẳng có gì. Thật ra hôm qua đồng nghiệp của em nó làm anh bực mình quá",
-        "speaker": null,
+        "vietnamese": "Hmmm, em biết sao không? Chuyện này cũng chẳng có gì. Thật ra hôm qua đồng nghiệp của em nó làm anh bực mình quá",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Hmmm // you know what? It doesn't matter // actually yesterday your coworker really pissed me off"
       },
@@ -42282,8 +42222,8 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "But today it was really different talking to you. That's it, have a nice day",
-        "vietnamese": "T: Nhưng mà hôm nay rất là khác khi nói chuyện với em. Vậy thôi, chúc em một ngày vui vẻ nha",
-        "speaker": null,
+        "vietnamese": "Nhưng mà hôm nay rất là khác khi nói chuyện với em. Vậy thôi, chúc em một ngày vui vẻ nha",
+        "speaker": "T",
         "audio_url": null,
         "beat_prosody": "But today it was really different talking to you. That's it // have a nice day"
       },
@@ -42814,10 +42754,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 1,
         "category": "phrase",
         "english": "Electronic mail Dear Boss…?",
-        "vietnamese": "",
-        "speaker": "Lesson",
+        "vietnamese": "Thư điện tử - Gửi Sếp thân mến…?",
+        "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Electronic mail Dear Boss…?"
+        "beat_prosody": "Electronic mail // Dear Boss…?"
       },
       {
         "chunk_id": "chunk_eres_d14_0002",
@@ -42893,11 +42833,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d14_0009",
         "item_number": 9,
         "category": "vocab",
-        "english": "Farewell emails / goodbye emails Email chia tay",
-        "vietnamese": "",
+        "english": "Farewell emails / goodbye emails",
+        "vietnamese": "Email chia tay",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Farewell emails // goodbye emails Email chia tay"
+        "beat_prosody": "Farewell emails // goodbye emails"
       },
       {
         "chunk_id": "chunk_eres_d14_0010",
@@ -45043,11 +44983,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d14_0224",
         "item_number": 224,
         "category": "monologue",
-        "english": "REFLEXES A. Context mp3 B. Back & Forth Rather than speaking, what if Apple dropped a long email to all of her fellow workers",
-        "vietnamese": "",
+        "english": "Rather than speaking, what if Apple dropped a long email to all of her fellow workers",
+        "vietnamese": "Thay vì nói trực tiếp, sẽ ra sao nếu Apple gửi một bức email dài cho tất cả đồng nghiệp của cô ấy",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "REFLEXES A. Context mp3 B. Back & Forth Rather than speaking // what if Apple dropped a long email to all of her fellow workers"
+        "beat_prosody": "Rather than speaking // what if Apple dropped a long email to all of her fellow workers"
       },
       {
         "chunk_id": "chunk_eres_d14_0225",
@@ -45154,7 +45094,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 235,
         "category": "monologue",
         "english": "This April 30th will be my last working day",
-        "vietnamese": "ngày 30 tháng 4 này sẽ là ngày làm việc cuối của tôi",
+        "vietnamese": "Ngày 30 tháng 4 này sẽ là ngày làm việc cuối của tôi",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "This April 30th will be my last working day"
@@ -45453,18 +45393,18 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d14_0265",
         "item_number": 265,
         "category": "dialogue",
-        "english": "A. Teamwork B. Emotion assessment EMOTION Out of sudden, Messi decided to do a video call with Park Han Seo, Head coach of Vietnam national football team",
-        "vietnamese": "",
+        "english": "Out of sudden, Messi decided to do a video call with Park Han Seo, Head coach of Vietnam national football team",
+        "vietnamese": "Đột nhiên, Messi quyết định gọi video cho Park Hang Seo, Huấn luyện viên trưởng đội tuyển bóng đá Việt Nam",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "A. Teamwork B. Emotion assessment EMOTION Out of sudden // Messi decided to do a video call with Park Han Seo // Head coach of Vietnam national football team"
+        "beat_prosody": "Out of sudden // Messi decided to do a video call with Park Han Seo // Head coach of Vietnam national football team"
       },
       {
         "chunk_id": "chunk_eres_d14_0266",
         "item_number": 266,
         "category": "dialogue",
         "english": "Hello Mr. Park, I hope you had a wonderful weekend with your family",
-        "vietnamese": "M: Hello ông Park, tôi hy vọng ông đã có một cái cuối tuần tuyệt vời bên gia đình",
+        "vietnamese": "Hello ông Park, tôi hy vọng ông đã có một cái cuối tuần tuyệt vời bên gia đình",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Hello Mr. Park // I hope you had a wonderful weekend with your family"
@@ -45474,7 +45414,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 267,
         "category": "dialogue",
         "english": "My name is Leonel Messi",
-        "vietnamese": "M: Tên tôi là Leonel Messi",
+        "vietnamese": "Tên tôi là Leonel Messi",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "My name is Leonel Messi"
@@ -45484,7 +45424,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 268,
         "category": "dialogue",
         "english": "Holy Moses, what a surprise! Who am I talking to now?!?",
-        "vietnamese": "P: Trời đất ơi, bất ngờ quá vậy! Tôi đang nói chuyện với ai đây!!?",
+        "vietnamese": "Trời đất ơi, bất ngờ quá vậy! Tôi đang nói chuyện với ai đây!!?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Holy Moses // what a surprise! Who am I talking to now?!?"
@@ -45494,7 +45434,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 269,
         "category": "dialogue",
         "english": "It seems you're looking for an assistant coach. Right?",
-        "vietnamese": "M: Hình như ông đang tìm một trợ lý HLV, phải không?",
+        "vietnamese": "Hình như ông đang tìm một trợ lý HLV, phải không?",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "It seems you're looking for an assistant coach. Right?"
@@ -45504,7 +45444,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 270,
         "category": "dialogue",
         "english": "Yeah, you must have seen this piece of advertisement on our official fanpage",
-        "vietnamese": "P: Yeah, chắc hẳn cậu đã thấy cái mẩu quảng cáo này trên fanpage chính thức của tụi tôi",
+        "vietnamese": "Yeah, chắc hẳn cậu đã thấy cái mẩu quảng cáo này trên fanpage chính thức của tụi tôi",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Yeah // you must have seen this piece of advertisement on our official fanpage"
@@ -45514,7 +45454,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 271,
         "category": "dialogue",
         "english": "Hmm, I've been thinking if I should apply for this position",
-        "vietnamese": "M: Hmm, tôi đang nghĩ liệu tôi có nên apply cho cái vị trí này hay không",
+        "vietnamese": "Hmm, tôi đang nghĩ liệu tôi có nên apply cho cái vị trí này hay không",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Hmm // I've been thinking if I should apply for this position"
@@ -45524,7 +45464,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 272,
         "category": "dialogue",
         "english": "What? Come on, stop pulling my leg!!!",
-        "vietnamese": "P: Hả? Thôi, đừng có chọc tôi nữa!!!",
+        "vietnamese": "Hả? Thôi, đừng có chọc tôi nữa!!!",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "What? Come on // stop pulling my leg!!!"
@@ -45534,7 +45474,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 273,
         "category": "dialogue",
         "english": "You're the legendary Leonel Messi, what are you talking about???",
-        "vietnamese": "P: Cậu là Leonel Messi huyền thoại mà, cậu đang nói cái gì vậy???",
+        "vietnamese": "Cậu là Leonel Messi huyền thoại mà, cậu đang nói cái gì vậy???",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "You're the legendary Leonel Messi // what are you talking about???"
@@ -45544,7 +45484,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 274,
         "category": "dialogue",
         "english": "Okay, I know it sounds crazy",
-        "vietnamese": "M: Okay, tôi biết là nó nghe crazy",
+        "vietnamese": "Okay, tôi biết là nó nghe crazy",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Okay // I know it sounds crazy"
@@ -45554,7 +45494,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 275,
         "category": "dialogue",
         "english": "But everything happens for a reason",
-        "vietnamese": "M: Nhưng mà mọi thứ xảy ra đều có lý do của nó cả",
+        "vietnamese": "Nhưng mà mọi thứ xảy ra đều có lý do của nó cả",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "But everything happens for a reason"
@@ -45564,7 +45504,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 276,
         "category": "dialogue",
         "english": "5 years ago, I happened to watch a football match between Vietnam and Uzbekistan",
-        "vietnamese": "M: 5 năm trước, tôi vô tình xem một trận bóng giữa VN và Uzbekistan",
+        "vietnamese": "5 năm trước, tôi vô tình xem một trận bóng giữa VN và Uzbekistan",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "5 years ago // I happened to watch a football match between Vietnam and Uzbekistan"
@@ -45574,7 +45514,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 277,
         "category": "dialogue",
         "english": "In a way, you're the endless inspiration for me,",
-        "vietnamese": "M: Một cách nào đó, ông là cái nguồn cảm hứng bất tận cho tôi",
+        "vietnamese": "Một cách nào đó, ông là cái nguồn cảm hứng bất tận cho tôi",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "In a way // you're the endless inspiration for me,"
@@ -45584,7 +45524,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 278,
         "category": "dialogue",
         "english": "Thank you for your kind words,",
-        "vietnamese": "P: Cám ơn vì những lời tử tế của cậu,",
+        "vietnamese": "Cám ơn vì những lời tử tế của cậu,",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Thank you for your kind words,"
@@ -45594,7 +45534,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 279,
         "category": "dialogue",
         "english": "But you must have mistaken me for someone else",
-        "vietnamese": "P: Nhưng chắc hẳn là cậu đã nhầm tôi với ai đó khác rồi",
+        "vietnamese": "Nhưng chắc hẳn là cậu đã nhầm tôi với ai đó khác rồi",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "But you must have mistaken me for someone else"
@@ -45604,7 +45544,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 280,
         "category": "dialogue",
         "english": "I myself always look up to those coaches who can stand up for their students",
-        "vietnamese": "M: Chính bản thân tôi luôn nể trọng những HLV mà có thể đứng lên bênh vực cho học trò của mình",
+        "vietnamese": "Chính bản thân tôi luôn nể trọng những HLV mà có thể đứng lên bênh vực cho học trò của mình",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I myself always look up to those coaches who can stand up for their students"
@@ -45614,7 +45554,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 281,
         "category": "dialogue",
         "english": "There's not many coaches out there who have the courage to do this",
-        "vietnamese": "M: Không có nhiều HLV ngoài kia có cái can đảm để làm chuyện này đâu",
+        "vietnamese": "Không có nhiều HLV ngoài kia có cái can đảm để làm chuyện này đâu",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "There's not many coaches out there who have the courage to do this"
@@ -45624,7 +45564,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 282,
         "category": "dialogue",
         "english": "Well, I'm flattered",
-        "vietnamese": "P: Well, tôi rất là cảm kích",
+        "vietnamese": "Well, tôi rất là cảm kích",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Well // I'm flattered"
@@ -45634,7 +45574,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 283,
         "category": "dialogue",
         "english": "Interesting, it's such a small world!",
-        "vietnamese": "P: Interesting, trái đất tròn thật!",
+        "vietnamese": "Interesting, trái đất tròn thật!",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Interesting // it's such a small world!"
@@ -45644,7 +45584,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 284,
         "category": "dialogue",
         "english": "The other day, my wife just told me she is a huge fan of Barcelona",
-        "vietnamese": "P: Hôm bữa, vợ tôi vừa bảo tôi bả là fan ruột của Barcelona xong",
+        "vietnamese": "Hôm bữa, vợ tôi vừa bảo tôi bả là fan ruột của Barcelona xong",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "The other day // my wife just told me she is a huge fan of Barcelona"
@@ -45654,7 +45594,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 285,
         "category": "dialogue",
         "english": "She wishes one day she would have a chance to ask for your autograph!",
-        "vietnamese": "P: Bả ước ngày nào đó bả sẽ có cơ hội để xin chữ ký cậu đó!",
+        "vietnamese": "Bả ước ngày nào đó bả sẽ có cơ hội để xin chữ ký cậu đó!",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "She wishes one day she would have a chance to ask for your autograph!"
@@ -45664,7 +45604,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 286,
         "category": "dialogue",
         "english": "Please tell her it's my pleasure to do that",
-        "vietnamese": "M: Xin hãy nói bà là tôi rất là vui để làm điều đó",
+        "vietnamese": "Xin hãy nói bà là tôi rất là vui để làm điều đó",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Please tell her it's my pleasure to do that"
@@ -45674,7 +45614,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 287,
         "category": "dialogue",
         "english": "I know I'm supposed to write you a proper cover letter",
-        "vietnamese": "M: Tôi biết là tôi nên viết ông một cái cover letter chỉnh chu",
+        "vietnamese": "Tôi biết là tôi nên viết ông một cái cover letter chỉnh chu",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I know I'm supposed to write you a proper cover letter"
@@ -45684,7 +45624,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 288,
         "category": "dialogue",
         "english": "But I really don't know how to start or how to articulate my thoughts",
-        "vietnamese": "M: Nhưng mà thực sự tôi không biết bắt đầu như nào hay là diễn đạt suy nghĩ ra sao",
+        "vietnamese": "Nhưng mà thực sự tôi không biết bắt đầu như nào hay là diễn đạt suy nghĩ ra sao",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "But I really don't know how to start or how to articulate my thoughts"
@@ -45694,7 +45634,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 289,
         "category": "dialogue",
         "english": "Wait, this entire time, you've been serious?",
-        "vietnamese": "P: Uả, nãy giờ cậu nghiêm túc á hả?",
+        "vietnamese": "Uả, nãy giờ cậu nghiêm túc á hả?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Wait // this entire time // you've been serious?"
@@ -45704,7 +45644,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 290,
         "category": "dialogue",
         "english": "Duh, it took me 3 days in a row preparing for this video call",
-        "vietnamese": "M: Còn phải hỏi, tôi tốn 3 ngày liền để chuẩn bị cho cái video call này đây",
+        "vietnamese": "Còn phải hỏi, tôi tốn 3 ngày liền để chuẩn bị cho cái video call này đây",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Duh // it took me 3 days in a row preparing for this video call"
@@ -45714,7 +45654,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 291,
         "category": "dialogue",
         "english": "In a way, I wanna make a positive impact as a coach",
-        "vietnamese": "M: Một cách nào đó, tôi muốn tạo ra một tác động tích cực ở cương vị HLV",
+        "vietnamese": "Một cách nào đó, tôi muốn tạo ra một tác động tích cực ở cương vị HLV",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "In a way // I wanna make a positive impact as a coach"
@@ -45724,7 +45664,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 292,
         "category": "dialogue",
         "english": "Just like the way you did for Vietnamese national football team",
-        "vietnamese": "M: Cũng như cái cách mà ông đã làm cho đội tuyển bóng đá VN",
+        "vietnamese": "Cũng như cái cách mà ông đã làm cho đội tuyển bóng đá VN",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Just like the way you did for Vietnamese national football team"
@@ -45734,7 +45674,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 293,
         "category": "dialogue",
         "english": "I'm not trying to exaggerate",
-        "vietnamese": "M: Tôi không có đang cố để nói quá lên",
+        "vietnamese": "Tôi không có đang cố để nói quá lên",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I'm not trying to exaggerate"
@@ -45744,7 +45684,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 294,
         "category": "dialogue",
         "english": "But to me, your success was quite a phenomenon",
-        "vietnamese": "M: Nhưng mà với tôi, cái thành công của ông khá là một hiện tượng đấy",
+        "vietnamese": "Nhưng mà với tôi, cái thành công của ông khá là một hiện tượng đấy",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "But to me // your success was quite a phenomenon"
@@ -45754,7 +45694,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 295,
         "category": "dialogue",
         "english": "I mean we didn't expect a big name like you would apply for this job",
-        "vietnamese": "P: Ý tôi là bọn tôi không hi vọng một tên tuổi lớn như cậu sẽ apply vào cái job này",
+        "vietnamese": "Ý tôi là bọn tôi không hi vọng một tên tuổi lớn như cậu sẽ apply vào cái job này",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "I mean we didn't expect a big name like you would apply for this job"
@@ -45764,7 +45704,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 296,
         "category": "dialogue",
         "english": "I've been playing football as a professional footballer for more than 18 years",
-        "vietnamese": "M: Tôi đã và đang chơi bóng như một cầu thủ chuyên nghiệp hơn 18 năm rồi",
+        "vietnamese": "Tôi đã và đang chơi bóng như một cầu thủ chuyên nghiệp hơn 18 năm rồi",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I've been playing football as a professional footballer for more than 18 years"
@@ -45774,7 +45714,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 297,
         "category": "dialogue",
         "english": "I've spent the last 4 years researching about football strategies",
-        "vietnamese": "M: Tôi đã dành 4 năm vừa qua để nghiên cứu về những chiến lược bóng đá",
+        "vietnamese": "Tôi đã dành 4 năm vừa qua để nghiên cứu về những chiến lược bóng đá",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I've spent the last 4 years researching about football strategies"
@@ -45784,7 +45724,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 298,
         "category": "dialogue",
         "english": "Especially those strategies used in team managing",
-        "vietnamese": "M: Đặc biệt là những chiến lược được dùng trong việc quản lý team",
+        "vietnamese": "Đặc biệt là những chiến lược được dùng trong việc quản lý team",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Especially those strategies used in team managing"
@@ -45794,7 +45734,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 299,
         "category": "dialogue",
         "english": "Okay, have you ever managed any football clubs?",
-        "vietnamese": "P: Okay, cậu có từng quản lý bất kỳ CLB bóng đá nào chưa?",
+        "vietnamese": "Okay, cậu có từng quản lý bất kỳ CLB bóng đá nào chưa?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Okay // have you ever managed any football clubs?"
@@ -45804,7 +45744,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 300,
         "category": "dialogue",
         "english": "Not yet but I was just assigned to become the head coach last April",
-        "vietnamese": "M: Chưa nhưng mà tôi vừa được giao làm HLV trưởng tháng 4 vừa rồi",
+        "vietnamese": "Chưa nhưng mà tôi vừa được giao làm HLV trưởng tháng 4 vừa rồi",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Not yet but I was just assigned to become the head coach last April"
@@ -45814,7 +45754,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 301,
         "category": "dialogue",
         "english": "I know that I'm nowhere near as dedicated as you are",
-        "vietnamese": "M: Tôi biết rằng tôi còn khuya mới có tâm được như ông",
+        "vietnamese": "Tôi biết rằng tôi còn khuya mới có tâm được như ông",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I know that I'm nowhere near as dedicated as you are"
@@ -45824,7 +45764,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 302,
         "category": "dialogue",
         "english": "Don't say that, at least you don't have to start from scratch",
-        "vietnamese": "P: Đừng nói vậy, ít nhất cậu đâu có phải bắt đầu từ số 0 đâu",
+        "vietnamese": "Đừng nói vậy, ít nhất cậu đâu có phải bắt đầu từ số 0 đâu",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Don't say that // at least you don't have to start from scratch"
@@ -45834,7 +45774,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 303,
         "category": "dialogue",
         "english": "You're one of the greatest footballers of all time, so to speak",
-        "vietnamese": "P: Cậu là một trong những cầu thủ vĩ đại nhất mọi thời đại, có thể nói vậy",
+        "vietnamese": "Cậu là một trong những cầu thủ vĩ đại nhất mọi thời đại, có thể nói vậy",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "You're one of the greatest footballers of all time // so to speak"
@@ -45844,7 +45784,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 304,
         "category": "dialogue",
         "english": "In terms of management, my philosophy is communication always comes first",
-        "vietnamese": "P: Nói về quản trị, nguyên tắc của tôi là giao tiếp chính là ưu tiên hàng đầu",
+        "vietnamese": "Nói về quản trị, nguyên tắc của tôi là giao tiếp chính là ưu tiên hàng đầu",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "In terms of management // my philosophy is communication always comes first"
@@ -45854,7 +45794,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 305,
         "category": "dialogue",
         "english": "You're right, I totally agree with you",
-        "vietnamese": "M: Ông nói phải, tôi hoàn toàn đồng ý với ông",
+        "vietnamese": "Ông nói phải, tôi hoàn toàn đồng ý với ông",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "You're right // I totally agree with you"
@@ -45864,7 +45804,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 306,
         "category": "dialogue",
         "english": "For the time being, I've been working on my Korean",
-        "vietnamese": "M: Ở hiện tại, tôi đã và đang cải thiện tiếng Hàn của tôi",
+        "vietnamese": "Ở hiện tại, tôi đã và đang cải thiện tiếng Hàn của tôi",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "For the time being // I've been working on my Korean"
@@ -45874,7 +45814,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 307,
         "category": "dialogue",
         "english": "I can't wait to talk to you in person",
-        "vietnamese": "M: Tôi nôn nói chuyện trực tiếp với ông quá",
+        "vietnamese": "Tôi nôn nói chuyện trực tiếp với ông quá",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "I can't wait to talk to you in person"
@@ -45884,7 +45824,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 308,
         "category": "dialogue",
         "english": "Don't get me wrong",
-        "vietnamese": "P: Đừng hiểu nhầm ý tôi nha",
+        "vietnamese": "Đừng hiểu nhầm ý tôi nha",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Don't get me wrong"
@@ -45894,7 +45834,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 309,
         "category": "dialogue",
         "english": "A moment ago I said that doesn't mean you suck at communication",
-        "vietnamese": "P: Hồi nãy tôi nói vậy không có nghĩa là cậu cùi về giao tiếp",
+        "vietnamese": "Hồi nãy tôi nói vậy không có nghĩa là cậu cùi về giao tiếp",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "A moment ago I said that doesn't mean you suck at communication"
@@ -45904,7 +45844,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 310,
         "category": "dialogue",
         "english": "Alright, if you're really interested in this position, just drop me an email by Sunday",
-        "vietnamese": "P: Alright, nếu cậu thực sự hứng thú với cái vị trí này, cứ gửi tôi cái email trước CN",
+        "vietnamese": "Alright, nếu cậu thực sự hứng thú với cái vị trí này, cứ gửi tôi cái email trước CN",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Alright // if you're really interested in this position // just drop me an email by Sunday"
@@ -45914,7 +45854,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 311,
         "category": "dialogue",
         "english": "Okay, I'll sleep on it, stay in touch",
-        "vietnamese": "M: Okay, tôi sẽ suy nghĩ thêm, giữ liên lạc nha",
+        "vietnamese": "Okay, tôi sẽ suy nghĩ thêm, giữ liên lạc nha",
         "speaker": "M",
         "audio_url": null,
         "beat_prosody": "Okay // I'll sleep on it // stay in touch"
@@ -46610,11 +46550,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d15_0018",
         "item_number": 18,
         "category": "vocab",
-        "english": "Cool / interesting / intriguing Hay ho",
-        "vietnamese": "",
+        "english": "Cool / interesting / intriguing",
+        "vietnamese": "Hay ho",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Cool // interesting // intriguing Hay ho"
+        "beat_prosody": "Cool // interesting // intriguing"
       },
       {
         "chunk_id": "chunk_eres_d15_0019",
@@ -46630,11 +46570,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d15_0020",
         "item_number": 20,
         "category": "vocab",
-        "english": "Delicious / yummy / toothsome / tasty Ngon",
-        "vietnamese": "",
+        "english": "Delicious / yummy / toothsome / tasty",
+        "vietnamese": "Ngon",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Delicious // yummy // toothsome // tasty Ngon"
+        "beat_prosody": "Delicious // yummy // toothsome // tasty"
       },
       {
         "chunk_id": "chunk_eres_d15_0021",
@@ -47200,11 +47140,11 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "chunk_id": "chunk_eres_d15_0077",
         "item_number": 77,
         "category": "vocab",
-        "english": "Cheers! Dzooo!",
-        "vietnamese": "",
+        "english": "Cheers!",
+        "vietnamese": "Dô! / Cạn ly!",
         "speaker": null,
         "audio_url": null,
-        "beat_prosody": "Cheers! Dzooo!"
+        "beat_prosody": "Cheers!"
       },
       {
         "chunk_id": "chunk_eres_d15_0078",
@@ -47671,7 +47611,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 124,
         "category": "phrase",
         "english": "Believe it or not, I'm not good at cooking",
-        "vietnamese": "Tin hay ko tùy, tui ko có giỏi nấu ăn",
+        "vietnamese": "Tin hay không tùy, tui không có giỏi nấu ăn",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Believe it or not // I'm not good at cooking"
@@ -47721,7 +47661,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 129,
         "category": "phrase",
         "english": "Don't you see I'm eating?",
-        "vietnamese": "Anh ko thấy tôi đang ăn à?",
+        "vietnamese": "Anh không thấy tôi đang ăn à?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Don't you see I'm eating?"
@@ -47771,7 +47711,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 134,
         "category": "phrase",
         "english": "Hey, I don't think we can afford that",
-        "vietnamese": "Ê, tui ko nghĩ ta mua nổi cái đó đâu",
+        "vietnamese": "Ê, tui không nghĩ ta mua nổi cái đó đâu",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Hey // I don't think we can afford that"
@@ -47801,7 +47741,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 137,
         "category": "phrase",
         "english": "Spit it out, do you feel nauseous?",
-        "vietnamese": "Nhả ra, cậu có cảm thấy buồn nôn ko?",
+        "vietnamese": "Nhả ra, cậu có cảm thấy buồn nôn không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Spit it out // do you feel nauseous?"
@@ -47821,7 +47761,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 139,
         "category": "phrase",
         "english": "Who knows maybe the blood sugar will increase",
-        "vietnamese": "Ko chừng đường máu sẽ tăng",
+        "vietnamese": "Không chừng đường máu sẽ tăng",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Who knows maybe the blood sugar will increase"
@@ -47911,7 +47851,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 148,
         "category": "phrase",
         "english": "Mom, can I have my friends over?",
-        "vietnamese": "Má, con mời bạn qua chơi được ko?",
+        "vietnamese": "Má, con mời bạn qua chơi được không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Mom // can I have my friends over?"
@@ -47961,7 +47901,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 153,
         "category": "phrase",
         "english": "I don't know if this is sugar-free",
-        "vietnamese": "Tui ko biết cái này có ko đường hay là ko",
+        "vietnamese": "Tui không biết cái này có không đường hay là không",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I don't know if this is sugar-free"
@@ -48051,7 +47991,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 162,
         "category": "phrase",
         "english": "Wait, wait, you didn't count me in???",
-        "vietnamese": "Ủa, ủa, cậu ko tính tui vào à???",
+        "vietnamese": "Ủa, ủa, cậu không tính tui vào à???",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Wait // wait // you didn't count me in???"
@@ -48071,7 +48011,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 164,
         "category": "phrase",
         "english": "Do you like eating rice noodle?",
-        "vietnamese": "Cậu thich ăn bún ko?",
+        "vietnamese": "Cậu thich ăn bún không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Do you like eating rice noodle?"
@@ -48121,7 +48061,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 169,
         "category": "phrase",
         "english": "You're not allowed to eat on the sidewalk",
-        "vietnamese": "Cậu ko được phép ăn trên vỉa hè",
+        "vietnamese": "Cậu không được phép ăn trên vỉa hè",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "You're not allowed to eat on the sidewalk"
@@ -48141,7 +48081,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 171,
         "category": "phrase",
         "english": "I don't know, you pick the place",
-        "vietnamese": "Tao ko biết, mày chọn chỗ đi",
+        "vietnamese": "Tao không biết, mày chọn chỗ đi",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I don't know // you pick the place"
@@ -48151,7 +48091,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 172,
         "category": "phrase",
         "english": "Do you serve soft drinks here?",
-        "vietnamese": "Chị có phục vụ nước ngọt ở đây ko?",
+        "vietnamese": "Chị có phục vụ nước ngọt ở đây không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Do you serve soft drinks here?"
@@ -48271,7 +48211,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 184,
         "category": "phrase",
         "english": "Let go off me, you know who I am?",
-        "vietnamese": "Buông bố ra, mày biết bố là ai ko?",
+        "vietnamese": "Buông bố ra, mày biết bố là ai không?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Let go off me // you know who I am?"

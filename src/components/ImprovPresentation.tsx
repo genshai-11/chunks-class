@@ -1445,8 +1445,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       )}
                     </div>
 
-                    {/* Hints Preview: High contrast black in Light Mode */}
-                    <div className="flex flex-wrap items-baseline gap-y-1 text-xs">
+                    {/* Hints Preview: High contrast black in Light Mode, zinc-100 in Dark Mode */}
+                    <div className="flex flex-wrap items-baseline gap-y-1 text-xs font-bold leading-snug">
                       {item.hints.map((h, hIdx) => {
                         const enText = getHintTextByLanguage(h, 'en') || h.text;
                         const viText = getHintTextByLanguage(h, 'vi') || h.translation;
@@ -1455,17 +1455,17 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                             <span className="inline-flex items-baseline gap-1.5">
                               {viText ? (
                                 <>
-                                  <span className="text-black dark:text-white font-bold">
+                                  <span className="text-black dark:text-zinc-100 font-bold text-xs leading-snug">
                                     {viText}
                                   </span>
                                   {enText && enText !== viText && (
-                                    <span className="text-black dark:text-zinc-300 font-mono font-bold text-xs">
+                                    <span className="text-black dark:text-zinc-200 font-mono font-bold text-xs leading-snug">
                                       ({enText})
                                     </span>
                                   )}
                                 </>
                               ) : (
-                                <span className="text-black dark:text-white font-bold">
+                                <span className="text-black dark:text-zinc-100 font-bold text-xs leading-snug">
                                   {enText}
                                 </span>
                               )}

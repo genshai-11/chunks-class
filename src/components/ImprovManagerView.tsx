@@ -42,7 +42,7 @@ import {
   stopImprovAudio,
   getHintTextByLanguage
 } from '../services/improvTtsService';
-import { audioPlayer, sanitizeSpeechText } from '../services/googleTtsService';
+import { audioPlayer, sanitizeSpeechText, ALL_VOICES, GOOGLE_TTS_VOICES } from '../services/googleTtsService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import * as XLSX from 'xlsx';
 import confetti from 'canvas-confetti';
@@ -91,7 +91,11 @@ import {
   List,
   Flame,
   CheckSquare,
-  Minus
+  Minus,
+  Maximize2,
+  Minimize2,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 // --------------------------------------------------------------------------
@@ -189,9 +193,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [synthesizingItemIds, setSynthesizingItemIds] = useState<Record<string, boolean>>({});
   const playAbortRef = useRef<boolean>(false);
 
-  // Batch Audio Worker State
+  // Batch Audio Worker State & Custom Voices
   const [batchWorkersCount, setBatchWorkersCount] = useState<number>(4);
   const [batchTargetLang, setBatchTargetLang] = useState<'en' | 'vi' | 'both'>('both');
+  const [batchVoiceEn, setBatchVoiceEn] = useState<string>(currentVoiceEn || 'aura-asteria-en');
+  const [batchVoiceVi, setBatchVoiceVi] = useState<string>(currentVoiceVi || 'vi-VN-Neural2-A');
   const [isBatchRunning, setIsBatchRunning] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
@@ -204,11 +210,82 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [batchLogs, setBatchLogs] = useState<string[]>([]);
   const cancelBatchAudioRef = useRef<boolean>(false);
 
+  // Keep batch voice in sync if prop changes
+  useEffect(() => {
+    if (currentVoiceEn) setBatchVoiceEn(currentVoiceEn);
+  }, [currentVoiceEn]);
+
+  useEffect(() => {
+    if (currentVoiceVi) setBatchVoiceVi(currentVoiceVi);
+  }, [currentVoiceVi]);
+
+  // Voice options for batch generation modal
+  const enVoiceOptions = useMemo(() => {
+    return ALL_VOICES.filter(v => v.languageCode === 'en-US' || v.id.startsWith('aura-') || v.id.startsWith('en-US-'));
+  }, []);
+
+  const viVoiceOptions = useMemo(() => {
+    return GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN');
+  }, []);
+
+  // UI Feedback Toast & Fullscreen / Dark Mode State
+  const [deleteSuccessToast, setDeleteSuccessToast] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('chunks_theme') === 'dark' || document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.warn('Fullscreen toggle failed:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('chunks_theme', next ? 'dark' : 'light');
+        if (next) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+      return next;
+    });
+  };
+
   // --------------------------------------------------------------------------
-  // D. AI Generator Form State (3-Layer Filter)
+  // D. AI Generator Form State (3-Layer Filter) - Default to Level B ERES
   // --------------------------------------------------------------------------
-  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv Mastery - Level B Reflexes');
-  const [genDescription, setGenDescription] = useState<string>('Bộ bài tập ngẫu hứng đa tầng rèn luyện phản xạ nhanh kết hợp từ vựng cốt lõi...');
+  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv Mastery - Level B ERES Reflexes');
+  const [genDescription, setGenDescription] = useState<string>('Bộ bài tập ngẫu hứng đa tầng rèn luyện phản xạ nhanh kết hợp từ vựng cốt lõi Level B ERES...');
   const [genTotalItems, setGenTotalItems] = useState<number>(50);
   const [genSessionsCount, setGenSessionsCount] = useState<number>(4);
   const [genSessionConfigs, setGenSessionConfigs] = useState<ImprovSessionConfig[]>([
@@ -218,11 +295,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     { sessionNumber: 4, hcTotal: 4, hintTypes: ['Keyword', 'Logic word', 'Fancy word', 'Ending'], itemsCount: 13 }
   ]);
 
-  // Layer 1: Khóa học
+  // Layer 1: Khóa học (Defaults to LEVEL_B_ERES)
   const [genSourceLevel, setGenSourceLevel] = useState<CourseLevel | 'ALL'>('LEVEL_B_ERES');
-  // Layer 2: Bài học (Days)
+  // Layer 2: Bài học (Days) - Defaults to level_b_eres_day_1
   const [genAvailableLessons, setGenAvailableLessons] = useState<LessonDoc[]>([]);
-  const [genSelectedLessonIds, setGenSelectedLessonIds] = useState<string[]>([]);
+  const [genSelectedLessonIds, setGenSelectedLessonIds] = useState<string[]>(['level_b_eres_day_1']);
   // Layer 3: Thể loại & Từ vựng cụ thể
   const [genCategoryFilter, setGenCategoryFilter] = useState<string>('all');
   const [genVocabSearch, setGenVocabSearch] = useState<string>('');
@@ -325,15 +402,31 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         let loaded = await getAllImprovPackages();
         const defaultSeeds = createDefaultSeedPackages();
 
+        const deletedIdsStr = typeof window !== 'undefined' ? localStorage.getItem('chunks_improv_deleted_package_ids') : null;
+        let deletedIds = new Set<string>();
+        if (deletedIdsStr) {
+          try {
+            deletedIds = new Set<string>(JSON.parse(deletedIdsStr));
+          } catch (e) {
+            console.error('Error parsing deletedIds:', e);
+          }
+        }
+
+        // Filter defaultSeeds so that deletedIds are never resurrected!
+        const filteredDefaultSeeds = defaultSeeds.filter(d => !deletedIds.has(d.id));
+        // Also filter loaded packages in case of race condition:
+        loaded = (loaded || []).filter(p => !deletedIds.has(p.id));
+
         // Ensure default packages (DEFAULT_IMPROV_PACKAGES, IMPROV_SET_01, IMPROV_SET_02)
-        // are automatically persisted into localStorage and Firestore so Studio is never empty
+        // are automatically persisted into localStorage and Firestore so Studio is never empty,
+        // ONLY if they have not been deleted!
         let needsPersistence = false;
         if (!loaded || loaded.length === 0) {
-          loaded = defaultSeeds;
+          loaded = filteredDefaultSeeds;
           needsPersistence = true;
         } else {
           const loadedIds = new Set(loaded.map(p => p.id));
-          const missingDefaults = defaultSeeds.filter(d => !loadedIds.has(d.id));
+          const missingDefaults = filteredDefaultSeeds.filter(d => !loadedIds.has(d.id));
           if (missingDefaults.length > 0) {
             loaded = [...missingDefaults, ...loaded];
             needsPersistence = true;
@@ -341,7 +434,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         }
 
         if (needsPersistence) {
-          for (const s of defaultSeeds) {
+          for (const s of filteredDefaultSeeds) {
             try {
               await saveImprovPackage(s);
             } catch (err) {
@@ -357,11 +450,22 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         }
       } catch (err) {
         console.error('Failed to load Improv packages, restoring defaults:', err);
-        const seeds = createDefaultSeedPackages();
-        setPackages(seeds);
-        setActivePackageId(seeds[0].id);
-        for (const s of seeds) {
-          saveImprovPackage(s).catch(() => {});
+        const deletedIdsStr = typeof window !== 'undefined' ? localStorage.getItem('chunks_improv_deleted_package_ids') : null;
+        let deletedIds = new Set<string>();
+        if (deletedIdsStr) {
+          try {
+            deletedIds = new Set<string>(JSON.parse(deletedIdsStr));
+          } catch (e) {
+            console.error('Error parsing deletedIds:', e);
+          }
+        }
+        const seeds = createDefaultSeedPackages().filter(d => !deletedIds.has(d.id));
+        if (seeds.length > 0) {
+          setPackages(seeds);
+          setActivePackageId(seeds[0].id);
+          for (const s of seeds) {
+            saveImprovPackage(s).catch(() => {});
+          }
         }
       } finally {
         setIsLoadingPackages(false);
@@ -499,6 +603,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         totalItems++;
         totalHints += it.hints.length;
         const isReady = Boolean(
+          it.audioUrl ||
           audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
           audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
           (it.hints && it.hints.length > 0 && it.hints.every(h => {
@@ -795,15 +900,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setBatchLogs(prev => [`[${time}] ${msg}`, ...prev.slice(0, 100)]);
     };
 
-    addLog(`Khởi động bộ tổng hợp âm thanh (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()})...`);
+    addLog(`Khởi động bộ tổng hợp âm thanh (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()}, EN: ${batchVoiceEn}, VI: ${batchVoiceVi})...`);
 
     try {
       const langModeToUse = batchTargetLang === 'vi' ? 'VI_ONLY' : batchTargetLang === 'both' ? 'EN_THEN_VI' : 'EN_ONLY';
       await improvTts.preparePackageAudio(
         activePackage,
         {
-          voiceEn: currentVoiceEn,
-          voiceVi: currentVoiceVi,
+          voiceEn: batchVoiceEn,
+          voiceVi: batchVoiceVi,
           langMode: langModeToUse,
           concurrency: batchWorkersCount,
           forceRegenerate: false
@@ -820,6 +925,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           addLog(statusText);
         }
       );
+
+      // Mark audio as prepared in the package items or package metadata:
+      const updatedSessions = activePackage.sessions.map(s => ({
+        ...s,
+        items: s.items.map(it => ({
+          ...it,
+          audioUrl: it.audioUrl || 'cached'
+        }))
+      }));
+      const updatedPkg: ImprovPackage = { 
+        ...activePackage, 
+        sessions: updatedSessions, 
+        updatedAt: new Date().toISOString() 
+      };
+      await saveImprovPackage(updatedPkg);
+      setActivePackageId(updatedPkg.id);
+      setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
 
       addLog('Đã hoàn tất tạo toàn bộ âm thanh cho package!');
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
@@ -1259,18 +1381,60 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
   const handleDeleteActivePackage = async () => {
     if (!activePackage) return;
-    await deleteImprovPackage(activePackage.id);
-    const remaining = packages.filter(p => p.id !== activePackage.id);
-    setPackages(remaining);
-    if (remaining.length > 0) {
-      setActivePackageId(remaining[0].id);
-    } else {
-      const seeds = createDefaultSeedPackages();
-      setPackages(seeds);
-      setActivePackageId(seeds[0].id);
-      await saveImprovPackage(seeds[0]);
+    try {
+      const deletedIdsStr = typeof window !== 'undefined' ? localStorage.getItem('chunks_improv_deleted_package_ids') : null;
+      const deletedIds: string[] = deletedIdsStr ? JSON.parse(deletedIdsStr) : [];
+      if (!deletedIds.includes(activePackage.id)) {
+        deletedIds.push(activePackage.id);
+        localStorage.setItem('chunks_improv_deleted_package_ids', JSON.stringify(deletedIds));
+      }
+
+      await deleteImprovPackage(activePackage.id);
+      const remaining = packages.filter(p => p.id !== activePackage.id);
+      setPackages(remaining);
+
+      if (remaining.length > 0) {
+        setActivePackageId(remaining[0].id);
+      } else {
+        const defaultSeeds = createDefaultSeedPackages().filter(d => !deletedIds.includes(d.id));
+        if (defaultSeeds.length > 0) {
+          setPackages(defaultSeeds);
+          setActivePackageId(defaultSeeds[0].id);
+          await saveImprovPackage(defaultSeeds[0]);
+        } else {
+          const newPkg: ImprovPackage = {
+            id: `pkg_custom_${Date.now()}`,
+            title: 'Custom Improv Cohort',
+            description: 'Bộ luyện tập phản xạ tùy chỉnh mới',
+            sourceCourseLevel: 'LEVEL_B_ERES',
+            sourceLessonIds: ['level_b_eres_day_1'],
+            sessionsCount: 1,
+            totalItems: 0,
+            sessions: [
+              {
+                sessionNumber: 1,
+                title: 'Session 1 (2 Hints)',
+                hcTotal: 2,
+                hintTypes: ['Keyword', 'Ending'],
+                items: []
+              }
+            ],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          setPackages([newPkg]);
+          setActivePackageId(newPkg.id);
+          await saveImprovPackage(newPkg);
+        }
+      }
+      setIsDeleteModalOpen(false);
+      setDeleteSuccessToast("Đã xóa package thành công!");
+      setTimeout(() => {
+        setDeleteSuccessToast(null);
+      }, 3000);
+    } catch (err: any) {
+      console.error('Lỗi khi xóa package:', err);
     }
-    setIsDeleteModalOpen(false);
   };
 
   if (isLoadingPackages && packages.length === 0) {
@@ -1283,25 +1447,25 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#FAFAFA] text-[#0A0A0A] font-sans antialiased overflow-y-auto">
+    <div className={`flex flex-col h-full bg-[#FAFAFA] dark:bg-[#09090B] text-[#0A0A0A] dark:text-zinc-100 font-sans antialiased overflow-y-auto ${isDarkMode ? 'dark' : ''}`}>
       {/* ==================================================================== */}
       {/* 1. HEADER & PACKAGE SELECTOR TOOLBAR */}
       {/* ==================================================================== */}
-      <div className="sticky top-0 z-10 bg-white border-b border-[#E8E8EC] px-6 py-4 shadow-2xs">
+      <div className="sticky top-0 z-10 bg-white dark:bg-[#121215] border-b border-[#E8E8EC] dark:border-zinc-800 px-6 py-4 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Left: Package Switcher & Info */}
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-50 text-[#DC2626] border border-red-100 shrink-0">
+            <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#DC2626] border border-red-100 dark:border-red-900/60 shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#DC2626] bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#DC2626] bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded border border-red-100 dark:border-red-900/60">
                   Improv Studio
                 </span>
                 <span className="text-xs text-zinc-400">•</span>
-                <span className="text-xs text-zinc-500 font-mono">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
                   {activePackage?.sessionsCount || 0} Sessions ({stats.totalItems} Items)
                 </span>
               </div>
@@ -1314,10 +1478,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     setActivePackageId(e.target.value);
                     setActiveSessionTab('all');
                   }}
-                  className="text-base font-bold text-zinc-900 bg-transparent hover:bg-zinc-50 border-0 focus:ring-2 focus:ring-[#DC2626]/20 rounded-lg cursor-pointer transition-all pr-8 py-0.5 truncate max-w-[320px] sm:max-w-[450px]"
+                  className="text-base font-bold text-zinc-900 dark:text-zinc-100 bg-transparent dark:bg-[#18181B] hover:bg-zinc-50 dark:hover:bg-zinc-800 border-0 focus:ring-2 focus:ring-[#DC2626]/20 rounded-lg cursor-pointer transition-all pr-8 py-0.5 truncate max-w-[320px] sm:max-w-[450px]"
                 >
                   {packages.map(p => (
-                    <option key={p.id} value={p.id}>
+                    <option key={p.id} value={p.id} className="bg-white dark:bg-[#18181B] text-zinc-900 dark:text-zinc-100">
                       {p.title} ({p.sessionsCount} Sessions - {p.totalItems} Items)
                     </option>
                   ))}
@@ -1328,6 +1492,24 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
           {/* Right: Primary Action Buttons */}
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {/* Fullscreen Button */}
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 rounded-xl border border-[#E8E8EC] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
+              title={isFullscreen ? 'Thoát toàn màn hình' : 'Bật toàn màn hình (Fullscreen)'}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+
+            {/* Dark Mode Theme Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-xl border border-[#E8E8EC] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
+              title={isDarkMode ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+            >
+              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
+            </button>
+
             {/* Create New (AI Generator) */}
             <button
               onClick={() => setIsGeneratorOpen(true)}
@@ -1340,25 +1522,25 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             {/* Import Excel */}
             <button
               onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E8E8EC] dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
             >
-              <Upload className="w-3.5 h-3.5 text-zinc-500" />
+              <Upload className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
               <span>Import Excel</span>
             </button>
 
             {/* Export Excel */}
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E8E8EC] dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
             >
-              <Download className="w-3.5 h-3.5 text-zinc-500" />
+              <Download className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
               <span>Export Excel</span>
             </button>
 
             {/* Delete Package */}
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="p-2 rounded-xl border border-[#E8E8EC] hover:border-red-200 hover:bg-red-50 text-zinc-400 hover:text-red-600 active:scale-95 transition-all cursor-pointer"
+              className="p-2 rounded-xl border border-[#E8E8EC] dark:border-zinc-700 hover:border-red-200 dark:hover:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-600 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
               title="Xóa Package hiện tại"
             >
               <Trash2 className="w-4 h-4" />
@@ -1367,52 +1549,52 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         </div>
 
         {/* Stats Summary Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-zinc-100">
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center gap-3">
-            <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="bg-zinc-50/80 dark:bg-zinc-900/80 rounded-lg p-2.5 border border-zinc-200/60 dark:border-zinc-800 flex items-center gap-3">
+            <div className="p-2 bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300">
               <Layers className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Total Items</div>
-              <div className="text-sm font-bold text-zinc-800">{stats.totalItems} Items</div>
+              <div className="text-[10px] font-mono uppercase text-zinc-400 dark:text-zinc-500 font-bold">Total Items</div>
+              <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{stats.totalItems} Items</div>
             </div>
           </div>
 
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center gap-3">
-            <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
+          <div className="bg-zinc-50/80 dark:bg-zinc-900/80 rounded-lg p-2.5 border border-zinc-200/60 dark:border-zinc-800 flex items-center gap-3">
+            <div className="p-2 bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300">
               <Clock className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Total Sessions</div>
-              <div className="text-sm font-bold text-zinc-800">{stats.totalSessions} Sessions</div>
+              <div className="text-[10px] font-mono uppercase text-zinc-400 dark:text-zinc-500 font-bold">Total Sessions</div>
+              <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{stats.totalSessions} Sessions</div>
             </div>
           </div>
 
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center gap-3">
-            <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
+          <div className="bg-zinc-50/80 dark:bg-zinc-900/80 rounded-lg p-2.5 border border-zinc-200/60 dark:border-zinc-800 flex items-center gap-3">
+            <div className="p-2 bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300">
               <BarChart3 className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Total Hints</div>
-              <div className="text-sm font-bold text-zinc-800">{stats.totalHints} Clues</div>
+              <div className="text-[10px] font-mono uppercase text-zinc-400 dark:text-zinc-500 font-bold">Total Hints</div>
+              <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{stats.totalHints} Clues</div>
             </div>
           </div>
 
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center justify-between">
+          <div className="bg-zinc-50/80 dark:bg-zinc-900/80 rounded-lg p-2.5 border border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
+              <div className="p-2 bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300">
                 <Headphones className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Audio Prepared</div>
-                <div className="text-sm font-bold text-zinc-800">
+                <div className="text-[10px] font-mono uppercase text-zinc-400 dark:text-zinc-500 font-bold">Audio Prepared</div>
+                <div className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
                   {stats.audioPreparedPercent}% ({stats.audioPreparedCount}/{stats.totalItems})
                 </div>
               </div>
             </div>
             <button
               onClick={() => setIsBatchAudioModalOpen(true)}
-              className="px-2 py-1 text-[11px] font-bold text-[#DC2626] bg-red-50 hover:bg-red-100 rounded-md border border-red-200 cursor-pointer transition-all"
+              className="px-2 py-1 text-[11px] font-bold text-[#DC2626] bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 rounded-md border border-red-200 dark:border-red-800 cursor-pointer transition-all"
             >
               Batch TTS
             </button>
@@ -1425,26 +1607,26 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       {/* ==================================================================== */}
       <div className="flex-1 p-6 space-y-6">
         {/* Session Navigation Tabs & Filter Bar */}
-        <div className="bg-white rounded-2xl border border-[#E8E8EC] p-4 shadow-2xs space-y-4">
+        <div className="bg-white dark:bg-[#121215] rounded-2xl border border-[#E8E8EC] dark:border-zinc-800 p-4 shadow-2xs space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Session Dropdown Selector */}
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-700 rounded-xl">
                 <Filter className="w-3.5 h-3.5 text-[#DC2626]" />
-                <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Session:</span>
+                <span className="text-[11px] font-mono uppercase font-bold text-zinc-400 dark:text-zinc-500">Session:</span>
                 <select
                   value={activeSessionTab}
                   onChange={(e) => {
                     const val = e.target.value;
                     setActiveSessionTab(val === 'all' ? 'all' : Number(val));
                   }}
-                  className="bg-transparent text-xs font-bold text-zinc-900 border-0 focus:ring-0 cursor-pointer pr-4"
+                  className="bg-transparent text-xs font-bold text-zinc-900 dark:text-zinc-100 border-0 focus:ring-0 cursor-pointer pr-4"
                 >
-                  <option value="all">
+                  <option value="all" className="bg-white dark:bg-[#18181B] text-zinc-900 dark:text-zinc-100">
                     Tất Cả Sessions ({activePackage?.totalItems || 0} Items)
                   </option>
                   {(activePackage?.sessions || []).map(s => (
-                    <option key={s.sessionNumber} value={s.sessionNumber}>
+                    <option key={s.sessionNumber} value={s.sessionNumber} className="bg-white dark:bg-[#18181B] text-zinc-900 dark:text-zinc-100">
                       Session {s.sessionNumber} ({s.hcTotal} Hints - {s.items.length} Items)
                     </option>
                   ))}
@@ -1455,14 +1637,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             {/* Quick Controls: View Switcher, Add Item, Subtitle Toggle & Batch Audio Trigger */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               {/* View Mode Toggle */}
-              <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+              <div className="flex items-center p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     viewMode === 'table'
-                      ? 'bg-white text-[#DC2626] shadow-xs'
-                      : 'text-zinc-600 hover:text-zinc-900'
+                      ? 'bg-white dark:bg-zinc-900 text-[#DC2626] shadow-xs'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                   title="Chế độ xem bảng danh sách chi tiết"
                 >
@@ -1474,8 +1656,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   onClick={() => setViewMode('cards')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     viewMode === 'cards'
-                      ? 'bg-white text-[#DC2626] shadow-xs'
-                      : 'text-zinc-600 hover:text-zinc-900'
+                      ? 'bg-white dark:bg-zinc-900 text-[#DC2626] shadow-xs'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                   title="Chế độ xem dạng thẻ dòng chảy"
                 >
@@ -1487,7 +1669,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               {/* Add Item Button */}
               <button
                 onClick={() => handleOpenAddItemModal()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold shadow-2xs transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 text-[#DC2626] border border-red-200 dark:border-red-800 text-xs font-bold shadow-2xs transition-all cursor-pointer"
                 title="Thêm câu hỏi/bài tập mới vào session"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -1499,8 +1681,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 onClick={() => setShowVietnamese(!showVietnamese)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                   showVietnamese
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-zinc-50 text-zinc-500 border-zinc-200'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                    : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
                 }`}
                 title="Bật/Tắt hiển thị nghĩa tiếng Việt"
               >
@@ -1511,7 +1693,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               {/* Batch Audio Trigger */}
               <button
                 onClick={() => setIsBatchAudioModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-800 hover:bg-black dark:hover:bg-zinc-700 text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-300" />
                 <span>Tạo Batch Audio Package</span>
@@ -1520,7 +1702,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           </div>
 
           {/* Search & Sub-Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-zinc-100">
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -1528,7 +1710,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 placeholder="Tìm kiếm hint tiếng Anh, nghĩa tiếng Việt, hoặc từ loại..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-zinc-50/80 border border-zinc-200 rounded-xl text-xs text-zinc-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 transition-all"
+                className="w-full pl-9 pr-4 py-2 bg-zinc-50/80 dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-zinc-100 focus:bg-white dark:focus:bg-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 transition-all"
               />
               {searchQuery && (
                 <button
@@ -1541,7 +1723,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-              <span className="text-xs text-zinc-400 font-mono">
+              <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono">
                 Hiển thị {filteredItems.length} / {stats.totalItems} items
               </span>
             </div>
@@ -1635,10 +1817,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           /* ================================================================ */
           /* TABLE VIEW MODE (Condensed, High-Density, Clear Columns) */
           /* ================================================================ */
-          <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xs overflow-hidden">
+          <div className="bg-white dark:bg-[#121215] rounded-2xl border border-[#E8E8EC] dark:border-zinc-800 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-zinc-100/80 text-zinc-600 font-mono text-[10px] uppercase border-b border-zinc-200">
+                <thead className="bg-zinc-100/80 dark:bg-zinc-900/90 text-zinc-600 dark:text-zinc-400 font-mono text-[10px] uppercase border-b border-zinc-200 dark:border-zinc-800">
                   <tr>
                     <th className="p-3.5 w-10 text-center">
                       <input
@@ -1656,12 +1838,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     <th className="p-3.5 w-64 text-right">Thao Tác Quản Lý</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100">
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
                   {filteredItems.map((item) => {
                     const isPlayingThis = playingItemId === item.id;
                     const isSynthesizing = synthesizingItemIds[item.id] || false;
                     const isSelected = selectedItemIds.includes(item.id);
                     const isAudioEnReady = Boolean(
+                      item.audioUrl ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
                       (item.hints && item.hints.length > 0 && item.hints.every(h => {
@@ -1670,6 +1853,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       }))
                     );
                     const isAudioViReady = Boolean(
+                      item.audioUrl ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
                       (item.hints && item.hints.length > 0 && item.hints.every(h => {
@@ -1681,8 +1865,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     return (
                       <tr 
                         key={item.id}
-                        className={`hover:bg-zinc-50/80 transition-colors ${
-                          isPlayingThis ? 'bg-red-50/40' : isSelected ? 'bg-red-50/20' : ''
+                        className={`hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors ${
+                          isPlayingThis ? 'bg-red-50/40 dark:bg-red-950/20' : isSelected ? 'bg-red-50/20 dark:bg-red-950/10' : ''
                         }`}
                       >
                         {/* Checkbox Column */}
@@ -1696,8 +1880,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         </td>
 
                         {/* STT Column */}
-                        <td className="p-3.5 text-center font-mono font-bold text-zinc-700">
-                          <span className="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-zinc-100 border border-zinc-200 text-xs">
+                        <td className="p-3.5 text-center font-mono font-bold text-zinc-700 dark:text-zinc-300">
+                          <span className="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs">
                             #{item.itemNumber}
                           </span>
                         </td>
@@ -1705,10 +1889,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         {/* Session Badge */}
                         <td className="p-3.5">
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-xs font-bold text-zinc-900">
+                            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                               Session {item.sessionNumber}
                             </span>
-                            <span className="text-[10px] font-mono text-zinc-400">
+                            <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
                               {item.hints.length} hints
                             </span>
                           </div>
@@ -1726,8 +1910,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                   <div
                                     className={`p-2 rounded-xl border transition-all ${
                                       isHintActive
-                                        ? 'bg-red-50 border-[#DC2626] ring-2 ring-red-500/20'
-                                        : 'bg-zinc-50/80 border-zinc-200/80'
+                                        ? 'bg-red-50 dark:bg-red-950/40 border-[#DC2626] ring-2 ring-red-500/20'
+                                        : 'bg-zinc-50/80 dark:bg-zinc-900/80 border-zinc-200/80 dark:border-zinc-800'
                                     }`}
                                   >
                                     <div className="flex items-center gap-1 mb-1">
@@ -1760,19 +1944,19 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                           <div className="flex flex-col items-center gap-1">
                             <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
                               isAudioEnReady
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-zinc-100 text-zinc-400 border-zinc-200'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border-zinc-200 dark:border-zinc-700'
                             }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${isAudioEnReady ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+                              <span className={`w-1.5 h-1.5 rounded-full ${isAudioEnReady ? 'bg-emerald-500' : 'bg-zinc-400 dark:bg-zinc-600'}`} />
                               <span>EN {isAudioEnReady ? '✓' : '—'}</span>
                             </span>
 
                             <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
                               isAudioViReady
-                                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                : 'bg-zinc-100 text-zinc-400 border-zinc-200'
+                                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
+                                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border-zinc-200 dark:border-zinc-700'
                             }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${isAudioViReady ? 'bg-blue-500' : 'bg-zinc-400'}`} />
+                              <span className={`w-1.5 h-1.5 rounded-full ${isAudioViReady ? 'bg-blue-500' : 'bg-zinc-400 dark:bg-zinc-600'}`} />
                               <span>VI {isAudioViReady ? '✓' : '—'}</span>
                             </span>
                           </div>
@@ -1863,6 +2047,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               const isSynthesizing = synthesizingItemIds[item.id] || false;
               const isSelected = selectedItemIds.includes(item.id);
               const isAudioEnReady = Boolean(
+                item.audioUrl ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
                 (item.hints && item.hints.length > 0 && item.hints.every(h => {
@@ -1871,6 +2056,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 }))
               );
               const isAudioViReady = Boolean(
+                item.audioUrl ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
                 (item.hints && item.hints.length > 0 && item.hints.every(h => {
@@ -1882,12 +2068,12 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               return (
                 <div
                   key={item.id}
-                  className={`bg-white rounded-2xl border transition-all duration-200 p-4.5 shadow-2xs hover:shadow-xs ${
+                  className={`bg-white dark:bg-[#121215] rounded-2xl border transition-all duration-200 p-4.5 shadow-2xs hover:shadow-xs ${
                     isPlayingThis 
                       ? 'border-[#DC2626] ring-2 ring-red-500/10' 
                       : isSelected
-                      ? 'border-[#DC2626] bg-red-50/15'
-                      : 'border-[#E8E8EC] hover:border-zinc-300'
+                      ? 'border-[#DC2626] bg-red-50/15 dark:bg-red-950/20'
+                      : 'border-[#E8E8EC] dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
                   }`}
                 >
                   <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
@@ -1900,26 +2086,26 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         className="rounded text-[#DC2626] focus:ring-[#DC2626] cursor-pointer"
                       />
 
-                      <div className="w-8 h-8 rounded-xl bg-zinc-100 font-mono font-bold text-xs text-zinc-700 flex items-center justify-center border border-zinc-200">
+                      <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-mono font-bold text-xs text-zinc-700 dark:text-zinc-300 flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
                         #{item.itemNumber}
                       </div>
 
                       <div className="flex flex-col">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
+                          <span className="text-[10px] font-mono font-bold text-zinc-500 dark:text-zinc-400 uppercase">
                             Session {item.sessionNumber}
                           </span>
-                          <span className="w-1 h-1 rounded-full bg-zinc-300" />
-                          <span className="text-[10px] font-mono font-semibold text-zinc-600 bg-zinc-100 px-1.5 py-0.2 rounded">
+                          <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                          <span className="text-[10px] font-mono font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.2 rounded">
                             {item.hints.length} Hints
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className={`text-[10px] font-mono font-semibold ${isAudioEnReady ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                          <span className={`text-[10px] font-mono font-semibold ${isAudioEnReady ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
                             EN {isAudioEnReady ? '✓' : '—'}
                           </span>
-                          <span className="text-zinc-300">•</span>
-                          <span className={`text-[10px] font-mono font-semibold ${isAudioViReady ? 'text-blue-600' : 'text-zinc-400'}`}>
+                          <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                          <span className={`text-[10px] font-mono font-semibold ${isAudioViReady ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
                             VI {isAudioViReady ? '✓' : '—'}
                           </span>
                         </div>
@@ -1938,13 +2124,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                               key={hint.id || hint.itemIndex}
                               className={`p-3 rounded-xl border transition-all duration-150 flex flex-col justify-between w-[210px] sm:w-[240px] shrink-0 ${
                                 isHintActive
-                                  ? 'bg-red-50/90 border-[#DC2626] ring-2 ring-red-500/20 scale-102'
-                                  : 'bg-zinc-50/80 border-zinc-200/80 hover:bg-zinc-50'
+                                  ? 'bg-red-50/90 dark:bg-red-950/40 border-[#DC2626] ring-2 ring-red-500/20 scale-102'
+                                  : 'bg-zinc-50/80 dark:bg-zinc-900/80 border-zinc-200/80 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                               }`}
                             >
                               {/* Clue Header: Number & Badge */}
                               <div className="flex items-center justify-between gap-1 mb-1.5">
-                                <span className="text-[10px] font-mono font-bold text-zinc-400">
+                                <span className="text-[10px] font-mono font-bold text-zinc-400 dark:text-zinc-500">
                                   HINT {hint.itemIndex}
                                 </span>
                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${badge.bg} ${badge.text} ${badge.border}`}>
@@ -3129,19 +3315,19 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       {/* 6. MODAL: PACKAGE BATCH AUDIO GENERATOR */}
       {/* ==================================================================== */}
       {isBatchAudioModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-[#E8E8EC] shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-[#E8E8EC] flex items-center justify-between bg-zinc-50/80">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#121215] rounded-3xl border border-[#E8E8EC] dark:border-zinc-800 shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-[#E8E8EC] dark:border-zinc-800 flex items-center justify-between bg-zinc-50/80 dark:bg-zinc-900/80">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-purple-50 text-purple-700 border border-purple-100">
+                <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-100 dark:border-purple-900/50">
                   <Zap className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-base text-zinc-900">
+                  <h3 className="font-display font-bold text-base text-zinc-900 dark:text-zinc-100">
                     Bộ Tổng Hợp Âm Thanh Toàn Diện Package (Batch Audio TTS)
                   </h3>
-                  <p className="text-xs text-zinc-500">
-                    Sử dụng DeepSeek/Deepgram Aura & Google TTS để tạo audio cho toàn bộ {stats.totalItems} items.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Tùy chọn mô hình giọng đọc và tạo âm thanh chất lượng cao cho toàn bộ {stats.totalItems} items.
                   </p>
                 </div>
               </div>
@@ -3149,7 +3335,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               <button
                 onClick={() => !isBatchRunning && setIsBatchAudioModalOpen(false)}
                 disabled={isBatchRunning}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/50 cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -3157,8 +3343,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
             <div className="p-6 space-y-4">
               {/* Target Language Selection: EN, VI, or BOTH */}
-              <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60 space-y-2">
-                <div className="font-bold text-zinc-800 text-xs">Mục Tiêu Ngôn Ngữ Audio (Audio Target)</div>
+              <div className="p-3.5 bg-zinc-50 dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 space-y-2">
+                <div className="font-bold text-zinc-800 dark:text-zinc-200 text-xs">Mục Tiêu Ngôn Ngữ Audio (Audio Target)</div>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
@@ -3166,8 +3352,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     onClick={() => setBatchTargetLang('en')}
                     className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       batchTargetLang === 'en'
-                        ? 'bg-zinc-900 text-white border-zinc-900'
-                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100 shadow-xs'
+                        : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                     }`}
                   >
                     <span>Tiếng Anh (EN)</span>
@@ -3179,8 +3365,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     onClick={() => setBatchTargetLang('vi')}
                     className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       batchTargetLang === 'vi'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                        : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                     }`}
                   >
                     <span>Tiếng Việt (VI)</span>
@@ -3192,8 +3378,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     onClick={() => setBatchTargetLang('both')}
                     className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       batchTargetLang === 'both'
-                        ? 'bg-[#DC2626] text-white border-[#DC2626]'
-                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        ? 'bg-[#DC2626] text-white border-[#DC2626] shadow-xs'
+                        : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                     }`}
                   >
                     <span>Cả 2 (EN & VI)</span>
@@ -3201,11 +3387,52 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
               </div>
 
+              {/* Custom Voice Model Selection: EN & VI */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-zinc-50 dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/60 dark:border-zinc-800">
+                {/* English Voice Selector */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                    Giọng Đọc Tiếng Anh (English Voice)
+                  </label>
+                  <select
+                    value={batchVoiceEn}
+                    disabled={isBatchRunning}
+                    onChange={(e) => setBatchVoiceEn(e.target.value)}
+                    className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
+                  >
+                    {enVoiceOptions.map(v => (
+                      <option key={v.id} value={v.id} className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">
+                        {v.name} ({v.gender}) {v.provider ? `[${v.provider}]` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Vietnamese Voice Selector */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                    Giọng Đọc Tiếng Việt (Vietnamese Voice)
+                  </label>
+                  <select
+                    value={batchVoiceVi}
+                    disabled={isBatchRunning}
+                    onChange={(e) => setBatchVoiceVi(e.target.value)}
+                    className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
+                  >
+                    {viVoiceOptions.map(v => (
+                      <option key={v.id} value={v.id} className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">
+                        {v.name} ({v.gender})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               {/* Workers count selector */}
-              <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
+              <div className="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-900/80 rounded-2xl border border-zinc-200/60 dark:border-zinc-800">
                 <div>
-                  <div className="font-bold text-zinc-800 text-xs">Số Luồng Xử Lý Song Song (Workers Pool)</div>
-                  <div className="text-[11px] text-zinc-400">Tối ưu tốc độ tạo âm thanh mà không nghẽn mạng</div>
+                  <div className="font-bold text-zinc-800 dark:text-zinc-200 text-xs">Số Luồng Xử Lý Song Song (Workers Pool)</div>
+                  <div className="text-[11px] text-zinc-400 dark:text-zinc-500">Tối ưu tốc độ tạo âm thanh mà không nghẽn mạng</div>
                 </div>
 
                 <div className="flex items-center gap-1.5 font-mono">
@@ -3217,8 +3444,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       onClick={() => setBatchWorkersCount(w)}
                       className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
                         batchWorkersCount === w
-                          ? 'bg-zinc-900 text-white border-zinc-900'
-                          : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-100'
+                          ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                       }`}
                     >
                       {w} Threads
@@ -3257,11 +3484,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-[#E8E8EC] bg-zinc-50/80 flex items-center justify-between">
+            <div className="px-6 py-4 border-t border-[#E8E8EC] dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/80 flex items-center justify-between">
               <button
                 onClick={() => setIsBatchAudioModalOpen(false)}
                 disabled={isBatchRunning}
-                className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer"
               >
                 Đóng
               </button>
@@ -3493,25 +3720,25 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       {/* 9. MODAL: DELETE PACKAGE CONFIRMATION */}
       {/* ==================================================================== */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl border border-[#E8E8EC] shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#DC2626] border border-red-100 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white dark:bg-[#121215] rounded-3xl border border-[#E8E8EC] dark:border-zinc-800 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-950/40 text-[#DC2626] border border-red-100 dark:border-red-900/50 flex items-center justify-center mx-auto">
               <Trash2 className="w-6 h-6" />
             </div>
 
             <div className="text-center space-y-1.5">
-              <h3 className="font-display font-bold text-base text-zinc-900">
+              <h3 className="font-display font-bold text-base text-zinc-900 dark:text-zinc-100">
                 Xác Nhận Xóa Package?
               </h3>
-              <p className="text-xs text-zinc-500">
-                Bạn có chắc chắn muốn xóa package <span className="font-bold text-zinc-800">"{activePackage?.title}"</span>? Hành động này sẽ xóa toàn bộ {stats.totalItems} items và không thể hoàn tác.
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Bạn có chắc chắn muốn xóa package <span className="font-bold text-zinc-800 dark:text-zinc-200">"{activePackage?.title}"</span>? Hành động này sẽ xóa toàn bộ {stats.totalItems} items và không thể hoàn tác.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="py-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer"
+                className="py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer"
               >
                 Hủy Bỏ
               </button>
@@ -3523,6 +3750,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 10. TOAST: DELETE SUCCESS NOTIFICATION */}
+      {/* ==================================================================== */}
+      {deleteSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white rounded-xl shadow-2xl font-bold text-xs animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-100 shrink-0" />
+          <span>{deleteSuccessToast}</span>
         </div>
       )}
     </div>
