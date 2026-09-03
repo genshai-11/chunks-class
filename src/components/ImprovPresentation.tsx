@@ -510,10 +510,11 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col select-none font-sans overflow-hidden transition-colors duration-200 ${
+      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, sans-serif' }}
+      className={`fixed inset-0 z-50 flex flex-col select-none overflow-hidden transition-colors duration-200 ${
         highContrastDark 
           ? 'bg-[#0A0A0A] text-white' 
-          : 'bg-[#F8F9FA] text-[#0A0A0A]'
+          : 'bg-[#FAFAFA] text-[#0A0A0A]'
       }`}
     >
       {/* ==================================================================== */}
@@ -1003,19 +1004,19 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         setCurrentRevealStep(idx + 1);
                         playSingleHintAudio(hint, idx);
                       }}
-                      className={`min-h-[180px] md:min-h-[220px] p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-all group ${
+                      className={`min-h-[180px] md:min-h-[220px] p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-colors duration-150 group ${
                         highContrastDark
-                          ? 'bg-zinc-900/30 hover:bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700 text-zinc-500 hover:text-zinc-300'
-                          : 'bg-zinc-50/60 hover:bg-zinc-100/80 border border-zinc-200/80 hover:border-zinc-300 text-zinc-400 hover:text-zinc-700'
+                          ? 'bg-zinc-900/30 hover:bg-zinc-900/60 border border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                          : 'bg-[#F4F4F6]/80 hover:bg-[#F4F4F6] border border-zinc-200/60 text-[#6B6B76] hover:text-[#0A0A0A]'
                       }`}
                     >
-                      <div className="w-11 h-11 rounded-full bg-zinc-200/60 dark:bg-zinc-800/80 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
-                        <Lock className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                      <div className="w-10 h-10 rounded-xl bg-zinc-200/70 dark:bg-zinc-800/80 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-150 shadow-xs">
+                        <Lock className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                       </div>
-                      <div className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      <div className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-300">
                         Gợi ý {idx + 1}
                       </div>
-                      <div className="text-[11px] font-sans text-zinc-400 dark:text-zinc-500 mt-1">
+                      <div className="text-[11px] text-[#6B6B76] dark:text-zinc-400 mt-1">
                         Bấm hoặc Space để mở
                       </div>
                     </div>
@@ -1030,10 +1031,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 return (
                   <div
                     key={hint.id || `hint_${idx}`}
-                    className={`min-h-[200px] md:min-h-[260px] p-4 md:p-6 flex flex-col justify-between transition-all duration-300 relative group rounded-2xl ${
+                    className={`min-h-[200px] md:min-h-[260px] p-4 md:p-6 flex flex-col justify-between transition-all duration-200 relative group rounded-2xl ${
                       isCurrentlySpeaking
-                        ? 'bg-red-500/5 dark:bg-red-500/10 ring-2 ring-[#DC2626]/30'
-                        : 'hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40'
+                        ? 'bg-red-500/5 dark:bg-red-500/10 ring-2 ring-[#DC2626]/40'
+                        : 'hover:bg-zinc-50/60 dark:hover:bg-zinc-900/40'
                     }`}
                   >
                     {/* Top: Compact Semantic Role Badge & Individual Play Button */}
@@ -1052,7 +1053,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
                       <button
                         onClick={() => playSingleHintAudio(hint, idx)}
-                        className={`p-1.5 rounded-full transition-all cursor-pointer ${
+                        className={`p-1.5 rounded-full transition-all duration-150 cursor-pointer ${
                           isCurrentlySpeaking
                             ? 'bg-[#DC2626] text-white shadow-md animate-pulse'
                             : highContrastDark
@@ -1068,10 +1069,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                     {/* Center: Extra Large Typography (High-Signal Projector Display) */}
                     <div className="my-auto py-2">
                       <div
-                        className={`font-display font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-none tracking-tight transition-colors duration-200 ${
+                        className={`font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-none tracking-tight transition-colors duration-150 ${
                           isCurrentlySpeaking
                             ? 'text-[#DC2626] animate-pulse'
-                            : 'text-zinc-950 dark:text-white'
+                            : 'text-[#0A0A0A] dark:text-white'
                         }`}
                       >
                         {mainText}
@@ -1081,10 +1082,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       {showSubtitle && subText && (
                         <div className="mt-3 sm:mt-4">
                           <div
-                            className={`text-xl sm:text-2xl md:text-3xl tracking-normal text-zinc-500 dark:text-zinc-400 ${
+                            className={`text-xl sm:text-2xl md:text-3xl tracking-normal text-[#6B6B76] dark:text-zinc-400 ${
                               languageMode === 'VI_ONLY'
                                 ? 'font-mono font-semibold'
-                                : 'font-sans font-medium'
+                                : 'font-medium'
                             }`}
                           >
                             {subText}

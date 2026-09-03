@@ -21,6 +21,28 @@ import {
   ChunkItem
 } from '../types';
 import { DEFAULT_IMPROV_PACKAGES } from '../data/defaultImprovPackages';
+import { IMPROV_SET_01, IMPROV_SET_02 } from '../data/improvSet01And02';
+
+export function loadDefaultPresets(): ImprovPackage[] {
+  return [IMPROV_SET_01, IMPROV_SET_02];
+}
+
+export function ensureDefaultSetsPresent(packages: ImprovPackage[]): ImprovPackage[] {
+  const result = [...packages];
+  const existingIds = new Set(result.map(p => p.id));
+
+  // If IMPROV_SET_02 is missing, prepend it
+  if (!existingIds.has(IMPROV_SET_02.id)) {
+    result.unshift(IMPROV_SET_02);
+  }
+
+  // If IMPROV_SET_01 is missing, prepend it (so Set 01 comes first)
+  if (!existingIds.has(IMPROV_SET_01.id)) {
+    result.unshift(IMPROV_SET_01);
+  }
+
+  return result;
+}
 
 // --------------------------------------------------------------------------
 // 1. Default Master System Prompt & LLM Configuration
@@ -136,7 +158,8 @@ export async function getAllImprovPackages(): Promise<ImprovPackage[]> {
   try {
     const snapshot = await getDocs(collection(db, 'improv_packages'));
     if (!snapshot.empty) {
-      const packages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ImprovPackage));
+      let packages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ImprovPackage));
+      packages = ensureDefaultSetsPresent(packages);
       // Save local backup
       try {
         localStorage.setItem(LOCAL_STORAGE_IMPROV_KEY, JSON.stringify(packages));
@@ -151,14 +174,22 @@ export async function getAllImprovPackages(): Promise<ImprovPackage[]> {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_IMPROV_KEY);
     if (saved) {
-      const parsed: ImprovPackage[] = JSON.parse(saved);
+      let parsed: ImprovPackage[] = JSON.parse(saved);
       if (parsed && parsed.length > 0) {
+        parsed = ensureDefaultSetsPresent(parsed);
+        try {
+          localStorage.setItem(LOCAL_STORAGE_IMPROV_KEY, JSON.stringify(parsed));
+        } catch {}
         return parsed.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
       }
     }
   } catch {}
 
-  return DEFAULT_IMPROV_PACKAGES;
+  const fallback = ensureDefaultSetsPresent(DEFAULT_IMPROV_PACKAGES);
+  try {
+    localStorage.setItem(LOCAL_STORAGE_IMPROV_KEY, JSON.stringify(fallback));
+  } catch {}
+  return fallback;
 }
 
 export async function getImprovPackageById(id: string): Promise<ImprovPackage | null> {

@@ -19,6 +19,7 @@ import {
   deleteImprovItem,
   parseImprovExcelFile, 
   exportImprovPackageToExcel,
+  loadDefaultPresets,
   DEFAULT_IMPROV_MASTER_PROMPT,
   DEFAULT_IMPROV_LLM_CONFIG,
   DEEPSEEK_DEFAULT_CONFIG,
@@ -26,6 +27,7 @@ import {
   executeLlmGeneration,
   testLlmConnection
 } from '../services/improvService';
+import { IMPROV_SET_01, IMPROV_SET_02 } from '../data/improvSet01And02';
 import { 
   improvTts, 
   synthesizeItemCombinedAudio, 
@@ -850,6 +852,95 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   // --------------------------------------------------------------------------
+  // Bulk Selection Operations (Thao tác hàng loạt)
+  // --------------------------------------------------------------------------
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [isBulkOperating, setIsBulkOperating] = useState<boolean>(false);
+
+  // Toggle selection for a single item
+  const handleToggleSelectItem = (id: string) => {
+    setSelectedItemIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  // Select / Deselect all currently filtered items
+  const handleToggleSelectAllFiltered = () => {
+    const visibleIds = filteredItems.map(it => it.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedItemIds.includes(id));
+    if (allSelected) {
+      setSelectedItemIds(prev => prev.filter(id => !visibleIds.includes(id)));
+    } else {
+      const set = new Set([...selectedItemIds, ...visibleIds]);
+      setSelectedItemIds(Array.from(set));
+    }
+  };
+
+  // Bulk synthesize audio
+  const handleBulkSynthesize = async (target: 'en' | 'vi' | 'both') => {
+    if (selectedItemIds.length === 0 || !activePackage) return;
+    setIsBulkOperating(true);
+    try {
+      const itemsToProcess = filteredItems.filter(it => selectedItemIds.includes(it.id));
+      for (const item of itemsToProcess) {
+        setSynthesizingItemIds(prev => ({ ...prev, [item.id]: true }));
+        try {
+          if (target === 'en' || target === 'both') {
+            await synthesizeItemCombinedAudio(item, 'aura-asteria-en', 'vi-VN-Neural2-A', 'EN_ONLY', true);
+          }
+          if (target === 'vi' || target === 'both') {
+            await synthesizeItemCombinedAudio(item, 'aura-asteria-en', 'vi-VN-Neural2-A', 'VI_ONLY', true);
+          }
+        } finally {
+          setSynthesizingItemIds(prev => ({ ...prev, [item.id]: false }));
+        }
+      }
+      confetti({ particleCount: 50, spread: 60 });
+    } catch (err: any) {
+      alert(`Lỗi khi tạo audio hàng loạt: ${err?.message || 'Không thể tạo âm thanh'}`);
+    } finally {
+      setIsBulkOperating(false);
+    }
+  };
+
+  // Bulk delete items
+  const handleBulkDelete = async () => {
+    if (selectedItemIds.length === 0 || !activePackage) return;
+    const confirmMsg = `Bạn có chắc chắn muốn xóa vĩnh viễn ${selectedItemIds.length} câu đã chọn khỏi Package không?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsBulkOperating(true);
+    try {
+      const selectedSet = new Set(selectedItemIds);
+      const updatedSessions = activePackage.sessions.map(s => {
+        const remaining = s.items.filter(it => !selectedSet.has(it.id));
+        return {
+          ...s,
+          items: remaining.map((it, idx) => ({ ...it, itemNumber: idx + 1 }))
+        };
+      }).filter(s => s.items.length > 0);
+
+      const totalItems = updatedSessions.reduce((acc, s) => acc + s.items.length, 0);
+      const updatedPkg: ImprovPackage = {
+        ...activePackage,
+        sessions: updatedSessions,
+        sessionsCount: updatedSessions.length,
+        totalItems,
+        updatedAt: new Date().toISOString()
+      };
+
+      await saveImprovPackage(updatedPkg);
+      setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
+      setSelectedItemIds([]);
+      confetti({ particleCount: 40, spread: 50 });
+    } catch (err: any) {
+      alert(`Lỗi khi xóa hàng loạt: ${err?.message || 'Không thể xóa các câu đã chọn'}`);
+    } finally {
+      setIsBulkOperating(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
   // 4. Package-Wide Batch Audio Generator (EN, VI, or BOTH)
   // --------------------------------------------------------------------------
 
@@ -1206,14 +1297,55 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     setImportFile(file);
     setIsParsingImport(true);
     try {
-      const parsed = await parseImprovExcelFile(file);
-      setImportParsedPackage(parsed);
+      const fileNameLower = file.name.toLowerCase();
+      if (fileNameLower.endsWith('.json')) {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (!parsed || !Array.isArray(parsed.sessions)) {
+          throw new Error('File JSON không hợp lệ. Phải chứa cấu trúc ImprovPackage với trường "sessions" là mảng.');
+        }
+        const now = new Date().toISOString();
+        const improvPkg: ImprovPackage = {
+          id: parsed.id || `pkg_improv_${Date.now()}`,
+          title: parsed.title || file.name.replace(/\.[^/.]+$/, ""),
+          description: parsed.description || 'Imported Improv JSON Package',
+          sessionsCount: parsed.sessions.length,
+          totalItems: parsed.totalItems || parsed.sessions.reduce((acc: number, s: any) => acc + (s.items?.length || 0), 0),
+          sessions: parsed.sessions,
+          sourceCourseLevel: parsed.sourceCourseLevel,
+          sourceLessonIds: parsed.sourceLessonIds,
+          createdAt: parsed.createdAt || now,
+          updatedAt: now
+        };
+        setImportParsedPackage(improvPkg);
+      } else {
+        const parsed = await parseImprovExcelFile(file);
+        setImportParsedPackage(parsed);
+      }
     } catch (err: any) {
-      alert(`Lỗi đọc file Excel: ${err?.message || 'Không thể xử lý file này'}`);
+      alert(`Lỗi đọc file: ${err?.message || 'Không thể xử lý file này'}`);
       setImportFile(null);
       setImportParsedPackage(null);
     } finally {
       setIsParsingImport(false);
+    }
+  };
+
+  const handleQuickLoadDefaultPresets = async () => {
+    try {
+      await saveImprovPackage(IMPROV_SET_01);
+      await saveImprovPackage(IMPROV_SET_02);
+      setPackages(prev => {
+        const remaining = prev.filter(p => p.id !== IMPROV_SET_01.id && p.id !== IMPROV_SET_02.id);
+        return [IMPROV_SET_01, IMPROV_SET_02, ...remaining];
+      });
+      setActivePackageId(IMPROV_SET_01.id);
+      setIsImportModalOpen(false);
+      setImportFile(null);
+      setImportParsedPackage(null);
+      confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
+    } catch (err: any) {
+      alert(`Lỗi khi nạp presets: ${err?.message || 'Không thể lưu Set 01 & Set 02'}`);
     }
   };
 
@@ -1455,37 +1587,29 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         {/* Session Navigation Tabs & Filter Bar */}
         <div className="bg-white rounded-2xl border border-[#E8E8EC] p-4 shadow-2xs space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Session Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-              <button
-                onClick={() => setActiveSessionTab('all')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  activeSessionTab === 'all'
-                    ? 'bg-zinc-900 text-white shadow-xs'
-                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
-                }`}
-              >
-                Tất Cả Sessions ({activePackage?.totalItems || 0})
-              </button>
-
-              {activePackage?.sessions.map(s => (
-                <button
-                  key={s.sessionNumber}
-                  onClick={() => setActiveSessionTab(s.sessionNumber)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                    activeSessionTab === s.sessionNumber
-                      ? 'bg-[#DC2626] text-white shadow-xs'
-                      : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
-                  }`}
+            {/* Session Dropdown Selector */}
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl">
+                <Filter className="w-3.5 h-3.5 text-[#DC2626]" />
+                <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Session:</span>
+                <select
+                  value={activeSessionTab}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setActiveSessionTab(val === 'all' ? 'all' : Number(val));
+                  }}
+                  className="bg-transparent text-xs font-bold text-zinc-900 border-0 focus:ring-0 cursor-pointer pr-4"
                 >
-                  <span>Session {s.sessionNumber}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                    activeSessionTab === s.sessionNumber ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'
-                  }`}>
-                    {s.hcTotal} Hints ({s.items.length})
-                  </span>
-                </button>
-              ))}
+                  <option value="all">
+                    Tất Cả Sessions ({activePackage?.totalItems || 0} Items)
+                  </option>
+                  {(activePackage?.sessions || []).map(s => (
+                    <option key={s.sessionNumber} value={s.sessionNumber}>
+                      Session {s.sessionNumber} ({s.hcTotal} Hints - {s.items.length} Items)
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Quick Controls: View Switcher, Add Item, Subtitle Toggle & Batch Audio Trigger */}
@@ -1585,6 +1709,69 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         </div>
 
         {/* ================================================================== */}
+        {/* BULK ACTIONS BAR (Thanh thao tác hàng loạt khi có mục được chọn) */}
+        {/* ================================================================== */}
+        {selectedItemIds.length > 0 && (
+          <div className="sticky top-20 z-20 bg-zinc-900 text-white rounded-2xl p-4 shadow-xl border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse" />
+              <span className="text-xs font-mono font-bold">
+                Đã chọn <span className="text-amber-300 font-black">{selectedItemIds.length}</span> / {filteredItems.length} items
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => handleBulkSynthesize('en')}
+                disabled={isBulkOperating}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold rounded-xl border border-zinc-700 transition-all cursor-pointer disabled:opacity-50"
+                title="Tạo lại âm thanh tiếng Anh cho các câu đã chọn"
+              >
+                <Play className="w-3 h-3 text-[#DC2626] fill-current" />
+                <span>Tạo lại Audio EN</span>
+              </button>
+
+              <button
+                onClick={() => handleBulkSynthesize('vi')}
+                disabled={isBulkOperating}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold rounded-xl border border-zinc-700 transition-all cursor-pointer disabled:opacity-50"
+                title="Tạo lại âm thanh tiếng Việt cho các câu đã chọn"
+              >
+                <Play className="w-3 h-3 text-blue-400 fill-current" />
+                <span>Tạo lại Audio VI</span>
+              </button>
+
+              <button
+                onClick={() => handleBulkSynthesize('both')}
+                disabled={isBulkOperating}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                title="Tạo lại cả âm thanh tiếng Anh và tiếng Việt"
+              >
+                {isBulkOperating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Volume2 className="w-3 h-3" />}
+                <span>Tạo lại Cả Hai</span>
+              </button>
+
+              <button
+                onClick={handleBulkDelete}
+                disabled={isBulkOperating}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-red-950/80 hover:text-red-400 text-zinc-300 text-xs font-bold rounded-xl border border-zinc-700 hover:border-red-800 transition-all cursor-pointer disabled:opacity-50"
+                title="Xóa các câu đã chọn"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Xóa các câu đã chọn</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedItemIds([])}
+                className="px-2.5 py-1.5 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              >
+                Bỏ chọn
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================== */}
         {/* 3. ITEMS REVIEW & AUDITION (TABLE MODE VS CARDS MODE) */}
         {/* ================================================================== */}
         {filteredItems.length === 0 ? (
@@ -1613,6 +1800,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-zinc-100/80 text-zinc-600 font-mono text-[10px] uppercase border-b border-zinc-200">
                   <tr>
+                    <th className="p-3.5 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={filteredItems.length > 0 && filteredItems.every(it => selectedItemIds.includes(it.id))}
+                        onChange={handleToggleSelectAllFiltered}
+                        className="rounded text-[#DC2626] focus:ring-[#DC2626] cursor-pointer"
+                        title="Chọn tất cả / Bỏ chọn tất cả"
+                      />
+                    </th>
                     <th className="p-3.5 w-16 text-center">STT</th>
                     <th className="p-3.5 w-28">Session</th>
                     <th className="p-3.5 min-w-[320px]">Các Gợi Ý & Từ Loại (Clues Stream)</th>
@@ -1624,6 +1820,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   {filteredItems.map((item) => {
                     const isPlayingThis = playingItemId === item.id;
                     const isSynthesizing = synthesizingItemIds[item.id] || false;
+                    const isSelected = selectedItemIds.includes(item.id);
                     const cacheKeyEn = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
                     const cacheKeyVi = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_VI_ONLY`;
                     const isAudioEnReady = Boolean(audioPlayer.getCachedAudio(cacheKeyEn, 'aura-asteria-en'));
@@ -1633,9 +1830,19 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       <tr 
                         key={item.id}
                         className={`hover:bg-zinc-50/80 transition-colors ${
-                          isPlayingThis ? 'bg-red-50/40' : ''
+                          isPlayingThis ? 'bg-red-50/40' : isSelected ? 'bg-red-50/20' : ''
                         }`}
                       >
+                        {/* Checkbox Column */}
+                        <td className="p-3.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectItem(item.id)}
+                            className="rounded text-[#DC2626] focus:ring-[#DC2626] cursor-pointer"
+                          />
+                        </td>
+
                         {/* STT Column */}
                         <td className="p-3.5 text-center font-mono font-bold text-zinc-700">
                           <span className="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-zinc-100 border border-zinc-200 text-xs">
@@ -1801,6 +2008,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             {filteredItems.map((item) => {
               const isPlayingThis = playingItemId === item.id;
               const isSynthesizing = synthesizingItemIds[item.id] || false;
+              const isSelected = selectedItemIds.includes(item.id);
               const cacheKeyEn = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
               const cacheKeyVi = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_VI_ONLY`;
               const isAudioEnReady = Boolean(audioPlayer.getCachedAudio(cacheKeyEn, 'aura-asteria-en'));
@@ -1812,12 +2020,21 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   className={`bg-white rounded-2xl border transition-all duration-200 p-4.5 shadow-2xs hover:shadow-xs ${
                     isPlayingThis 
                       ? 'border-[#DC2626] ring-2 ring-red-500/10' 
+                      : isSelected
+                      ? 'border-[#DC2626] bg-red-50/15'
                       : 'border-[#E8E8EC] hover:border-zinc-300'
                   }`}
                 >
                   <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                    {/* Left Index & Session Badge */}
+                    {/* Left Index, Checkbox & Session Badge */}
                     <div className="flex items-center gap-3 shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelectItem(item.id)}
+                        className="rounded text-[#DC2626] focus:ring-[#DC2626] cursor-pointer"
+                      />
+
                       <div className="w-8 h-8 rounded-xl bg-zinc-100 font-mono font-bold text-xs text-zinc-700 flex items-center justify-center border border-zinc-200">
                         #{item.itemNumber}
                       </div>
@@ -3210,10 +3427,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-base text-zinc-900">
-                    Import Package từ Excel (.xlsx / .csv)
+                    Import Package từ Excel (.xlsx / .csv) & JSON (.json)
                   </h3>
                   <p className="text-xs text-zinc-500">
-                    Tải lên file bảng tính chứa cấu trúc Session, Item, và các cột hint-1..N.
+                    Tải lên file bảng tính (.xlsx, .csv) hoặc file JSON xuất chuẩn CHUNKS Improv.
                   </p>
                 </div>
               </div>
@@ -3227,6 +3444,32 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             </div>
 
             <div className="p-6 space-y-4">
+              {/* Quick Preset Loader Banner */}
+              <div className="p-3.5 bg-gradient-to-r from-red-50 to-amber-50 rounded-2xl border border-red-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-white rounded-xl shadow-2xs text-[#DC2626] border border-red-100 shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-zinc-900">
+                      Nạp nhanh 2 bộ bài tập chuẩn (Default Presets)
+                    </div>
+                    <div className="text-[11px] text-zinc-500">
+                      Bao gồm Set 01 (Wandering Souls) & Set 02 (Tell Me About Yourself) - 120 items chuẩn ngữ âm.
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleQuickLoadDefaultPresets}
+                  className="px-3.5 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold rounded-xl shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Nạp nhanh Set 01 & Set 02</span>
+                </button>
+              </div>
+
               {/* Dropzone */}
               <div
                 onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
@@ -3246,7 +3489,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
-                  input.accept = '.xlsx, .xls, .csv';
+                  input.accept = '.xlsx, .xls, .csv, .json';
                   input.onchange = (e: any) => {
                     if (e.target?.files?.[0]) handleFileDrop(e.target.files[0]);
                   };
@@ -3259,17 +3502,17 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                 <div>
                   <div className="text-sm font-bold text-zinc-800">
-                    {importFile ? importFile.name : 'Kéo thả file Excel (.xlsx) vào đây hoặc click để chọn'}
+                    {importFile ? importFile.name : 'Kéo thả file Excel (.xlsx, .csv) hoặc JSON (.json) vào đây'}
                   </div>
                   <div className="text-xs text-zinc-400 mt-1">
-                    Hỗ trợ định dạng .xlsx, .xls, .csv theo tiêu chuẩn CHUNKS Improv.
+                    Hỗ trợ định dạng .xlsx, .xls, .csv, .json theo tiêu chuẩn CHUNKS Improv.
                   </div>
                 </div>
 
                 {isParsingImport && (
                   <div className="flex items-center gap-2 text-xs text-[#DC2626] font-mono">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Đang đọc và phân tích bảng tính...</span>
+                    <span>Đang đọc và phân tích file...</span>
                   </div>
                 )}
               </div>
