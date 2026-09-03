@@ -107,6 +107,30 @@ export const GOOGLE_TTS_VOICES: VoiceOption[] = [
     provider: 'GOOGLE'
   },
   {
+    id: 'en-US-Studio-Q',
+    name: 'en-US-Studio-Q (Google Studio Male)',
+    languageCode: 'en-US',
+    gender: 'MALE',
+    description: 'Broadcast-grade studio clarity for academic narrations.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'en-US-Casual-K',
+    name: 'en-US-Casual-K (Google Casual Conversational)',
+    languageCode: 'en-US',
+    gender: 'MALE',
+    description: 'Relaxed, natural American conversational tone.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'en-US-Journey-D',
+    name: 'en-US-Journey-D (Google Journey Expressive)',
+    languageCode: 'en-US',
+    gender: 'MALE',
+    description: 'Dynamic conversational inflection.',
+    provider: 'GOOGLE'
+  },
+  {
     id: 'vi-VN-Chirp3-HD-Vindemiatrix',
     name: 'vi-VN-Chirp3-HD-Vindemiatrix (Google Chirp3-HD Studio Nữ)',
     languageCode: 'vi-VN',
@@ -136,6 +160,22 @@ export const GOOGLE_TTS_VOICES: VoiceOption[] = [
     languageCode: 'vi-VN',
     gender: 'MALE',
     description: 'Neural2 Vietnamese standard male voice.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Wavenet-A',
+    name: 'vi-VN-Wavenet-A (Vietnamese WaveNet Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'WaveNet high-fidelity Northern female pronunciation.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Wavenet-B',
+    name: 'vi-VN-Wavenet-B (Vietnamese WaveNet Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'WaveNet natural Northern male pronunciation.',
     provider: 'GOOGLE'
   },
   {
@@ -205,7 +245,7 @@ function openIndexedDB(): Promise<IDBDatabase | null> {
   });
 }
 
-async function saveAudioBlobToDB(key: string, base64: string): Promise<void> {
+export async function saveAudioBlobToDB(key: string, base64: string): Promise<void> {
   const db = await openIndexedDB();
   if (!db) return;
   return new Promise((resolve) => {
@@ -221,7 +261,26 @@ async function saveAudioBlobToDB(key: string, base64: string): Promise<void> {
   });
 }
 
-async function loadAllAudioBlobsFromDB(): Promise<Map<string, string>> {
+export async function getAudioBlobFromDB(key: string): Promise<string | null> {
+  const db = await openIndexedDB();
+  if (!db) return null;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.get(key);
+      request.onsuccess = (e: any) => {
+        const record = e.target.result;
+        resolve(record && record.base64 ? record.base64 : null);
+      };
+      request.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+export async function loadAllAudioBlobsFromDB(): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   const db = await openIndexedDB();
   if (!db) return map;
@@ -390,19 +449,72 @@ class AudioPlayService {
     }
   }
 
-  public isChunkCached(text: string, voiceName: string): boolean {
+  public isChunkCached(text: string, voiceName?: string): boolean {
+    if (!text) return false;
+    if (this.audioCache.has(text)) return true;
     const clean = sanitizeSpeechText(text);
-    return this.audioCache.has(this.getCacheKey(voiceName, clean)) || this.audioCache.has(this.getCacheKey(voiceName, text));
+    if (clean && this.audioCache.has(clean)) return true;
+    if (voiceName) {
+      if (this.audioCache.has(this.getCacheKey(voiceName, clean))) return true;
+      if (this.audioCache.has(this.getCacheKey(voiceName, text))) return true;
+    }
+    return false;
   }
 
-  public getCachedAudio(text: string, voiceName: string): string | null {
+  /**
+   * Synchronous cache retrieval (Memory Map).
+   * Checks raw keys, clean speech text, and composite model::text keys.
+   */
+  public getCachedAudio(text: string, voiceName?: string): string | null {
+    if (!text) return null;
+    if (this.audioCache.has(text)) {
+      return this.audioCache.get(text)!;
+    }
     const clean = sanitizeSpeechText(text);
-    return this.audioCache.get(this.getCacheKey(voiceName, clean)) || this.audioCache.get(this.getCacheKey(voiceName, text)) || null;
+    if (clean && this.audioCache.has(clean)) {
+      return this.audioCache.get(clean)!;
+    }
+    if (voiceName) {
+      const k1 = this.getCacheKey(voiceName, clean);
+      if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
+      const k2 = this.getCacheKey(voiceName, text);
+      if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
+    }
+    return null;
+  }
+
+  /**
+   * Asynchronous cache retrieval (IndexedDB + Memory).
+   * Checks in-memory cache first; if missing, fetches from IndexedDB
+   * and populates memory for instant 0ms subsequent access.
+   */
+  public async getCachedAudioAsync(text: string, voiceName?: string): Promise<string | null> {
+    if (!text) return null;
+    const memCached = this.getCachedAudio(text, voiceName);
+    if (memCached) return memCached;
+
+    const clean = sanitizeSpeechText(text);
+    const keysToCheck: string[] = [text];
+    if (clean && clean !== text) keysToCheck.push(clean);
+    if (voiceName) {
+      keysToCheck.push(this.getCacheKey(voiceName, clean));
+      if (clean !== text) keysToCheck.push(this.getCacheKey(voiceName, text));
+    }
+
+    for (const key of keysToCheck) {
+      const fromDb = await getAudioBlobFromDB(key);
+      if (fromDb) {
+        this.audioCache.set(key, fromDb);
+        return fromDb;
+      }
+    }
+
+    return null;
   }
 
   public setCachedAudio(text: string, voiceName: string, base64: string): void {
     const clean = sanitizeSpeechText(text);
-    this.audioCache.set(this.getCacheKey(voiceName, clean), base64);
+    this.setCache(this.getCacheKey(voiceName, clean), base64);
   }
 
   public getCacheEntriesCount(): number {
@@ -578,8 +690,7 @@ class AudioPlayService {
       if (isVietnamese) {
         const effectiveViVoice = (voiceName && voiceName.startsWith('vi-')) ? voiceName : 'vi-VN-Neural2-A';
         const cacheKey = this.getCacheKey(effectiveViVoice, cleanText);
-        const rawCacheKey = this.getCacheKey(effectiveViVoice, text);
-        const cached = this.audioCache.get(cacheKey) || this.audioCache.get(rawCacheKey);
+        const cached = await this.getCachedAudioAsync(cleanText, effectiveViVoice);
 
         if (cached) {
           this.setLastSource('GOOGLE_CLOUD_AI');
@@ -587,7 +698,7 @@ class AudioPlayService {
           return;
         }
 
-        // Tier 1: Google Cloud TTS REST API (vi-VN: Neural2-A / Standard-A)
+        // Tier 1: Google Cloud TTS REST API (vi-VN: Neural2-A / Standard-A / WaveNet / Chirp3)
         try {
           const base64Audio = await this.synthesizeWithGoogleTTS(cleanText, effectiveViVoice, 1.0);
           if (base64Audio) {
@@ -608,13 +719,18 @@ class AudioPlayService {
 
       // ======================================================================
       // 2. ENGLISH PLAYBACK PIPELINE
-      // Routes to Deepgram Aura (if selected/provider) or GCS permanent audio or Google Cloud TTS en-US
+      // Routes to Deepgram Aura (if aura-* voice or provider is DEEPGRAM_AURA and not en-US-*)
+      // Or Google Cloud TTS (if en-US-* voice or provider is GOOGLE_TTS)
       // ======================================================================
-      const isDeepgram = !forceCloudTts && (this.activeProvider === 'DEEPGRAM_AURA' || voiceName.startsWith('aura-'));
-      const effectiveEnVoice = voiceName && !voiceName.startsWith('vi-') ? voiceName : 'aura-asteria-en';
+      const isAuraVoice = Boolean(voiceName && voiceName.startsWith('aura-'));
+      const isGoogleEnVoice = Boolean(voiceName && voiceName.startsWith('en-US-'));
+      const isDeepgram = !forceCloudTts && (isAuraVoice || (!isGoogleEnVoice && this.activeProvider === 'DEEPGRAM_AURA'));
+      const effectiveEnVoice = isDeepgram
+        ? (isAuraVoice ? voiceName : 'aura-asteria-en')
+        : (isGoogleEnVoice ? voiceName : (voiceName && !voiceName.startsWith('vi-') ? voiceName : 'en-US-Journey-F'));
+
       const cacheKey = this.getCacheKey(effectiveEnVoice, cleanText);
-      const rawCacheKey = this.getCacheKey(effectiveEnVoice, text);
-      const cached = this.audioCache.get(cacheKey) || this.audioCache.get(rawCacheKey);
+      const cached = await this.getCachedAudioAsync(cleanText, effectiveEnVoice);
 
       if (cached) {
         this.setLastSource(isDeepgram ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI');
@@ -625,7 +741,7 @@ class AudioPlayService {
       // Step 1: Deepgram Aura Engine (if provider or voice is aura-*)
       if (isDeepgram) {
         try {
-          const dgModel = voiceName.startsWith('aura-') ? voiceName : 'aura-asteria-en';
+          const dgModel = effectiveEnVoice;
           const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
           if (base64) {
             this.setCache(cacheKey, base64);
@@ -638,8 +754,9 @@ class AudioPlayService {
         }
       }
 
-      // Step 2: GCS Master Permanent Audio (if not forced to TTS and GCS URL exists)
-      if (!forceCloudTts && !isDeepgram && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
+      // Step 2: GCS Master Permanent Audio (if not forced to TTS and GCS URL exists and not custom voice)
+      const isCustomVoice = (isAuraVoice && effectiveEnVoice !== 'aura-asteria-en') || (isGoogleEnVoice && effectiveEnVoice !== 'en-US-Journey-F');
+      if (!forceCloudTts && !isDeepgram && !isCustomVoice && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
         try {
           this.setLastSource('GCS_MASTER');
           await this.playUrl(permanentAudioUrl, speed);
@@ -654,7 +771,7 @@ class AudioPlayService {
         const googleVoice = effectiveEnVoice.startsWith('aura-') ? 'en-US-Journey-F' : effectiveEnVoice;
         const base64Audio = await this.synthesizeWithGoogleTTS(cleanText, googleVoice, 1.0);
         if (base64Audio) {
-          this.audioCache.set(cacheKey, base64Audio);
+          this.setCache(cacheKey, base64Audio);
           this.setLastSource('GOOGLE_CLOUD_AI');
           await this.playBase64(base64Audio, speed);
           return;
@@ -763,11 +880,14 @@ class AudioPlayService {
       const voiceVi = (params.voiceName && params.voiceName.startsWith('vi-')) ? params.voiceName : 'vi-VN-Neural2-A';
       const cacheKey = this.getCacheKey(voiceVi, cleanText);
 
-      if (!forceRegenerate && this.audioCache.has(cacheKey)) {
-        return { base64: this.audioCache.get(cacheKey)!, source: 'GOOGLE_CLOUD_AI', voice: voiceVi, language: 'vi' };
+      if (!forceRegenerate) {
+        const cached = await this.getCachedAudioAsync(cleanText, voiceVi);
+        if (cached) {
+          return { base64: cached, source: 'GOOGLE_CLOUD_AI', voice: voiceVi, language: 'vi' };
+        }
       }
 
-      // 1. Google Cloud TTS (vi-VN: Neural2-A / Standard-A)
+      // 1. Google Cloud TTS (vi-VN: Neural2-A / Standard-A / WaveNet / Chirp3)
       try {
         const base64 = await this.synthesizeWithGoogleTTS(cleanText, voiceVi, speed, forceRegenerate);
         if (base64) {
@@ -782,12 +902,19 @@ class AudioPlayService {
     } else {
       // English
       const activeProvider = params.provider || this.activeProvider;
-      const voiceEn = params.voiceName || (activeProvider === 'DEEPGRAM_AURA' ? 'aura-asteria-en' : 'en-US-Journey-F');
-      const isDeepgram = activeProvider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-');
+      const isAura = Boolean(params.voiceName && params.voiceName.startsWith('aura-'));
+      const isGoogleEn = Boolean(params.voiceName && params.voiceName.startsWith('en-US-'));
+      const isDeepgram = isAura || (!isGoogleEn && activeProvider === 'DEEPGRAM_AURA');
+      const voiceEn = isDeepgram
+        ? (isAura ? params.voiceName! : 'aura-asteria-en')
+        : (isGoogleEn ? params.voiceName! : (params.voiceName || 'en-US-Journey-F'));
       const cacheKey = this.getCacheKey(voiceEn, cleanText);
 
-      if (!forceRegenerate && this.audioCache.has(cacheKey)) {
-        return { base64: this.audioCache.get(cacheKey)!, source: isDeepgram ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI', voice: voiceEn, language: 'en' };
+      if (!forceRegenerate) {
+        const cached = await this.getCachedAudioAsync(cleanText, voiceEn);
+        if (cached) {
+          return { base64: cached, source: isDeepgram ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI', voice: voiceEn, language: 'en' };
+        }
       }
 
       if (isDeepgram) {

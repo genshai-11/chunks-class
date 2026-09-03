@@ -62,6 +62,41 @@ export const DEEPGRAM_AURA_VOICES: DeepgramVoiceOption[] = [
     gender: 'MALE',
     accent: 'UK',
     description: 'Polished British male voice for international English drills.'
+  },
+  {
+    id: 'aura-angus-en',
+    name: 'Aura Angus (Male - Casual & Friendly)',
+    gender: 'MALE',
+    accent: 'US',
+    description: 'Warm, casual, and friendly tone for everyday chat.'
+  },
+  {
+    id: 'aura-hera-en',
+    name: 'Aura Hera (Female - Confident & Articulate)',
+    gender: 'FEMALE',
+    accent: 'US',
+    description: 'Mature, authoritative, and expressive professional tone.'
+  },
+  {
+    id: 'aura-orpheus-en',
+    name: 'Aura Orpheus (Male - Smooth & Clear)',
+    gender: 'MALE',
+    accent: 'US',
+    description: 'Smooth, polished male voice for fluent storytelling.'
+  },
+  {
+    id: 'aura-zeus-en',
+    name: 'Aura Zeus (Male - Deep & Resonant)',
+    gender: 'MALE',
+    accent: 'US',
+    description: 'Commanding, deep male articulation for presentations.'
+  },
+  {
+    id: 'aura-theia-en',
+    name: 'Aura Theia (Female - Warm & Engaging)',
+    gender: 'FEMALE',
+    accent: 'US',
+    description: 'Polite, expressive, and engaging conversational voice.'
   }
 ];
 

@@ -9,25 +9,32 @@ import {
   ImprovLlmProvider,
   CourseLevel,
   LessonDoc,
-  ChunkItem
+  ChunkItem,
+  CohortAudioSettings
 } from '../types';
 import { 
   getAllImprovPackages, 
   saveImprovPackage, 
   deleteImprovPackage, 
-  addOrUpdateImprovItem,
-  deleteImprovItem,
+  addOrUpdateImprovItem, 
+  deleteImprovItem, 
   parseImprovExcelFile, 
-  exportImprovPackageToExcel,
-  loadDefaultPresets,
-  DEFAULT_IMPROV_MASTER_PROMPT,
-  DEFAULT_IMPROV_LLM_CONFIG,
-  DEEPSEEK_DEFAULT_CONFIG,
-  GOOGLE_GENAI_DEFAULT_CONFIG,
-  executeLlmGeneration,
-  testLlmConnection
+  exportImprovPackageToExcel, 
+  loadDefaultPresets, 
+  DEFAULT_IMPROV_MASTER_PROMPT, 
+  DEFAULT_IMPROV_LLM_CONFIG, 
+  DEEPSEEK_DEFAULT_CONFIG, 
+  GOOGLE_GENAI_DEFAULT_CONFIG, 
+  executeLlmGeneration, 
+  testLlmConnection 
 } from '../services/improvService';
 import { IMPROV_SET_01, IMPROV_SET_02 } from '../data/improvSet01And02';
+import { DEFAULT_IMPROV_PACKAGES } from '../data/defaultImprovPackages';
+import { 
+  getSemanticHintBadge, 
+  improvText, 
+  improvColors 
+} from '../styles/improvTheme';
 import { 
   improvTts, 
   synthesizeItemCombinedAudio, 
@@ -100,49 +107,17 @@ export interface HintTypeBadgeInfo {
 }
 
 export function getHintTypeBadgeClasses(type: string): HintTypeBadgeInfo {
-  const t = (type || '').toLowerCase();
-  if (t.includes('keyword') || t.includes('core') || t.includes('seed')) {
-    return {
-      bg: 'bg-red-50 hover:bg-red-100/80',
-      text: 'text-red-700',
-      border: 'border-red-200',
-      dot: 'bg-red-500',
-      label: 'Keyword'
-    };
-  }
-  if (t.includes('logic') || t.includes('collocation') || t.includes('slot') || t.includes('connector')) {
-    return {
-      bg: 'bg-amber-50 hover:bg-amber-100/80',
-      text: 'text-amber-700',
-      border: 'border-amber-200',
-      dot: 'bg-amber-500',
-      label: 'Logic word'
-    };
-  }
-  if (t.includes('fancy') || t.includes('idiom') || t.includes('contrast') || t.includes('advanced') || t.includes('slang')) {
-    return {
-      bg: 'bg-purple-50 hover:bg-purple-100/80',
-      text: 'text-purple-700',
-      border: 'border-purple-200',
-      dot: 'bg-purple-500',
-      label: 'Fancy word'
-    };
-  }
-  if (t.includes('ending') || t.includes('reaction') || t.includes('dialogue') || t.includes('reflex') || t.includes('example') || t.includes('sentence')) {
-    return {
-      bg: 'bg-emerald-50 hover:bg-emerald-100/80',
-      text: 'text-emerald-700',
-      border: 'border-emerald-200',
-      dot: 'bg-emerald-500',
-      label: 'Ending'
-    };
-  }
+  const badge = getSemanticHintBadge(type);
+  const classes = badge.badgeClass.split(' ');
+  const bg = classes[0] || 'bg-zinc-50';
+  const text = classes[1] || 'text-zinc-700';
+  const border = classes[2] || 'border-zinc-200';
   return {
-    bg: 'bg-zinc-50 hover:bg-zinc-100',
-    text: 'text-zinc-700',
-    border: 'border-zinc-200',
-    dot: 'bg-zinc-400',
-    label: type || 'Hint'
+    bg: `${bg} hover:${bg}/80`,
+    text,
+    border,
+    dot: badge.dotClass,
+    label: badge.label
   };
 }
 
@@ -153,177 +128,8 @@ const HINT_TYPE_OPTIONS = ['Keyword', 'Logic word', 'Fancy word', 'Ending'];
 // --------------------------------------------------------------------------
 
 function createDefaultSeedPackages(): ImprovPackage[] {
-  const now = new Date().toISOString();
-
-  // Seed Package 1: ERES Speaking Masterclass
-  const seedPkg1: ImprovPackage = {
-    id: 'pkg_improv_eres_k24',
-    title: 'Level B - ERES Spoken Reflexes & Conversational Improv (K24)',
-    description: '4 Sessions luyện phản xạ ngẫu hứng theo bậc thang gợi ý (2 -> 3 -> 4 -> 5 hints) kết hợp từ vựng và đàm thoại cốt lõi.',
-    totalItems: 50,
-    sessionsCount: 4,
-    sourceCourseLevel: 'LEVEL_B_ERES',
-    createdAt: now,
-    updatedAt: now,
-    sessions: [
-      {
-        sessionNumber: 1,
-        title: 'Session 1: Foundation 2 Hints (Keyword + Ending)',
-        hcTotal: 2,
-        hintTypes: ['Keyword', 'Ending'],
-        items: Array.from({ length: 12 }, (_, i) => ({
-          id: `item_s1_i${i + 1}`,
-          itemNumber: i + 1,
-          sessionNumber: 1,
-          hcTotal: 2,
-          hints: [
-            {
-              id: `h_1_${i + 1}_1`,
-              text: i % 2 === 0 ? 'give it a shot' : 'hit the ground running',
-              translation: i % 2 === 0 ? 'thử làm một phen' : 'bắt tay vào làm ngay tức khắc',
-              typeFunction: 'Keyword',
-              itemIndex: 1
-            },
-            {
-              id: `h_1_${i + 1}_2`,
-              text: i % 2 === 0 ? "Don't hesitate, just give it a shot today!" : 'We need to hit the ground running this quarter.',
-              translation: i % 2 === 0 ? 'Đừng chần chừ, hãy thử sức ngay hôm nay!' : 'Chúng ta cần bắt tay vào việc ngay trong quý này.',
-              typeFunction: 'Ending',
-              itemIndex: 2
-            }
-          ]
-        }))
-      },
-      {
-        sessionNumber: 2,
-        title: 'Session 2: Triad Reflex 3 Hints (Keyword + Logic + Ending)',
-        hcTotal: 3,
-        hintTypes: ['Keyword', 'Logic word', 'Ending'],
-        items: Array.from({ length: 12 }, (_, i) => ({
-          id: `item_s2_i${i + 1}`,
-          itemNumber: i + 1,
-          sessionNumber: 2,
-          hcTotal: 3,
-          hints: [
-            {
-              id: `h_2_${i + 1}_1`,
-              text: 'room for improvement',
-              translation: 'vẫn còn cơ hội/khoảng trống để cải thiện',
-              typeFunction: 'Keyword',
-              itemIndex: 1
-            },
-            {
-              id: `h_2_${i + 1}_2`,
-              text: 'to put it bluntly',
-              translation: 'nói thẳng ra là / thẳng thắn mà nói',
-              typeFunction: 'Logic word',
-              itemIndex: 2
-            },
-            {
-              id: `h_2_${i + 1}_3`,
-              text: "To put it bluntly, there's still plenty of room for improvement in our presentation.",
-              translation: 'Nói thẳng ra là bài thuyết trình của chúng ta vẫn còn rất nhiều điểm cần cải thiện.',
-              typeFunction: 'Ending',
-              itemIndex: 3
-            }
-          ]
-        }))
-      },
-      {
-        sessionNumber: 3,
-        title: 'Session 3: Dynamic Quad 4 Hints (Keyword + Logic + Fancy + Ending)',
-        hcTotal: 4,
-        hintTypes: ['Keyword', 'Logic word', 'Fancy word', 'Ending'],
-        items: Array.from({ length: 13 }, (_, i) => ({
-          id: `item_s3_i${i + 1}`,
-          itemNumber: i + 1,
-          sessionNumber: 3,
-          hcTotal: 4,
-          hints: [
-            {
-              id: `h_3_${i + 1}_1`,
-              text: 'keep an eye on',
-              translation: 'để mắt tới / theo dõi sát sao',
-              typeFunction: 'Keyword',
-              itemIndex: 1
-            },
-            {
-              id: `h_3_${i + 1}_2`,
-              text: 'as far as I know',
-              translation: 'theo như tôi được biết',
-              typeFunction: 'Logic word',
-              itemIndex: 2
-            },
-            {
-              id: `h_3_${i + 1}_3`,
-              text: 'a blessing in disguise',
-              translation: 'trong cái rủi có cái may',
-              typeFunction: 'Fancy word',
-              itemIndex: 3
-            },
-            {
-              id: `h_3_${i + 1}_4`,
-              text: 'As far as I know, losing that contract was a blessing in disguise because we kept an eye on better deals.',
-              translation: 'Theo tôi biết, việc mất hợp đồng đó hóa ra lại là điều may vì chúng ta đã theo sát các cơ hội tốt hơn.',
-              typeFunction: 'Ending',
-              itemIndex: 4
-            }
-          ]
-        }))
-      },
-      {
-        sessionNumber: 4,
-        title: 'Session 4: Advanced Quintet 5 Hints (Extended Logic & Context)',
-        hcTotal: 5,
-        hintTypes: ['Keyword', 'Logic word', 'Fancy word', 'Logic word', 'Ending'],
-        items: Array.from({ length: 13 }, (_, i) => ({
-          id: `item_s4_i${i + 1}`,
-          itemNumber: i + 1,
-          sessionNumber: 4,
-          hcTotal: 5,
-          hints: [
-            {
-              id: `h_4_${i + 1}_1`,
-              text: 'break the ice',
-              translation: 'phá vỡ bầu không khí ngại ngùng ban đầu',
-              typeFunction: 'Keyword',
-              itemIndex: 1
-            },
-            {
-              id: `h_4_${i + 1}_2`,
-              text: 'in the first place',
-              translation: 'ngay từ đầu',
-              typeFunction: 'Logic word',
-              itemIndex: 2
-            },
-            {
-              id: `h_4_${i + 1}_3`,
-              text: 'out of the blue',
-              translation: 'bất thình lình / hoàn toàn bất ngờ',
-              typeFunction: 'Fancy word',
-              itemIndex: 3
-            },
-            {
-              id: `h_4_${i + 1}_4`,
-              text: 'on top of that',
-              translation: 'hơn thế nữa / chưa kể đến',
-              typeFunction: 'Logic word',
-              itemIndex: 4
-            },
-            {
-              id: `h_4_${i + 1}_5`,
-              text: 'He tried to break the ice with a joke, but out of the blue, the client asked why we were here in the first place.',
-              translation: 'Anh ấy cố phá tan bầu không khí bằng một câu đùa, nhưng bất thình lình, khách hàng hỏi ngay từ đầu chúng tôi đến đây làm gì.',
-              typeFunction: 'Ending',
-              itemIndex: 5
-            }
-          ]
-        }))
-      }
-    ]
-  };
-
-  return [seedPkg1];
+  const allSeeds = [IMPROV_SET_01, IMPROV_SET_02, ...DEFAULT_IMPROV_PACKAGES];
+  return Array.from(new Map(allSeeds.map(p => [p.id, p])).values());
 }
 
 // --------------------------------------------------------------------------
@@ -333,6 +139,7 @@ function createDefaultSeedPackages(): ImprovPackage[] {
 interface ImprovManagerViewProps {
   onLaunchPresentation?: (packageId: string, sessionNumber?: number) => void;
   defaultPackageId?: string;
+  audioSettings?: CohortAudioSettings;
 }
 
 interface GenerationLogItem {
@@ -344,8 +151,11 @@ interface GenerationLogItem {
 
 export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   onLaunchPresentation,
-  defaultPackageId
+  defaultPackageId,
+  audioSettings
 }) => {
+  const currentVoiceEn = audioSettings?.voice_profile_en || 'aura-asteria-en';
+  const currentVoiceVi = audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A';
   // --------------------------------------------------------------------------
   // A. Packages & Active Selection State
   // --------------------------------------------------------------------------
@@ -513,23 +323,46 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setIsLoadingPackages(true);
       try {
         let loaded = await getAllImprovPackages();
+        const defaultSeeds = createDefaultSeedPackages();
+
+        // Ensure default packages (DEFAULT_IMPROV_PACKAGES, IMPROV_SET_01, IMPROV_SET_02)
+        // are automatically persisted into localStorage and Firestore so Studio is never empty
+        let needsPersistence = false;
         if (!loaded || loaded.length === 0) {
-          const seeds = createDefaultSeedPackages();
-          for (const s of seeds) {
-            await saveImprovPackage(s);
+          loaded = defaultSeeds;
+          needsPersistence = true;
+        } else {
+          const loadedIds = new Set(loaded.map(p => p.id));
+          const missingDefaults = defaultSeeds.filter(d => !loadedIds.has(d.id));
+          if (missingDefaults.length > 0) {
+            loaded = [...missingDefaults, ...loaded];
+            needsPersistence = true;
           }
-          loaded = seeds;
         }
+
+        if (needsPersistence) {
+          for (const s of defaultSeeds) {
+            try {
+              await saveImprovPackage(s);
+            } catch (err) {
+              console.warn('[ImprovManagerView] Auto-persistence notice for pkg:', s.id, err);
+            }
+          }
+        }
+
         setPackages(loaded);
         if (loaded.length > 0) {
           const found = defaultPackageId ? loaded.find(p => p.id === defaultPackageId) : null;
           setActivePackageId(found ? found.id : loaded[0].id);
         }
       } catch (err) {
-        console.error('Failed to load Improv packages:', err);
+        console.error('Failed to load Improv packages, restoring defaults:', err);
         const seeds = createDefaultSeedPackages();
         setPackages(seeds);
         setActivePackageId(seeds[0].id);
+        for (const s of seeds) {
+          saveImprovPackage(s).catch(() => {});
+        }
       } finally {
         setIsLoadingPackages(false);
       }
@@ -665,8 +498,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       s.items.forEach(it => {
         totalItems++;
         totalHints += it.hints.length;
-        const cacheKeyEn = `improv_item_${it.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
-        if (audioPlayer.getCachedAudio(cacheKeyEn, 'aura-asteria-en')) {
+        const isReady = Boolean(
+          audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
+          audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
+          (it.hints && it.hints.length > 0 && it.hints.every(h => {
+            const t = h.text?.trim();
+            return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+          }))
+        );
+        if (isReady) {
           audioPreparedCount++;
         }
       });
@@ -681,7 +521,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       audioPreparedCount,
       audioPreparedPercent: percent
     };
-  }, [activePackage, synthesizingItemIds]);
+  }, [activePackage, synthesizingItemIds, currentVoiceEn, currentVoiceVi]);
 
   // --------------------------------------------------------------------------
   // 2. Audio Playback with 1-Second Pause Sequence (EN / VI)
@@ -715,7 +555,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
       try {
         const textToSpeak = getHintTextByLanguage(hint, lang);
-        const voice = lang === 'vi' ? 'vi-VN-Neural2-A' : 'aura-asteria-en';
+        const voice = lang === 'vi' ? currentVoiceVi : currentVoiceEn;
         await audioPlayer.playChunk(textToSpeak, null, voice, 1.0, false);
       } catch (err) {
         console.warn(`[Audio] Playback error on hint #${hint.itemIndex}:`, err);
@@ -740,10 +580,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     setSynthesizingItemIds(prev => ({ ...prev, [item.id]: true }));
     try {
       if (target === 'en' || target === 'both') {
-        await synthesizeItemCombinedAudio(item, 'aura-asteria-en', 'vi-VN-Neural2-A', 'EN_ONLY', true);
+        await synthesizeItemCombinedAudio(item, currentVoiceEn, currentVoiceVi, 'EN_ONLY', true);
       }
       if (target === 'vi' || target === 'both') {
-        await synthesizeItemCombinedAudio(item, 'aura-asteria-en', 'vi-VN-Neural2-A', 'VI_ONLY', true);
+        await synthesizeItemCombinedAudio(item, currentVoiceEn, currentVoiceVi, 'VI_ONLY', true);
       }
       // Trigger small confetti
       confetti({ particleCount: 20, spread: 40, origin: { y: 0.8 } });
@@ -886,10 +726,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         setSynthesizingItemIds(prev => ({ ...prev, [item.id]: true }));
         try {
           if (target === 'en' || target === 'both') {
-            await synthesizeItemCombinedAudio(item, 'aura-asteria-en', 'vi-VN-Neural2-A', 'EN_ONLY', true);
+            await synthesizeItemCombinedAudio(item, currentVoiceEn, currentVoiceVi, 'EN_ONLY', true);
           }
           if (target === 'vi' || target === 'both') {
-            await synthesizeItemCombinedAudio(item, 'aura-asteria-en', 'vi-VN-Neural2-A', 'VI_ONLY', true);
+            await synthesizeItemCombinedAudio(item, currentVoiceEn, currentVoiceVi, 'VI_ONLY', true);
           }
         } finally {
           setSynthesizingItemIds(prev => ({ ...prev, [item.id]: false }));
@@ -962,8 +802,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       await improvTts.preparePackageAudio(
         activePackage,
         {
-          voiceEn: 'aura-asteria-en',
-          voiceVi: 'vi-VN-Neural2-A',
+          voiceEn: currentVoiceEn,
+          voiceVi: currentVoiceVi,
           langMode: langModeToUse,
           concurrency: batchWorkersCount,
           forceRegenerate: false
@@ -1821,10 +1661,22 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     const isPlayingThis = playingItemId === item.id;
                     const isSynthesizing = synthesizingItemIds[item.id] || false;
                     const isSelected = selectedItemIds.includes(item.id);
-                    const cacheKeyEn = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
-                    const cacheKeyVi = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_VI_ONLY`;
-                    const isAudioEnReady = Boolean(audioPlayer.getCachedAudio(cacheKeyEn, 'aura-asteria-en'));
-                    const isAudioViReady = Boolean(audioPlayer.getCachedAudio(cacheKeyVi, 'aura-asteria-en'));
+                    const isAudioEnReady = Boolean(
+                      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
+                      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
+                      (item.hints && item.hints.length > 0 && item.hints.every(h => {
+                        const t = h.text?.trim();
+                        return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+                      }))
+                    );
+                    const isAudioViReady = Boolean(
+                      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
+                      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
+                      (item.hints && item.hints.length > 0 && item.hints.every(h => {
+                        const t = (h.translation || '').trim();
+                        return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
+                      }))
+                    );
 
                     return (
                       <tr 
@@ -1878,23 +1730,24 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                         : 'bg-zinc-50/80 border-zinc-200/80'
                                     }`}
                                   >
-                                    <div className="flex items-center gap-1 mb-0.5">
-                                      <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${badge.bg} ${badge.text} ${badge.border}`}>
-                                        {badge.label}
+                                    <div className="flex items-center gap-1 mb-1">
+                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex items-center gap-1 ${badge.bg} ${badge.text} ${badge.border}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                                        <span>{badge.label}</span>
                                       </span>
                                     </div>
-                                    <div className="font-bold text-zinc-900 text-xs">
+                                    <div className="font-bold text-zinc-900 text-xs leading-snug">
                                       {hint.text}
                                     </div>
                                     {showVietnamese && hint.translation && (
-                                      <div className="text-[10px] text-zinc-500 italic mt-0.5">
+                                      <div className="text-[11px] text-zinc-700 font-medium mt-1 leading-tight">
                                         {hint.translation}
                                       </div>
                                     )}
                                   </div>
 
                                   {hIdx < item.hints.length - 1 && (
-                                    <span className="text-zinc-300 font-bold text-xs">➔</span>
+                                    <span className="text-[#DC2626] font-black text-xs mx-1 select-none">➔</span>
                                   )}
                                 </React.Fragment>
                               );
@@ -2009,10 +1862,22 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               const isPlayingThis = playingItemId === item.id;
               const isSynthesizing = synthesizingItemIds[item.id] || false;
               const isSelected = selectedItemIds.includes(item.id);
-              const cacheKeyEn = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
-              const cacheKeyVi = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_VI_ONLY`;
-              const isAudioEnReady = Boolean(audioPlayer.getCachedAudio(cacheKeyEn, 'aura-asteria-en'));
-              const isAudioViReady = Boolean(audioPlayer.getCachedAudio(cacheKeyVi, 'aura-asteria-en'));
+              const isAudioEnReady = Boolean(
+                audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
+                audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
+                (item.hints && item.hints.length > 0 && item.hints.every(h => {
+                  const t = h.text?.trim();
+                  return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+                }))
+              );
+              const isAudioViReady = Boolean(
+                audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
+                audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
+                (item.hints && item.hints.length > 0 && item.hints.every(h => {
+                  const t = (h.translation || '').trim();
+                  return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
+                }))
+              );
 
               return (
                 <div
@@ -2095,7 +1960,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                               {/* Clue Vietnamese Meaning */}
                               {showVietnamese && hint.translation && (
-                                <div className="text-[11px] text-zinc-500 italic line-clamp-2 mt-auto pt-1 border-t border-zinc-200/60 font-medium">
+                                <div className="text-[11px] text-zinc-700 font-medium line-clamp-2 mt-auto pt-1 border-t border-zinc-200/80">
                                   {hint.translation}
                                 </div>
                               )}

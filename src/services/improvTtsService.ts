@@ -188,8 +188,96 @@ class ImprovTtsEngine {
   private activeSequenceId: number = 0;
 
   /**
+   * Synthesize or fetch from cache a single hint's audio (EN or VI).
+   * Caches in IndexedDB with key `improv_hint_${hint.id}_${effectiveVoice}_${lang}`.
+   */
+  async synthesizeSingleHintAudio(
+    hint: ImprovHint,
+    lang: 'en' | 'vi',
+    voice?: string,
+    forceRegenerate: boolean = false
+  ): Promise<string> {
+    const isVi = lang === 'vi';
+    const effectiveVoice = voice || (isVi ? 'vi-VN-Neural2-A' : 'aura-asteria-en');
+    const cacheKey = `improv_hint_${hint.id}_${effectiveVoice}_${lang}`;
+
+    if (!forceRegenerate) {
+      const cached = await audioPlayer.getCachedAudioAsync(cacheKey);
+      if (cached) return cached;
+    }
+
+    const textToSpeak = sanitizeSpeechText(getHintTextByLanguage(hint, lang));
+    if (!textToSpeak) {
+      throw new Error(`Hint ${hint.id} has no text for language ${lang}`);
+    }
+
+    const res = await audioPlayer.synthesizeSingleChunk({
+      text: textToSpeak,
+      language: lang,
+      voiceName: effectiveVoice,
+      forceRegenerate
+    });
+
+    if (!res.base64) {
+      throw new Error(`Failed to synthesize hint ${hint.id} audio`);
+    }
+
+    audioPlayer.setCache(cacheKey, res.base64);
+    return res.base64;
+  }
+
+  /**
+   * Plays a single hint's audio (EN or VI) using the specified voice and speed.
+   * Caches each hint in IndexedDB (`improv_hint_${hint.id}_${voice}_${lang}`)
+   * so any played hint is stored in the audio bucket and 100% reusable instantly.
+   */
+  async playSingleHintAudio(
+    hint: ImprovHint,
+    lang: 'en' | 'vi',
+    voice?: string,
+    speed: number = 1.0,
+    onEnded?: () => void
+  ): Promise<void> {
+    this.stop();
+    const seqId = ++this.activeSequenceId;
+
+    try {
+      const effectiveVoice = voice || (lang === 'vi' ? 'vi-VN-Neural2-A' : 'aura-asteria-en');
+      const base64Audio = await this.synthesizeSingleHintAudio(hint, lang, effectiveVoice, false);
+
+      if (this.activeSequenceId !== seqId) return;
+
+      const dataUri = base64Audio.startsWith('data:') ? base64Audio : `data:audio/mp3;base64,${base64Audio}`;
+      const audio = new Audio(dataUri);
+      audio.playbackRate = speed;
+      this.currentAudio = audio;
+
+      audio.onended = () => {
+        if (this.activeSequenceId === seqId) {
+          this.currentAudio = null;
+          onEnded?.();
+        }
+      };
+
+      audio.onerror = (e) => {
+        console.warn(`[Improv TTS] Hint audio playback error (Hint: ${hint.id}):`, e);
+        if (this.activeSequenceId === seqId) {
+          this.currentAudio = null;
+          onEnded?.();
+        }
+      };
+
+      await audio.play();
+    } catch (err) {
+      console.warn(`[Improv TTS] Single hint playback failed (Hint: ${hint.id}):`, err);
+      onEnded?.();
+    }
+  }
+
+  /**
    * Generates a single continuous combined audio stream for an ImprovItem.
-   * All hints are synthesized and stitched with ~1.0 second silence in between.
+   * All hints are synthesized (and cached individually in IndexedDB) and stitched with ~1.0 second silence.
+   * The combined audio is saved to IndexedDB (`improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_${normalizedMode}`).
    */
   async synthesizeItemCombinedAudio(
     item: ImprovItem,
@@ -203,16 +291,18 @@ class ImprovTtsEngine {
       throw new Error(`Improv item #${item.itemNumber} (Session ${item.sessionNumber}) contains no hints.`);
     }
 
+    const effectiveVoiceEn = voiceEn || 'aura-asteria-en';
+    const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
     const normalizedMode = normalizeLanguageMode(langMode);
-    const cacheKey = `improv_item_${item.id}_${voiceEn}_${voiceVi}_${normalizedMode}`;
+    const cacheKey = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_${normalizedMode}`;
 
     // 1. Check persistent & memory cache
     if (!forceRegenerate) {
-      const cached = audioPlayer.getCachedAudio(cacheKey, voiceEn);
+      const cached = await audioPlayer.getCachedAudioAsync(cacheKey);
       if (cached) return cached;
     }
 
-    // 2. Synthesize each hint audio
+    // 2. Synthesize each hint audio (persisted individually) and decode to AudioBuffer
     const audioContext = getAudioContext();
     const hintBuffers: AudioBuffer[] = [];
 
@@ -223,79 +313,47 @@ class ImprovTtsEngine {
 
       if (normalizedMode === 'EN_ONLY') {
         if (enText) {
-          const res = await audioPlayer.synthesizeSingleChunk({
-            text: enText,
-            language: 'en',
-            voiceName: voiceEn,
-            forceRegenerate
-          });
-          if (res.base64 && audioContext) {
-            const buf = await decodeAudioBase64(audioContext, res.base64);
+          const base64 = await this.synthesizeSingleHintAudio(hint, 'en', effectiveVoiceEn, forceRegenerate);
+          if (base64 && audioContext) {
+            const buf = await decodeAudioBase64(audioContext, base64);
             hintBuffers.push(buf);
           }
         }
       } else if (normalizedMode === 'VI_ONLY') {
         if (viText) {
-          const res = await audioPlayer.synthesizeSingleChunk({
-            text: viText,
-            language: 'vi',
-            voiceName: voiceVi,
-            forceRegenerate
-          });
-          if (res.base64 && audioContext) {
-            const buf = await decodeAudioBase64(audioContext, res.base64);
+          const base64 = await this.synthesizeSingleHintAudio(hint, 'vi', effectiveVoiceVi, forceRegenerate);
+          if (base64 && audioContext) {
+            const buf = await decodeAudioBase64(audioContext, base64);
             hintBuffers.push(buf);
           }
         }
       } else if (normalizedMode === 'EN_THEN_VI') {
-        // Synthesize EN then VI for each hint
         if (enText) {
-          const resEn = await audioPlayer.synthesizeSingleChunk({
-            text: enText,
-            language: 'en',
-            voiceName: voiceEn,
-            forceRegenerate
-          });
-          if (resEn.base64 && audioContext) {
-            const bufEn = await decodeAudioBase64(audioContext, resEn.base64);
+          const base64En = await this.synthesizeSingleHintAudio(hint, 'en', effectiveVoiceEn, forceRegenerate);
+          if (base64En && audioContext) {
+            const bufEn = await decodeAudioBase64(audioContext, base64En);
             hintBuffers.push(bufEn);
           }
         }
         if (viText) {
-          const resVi = await audioPlayer.synthesizeSingleChunk({
-            text: viText,
-            language: 'vi',
-            voiceName: voiceVi,
-            forceRegenerate
-          });
-          if (resVi.base64 && audioContext) {
-            const bufVi = await decodeAudioBase64(audioContext, resVi.base64);
+          const base64Vi = await this.synthesizeSingleHintAudio(hint, 'vi', effectiveVoiceVi, forceRegenerate);
+          if (base64Vi && audioContext) {
+            const bufVi = await decodeAudioBase64(audioContext, base64Vi);
             hintBuffers.push(bufVi);
           }
         }
       } else if (normalizedMode === 'VI_THEN_EN') {
-        // Synthesize VI then EN for each hint
         if (viText) {
-          const resVi = await audioPlayer.synthesizeSingleChunk({
-            text: viText,
-            language: 'vi',
-            voiceName: voiceVi,
-            forceRegenerate
-          });
-          if (resVi.base64 && audioContext) {
-            const bufVi = await decodeAudioBase64(audioContext, resVi.base64);
+          const base64Vi = await this.synthesizeSingleHintAudio(hint, 'vi', effectiveVoiceVi, forceRegenerate);
+          if (base64Vi && audioContext) {
+            const bufVi = await decodeAudioBase64(audioContext, base64Vi);
             hintBuffers.push(bufVi);
           }
         }
         if (enText) {
-          const resEn = await audioPlayer.synthesizeSingleChunk({
-            text: enText,
-            language: 'en',
-            voiceName: voiceEn,
-            forceRegenerate
-          });
-          if (resEn.base64 && audioContext) {
-            const bufEn = await decodeAudioBase64(audioContext, resEn.base64);
+          const base64En = await this.synthesizeSingleHintAudio(hint, 'en', effectiveVoiceEn, forceRegenerate);
+          if (base64En && audioContext) {
+            const bufEn = await decodeAudioBase64(audioContext, base64En);
             hintBuffers.push(bufEn);
           }
         }
@@ -320,7 +378,8 @@ class ImprovTtsEngine {
   }
 
   /**
-   * Pre-generates and caches audio for all items across all sessions in an ImprovPackage.
+   * Pre-generates and stores both full item continuous audio and individual hint audio in IndexedDB.
+   * Dynamically honors voiceEn and voiceVi from options without overriding with hardcoded values.
    */
   async preparePackageAudio(
     pkg: ImprovPackage,
@@ -331,6 +390,7 @@ class ImprovTtsEngine {
     const voiceVi = options?.voiceVi || 'vi-VN-Neural2-A';
     const forceRegenerate = options?.forceRegenerate || false;
     const concurrency = Math.max(1, Math.min(6, options?.concurrency || 3));
+    const langMode = options?.langMode ? normalizeLanguageMode(options.langMode) : 'EN_ONLY';
 
     // Flatten all items
     const allItems: { item: ImprovItem; sessionNum: number }[] = [];
@@ -352,13 +412,36 @@ class ImprovTtsEngine {
       while (currentIndex < total) {
         const idx = currentIndex++;
         const { item, sessionNum } = allItems[idx];
-        const cacheKey = `improv_item_${item.id}_${voiceEn}_${voiceVi}_EN_ONLY`;
+        const itemCacheKey = `improv_item_${item.id}_${voiceEn}_${voiceVi}_${langMode}`;
 
-        if (!forceRegenerate && audioPlayer.getCachedAudio(cacheKey, voiceEn)) {
+        const isItemCached = !forceRegenerate && Boolean(await audioPlayer.getCachedAudioAsync(itemCacheKey));
+
+        // Check if individual hints are also already cached
+        let allHintsCached = true;
+        for (const h of (item.hints || [])) {
+          if (langMode === 'EN_ONLY' || langMode === 'EN_THEN_VI' || langMode === 'VI_THEN_EN') {
+            const hKeyEn = `improv_hint_${h.id}_${voiceEn}_en`;
+            if (!(await audioPlayer.getCachedAudioAsync(hKeyEn))) {
+              allHintsCached = false;
+              break;
+            }
+          }
+          if (langMode === 'VI_ONLY' || langMode === 'EN_THEN_VI' || langMode === 'VI_THEN_EN') {
+            const hKeyVi = `improv_hint_${h.id}_${voiceVi}_vi`;
+            if (!(await audioPlayer.getCachedAudioAsync(hKeyVi))) {
+              allHintsCached = false;
+              break;
+            }
+          }
+        }
+
+        if (isItemCached && allHintsCached) {
           skipped++;
         } else {
           try {
-            await this.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, 'EN_ONLY', forceRegenerate);
+            // synthesizeItemCombinedAudio automatically synthesizes & caches both
+            // the individual hints (via synthesizeSingleHintAudio) and the full continuous audio in IndexedDB.
+            await this.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, langMode, forceRegenerate);
             prepared++;
           } catch (err) {
             console.warn(`[Improv TTS] Batch synthesis failed for item #${item.itemNumber} (Session ${sessionNum}):`, err);
@@ -389,6 +472,7 @@ class ImprovTtsEngine {
 
   /**
    * Plays the combined continuous hint audio for an ImprovItem.
+   * Dynamically honors voiceEn and voiceVi without overriding with hardcoded defaults.
    */
   async playItemAudio(
     item: ImprovItem,
@@ -454,6 +538,21 @@ class ImprovTtsEngine {
 export const improvTts = new ImprovTtsEngine();
 
 // Standalone function exports matching specifications
+export const synthesizeSingleHintAudio = (
+  hint: ImprovHint,
+  lang: 'en' | 'vi',
+  voice?: string,
+  forceRegenerate?: boolean
+) => improvTts.synthesizeSingleHintAudio(hint, lang, voice, forceRegenerate);
+
+export const playSingleHintAudio = (
+  hint: ImprovHint,
+  lang: 'en' | 'vi',
+  voice?: string,
+  speed?: number,
+  onEnded?: () => void
+) => improvTts.playSingleHintAudio(hint, lang, voice, speed, onEnded);
+
 export const synthesizeItemCombinedAudio = (
   item: ImprovItem,
   voiceEn?: string,
@@ -471,7 +570,10 @@ export const preparePackageAudio = (
 export const playItemAudio = (
   item: ImprovItem,
   speed?: number,
-  onEnded?: () => void
-) => improvTts.playItemAudio(item, speed, onEnded);
+  onEnded?: () => void,
+  voiceEn?: string,
+  voiceVi?: string,
+  langMode?: LanguageMode
+) => improvTts.playItemAudio(item, speed, onEnded, voiceEn, voiceVi, langMode);
 
 export const stopImprovAudio = () => improvTts.stop();

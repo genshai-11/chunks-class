@@ -9,6 +9,12 @@ import {
 } from '../types';
 import { getAllImprovPackages } from '../services/improvService';
 import { 
+  getResponsiveHintTypography, 
+  getSemanticHintBadge, 
+  improvText, 
+  improvColors 
+} from '../styles/improvTheme';
+import { 
   audioPlayer, 
   GOOGLE_TTS_VOICES, 
   AudioProvider 
@@ -54,89 +60,7 @@ interface ImprovPresentationProps {
   onSelectPackage?: (packageId: string, sessionNumber?: number) => void;
 }
 
-interface SemanticBadge {
-  label: string;
-  badgeClass: string;
-  darkBadgeClass: string;
-  accentColor: string;
-}
-
-function getSemanticBadge(typeFunction: string, hintIndex: number): SemanticBadge {
-  const norm = (typeFunction || '').toLowerCase().trim();
-
-  if (norm.includes('key') || norm.includes('seed') || norm.includes('core')) {
-    return {
-      label: 'Keyword',
-      badgeClass: 'bg-red-50 text-red-700 border-red-200',
-      darkBadgeClass: 'bg-red-950/40 text-red-400 border-red-800/60',
-      accentColor: '#DC2626'
-    };
-  }
-  if (norm.includes('logic') || norm.includes('colloc') || norm.includes('slot') || norm.includes('connect')) {
-    return {
-      label: 'Logic word',
-      badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
-      darkBadgeClass: 'bg-amber-950/40 text-amber-400 border-amber-800/60',
-      accentColor: '#F59E0B'
-    };
-  }
-  if (norm.includes('fancy') || norm.includes('adv') || norm.includes('contrast') || norm.includes('nuance') || norm.includes('idiom')) {
-    return {
-      label: 'Fancy word',
-      badgeClass: 'bg-purple-50 text-purple-700 border-purple-200',
-      darkBadgeClass: 'bg-purple-950/40 text-purple-400 border-purple-800/60',
-      accentColor: '#8B5CF6'
-    };
-  }
-  if (norm.includes('end') || norm.includes('resol') || norm.includes('context') || norm.includes('example')) {
-    return {
-      label: 'Ending',
-      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      darkBadgeClass: 'bg-emerald-950/40 text-emerald-400 border-emerald-800/60',
-      accentColor: '#10B981'
-    };
-  }
-  if (norm.includes('wh') || norm.includes('quest') || norm.includes('dialog') || norm.includes('react')) {
-    return {
-      label: 'WH word',
-      badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
-      darkBadgeClass: 'bg-blue-950/40 text-blue-400 border-blue-800/60',
-      accentColor: '#3B82F6'
-    };
-  }
-
-  // Fallback by hint position
-  switch (hintIndex) {
-    case 0:
-      return {
-        label: 'Keyword',
-        badgeClass: 'bg-red-50 text-red-700 border-red-200',
-        darkBadgeClass: 'bg-red-950/40 text-red-400 border-red-800/60',
-        accentColor: '#DC2626'
-      };
-    case 1:
-      return {
-        label: 'Logic word',
-        badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
-        darkBadgeClass: 'bg-amber-950/40 text-amber-400 border-amber-800/60',
-        accentColor: '#F59E0B'
-      };
-    case 2:
-      return {
-        label: 'Fancy word',
-        badgeClass: 'bg-purple-50 text-purple-700 border-purple-200',
-        darkBadgeClass: 'bg-purple-950/40 text-purple-400 border-purple-800/60',
-        accentColor: '#8B5CF6'
-      };
-    default:
-      return {
-        label: 'Ending',
-        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        darkBadgeClass: 'bg-emerald-950/40 text-emerald-400 border-emerald-800/60',
-        accentColor: '#10B981'
-      };
-  }
-}
+const getSemanticBadge = getSemanticHintBadge;
 
 export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   packageId,
@@ -263,6 +187,19 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     return [...currentItem.hints].sort((a, b) => a.itemIndex - b.itemIndex);
   }, [currentItem]);
 
+  // Sync audioSettings if updated
+  useEffect(() => {
+    if (audioSettings?.voice_profile_en) {
+      setSelectedVoice(audioSettings.voice_profile_en);
+    }
+    if (audioSettings?.voice_profile_vi) {
+      setSelectedVoiceVi(audioSettings.voice_profile_vi);
+    }
+    if (audioSettings?.default_speed) {
+      setSpeed(audioSettings.default_speed);
+    }
+  }, [audioSettings?.voice_profile_en, audioSettings?.voice_profile_vi, audioSettings?.default_speed]);
+
   // Filtered packages for switcher popover
   const filteredPackages = useMemo(() => {
     if (!packageSearchQuery.trim()) return packages;
@@ -274,7 +211,11 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   }, [packages, packageSearchQuery]);
 
   // Audio Playback Engine: Sequential Hints with 1-second gap
-  const playRevealedHintsAudio = async (hintsToPlay: ImprovHint[]) => {
+  const playRevealedHintsAudio = async (
+    hintsToPlay: ImprovHint[],
+    voiceEn: string = selectedVoice,
+    voiceVi: string = selectedVoiceVi
+  ) => {
     audioPlayer.stop();
     const seqId = ++activeSequenceRef.current;
     setIsPlayingAudio(true);
@@ -291,12 +232,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         if (languageMode === 'VI_ONLY') {
           const textToSpeak = viText || enText;
           if (textToSpeak) {
-            await audioPlayer.playChunk(textToSpeak, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
+            await audioPlayer.playChunk(textToSpeak, null, voiceVi || 'vi-VN-Neural2-A', speed);
           }
         } else {
           // EN_ONLY
           if (enText) {
-            await audioPlayer.playChunk(enText, null, selectedVoice, speed, selectedVoice.startsWith('en-US'));
+            await audioPlayer.playChunk(enText, null, voiceEn, speed, voiceEn.startsWith('en-US'));
           }
         }
 
@@ -317,7 +258,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   };
 
   // Play single hint audio
-  const playSingleHintAudio = async (hint: ImprovHint, index: number) => {
+  const playSingleHintAudio = async (
+    hint: ImprovHint,
+    index: number,
+    voiceEn: string = selectedVoice,
+    voiceVi: string = selectedVoiceVi
+  ) => {
     audioPlayer.stop();
     const seqId = ++activeSequenceRef.current;
     setIsPlayingAudio(true);
@@ -330,12 +276,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       if (languageMode === 'VI_ONLY') {
         const textToSpeak = viText || enText;
         if (textToSpeak) {
-          await audioPlayer.playChunk(textToSpeak, null, selectedVoiceVi || 'vi-VN-Neural2-A', speed);
+          await audioPlayer.playChunk(textToSpeak, null, voiceVi || 'vi-VN-Neural2-A', speed);
         }
       } else {
         // EN_ONLY
         if (enText) {
-          await audioPlayer.playChunk(enText, null, selectedVoice, speed, selectedVoice.startsWith('en-US'));
+          await audioPlayer.playChunk(enText, null, voiceEn, speed, voiceEn.startsWith('en-US'));
         }
       }
     } catch (err) {
@@ -362,7 +308,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         // Play the newly revealed hint
         const newlyRevealed = hints[nextStep - 1];
         if (newlyRevealed) {
-          playSingleHintAudio(newlyRevealed, nextStep - 1);
+          playSingleHintAudio(newlyRevealed, nextStep - 1, selectedVoice, selectedVoiceVi);
         }
       } else {
         // Advance to next item
@@ -372,7 +318,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           setCurrentRevealStep(1);
           const nextItem = items[nextIndex];
           if (nextItem && nextItem.hints && nextItem.hints[0]) {
-            playSingleHintAudio(nextItem.hints[0], 0);
+            playSingleHintAudio(nextItem.hints[0], 0, selectedVoice, selectedVoiceVi);
           }
         }
       }
@@ -384,7 +330,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         setCurrentRevealStep(items[nextIndex]?.hints?.length || 1);
         const nextItem = items[nextIndex];
         if (nextItem && nextItem.hints) {
-          playRevealedHintsAudio(nextItem.hints);
+          playRevealedHintsAudio(nextItem.hints, selectedVoice, selectedVoiceVi);
         }
       }
     }
@@ -420,9 +366,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const handleReplay = () => {
     if (revealMode === 'step') {
       const revealed = hints.slice(0, currentRevealStep);
-      playRevealedHintsAudio(revealed);
+      playRevealedHintsAudio(revealed, selectedVoice, selectedVoiceVi);
     } else {
-      playRevealedHintsAudio(hints);
+      playRevealedHintsAudio(hints, selectedVoice, selectedVoiceVi);
     }
   };
 
@@ -969,27 +915,27 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             </p>
           </div>
         ) : (
-          <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 flex flex-col items-center">
             {/* Stage Header Info Pill */}
             <div className="mb-6 flex items-center gap-3">
               <span className="text-xs font-mono font-extrabold uppercase px-3 py-1 rounded-full bg-zinc-200/80 dark:bg-zinc-800/90 text-zinc-700 dark:text-zinc-300 tracking-wider">
-                {activeSession?.title || `Session ${selectedSessionNum}`}
+                Session {selectedSessionNum} • {hints.length} hints
               </span>
-              <span className="text-xs font-mono text-zinc-400 font-semibold">
-                Item {currentItemIndex + 1} / {totalItemsCount}
+              <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
+                Item {currentItemIndex + 1}/{totalItemsCount}
               </span>
             </div>
 
             {/* Horizontal Hints Flow Container (Always Parallel Columns, Projector-Optimized) */}
             <div
-              className={`justify-center items-stretch ${
+              className={`justify-center items-stretch w-full ${
                 hints.length === 2
-                  ? 'grid grid-cols-2 gap-4 sm:gap-8 md:gap-12 max-w-4xl w-full'
+                  ? 'grid grid-cols-2 gap-4 sm:gap-8 md:gap-12 max-w-5xl'
                   : hints.length === 3
-                  ? 'grid grid-cols-3 gap-3 sm:gap-6 md:gap-8 max-w-5xl w-full'
+                  ? 'grid grid-cols-3 gap-3 sm:gap-6 md:gap-8 max-w-6xl'
                   : hints.length === 5
-                  ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 max-w-7xl w-full'
-                  : 'grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 max-w-6xl w-full'
+                  ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 max-w-7xl'
+                  : 'grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 max-w-7xl'
               }`}
             >
               {hints.map((hint, idx) => {
@@ -1004,7 +950,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       key={hint.id || `unrevealed_${idx}`}
                       onClick={() => {
                         setCurrentRevealStep(idx + 1);
-                        playSingleHintAudio(hint, idx);
+                        playSingleHintAudio(hint, idx, selectedVoice, selectedVoiceVi);
                       }}
                       className="min-h-[180px] md:min-h-[220px] p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 group bg-[#F3F4F6] dark:bg-[#18181B] border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500"
                     >
@@ -1050,7 +996,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       </span>
 
                       <button
-                        onClick={() => playSingleHintAudio(hint, idx)}
+                        onClick={() => playSingleHintAudio(hint, idx, selectedVoice, selectedVoiceVi)}
                         className={`p-1.5 rounded-full transition-all duration-150 cursor-pointer ${
                           isCurrentlySpeaking
                             ? 'bg-[#DC2626] text-white shadow-md animate-pulse'
@@ -1064,13 +1010,13 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       </button>
                     </div>
 
-                    {/* Center: Extra Large Typography (High-Signal Projector Display) */}
-                    <div className="my-auto py-2">
+                    {/* Center: Responsive Typography (Zero-Overflow Projector Display) */}
+                    <div className="my-auto py-2.5 flex-1 flex flex-col justify-center">
                       <div
-                        className={`font-black font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight tracking-tight transition-colors duration-150 ${
+                        className={`${getResponsiveHintTypography(mainText)} transition-colors duration-150 ${
                           isCurrentlySpeaking
                             ? 'text-[#DC2626] animate-pulse'
-                            : 'text-black dark:text-white'
+                            : 'text-zinc-950 dark:text-zinc-50'
                         }`}
                       >
                         {mainText}
@@ -1078,10 +1024,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
                       {/* Bottom Subtitle / Transcript: Clearly Sized & Toggleable (Key V) */}
                       {showSubtitle && subText && (
-                        <div className="mt-2 sm:mt-4">
-                          <div className="text-zinc-700 dark:text-zinc-200 font-semibold text-lg sm:text-xl md:text-2xl tracking-normal">
-                            {subText}
-                          </div>
+                        <div className="mt-2 text-sm sm:text-base font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
+                          {subText}
                         </div>
                       )}
                     </div>
@@ -1447,16 +1391,16 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       setCurrentRevealStep(1);
                       setIsListDrawerOpen(false);
                     }}
-                    className={`p-3 rounded-xl border transition-all duration-150 cursor-pointer flex flex-col gap-2 group ${
+                    className={`p-3.5 rounded-xl border transition-all duration-150 cursor-pointer flex flex-col gap-2 group ${
                       isCurrent
-                        ? 'border-[#DC2626] bg-[#DC2626]/[0.06] shadow-xs ring-1 ring-[#DC2626]'
+                        ? 'border-[#DC2626] bg-[#DC2626]/[0.08] shadow-xs ring-1 ring-[#DC2626]'
                         : isCompleted
                         ? highContrastDark
-                          ? 'border-zinc-800 bg-zinc-950/40 opacity-80 hover:opacity-100 hover:border-zinc-700'
-                          : 'border-zinc-200/80 bg-zinc-50/50 opacity-80 hover:opacity-100 hover:border-zinc-300'
+                          ? 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
+                          : 'border-zinc-200/90 bg-zinc-50/80 hover:border-zinc-300'
                         : highContrastDark
-                        ? 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800/80'
-                        : 'border-[#E8E8EC] hover:border-zinc-300 bg-white hover:bg-zinc-50/70'
+                        ? 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/80 hover:bg-zinc-800/90'
+                        : 'border-[#E8E8EC] hover:border-zinc-300 bg-white hover:bg-zinc-50'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -1469,26 +1413,26 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                           <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
                         )}
 
-                        <span className="text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                        <span className="text-xs font-mono font-bold text-zinc-950 dark:text-zinc-50">
                           Câu {item.itemNumber || idx + 1}
                         </span>
 
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold">
                           {item.hints.length} hints
                         </span>
                       </div>
 
                       <div>
                         {isCurrent ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#DC2626] bg-[#DC2626]/10 px-2 py-0.5 rounded-full animate-pulse">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#DC2626] bg-[#DC2626]/15 px-2.5 py-0.5 rounded-full border border-red-300 dark:border-red-900 animate-pulse">
                             <Flame className="w-3 h-3 text-[#DC2626]" /> Đang Học
                           </span>
                         ) : isCompleted ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Đã Xong
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/70 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Đã Xong
                           </span>
                         ) : (
-                          <span className="text-[10px] font-mono text-zinc-400">
+                          <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 font-medium">
                             Chưa học
                           </span>
                         )}
@@ -1506,7 +1450,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                               </span>
                             )}
                             {h.text && (
-                              <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[11px] font-medium">
+                              <span className="text-zinc-600 dark:text-zinc-300 font-mono text-[11px] font-semibold">
                                 ({h.text})
                               </span>
                             )}
