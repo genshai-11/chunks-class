@@ -979,14 +979,14 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               </span>
             </div>
 
-            {/* Horizontal Hint Cards Grid */}
+            {/* Horizontal Hints Flow Container (Minimalist, Stage-like, Borderless, Projector-Optimized) */}
             <div
-              className={`w-full grid gap-4 md:gap-6 justify-center items-stretch ${
+              className={`w-full grid gap-8 md:gap-12 lg:gap-16 justify-center items-stretch ${
                 hints.length === 2
                   ? 'grid-cols-1 md:grid-cols-2 max-w-4xl'
                   : hints.length === 3
                   ? 'grid-cols-1 md:grid-cols-3 max-w-5xl'
-                  : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl'
+                  : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-7xl'
               }`}
             >
               {hints.map((hint, idx) => {
@@ -995,7 +995,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 const badgeInfo = getSemanticBadge(hint.typeFunction, idx);
 
                 if (!isRevealed) {
-                  // Mystery / Placeholder Card in Step Reveal Mode
+                  // Step Reveal Placeholder: Minimalist, Flat, Non-Boxy
                   return (
                     <div
                       key={hint.id || `unrevealed_${idx}`}
@@ -1003,46 +1003,48 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         setCurrentRevealStep(idx + 1);
                         playSingleHintAudio(hint, idx);
                       }}
-                      className={`min-h-[220px] md:min-h-[280px] p-6 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center cursor-pointer transition-all group ${
+                      className={`min-h-[180px] md:min-h-[220px] p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-all group ${
                         highContrastDark
-                          ? 'bg-zinc-950/40 border-zinc-800 hover:border-zinc-700 text-zinc-500 hover:text-zinc-300'
-                          : 'bg-white/60 border-zinc-300 hover:border-zinc-400 text-zinc-400 hover:text-zinc-700'
+                          ? 'bg-zinc-900/30 hover:bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700 text-zinc-500 hover:text-zinc-300'
+                          : 'bg-zinc-50/60 hover:bg-zinc-100/80 border border-zinc-200/80 hover:border-zinc-300 text-zinc-400 hover:text-zinc-700'
                       }`}
                     >
-                      <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800/60 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                        <Lock className="w-5 h-5 text-zinc-400" />
+                      <div className="w-11 h-11 rounded-full bg-zinc-200/60 dark:bg-zinc-800/80 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xs">
+                        <Lock className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                       </div>
-                      <div className="text-xs font-mono font-bold uppercase tracking-wider">
+                      <div className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         Gợi ý {idx + 1}
                       </div>
-                      <div className="text-[11px] font-sans text-zinc-400 mt-1">
-                        Bấm để mở hoặc nhấn phím Space
+                      <div className="text-[11px] font-sans text-zinc-400 dark:text-zinc-500 mt-1">
+                        Bấm hoặc Space để mở
                       </div>
                     </div>
                   );
                 }
 
-                // Revealed Card
+                // Main Primary & Secondary Content by Language Mode
+                const mainText = languageMode === 'VI_ONLY' ? (hint.translation || hint.text) : hint.text;
+                const subText = languageMode === 'VI_ONLY' ? hint.text : hint.translation;
+
+                // Revealed Hint Item: Borderless, High-Signal, Stage-Optimized
                 return (
                   <div
                     key={hint.id || `hint_${idx}`}
-                    className={`min-h-[220px] md:min-h-[280px] p-6 md:p-8 rounded-2xl md:rounded-3xl border flex flex-col justify-between transition-all duration-300 relative group shadow-sm ${
+                    className={`min-h-[200px] md:min-h-[260px] p-4 md:p-6 flex flex-col justify-between transition-all duration-300 relative group rounded-2xl ${
                       isCurrentlySpeaking
-                        ? 'ring-4 ring-[#DC2626]/40 border-[#DC2626] scale-[1.02]'
-                        : highContrastDark
-                        ? 'bg-[#141414] border-zinc-800 hover:border-zinc-700'
-                        : 'bg-white border-zinc-200/90 hover:border-zinc-300 hover:shadow-md'
+                        ? 'bg-red-500/5 dark:bg-red-500/10 ring-2 ring-[#DC2626]/30'
+                        : 'hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40'
                     }`}
                   >
-                    {/* Card Top: Semantic Role Badge & Individual Play Button */}
-                    <div className="flex items-center justify-between mb-4">
+                    {/* Top: Compact Semantic Role Badge & Individual Play Button */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
                       <span
-                        className={`text-[11px] md:text-xs font-mono font-extrabold uppercase px-2.5 py-1 rounded-md border tracking-wider flex items-center gap-1.5 ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] md:text-[11px] font-mono font-bold uppercase tracking-wider border shadow-xs ${
                           highContrastDark ? badgeInfo.darkBadgeClass : badgeInfo.badgeClass
                         }`}
                       >
                         <span 
-                          className="w-1.5 h-1.5 rounded-full" 
+                          className="w-1.5 h-1.5 rounded-full shrink-0" 
                           style={{ backgroundColor: badgeInfo.accentColor }} 
                         />
                         <span>{badgeInfo.label}</span>
@@ -1050,46 +1052,46 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
                       <button
                         onClick={() => playSingleHintAudio(hint, idx)}
-                        className={`p-2 rounded-full transition-all cursor-pointer ${
+                        className={`p-1.5 rounded-full transition-all cursor-pointer ${
                           isCurrentlySpeaking
                             ? 'bg-[#DC2626] text-white shadow-md animate-pulse'
                             : highContrastDark
-                            ? 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white'
-                            : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                            ? 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white'
+                            : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-zinc-900'
                         }`}
                         title="Nghe riêng gợi ý này"
                       >
-                        <Volume2 className="w-4 h-4" />
+                        <Volume2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
-                    {/* Card Center: Dynamic Display Typography (Inverted by Language Mode) */}
+                    {/* Center: Extra Large Typography (High-Signal Projector Display) */}
                     <div className="my-auto py-2">
-                      <div className="font-display font-extrabold text-2xl md:text-4xl lg:text-5xl leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">
-                        {languageMode === 'VI_ONLY' ? (hint.translation || hint.text) : hint.text}
+                      <div
+                        className={`font-display font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-none tracking-tight transition-colors duration-200 ${
+                          isCurrentlySpeaking
+                            ? 'text-[#DC2626] animate-pulse'
+                            : 'text-zinc-950 dark:text-white'
+                        }`}
+                      >
+                        {mainText}
                       </div>
-                    </div>
 
-                    {/* Card Bottom: Subtitle Translation / Secondary Text */}
-                    {showSubtitle && (
-                      languageMode === 'VI_ONLY' ? (
-                        hint.text ? (
-                          <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
-                            <div className="text-sm md:text-base font-mono font-medium text-zinc-500 dark:text-zinc-400">
-                              {hint.text}
-                            </div>
+                      {/* Bottom Subtitle / Transcript: Clearly Sized & Toggleable (Key V) */}
+                      {showSubtitle && subText && (
+                        <div className="mt-3 sm:mt-4">
+                          <div
+                            className={`text-xl sm:text-2xl md:text-3xl tracking-normal text-zinc-500 dark:text-zinc-400 ${
+                              languageMode === 'VI_ONLY'
+                                ? 'font-mono font-semibold'
+                                : 'font-sans font-medium'
+                            }`}
+                          >
+                            {subText}
                           </div>
-                        ) : null
-                      ) : (
-                        hint.translation ? (
-                          <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
-                            <div className="text-sm md:text-base font-sans font-medium text-zinc-500 dark:text-zinc-400">
-                              {hint.translation}
-                            </div>
-                          </div>
-                        ) : null
-                      )
-                    )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -1439,7 +1441,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             </div>
 
             {/* Items List */}
-            <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-1.5">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {items.map((item, idx) => {
                 const isCurrent = idx === currentItemIndex;
                 const isCompleted = idx < currentItemIndex;
@@ -1452,35 +1454,45 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       setCurrentRevealStep(1);
                       setIsListDrawerOpen(false);
                     }}
-                    className={`p-2 sm:p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    className={`p-3 rounded-xl border transition-all duration-150 cursor-pointer flex flex-col gap-2 group ${
                       isCurrent
-                        ? 'border-[#DC2626] bg-red-50/90 text-zinc-900 ring-2 ring-red-500/20 shadow-xs dark:bg-red-950/40 dark:border-red-600 dark:text-zinc-100'
+                        ? 'border-[#DC2626] bg-[#DC2626]/[0.06] shadow-xs ring-1 ring-[#DC2626]'
                         : isCompleted
                         ? highContrastDark
-                          ? 'border-emerald-900/50 bg-emerald-950/20 hover:bg-emerald-950/40 text-zinc-200'
-                          : 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 text-zinc-900'
+                          ? 'border-zinc-800 bg-zinc-950/40 opacity-80 hover:opacity-100 hover:border-zinc-700'
+                          : 'border-zinc-200/80 bg-zinc-50/50 opacity-80 hover:opacity-100 hover:border-zinc-300'
                         : highContrastDark
-                        ? 'border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/80 text-zinc-200'
-                        : 'border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50 text-zinc-900'
+                        ? 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800/80'
+                        : 'border-[#E8E8EC] hover:border-zinc-300 bg-white hover:bg-zinc-50/70'
                     }`}
                   >
-                    <div className="mb-1 flex items-center justify-between">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-xs">
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        ) : isCurrent ? (
+                          <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse shrink-0" />
+                        ) : (
+                          <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
+                        )}
+
+                        <span className="text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100">
                           Câu {item.itemNumber || idx + 1}
                         </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold">
                           {item.hints.length} hints
                         </span>
                       </div>
+
                       <div>
                         {isCurrent ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-red-600 bg-red-100 dark:bg-red-950/60 dark:text-red-400 px-2 py-0.5 rounded-full animate-pulse">
-                            <Flame className="w-3 h-3" /> Đang Học
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#DC2626] bg-[#DC2626]/10 px-2 py-0.5 rounded-full animate-pulse">
+                            <Flame className="w-3 h-3 text-[#DC2626]" /> Đang Học
                           </span>
                         ) : isCompleted ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                            <CheckCircle2 className="w-3 h-3" /> Đã Xong
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Đã Xong
                           </span>
                         ) : (
                           <span className="text-[10px] font-mono text-zinc-400">
@@ -1491,23 +1503,23 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                     </div>
 
                     {/* Hints Preview */}
-                    <div className="flex flex-wrap items-baseline gap-y-1">
+                    <div className="flex flex-wrap items-baseline gap-y-1 text-xs">
                       {item.hints.map((h, hIdx) => (
                         <React.Fragment key={h.id || hIdx}>
-                          <span className="inline-flex items-baseline gap-1">
+                          <span className="inline-flex items-baseline gap-1.5">
                             {h.translation && (
-                              <span className="text-zinc-900 dark:text-zinc-100 font-bold text-xs sm:text-sm">
+                              <span className="text-zinc-900 dark:text-zinc-100 font-bold">
                                 {h.translation}
                               </span>
                             )}
                             {h.text && (
-                              <span className="text-zinc-700 dark:text-zinc-300 font-semibold text-xs font-mono">
-                                {h.text}
+                              <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[11px] font-medium">
+                                ({h.text})
                               </span>
                             )}
                           </span>
                           {hIdx < item.hints.length - 1 && (
-                            <span className="text-[#DC2626] font-bold text-xs mx-1">➔</span>
+                            <span className="text-[#DC2626] font-bold text-xs mx-1.5 shrink-0">➔</span>
                           )}
                         </React.Fragment>
                       ))}

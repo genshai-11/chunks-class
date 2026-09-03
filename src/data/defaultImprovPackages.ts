@@ -1,6 +1,9 @@
 import { ImprovPackage } from '../types';
+import { IMPROV_SET_01, IMPROV_SET_02 } from './improvSet01And02';
 
 export const DEFAULT_IMPROV_PACKAGES: ImprovPackage[] = [
+  IMPROV_SET_01,
+  IMPROV_SET_02,
   {
     id: 'pkg_level_b_reflex_mastery',
     title: 'Level B • Spoken Reflex & Fluency Masterclass',

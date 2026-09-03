@@ -1,0 +1,2015 @@
+{
+  "id": "improv_set_02_tell_me_about_yourself",
+  "title": "Set 02 • Tell Me About Yourself (Self Pitch & Work Experience)",
+  "description": "60 progressive deduction items for self-introductions, professional skills, and interview reflexes based on Level B Day 3.",
+  "totalItems": 60,
+  "sessionsCount": 4,
+  "sessions": [
+    {
+      "sessionNumber": 1,
+      "title": "Session 1 • 2 Hints (Rapid Reaction & Self Pitch)",
+      "hcTotal": 2,
+      "hintTypes": [
+        "Keyword",
+        "Ending"
+      ],
+      "items": [
+        {
+          "id": "set02_s1_i01",
+          "itemNumber": 1,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i1_1",
+              "text": "work experience",
+              "translation": "kinh nghiệm làm việc thực tế",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i1_2",
+              "text": "detailed in my resume",
+              "translation": "được trình bày rõ trong hồ sơ",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i02",
+          "itemNumber": 2,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i2_1",
+              "text": "energetic mindset",
+              "translation": "tinh thần làm việc năng nổ",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i2_2",
+              "text": "brought to every project",
+              "translation": "được mang vào từng dự án",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i03",
+          "itemNumber": 3,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i3_1",
+              "text": "accounting function",
+              "translation": "nghiệp vụ kế toán tài chính",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i3_2",
+              "text": "handled with high accuracy",
+              "translation": "được xử lý với độ chuẩn xác cao",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i04",
+          "itemNumber": 4,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i4_1",
+              "text": "guide newcomers",
+              "translation": "hướng dẫn nhân viên mới",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i4_2",
+              "text": "during onboarding week",
+              "translation": "trong tuần đầu hội nhập",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i05",
+          "itemNumber": 5,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i5_1",
+              "text": "man of the month",
+              "translation": "nhân viên xuất sắc của tháng",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i5_2",
+              "text": "awarded two times consecutively",
+              "translation": "được trao tặng hai lần liên tiếp",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i06",
+          "itemNumber": 6,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i6_1",
+              "text": "senior student",
+              "translation": "sinh viên năm cuối",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i6_2",
+              "text": "graduating top of class",
+              "translation": "chuẩn bị tốt nghiệp thủ khoa",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i07",
+          "itemNumber": 7,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i7_1",
+              "text": "daily transactions",
+              "translation": "các giao dịch kế toán hằng ngày",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i7_2",
+              "text": "reconciled before evening",
+              "translation": "được đối chiếu xong trước buổi tối",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i08",
+          "itemNumber": 8,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i8_1",
+              "text": "risk management",
+              "translation": "nghiệp vụ quản trị rủi ro",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i8_2",
+              "text": "implemented across department",
+              "translation": "được áp dụng khắp phòng ban",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i09",
+          "itemNumber": 9,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i9_1",
+              "text": "monthly balance sheet",
+              "translation": "bảng cân đối kế toán hàng tháng",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i9_2",
+              "text": "audited without discrepancies",
+              "translation": "được kiểm toán không sai sót",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i10",
+          "itemNumber": 10,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i10_1",
+              "text": "top company",
+              "translation": "doanh nghiệp hàng đầu thị trường",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i10_2",
+              "text": "recruited for internship",
+              "translation": "được tuyển vào làm thực tập sinh",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i11",
+          "itemNumber": 11,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i11_1",
+              "text": "core strengths",
+              "translation": "những điểm mạnh then chốt",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i11_2",
+              "text": "aligned with job requirements",
+              "translation": "phù hợp hoàn hảo với vị trí ứng tuyển",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i12",
+          "itemNumber": 12,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i12_1",
+              "text": "open-ended questions",
+              "translation": "những câu hỏi phỏng vấn mở",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i12_2",
+              "text": "answered with calm confidence",
+              "translation": "được trả lời bằng sự tự tin điềm đạm",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i13",
+          "itemNumber": 13,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i13_1",
+              "text": "workplace integrity",
+              "translation": "sự chính trực trong công việc",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i13_2",
+              "text": "valued above all else",
+              "translation": "được coi trọng trên hết mọi thứ",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i14",
+          "itemNumber": 14,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i14_1",
+              "text": "creative ideas",
+              "translation": "những sáng kiến đổi mới",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i14_2",
+              "text": "pitched to executive board",
+              "translation": "được trình bày trước ban giám đốc",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        },
+        {
+          "id": "set02_s1_i15",
+          "itemNumber": 15,
+          "sessionNumber": 1,
+          "hcTotal": 2,
+          "hints": [
+            {
+              "id": "h_set02_s1_i15_1",
+              "text": "convince recruiters",
+              "translation": "thuyết phục các nhà tuyển dụng",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s1_i15_2",
+              "text": "through proven accomplishments",
+              "translation": "thông qua thành tích đã được chứng minh",
+              "typeFunction": "Ending",
+              "itemIndex": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sessionNumber": 2,
+      "title": "Session 2 • 3 Hints (Cause-Effect & Career Context)",
+      "hcTotal": 3,
+      "hintTypes": [
+        "Keyword",
+        "Logic word",
+        "Ending"
+      ],
+      "items": [
+        {
+          "id": "set02_s2_i01",
+          "itemNumber": 1,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i1_1",
+              "text": "years of experience",
+              "translation": "nhiều năm kinh nghiệm làm việc",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i1_2",
+              "text": "leveraging solid",
+              "translation": "tận dụng nền tảng...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i1_3",
+              "text": "optimized department budget",
+              "translation": "tối ưu hóa ngân sách phòng ban",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i02",
+          "itemNumber": 2,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i2_1",
+              "text": "company restructuring",
+              "translation": "đợt tái cơ cấu doanh nghiệp",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i2_2",
+              "text": "following the sudden",
+              "translation": "ngay sau khi diễn ra...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i2_3",
+              "text": "assumed expanded leadership role",
+              "translation": "đảm nhận vai trò lãnh đạo mở rộng",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i03",
+          "itemNumber": 3,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i3_1",
+              "text": "financial discrepancies",
+              "translation": "các sai lệch trong sổ sách tài chính",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i3_2",
+              "text": "in order to eliminate",
+              "translation": "nhằm mục đích dẹp bỏ...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i3_3",
+              "text": "redesigned verification system",
+              "translation": "thiết kế lại hệ thống đối soát dữ liệu",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i04",
+          "itemNumber": 4,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i4_1",
+              "text": "tight deadline pressure",
+              "translation": "áp lực thời hạn bàn giao gấp gáp",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i4_2",
+              "text": "despite working under",
+              "translation": "mặc dù luôn phải chịu...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i4_3",
+              "text": "delivered quarterly report flawlessly",
+              "translation": "hoàn thành báo cáo quý không tì vết",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i05",
+          "itemNumber": 5,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i5_1",
+              "text": "training new recruits",
+              "translation": "việc đào tạo nhân sự mới vào",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i5_2",
+              "text": "being responsible for",
+              "translation": "chịu trách nhiệm chính trong việc...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i5_3",
+              "text": "boosted team productivity greatly",
+              "translation": "nâng cao đáng kể hiệu suất toàn đội ngũ",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i06",
+          "itemNumber": 6,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i6_1",
+              "text": "e-commerce campaign",
+              "translation": "chiến dịch bán hàng thương mại điện tử",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i6_2",
+              "text": "while managing the",
+              "translation": "trong lúc điều hành...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i6_3",
+              "text": "doubled monthly sales revenue",
+              "translation": "tăng gấp đôi doanh số bán hàng tháng",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i07",
+          "itemNumber": 7,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i7_1",
+              "text": "academic research honors",
+              "translation": "giải thưởng nghiên cứu học thuật",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i7_2",
+              "text": "as a result of winning",
+              "translation": "nhờ đạt được...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i7_3",
+              "text": "secured full scholarship grant",
+              "translation": "nhận được suất học bổng toàn phần",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i08",
+          "itemNumber": 8,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i8_1",
+              "text": "clearance sales campaign",
+              "translation": "chiến dịch xả hàng tồn kho lớn",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i8_2",
+              "text": "specifically focusing on",
+              "translation": "tập trung mũi nhọn vào...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i8_3",
+              "text": "liquidated surplus inventory fast",
+              "translation": "giải phóng sạch lượng hàng tồn nhanh chóng",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i09",
+          "itemNumber": 9,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i9_1",
+              "text": "unrelated interview questions",
+              "translation": "những câu hỏi phỏng vấn lạc đề",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i9_2",
+              "text": "when confronted with",
+              "translation": "khi bất ngờ đối mặt với...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i9_3",
+              "text": "steered back to core skills",
+              "translation": "khéo léo dẫn dắt về kỹ năng trọng tâm",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i10",
+          "itemNumber": 10,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i10_1",
+              "text": "interpersonal team conflict",
+              "translation": "bất đồng quan điểm giữa đồng nghiệp",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i10_2",
+              "text": "stepped in to resolve",
+              "translation": "chủ động đứng ra hòa giải...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i10_3",
+              "text": "restored productive workspace harmony",
+              "translation": "lấy lại bầu không khí làm việc hiệu quả",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i11",
+          "itemNumber": 11,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i11_1",
+              "text": "cross-department collaboration",
+              "translation": "sự phối hợp giữa các phòng ban",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i11_2",
+              "text": "by actively promoting",
+              "translation": "bằng cách thúc đẩy mạnh mẽ...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i11_3",
+              "text": "accelerated product launch timeline",
+              "translation": "đẩy nhanh tiến độ tung sản phẩm mới",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i12",
+          "itemNumber": 12,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i12_1",
+              "text": "unexpected budget cuts",
+              "translation": "việc cắt giảm ngân sách bất ngờ",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i12_2",
+              "text": "adapting quickly to",
+              "translation": "nhanh chóng thích nghi trước...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i12_3",
+              "text": "automated manual accounting tasks",
+              "translation": "tự động hóa các thao tác kế toán thủ công",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i13",
+          "itemNumber": 13,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i13_1",
+              "text": "demanding client expectations",
+              "translation": "kỳ vọng khắt khe từ phía khách hàng",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i13_2",
+              "text": "in order to exceed",
+              "translation": "với quyết tâm vượt qua...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i13_3",
+              "text": "provided continuous project updates",
+              "translation": "liên tục báo cáo tiến độ minh bạch",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i14",
+          "itemNumber": 14,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i14_1",
+              "text": "new software rollout",
+              "translation": "việc triển khai phần mềm nghiệp vụ mới",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i14_2",
+              "text": "prior to executing",
+              "translation": "trước thời điểm đưa vào vận hành...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i14_3",
+              "text": "conducted hands-on user training",
+              "translation": "trực tiếp hướng dẫn thao tác cho người dùng",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        },
+        {
+          "id": "set02_s2_i15",
+          "itemNumber": 15,
+          "sessionNumber": 2,
+          "hcTotal": 3,
+          "hints": [
+            {
+              "id": "h_set02_s2_i15_1",
+              "text": "interview anxiety jitters",
+              "translation": "cảm giác hồi hộp lo lắng khi phỏng vấn",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s2_i15_2",
+              "text": "managed to overcome",
+              "translation": "đã hoàn toàn chiến thắng...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s2_i15_3",
+              "text": "delivered convincing personal pitch",
+              "translation": "trình bày bài giới thiệu bản thân thuyết phục",
+              "typeFunction": "Ending",
+              "itemIndex": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sessionNumber": 3,
+      "title": "Session 3 • 4 Hints (Nuance & Professional Skills)",
+      "hcTotal": 4,
+      "hintTypes": [
+        "Keyword",
+        "Logic word",
+        "Fancy word",
+        "Ending"
+      ],
+      "items": [
+        {
+          "id": "set02_s3_i01",
+          "itemNumber": 1,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i1_1",
+              "text": "accounting function",
+              "translation": "chức năng kế toán doanh nghiệp",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i1_2",
+              "text": "overseeing the entire",
+              "translation": "chịu trách nhiệm bao quát toàn bộ...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i1_3",
+              "text": "complex corporate ledger",
+              "translation": "hệ thống sổ cái doanh nghiệp phức tạp",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i1_4",
+              "text": "eliminated costly financial errors",
+              "translation": "loại bỏ sạch các sai sót tài chính tốn kém",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i02",
+          "itemNumber": 2,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i2_1",
+              "text": "mentoring junior staff",
+              "translation": "việc dẫn dắt kèm cặp nhân viên mới",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i2_2",
+              "text": "dedicatedly committing to",
+              "translation": "tận tâm cống hiến cho...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i2_3",
+              "text": "structured onboarding curriculum",
+              "translation": "giáo trình đào tạo hội nhập bài bản",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i2_4",
+              "text": "received man of the month award",
+              "translation": "được nhận danh hiệu nhân viên của tháng",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i03",
+          "itemNumber": 3,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i3_1",
+              "text": "promotional sales campaign",
+              "translation": "chiến dịch khuyến mãi kích cầu",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i3_2",
+              "text": "strategically designing a",
+              "translation": "lên chiến lược thiết kế một...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i3_3",
+              "text": "viral like-farming promotion",
+              "translation": "chiến dịch tương tác lan tỏa mạnh mẽ",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i3_4",
+              "text": "drove massive online conversions",
+              "translation": "kéo về lượng đơn hàng trực tuyến khổng lồ",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i04",
+          "itemNumber": 4,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i4_1",
+              "text": "rigorous audit preparation",
+              "translation": "công tác chuẩn bị kiểm toán gắt gao",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i4_2",
+              "text": "meticulously completing the",
+              "translation": "hoàn thành tỉ mỉ từng hạng mục của...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i4_3",
+              "text": "monthly balance sheet",
+              "translation": "bảng cân đối kế toán hàng tháng",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i4_4",
+              "text": "earned praise from senior partners",
+              "translation": "được các đối tác cấp cao hết lời khen ngợi",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i05",
+          "itemNumber": 5,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i5_1",
+              "text": "senior student leader",
+              "translation": "thủ lĩnh sinh viên năm cuối",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i5_2",
+              "text": "excelling consistently as a",
+              "translation": "luôn giữ vững phong độ xuất sắc của một...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i5_3",
+              "text": "top economics university scholar",
+              "translation": "sinh viên ưu tú trường đại học kinh tế",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i5_4",
+              "text": "transitioned smoothly into full-time role",
+              "translation": "chuyển tiếp suôn sẻ sang vị trí chính thức",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i06",
+          "itemNumber": 6,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i6_1",
+              "text": "unforeseen corporate restructuring",
+              "translation": "việc tái cấu trúc doanh nghiệp bất ngờ",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i6_2",
+              "text": "successfully weathering the",
+              "translation": "vượt qua trọn vẹn giai đoạn...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i6_3",
+              "text": "turbulent managerial transition",
+              "translation": "chuyển giao bộ máy quản lý đầy biến động",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i6_4",
+              "text": "retained key client accounts intact",
+              "translation": "giữ vững các hợp đồng khách hàng trọng điểm",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i07",
+          "itemNumber": 7,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i7_1",
+              "text": "uncompromising workplace integrity",
+              "translation": "tính chính trực tuyệt đối trong công sở",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i7_2",
+              "text": "firmly upholding our",
+              "translation": "luôn kiên định giữ vững...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i7_3",
+              "text": "transparent governance standards",
+              "translation": "những chuẩn mực quản trị minh bạch",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i7_4",
+              "text": "earned trust from executive directors",
+              "translation": "tạo dựng niềm tin vững chắc từ hội đồng quản trị",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i08",
+          "itemNumber": 8,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i8_1",
+              "text": "behavioral interview pitch",
+              "translation": "phần trả lời phỏng vấn hành vi",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i8_2",
+              "text": "delivering an articulate",
+              "translation": "trình bày một cách mạch lạc trong...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i8_3",
+              "text": "compelling professional narrative",
+              "translation": "câu chuyện phát triển sự nghiệp đầy thuyết phục",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i8_4",
+              "text": "impressed recruitment committee deeply",
+              "translation": "gây ấn tượng sâu sắc với hội đồng tuyển dụng",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i09",
+          "itemNumber": 9,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i9_1",
+              "text": "cross-functional team synergy",
+              "translation": "sức mạnh gắn kết liên phòng ban",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i9_2",
+              "text": "actively fostering strong",
+              "translation": "tích cực gây dựng và nuôi dưỡng...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i9_3",
+              "text": "harmonious workplace collaboration",
+              "translation": "sự cộng tác hài hòa nơi công sở",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i9_4",
+              "text": "surpassed annual departmental goals",
+              "translation": "hoàn thành vượt mức chỉ tiêu năm của phòng",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i10",
+          "itemNumber": 10,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i10_1",
+              "text": "high-stakes client negotiation",
+              "translation": "cuộc đàm phán hợp đồng cân não",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i10_2",
+              "text": "leading the crucial",
+              "translation": "dẫn dắt trực tiếp phiên...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i10_3",
+              "text": "strategic enterprise partnership",
+              "translation": "hợp tác chiến lược cấp doanh nghiệp",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i10_4",
+              "text": "secured multi-year service contract",
+              "translation": "ký kết thành công hợp đồng dài hạn nhiều năm",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i11",
+          "itemNumber": 11,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i11_1",
+              "text": "proactive workflow automation",
+              "translation": "chủ động tự động hóa luồng công việc",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i11_2",
+              "text": "spearheading modern",
+              "translation": "tiên phong dẫn dắt quá trình...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i11_3",
+              "text": "innovative software integration",
+              "translation": "tích hợp phần mềm đổi mới công nghệ",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i11_4",
+              "text": "slashed transaction processing time",
+              "translation": "cắt giảm một nửa thời gian xử lý giao dịch",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i12",
+          "itemNumber": 12,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i12_1",
+              "text": "challenging open-ended questions",
+              "translation": "những câu hỏi mở đầy thử thách",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i12_2",
+              "text": "deftly unpacking each",
+              "translation": "khéo léo bóc tách và phân tích từng...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i12_3",
+              "text": "intricate scenario dilemma",
+              "translation": "tình huống nghiệp vụ hóc búa",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i12_4",
+              "text": "convinced interview panel decisively",
+              "translation": "thuyết phục hoàn toàn các vị giám khảo",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i13",
+          "itemNumber": 13,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i13_1",
+              "text": "rapid market downturn",
+              "translation": "thời kỳ thị trường suy thoái nhanh",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i13_2",
+              "text": "remaining agile during",
+              "translation": "giữ vững sự linh hoạt bén nhạy giữa...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i13_3",
+              "text": "severe industry headwind",
+              "translation": "những cơn sóng gió ngành khốc liệt",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i13_4",
+              "text": "maintained positive operating margins",
+              "translation": "duy trì tốt biên lợi nhuận hoạt động dương",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i14",
+          "itemNumber": 14,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i14_1",
+              "text": "dynamic project management",
+              "translation": "năng lực điều phối dự án linh hoạt",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i14_2",
+              "text": "effectively utilizing modern",
+              "translation": "vận dụng hiệu quả những...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i14_3",
+              "text": "agile delivery methodologies",
+              "translation": "phương pháp quản trị dự án tinh gọn",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i14_4",
+              "text": "delivered milestone ahead of schedule",
+              "translation": "bàn giao cột mốc công việc trước tiến độ",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        },
+        {
+          "id": "set02_s3_i15",
+          "itemNumber": 15,
+          "sessionNumber": 3,
+          "hcTotal": 4,
+          "hints": [
+            {
+              "id": "h_set02_s3_i15_1",
+              "text": "long-term career roadmap",
+              "translation": "lộ trình phát triển sự nghiệp lâu dài",
+              "typeFunction": "Keyword",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s3_i15_2",
+              "text": "clearly presenting a",
+              "translation": "trình bày rõ ràng và mạch lạc một...",
+              "typeFunction": "Logic word",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s3_i15_3",
+              "text": "purposeful leadership trajectory",
+              "translation": "định hướng phát triển năng lực lãnh đạo",
+              "typeFunction": "Fancy word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s3_i15_4",
+              "text": "demonstrated strong company commitment",
+              "translation": "khẳng định cam kết gắn bó lâu dài cùng công ty",
+              "typeFunction": "Ending",
+              "itemIndex": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sessionNumber": 4,
+      "title": "Session 4 • 5 Hints (Full Spoken Reflex Flow)",
+      "hcTotal": 5,
+      "hintTypes": [
+        "Intro",
+        "Keyword",
+        "Logic word",
+        "Fancy word",
+        "Ending"
+      ],
+      "items": [
+        {
+          "id": "set02_s4_i01",
+          "itemNumber": 1,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i1_1",
+              "text": "Tell me about yourself",
+              "translation": "hãy giới thiệu về bản thân bạn",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i1_2",
+              "text": "18 years of experience",
+              "translation": "18 năm kinh nghiệm trong ngành",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i1_3",
+              "text": "demonstrates how I",
+              "translation": "chứng minh rõ việc tôi đã...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i1_4",
+              "text": "mastered accounting functions",
+              "translation": "làm chủ các nghiệp vụ kế toán chuyên sâu",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i1_5",
+              "text": "drove organizational excellence",
+              "translation": "thúc đẩy tổ chức phát triển vượt bậc",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i02",
+          "itemNumber": 2,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i2_1",
+              "text": "I'm not bragging but",
+              "translation": "không phải tôi khoe khoang đâu nhưng",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i2_2",
+              "text": "man of the month",
+              "translation": "nhân viên xuất sắc của tháng",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i2_3",
+              "text": "was awarded because of",
+              "translation": "đã được trao tặng nhờ...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i2_4",
+              "text": "exceptional newcomer mentoring",
+              "translation": "thành tích kèm cặp người mới xuất chúng",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i2_5",
+              "text": "raised overall department output",
+              "translation": "nâng tầm năng suất cho cả phòng ban",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i03",
+          "itemNumber": 3,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i3_1",
+              "text": "Specifically speaking",
+              "translation": "nói một cách cụ thể hơn",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i3_2",
+              "text": "reconciliation of transactions",
+              "translation": "khâu đối chiếu các giao dịch",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i3_3",
+              "text": "requires strict diligence and",
+              "translation": "đòi hỏi sự cẩn trọng cao độ và...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i3_4",
+              "text": "flawless bookkeeping precision",
+              "translation": "độ chuẩn xác tuyệt đối trong lưu giữ sổ sách",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i3_5",
+              "text": "prevented multi-million audits",
+              "translation": "ngăn chặn các rủi ro kiểm toán hàng triệu đô",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i04",
+          "itemNumber": 4,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i4_1",
+              "text": "Besides that point",
+              "translation": "bên cạnh điểm sáng đó ra",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i4_2",
+              "text": "energetic senior student",
+              "translation": "sinh viên năm cuối đầy nhiệt huyết",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i4_3",
+              "text": "balanced coursework while",
+              "translation": "đã cân bằng việc học tại trường trong khi...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i4_4",
+              "text": "leading e-commerce sales",
+              "translation": "dẫn dắt các chiến dịch bán hàng trực tuyến",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i4_5",
+              "text": "surpassed quarterly target goals",
+              "translation": "vượt xa các chỉ tiêu doanh số theo quý",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i05",
+          "itemNumber": 5,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i5_1",
+              "text": "Soon after that",
+              "translation": "ngay sau cột mốc đó",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i5_2",
+              "text": "company restructure plan",
+              "translation": "kế hoạch tái cơ cấu doanh nghiệp",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i5_3",
+              "text": "opened new avenues to",
+              "translation": "đã mở ra cơ hội lớn để...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i5_4",
+              "text": "eliminate redundant procedures",
+              "translation": "loại bỏ các quy trình thừa thãi rườm rà",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i5_5",
+              "text": "streamlined overall workflow",
+              "translation": "tinh gọn toàn bộ guồng quay công việc",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i06",
+          "itemNumber": 6,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i6_1",
+              "text": "In other words",
+              "translation": "nói theo một cách khác",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i6_2",
+              "text": "uncompromising integrity",
+              "translation": "sự chính trực không bao giờ thỏa hiệp",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i6_3",
+              "text": "serves as my",
+              "translation": "đóng vai trò là...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i6_4",
+              "text": "intangible internal anchor",
+              "translation": "điểm tựa nội lực vô hình vững chắc",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i6_5",
+              "text": "guides every ethical decision",
+              "translation": "dẫn lối cho mọi quyết định chuẩn mực đạo đức",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i07",
+          "itemNumber": 7,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i7_1",
+              "text": "As long as",
+              "translation": "miễn là chúng ta",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i7_2",
+              "text": "open-ended questions",
+              "translation": "những câu hỏi phỏng vấn mở",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i7_3",
+              "text": "are answered with honest",
+              "translation": "được đối đáp bằng sự chân thành cùng...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i7_4",
+              "text": "proven track record",
+              "translation": "những chiến tích thực tế đã được kiểm chứng",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i7_5",
+              "text": "convince any hiring panel",
+              "translation": "chắc chắn thuyết phục được mọi nhà tuyển dụng",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i08",
+          "itemNumber": 8,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i8_1",
+              "text": "Fortunately enough",
+              "translation": "thật may mắn khi mà",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i8_2",
+              "text": "monthly balance sheet",
+              "translation": "bảng cân đối kế toán hàng tháng",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i8_3",
+              "text": "was verified thoroughly through",
+              "translation": "đã được thẩm định kỹ lưỡng nhờ...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i8_4",
+              "text": "rigorous internal review",
+              "translation": "quy trình rà soát nội bộ gắt gao",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i8_5",
+              "text": "passed external audit smoothly",
+              "translation": "vượt qua kỳ kiểm toán bên ngoài trơn tru",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i09",
+          "itemNumber": 9,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i9_1",
+              "text": "For better or worse",
+              "translation": "dù tình thế có ra sao",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i9_2",
+              "text": "unpredictable market shifts",
+              "translation": "những biến động thị trường khôn lường",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i9_3",
+              "text": "demanded that we adopt",
+              "translation": "đòi hỏi chúng tôi phải áp dụng...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i9_4",
+              "text": "innovative digital strategies",
+              "translation": "những chiến lược chuyển đổi số đột phá",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i9_5",
+              "text": "strengthened long-term resilience",
+              "translation": "gia tăng sức bền bỉ dài hạn cho công ty",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i10",
+          "itemNumber": 10,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i10_1",
+              "text": "To be specific",
+              "translation": "nói cụ thể hơn nữa nhé",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i10_2",
+              "text": "clearance sales promotion",
+              "translation": "đợt khuyến mãi xả hàng quy mô lớn",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i10_3",
+              "text": "succeeded mainly because of",
+              "translation": "thành công vang dội chủ yếu nhờ...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i10_4",
+              "text": "persuasive marketing copy",
+              "translation": "nội dung quảng bá đánh trúng tâm lý người mua",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i10_5",
+              "text": "cleared aging warehouse inventory",
+              "translation": "dọn sạch hàng lưu kho lâu ngày trong kho",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i11",
+          "itemNumber": 11,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i11_1",
+              "text": "Take your time",
+              "translation": "cứ thong thả xem xét",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i11_2",
+              "text": "academic credentials portfolio",
+              "translation": "bộ hồ sơ thành tích học tập",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i11_3",
+              "text": "proves how thoroughly I",
+              "translation": "chứng minh việc tôi đã...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i11_4",
+              "text": "mastered economic principles",
+              "translation": "lĩnh hội sâu sắc các nguyên lý kinh tế học",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i11_5",
+              "text": "ready for senior responsibilities",
+              "translation": "hoàn toàn sẵn sàng cho các trọng trách lớn",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i12",
+          "itemNumber": 12,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i12_1",
+              "text": "People often say",
+              "translation": "người ta thường hay nói rằng",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i12_2",
+              "text": "harmonious office collaboration",
+              "translation": "sự đồng lòng gắn kết trong văn phòng",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i12_3",
+              "text": "flourishes only when we",
+              "translation": "chỉ đơm hoa kết trái một khi chúng ta...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i12_4",
+              "text": "cultivate mutual respect",
+              "translation": "biết tôn trọng và lắng nghe lẫn nhau",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i12_5",
+              "text": "elevates overall team morale",
+              "translation": "vực dậy tinh thần cho toàn thể đồng đội",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i13",
+          "itemNumber": 13,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i13_1",
+              "text": "No worries at all",
+              "translation": "hoàn toàn không có gì phải lo",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i13_2",
+              "text": "temporary budget constraint",
+              "translation": "những hạn chế ngân sách tạm thời",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i13_3",
+              "text": "can be managed by",
+              "translation": "đều có thể được tháo gỡ nhờ...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i13_4",
+              "text": "optimizing core resources",
+              "translation": "việc tối ưu hóa các nguồn lực cốt lõi",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i13_5",
+              "text": "delivers all project targets",
+              "translation": "vẫn hoàn thành mọi mục tiêu dự án đề ra",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i14",
+          "itemNumber": 14,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i14_1",
+              "text": "What do you say",
+              "translation": "bạn nghĩ thế nào nếu",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i14_2",
+              "text": "restructuring accounting team",
+              "translation": "việc tái tổ chức lại bộ phận kế toán",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i14_3",
+              "text": "empowers our staff with",
+              "translation": "sẽ trao quyền cho đội ngũ với...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i14_4",
+              "text": "cutting-edge automation tools",
+              "translation": "những công cụ tự động hóa hàng đầu",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i14_5",
+              "text": "doubles monthly operational efficiency",
+              "translation": "nhân đôi hiệu quả vận hành hằng tháng",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        },
+        {
+          "id": "set02_s4_i15",
+          "itemNumber": 15,
+          "sessionNumber": 4,
+          "hcTotal": 5,
+          "hints": [
+            {
+              "id": "h_set02_s4_i15_1",
+              "text": "Shall we conclude",
+              "translation": "chúng ta cùng khép lại bằng việc",
+              "typeFunction": "Intro",
+              "itemIndex": 1
+            },
+            {
+              "id": "h_set02_s4_i15_2",
+              "text": "consistent work experience",
+              "translation": "bề dày kinh nghiệm công tác vững vàng",
+              "typeFunction": "Keyword",
+              "itemIndex": 2
+            },
+            {
+              "id": "h_set02_s4_i15_3",
+              "text": "combined harmoniously with",
+              "translation": "kết hợp hài hòa cùng với...",
+              "typeFunction": "Logic word",
+              "itemIndex": 3
+            },
+            {
+              "id": "h_set02_s4_i15_4",
+              "text": "unrelenting proactive energy",
+              "translation": "nguồn năng lượng chủ động không ngừng nghỉ",
+              "typeFunction": "Fancy word",
+              "itemIndex": 4
+            },
+            {
+              "id": "h_set02_s4_i15_5",
+              "text": "makes me ideal candidate",
+              "translation": "giúp tôi trở thành ứng viên sáng giá nhất",
+              "typeFunction": "Ending",
+              "itemIndex": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "createdAt": "2026-09-03T00:00:00.000Z",
+  "updatedAt": "2026-09-03T00:00:00.000Z",
+  "sourceCourseLevel": "LEVEL_B_ERES",
+  "sourceLessonIds": [
+    "level_b_eres_day_3"
+  ]
+}
