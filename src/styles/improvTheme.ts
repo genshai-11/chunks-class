@@ -54,9 +54,9 @@ export const improvText = {
   translationDark: 'text-zinc-100 font-bold',
 
   // English subtext in brackets (Key L/P Drawer)
-  subtextEnglish: 'text-zinc-600 dark:text-zinc-300 font-mono font-semibold',
-  subtextEnglishLight: 'text-zinc-600 font-mono font-semibold',
-  subtextEnglishDark: 'text-zinc-300 font-mono font-semibold',
+  subtextEnglish: 'text-black dark:text-zinc-300 font-mono font-bold text-xs',
+  subtextEnglishLight: 'text-black font-mono font-bold text-xs',
+  subtextEnglishDark: 'text-zinc-300 font-mono font-bold text-xs',
 
   // Monospace Stage Header Info Pill (Minimal Standard)
   stageHeaderPill:

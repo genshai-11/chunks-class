@@ -1736,11 +1736,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                         <span>{badge.label}</span>
                                       </span>
                                     </div>
-                                    <div className="font-bold text-zinc-900 text-xs leading-snug">
+                                    <div className="font-bold text-zinc-900 dark:text-zinc-100 text-xs leading-snug">
                                       {hint.text}
                                     </div>
                                     {showVietnamese && hint.translation && (
-                                      <div className="text-[11px] text-zinc-700 font-medium mt-1 leading-tight">
+                                      <div className="text-[11px] text-zinc-700 dark:text-zinc-300 font-medium mt-1 leading-tight">
                                         {hint.translation}
                                       </div>
                                     )}
@@ -1954,13 +1954,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                               </div>
 
                               {/* Clue English Text */}
-                              <div className="text-xs font-bold text-zinc-900 leading-snug line-clamp-3 mb-1">
+                              <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-snug line-clamp-3 mb-1">
                                 {hint.text}
                               </div>
 
                               {/* Clue Vietnamese Meaning */}
                               {showVietnamese && hint.translation && (
-                                <div className="text-[11px] text-zinc-700 font-medium line-clamp-2 mt-auto pt-1 border-t border-zinc-200/80">
+                                <div className="text-[11px] text-zinc-700 dark:text-zinc-300 font-medium line-clamp-2 mt-auto pt-1 border-t border-zinc-200/80 dark:border-zinc-800">
                                   {hint.translation}
                                 </div>
                               )}

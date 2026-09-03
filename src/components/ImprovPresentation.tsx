@@ -968,8 +968,11 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 }
 
                 // Main Primary & Secondary Content by Language Mode
-                const mainText = languageMode === 'VI_ONLY' ? (hint.translation || hint.text) : hint.text;
-                const subText = languageMode === 'VI_ONLY' ? hint.text : hint.translation;
+                const enText = getHintTextByLanguage(hint, 'en');
+                const viText = getHintTextByLanguage(hint, 'vi');
+
+                const mainText = languageMode === 'VI_ONLY' ? (viText || enText) : (enText || viText);
+                const subText = languageMode === 'VI_ONLY' ? enText : viText;
 
                 // Revealed Hint Item: High-Signal, High-Contrast Stage Display
                 return (
@@ -1011,9 +1014,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                     </div>
 
                     {/* Center: Responsive Typography (Zero-Overflow Projector Display) */}
-                    <div className="my-auto py-2.5 flex-1 flex flex-col justify-center">
+                    <div className="my-auto py-2.5 flex-1 flex flex-col justify-center items-center text-center w-full">
                       <div
-                        className={`${getResponsiveHintTypography(mainText)} transition-colors duration-150 ${
+                        className={`${getResponsiveHintTypography(mainText)} transition-colors duration-150 text-center w-full ${
                           isCurrentlySpeaking
                             ? 'text-[#DC2626] animate-pulse'
                             : 'text-zinc-950 dark:text-zinc-50'
@@ -1023,8 +1026,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       </div>
 
                       {/* Bottom Subtitle / Transcript: Clearly Sized & Toggleable (Key V) */}
-                      {showSubtitle && subText && (
-                        <div className="mt-2 text-sm sm:text-base font-medium text-zinc-700 dark:text-zinc-300 leading-snug">
+                      {showSubtitle && subText && subText !== mainText && (
+                        <div className="mt-2 text-sm sm:text-base font-medium text-zinc-700 dark:text-zinc-300 leading-snug text-center w-full">
                           {subText}
                         </div>
                       )}
@@ -1355,6 +1358,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-1.5 overflow-x-auto">
               {(activePackage?.sessions || []).map((s) => {
                 const isSelected = s.sessionNumber === selectedSessionNum;
+                const hintCount = s.hcTotal || s.items?.[0]?.hints?.length || 2;
                 return (
                   <button
                     key={s.sessionNumber}
@@ -1363,7 +1367,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       setCurrentItemIndex(0);
                       setCurrentRevealStep(1);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-[#DC2626] text-white shadow-xs'
                         : highContrastDark
@@ -1371,7 +1375,16 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
                     }`}
                   >
-                    Session {s.sessionNumber} ({s.items.length})
+                    <span>Session {s.sessionNumber}</span>
+                    <span
+                      className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded-full ${
+                        isSelected
+                          ? 'bg-white/20 text-white'
+                          : 'bg-black/10 dark:bg-white/10 text-zinc-800 dark:text-zinc-200'
+                      }`}
+                    >
+                      {hintCount} hints
+                    </span>
                   </button>
                 );
               })}
@@ -1403,63 +1416,66 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         : 'border-[#E8E8EC] hover:border-zinc-300 bg-white hover:bg-zinc-50'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                        ) : isCurrent ? (
-                          <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse shrink-0" />
-                        ) : (
+                    {/* Minimal status indicator */}
+                    <div className="flex items-center gap-2">
+                      {isCurrent ? (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626] animate-pulse shrink-0" />
+                          <span className="text-xs font-mono font-black text-black dark:text-white">
+                            #{item.itemNumber || idx + 1}
+                          </span>
+                          <span className="text-[10px] font-mono font-bold text-[#DC2626]">
+                            Đang học
+                          </span>
+                        </>
+                      ) : isCompleted ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="text-xs font-mono font-bold text-zinc-600 dark:text-zinc-400">
+                            #{item.itemNumber || idx + 1}
+                          </span>
+                        </>
+                      ) : (
+                        <>
                           <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
-                        )}
-
-                        <span className="text-xs font-mono font-bold text-zinc-950 dark:text-zinc-50">
-                          Câu {item.itemNumber || idx + 1}
-                        </span>
-
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold">
-                          {item.hints.length} hints
-                        </span>
-                      </div>
-
-                      <div>
-                        {isCurrent ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#DC2626] bg-[#DC2626]/15 px-2.5 py-0.5 rounded-full border border-red-300 dark:border-red-900 animate-pulse">
-                            <Flame className="w-3 h-3 text-[#DC2626]" /> Đang Học
+                          <span className="text-xs font-mono font-medium text-zinc-500">
+                            #{item.itemNumber || idx + 1}
                           </span>
-                        ) : isCompleted ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/70 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Đã Xong
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 font-medium">
-                            Chưa học
-                          </span>
-                        )}
-                      </div>
+                        </>
+                      )}
                     </div>
 
-                    {/* Hints Preview */}
+                    {/* Hints Preview: High contrast black in Light Mode */}
                     <div className="flex flex-wrap items-baseline gap-y-1 text-xs">
-                      {item.hints.map((h, hIdx) => (
-                        <React.Fragment key={h.id || hIdx}>
-                          <span className="inline-flex items-baseline gap-1.5">
-                            {h.translation && (
-                              <span className="text-zinc-900 dark:text-zinc-100 font-bold">
-                                {h.translation}
-                              </span>
+                      {item.hints.map((h, hIdx) => {
+                        const enText = getHintTextByLanguage(h, 'en') || h.text;
+                        const viText = getHintTextByLanguage(h, 'vi') || h.translation;
+                        return (
+                          <React.Fragment key={h.id || hIdx}>
+                            <span className="inline-flex items-baseline gap-1.5">
+                              {viText ? (
+                                <>
+                                  <span className="text-black dark:text-white font-bold">
+                                    {viText}
+                                  </span>
+                                  {enText && enText !== viText && (
+                                    <span className="text-black dark:text-zinc-300 font-mono font-bold text-xs">
+                                      ({enText})
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-black dark:text-white font-bold">
+                                  {enText}
+                                </span>
+                              )}
+                            </span>
+                            {hIdx < item.hints.length - 1 && (
+                              <span className="text-[#DC2626] font-bold text-xs mx-1.5 shrink-0 select-none">➔</span>
                             )}
-                            {h.text && (
-                              <span className="text-zinc-600 dark:text-zinc-300 font-mono text-[11px] font-semibold">
-                                ({h.text})
-                              </span>
-                            )}
-                          </span>
-                          {hIdx < item.hints.length - 1 && (
-                            <span className="text-[#DC2626] font-bold text-xs mx-1.5 shrink-0">➔</span>
-                          )}
-                        </React.Fragment>
-                      ))}
+                          </React.Fragment>
+                        );
+                      })}
                     </div>
                   </div>
                 );
