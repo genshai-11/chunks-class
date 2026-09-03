@@ -111,11 +111,29 @@ validatePackage(foundSet01, 'DEFAULT_IMPROV_PACKAGES[Set 01]');
 validatePackage(foundSet02, 'DEFAULT_IMPROV_PACKAGES[Set 02]');
 
 // 3. Validate JSON files on disk
-console.log('\nValidating JSON files on disk...');
+console.log('\n=== Step 3: Validating JSON files on disk ===');
 const loadedSet01: ImprovPackage = JSON.parse(fs.readFileSync(set01JsonPath, 'utf-8'));
 const loadedSet02: ImprovPackage = JSON.parse(fs.readFileSync(set02JsonPath, 'utf-8'));
 
 validatePackage(loadedSet01, 'public/data/improv_set_01.json');
 validatePackage(loadedSet02, 'public/data/improv_set_02.json');
 
-console.log('\n🎉 ALL VALIDATIONS PASSED PERFECTLY!');
+// 4. Validate Excel files on disk
+console.log('\n=== Step 4: Validating Excel files on disk via parseImprovExcelFile ===');
+const { parseImprovExcelFile } = await import('../src/services/improvService');
+const excel01Path = path.join(publicDataDir, 'Improv_Set_01_Wandering_Souls.xlsx');
+const excel02Path = path.join(publicDataDir, 'Improv_Set_02_Tell_Me_About_Yourself.xlsx');
+
+if (!fs.existsSync(excel01Path)) throw new Error(`Missing Excel: ${excel01Path}`);
+if (!fs.existsSync(excel02Path)) throw new Error(`Missing Excel: ${excel02Path}`);
+
+const excel01Buf = fs.readFileSync(excel01Path);
+const excel02Buf = fs.readFileSync(excel02Path);
+
+const parsedExcel01 = await parseImprovExcelFile(excel01Buf.buffer);
+const parsedExcel02 = await parseImprovExcelFile(excel02Buf.buffer);
+
+validatePackage(parsedExcel01, 'public/data/Improv_Set_01_Wandering_Souls.xlsx');
+validatePackage(parsedExcel02, 'public/data/Improv_Set_02_Tell_Me_About_Yourself.xlsx');
+
+console.log('\n🎉 ALL VALIDATIONS (TS Data + Default Packages + JSON files + Excel files) PASSED PERFECTLY!');

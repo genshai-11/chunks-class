@@ -510,11 +510,11 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
   return (
     <div
-      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica Neue, Arial, sans-serif' }}
+      style={{ fontFamily: "'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
       className={`fixed inset-0 z-50 flex flex-col select-none overflow-hidden transition-colors duration-200 ${
         highContrastDark 
           ? 'bg-[#0A0A0A] text-white' 
-          : 'bg-[#FAFAFA] text-[#0A0A0A]'
+          : 'bg-[#FAFAFA] text-black'
       }`}
     >
       {/* ==================================================================== */}
@@ -980,14 +980,16 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               </span>
             </div>
 
-            {/* Horizontal Hints Flow Container (Minimalist, Stage-like, Borderless, Projector-Optimized) */}
+            {/* Horizontal Hints Flow Container (Always Parallel Columns, Projector-Optimized) */}
             <div
-              className={`w-full grid gap-8 md:gap-12 lg:gap-16 justify-center items-stretch ${
+              className={`justify-center items-stretch ${
                 hints.length === 2
-                  ? 'grid-cols-1 md:grid-cols-2 max-w-4xl'
+                  ? 'grid grid-cols-2 gap-4 sm:gap-8 md:gap-12 max-w-4xl w-full'
                   : hints.length === 3
-                  ? 'grid-cols-1 md:grid-cols-3 max-w-5xl'
-                  : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-7xl'
+                  ? 'grid grid-cols-3 gap-3 sm:gap-6 md:gap-8 max-w-5xl w-full'
+                  : hints.length === 5
+                  ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 max-w-7xl w-full'
+                  : 'grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 max-w-6xl w-full'
               }`}
             >
               {hints.map((hint, idx) => {
@@ -996,7 +998,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 const badgeInfo = getSemanticBadge(hint.typeFunction, idx);
 
                 if (!isRevealed) {
-                  // Step Reveal Placeholder: Minimalist, Flat, Non-Boxy
+                  // Step Reveal Placeholder: Clear contrast, Non-Boxy
                   return (
                     <div
                       key={hint.id || `unrevealed_${idx}`}
@@ -1004,19 +1006,15 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         setCurrentRevealStep(idx + 1);
                         playSingleHintAudio(hint, idx);
                       }}
-                      className={`min-h-[180px] md:min-h-[220px] p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-colors duration-150 group ${
-                        highContrastDark
-                          ? 'bg-zinc-900/30 hover:bg-zinc-900/60 border border-zinc-800 text-zinc-400 hover:text-zinc-200'
-                          : 'bg-[#F4F4F6]/80 hover:bg-[#F4F4F6] border border-zinc-200/60 text-[#6B6B76] hover:text-[#0A0A0A]'
-                      }`}
+                      className="min-h-[180px] md:min-h-[220px] p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 group bg-[#F3F4F6] dark:bg-[#18181B] border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-zinc-200/70 dark:bg-zinc-800/80 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-150 shadow-xs">
-                        <Lock className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                      <div className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-150 shadow-xs">
+                        <Lock className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
                       </div>
-                      <div className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-300">
+                      <div className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200">
                         Gợi ý {idx + 1}
                       </div>
-                      <div className="text-[11px] text-[#6B6B76] dark:text-zinc-400 mt-1">
+                      <div className="text-[11px] sm:text-xs text-zinc-800 dark:text-zinc-200 font-bold mt-1">
                         Bấm hoặc Space để mở
                       </div>
                     </div>
@@ -1027,14 +1025,14 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 const mainText = languageMode === 'VI_ONLY' ? (hint.translation || hint.text) : hint.text;
                 const subText = languageMode === 'VI_ONLY' ? hint.text : hint.translation;
 
-                // Revealed Hint Item: Borderless, High-Signal, Stage-Optimized
+                // Revealed Hint Item: High-Signal, High-Contrast Stage Display
                 return (
                   <div
                     key={hint.id || `hint_${idx}`}
-                    className={`min-h-[200px] md:min-h-[260px] p-4 md:p-6 flex flex-col justify-between transition-all duration-200 relative group rounded-2xl ${
+                    className={`min-h-[200px] md:min-h-[260px] p-4 md:p-6 flex flex-col justify-between transition-all duration-200 relative group rounded-2xl bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800 shadow-sm ${
                       isCurrentlySpeaking
-                        ? 'bg-red-500/5 dark:bg-red-500/10 ring-2 ring-[#DC2626]/40'
-                        : 'hover:bg-zinc-50/60 dark:hover:bg-zinc-900/40'
+                        ? 'bg-red-50/50 dark:bg-red-950/20 ring-2 ring-[#DC2626]/60 border-red-300 dark:border-red-900'
+                        : 'hover:border-zinc-300 dark:hover:border-zinc-700'
                     }`}
                   >
                     {/* Top: Compact Semantic Role Badge & Individual Play Button */}
@@ -1057,8 +1055,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                           isCurrentlySpeaking
                             ? 'bg-[#DC2626] text-white shadow-md animate-pulse'
                             : highContrastDark
-                            ? 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white'
-                            : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-zinc-900'
+                            ? 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white'
+                            : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800 hover:text-black'
                         }`}
                         title="Nghe riêng gợi ý này"
                       >
@@ -1069,10 +1067,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                     {/* Center: Extra Large Typography (High-Signal Projector Display) */}
                     <div className="my-auto py-2">
                       <div
-                        className={`font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-none tracking-tight transition-colors duration-150 ${
+                        className={`font-black font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight tracking-tight transition-colors duration-150 ${
                           isCurrentlySpeaking
                             ? 'text-[#DC2626] animate-pulse'
-                            : 'text-[#0A0A0A] dark:text-white'
+                            : 'text-black dark:text-white'
                         }`}
                       >
                         {mainText}
@@ -1080,14 +1078,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
                       {/* Bottom Subtitle / Transcript: Clearly Sized & Toggleable (Key V) */}
                       {showSubtitle && subText && (
-                        <div className="mt-3 sm:mt-4">
-                          <div
-                            className={`text-xl sm:text-2xl md:text-3xl tracking-normal text-[#6B6B76] dark:text-zinc-400 ${
-                              languageMode === 'VI_ONLY'
-                                ? 'font-mono font-semibold'
-                                : 'font-medium'
-                            }`}
-                          >
+                        <div className="mt-2 sm:mt-4">
+                          <div className="text-zinc-700 dark:text-zinc-200 font-semibold text-lg sm:text-xl md:text-2xl tracking-normal">
                             {subText}
                           </div>
                         </div>

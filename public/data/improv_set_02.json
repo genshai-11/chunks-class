@@ -7,11 +7,11 @@
   "sessions": [
     {
       "sessionNumber": 1,
-      "title": "Session 1 • 2 Hints (Rapid Reaction & Self Pitch)",
+      "title": "Session 1 • 2 Hints (Self Pitch & Core Accounting Reflex)",
       "hcTotal": 2,
       "hintTypes": [
-        "Keyword",
-        "Ending"
+        "Danh từ · Keyword",
+        "Động từ · Ending"
       ],
       "items": [
         {
@@ -22,16 +22,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i1_1",
-              "text": "work experience",
-              "translation": "kinh nghiệm làm việc thực tế",
-              "typeFunction": "Keyword",
+              "text": "experience",
+              "translation": "kinh nghiệm",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i1_2",
-              "text": "detailed in my resume",
-              "translation": "được trình bày rõ trong hồ sơ",
-              "typeFunction": "Ending",
+              "text": "gain",
+              "translation": "tích lũy",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -44,16 +44,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i2_1",
-              "text": "energetic mindset",
-              "translation": "tinh thần làm việc năng nổ",
-              "typeFunction": "Keyword",
+              "text": "financial report",
+              "translation": "báo cáo tài chính",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i2_2",
-              "text": "brought to every project",
-              "translation": "được mang vào từng dự án",
-              "typeFunction": "Ending",
+              "text": "finish",
+              "translation": "hoàn thành",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -66,16 +66,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i3_1",
-              "text": "accounting function",
-              "translation": "nghiệp vụ kế toán tài chính",
-              "typeFunction": "Keyword",
+              "text": "proactive",
+              "translation": "năng động",
+              "typeFunction": "Tính từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i3_2",
-              "text": "handled with high accuracy",
-              "translation": "được xử lý với độ chuẩn xác cao",
-              "typeFunction": "Ending",
+              "text": "work",
+              "translation": "làm việc",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -88,16 +88,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i4_1",
-              "text": "guide newcomers",
-              "translation": "hướng dẫn nhân viên mới",
-              "typeFunction": "Keyword",
+              "text": "skills",
+              "translation": "kỹ năng",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i4_2",
-              "text": "during onboarding week",
-              "translation": "trong tuần đầu hội nhập",
-              "typeFunction": "Ending",
+              "text": "improve",
+              "translation": "cải thiện",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -110,16 +110,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i5_1",
-              "text": "man of the month",
-              "translation": "nhân viên xuất sắc của tháng",
-              "typeFunction": "Keyword",
+              "text": "risk management",
+              "translation": "quản lý rủi ro",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i5_2",
-              "text": "awarded two times consecutively",
-              "translation": "được trao tặng hai lần liên tiếp",
-              "typeFunction": "Ending",
+              "text": "careful",
+              "translation": "cẩn thận",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -132,16 +132,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i6_1",
-              "text": "senior student",
-              "translation": "sinh viên năm cuối",
-              "typeFunction": "Keyword",
+              "text": "colleagues",
+              "translation": "đồng nghiệp",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i6_2",
-              "text": "graduating top of class",
-              "translation": "chuẩn bị tốt nghiệp thủ khoa",
-              "typeFunction": "Ending",
+              "text": "support",
+              "translation": "hỗ trợ",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -154,16 +154,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i7_1",
-              "text": "daily transactions",
-              "translation": "các giao dịch kế toán hằng ngày",
-              "typeFunction": "Keyword",
+              "text": "job interview",
+              "translation": "phỏng vấn",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i7_2",
-              "text": "reconciled before evening",
-              "translation": "được đối chiếu xong trước buổi tối",
-              "typeFunction": "Ending",
+              "text": "confident",
+              "translation": "tự tin",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -176,16 +176,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i8_1",
-              "text": "risk management",
-              "translation": "nghiệp vụ quản trị rủi ro",
-              "typeFunction": "Keyword",
+              "text": "transactions",
+              "translation": "giao dịch",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i8_2",
-              "text": "implemented across department",
-              "translation": "được áp dụng khắp phòng ban",
-              "typeFunction": "Ending",
+              "text": "reconcile",
+              "translation": "đối soát",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -198,16 +198,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i9_1",
-              "text": "monthly balance sheet",
-              "translation": "bảng cân đối kế toán hàng tháng",
-              "typeFunction": "Keyword",
+              "text": "creative",
+              "translation": "sáng tạo",
+              "typeFunction": "Tính từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i9_2",
-              "text": "audited without discrepancies",
-              "translation": "được kiểm toán không sai sót",
-              "typeFunction": "Ending",
+              "text": "solutions",
+              "translation": "giải pháp",
+              "typeFunction": "Danh từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -220,16 +220,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i10_1",
-              "text": "top company",
-              "translation": "doanh nghiệp hàng đầu thị trường",
-              "typeFunction": "Keyword",
+              "text": "balance sheet",
+              "translation": "bảng cân đối kế toán",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i10_2",
-              "text": "recruited for internship",
-              "translation": "được tuyển vào làm thực tập sinh",
-              "typeFunction": "Ending",
+              "text": "accurate",
+              "translation": "chính xác",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -242,16 +242,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i11_1",
-              "text": "core strengths",
-              "translation": "những điểm mạnh then chốt",
-              "typeFunction": "Keyword",
+              "text": "deadline",
+              "translation": "hạn chót",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i11_2",
-              "text": "aligned with job requirements",
-              "translation": "phù hợp hoàn hảo với vị trí ứng tuyển",
-              "typeFunction": "Ending",
+              "text": "meet",
+              "translation": "kịp thời hạn",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -264,16 +264,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i12_1",
-              "text": "open-ended questions",
-              "translation": "những câu hỏi phỏng vấn mở",
-              "typeFunction": "Keyword",
+              "text": "accounting system",
+              "translation": "hệ thống kế toán",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i12_2",
-              "text": "answered with calm confidence",
-              "translation": "được trả lời bằng sự tự tin điềm đạm",
-              "typeFunction": "Ending",
+              "text": "upgrade",
+              "translation": "nâng cấp",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -286,16 +286,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i13_1",
-              "text": "workplace integrity",
-              "translation": "sự chính trực trong công việc",
-              "typeFunction": "Keyword",
+              "text": "leadership",
+              "translation": "năng lực lãnh đạo",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i13_2",
-              "text": "valued above all else",
-              "translation": "được coi trọng trên hết mọi thứ",
-              "typeFunction": "Ending",
+              "text": "demonstrate",
+              "translation": "thể hiện",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -308,16 +308,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i14_1",
-              "text": "creative ideas",
-              "translation": "những sáng kiến đổi mới",
-              "typeFunction": "Keyword",
+              "text": "audit team",
+              "translation": "đoàn kiểm toán",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i14_2",
-              "text": "pitched to executive board",
-              "translation": "được trình bày trước ban giám đốc",
-              "typeFunction": "Ending",
+              "text": "coordinate",
+              "translation": "phối hợp",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -330,16 +330,16 @@
           "hints": [
             {
               "id": "h_set02_s1_i15_1",
-              "text": "convince recruiters",
-              "translation": "thuyết phục các nhà tuyển dụng",
-              "typeFunction": "Keyword",
+              "text": "career path",
+              "translation": "định hướng nghề nghiệp",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s1_i15_2",
-              "text": "through proven accomplishments",
-              "translation": "thông qua thành tích đã được chứng minh",
-              "typeFunction": "Ending",
+              "text": "clear",
+              "translation": "rõ ràng",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 2
             }
           ]
@@ -351,9 +351,9 @@
       "title": "Session 2 • 3 Hints (Cause-Effect & Career Context)",
       "hcTotal": 3,
       "hintTypes": [
-        "Keyword",
-        "Logic word",
-        "Ending"
+        "Danh từ · Keyword",
+        "Từ nối · Logic word",
+        "Tính từ · Ending"
       ],
       "items": [
         {
@@ -364,23 +364,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i1_1",
-              "text": "years of experience",
-              "translation": "nhiều năm kinh nghiệm làm việc",
-              "typeFunction": "Keyword",
+              "text": "tax audit",
+              "translation": "kiểm toán thuế",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i1_2",
-              "text": "leveraging solid",
-              "translation": "tận dụng nền tảng...",
-              "typeFunction": "Logic word",
+              "text": "before that",
+              "translation": "trước đó",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i1_3",
-              "text": "optimized department budget",
-              "translation": "tối ưu hóa ngân sách phòng ban",
-              "typeFunction": "Ending",
+              "text": "prepare",
+              "translation": "chuẩn bị kỹ",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -393,23 +393,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i2_1",
-              "text": "company restructuring",
-              "translation": "đợt tái cơ cấu doanh nghiệp",
-              "typeFunction": "Keyword",
+              "text": "financial data",
+              "translation": "dữ liệu tài chính",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i2_2",
-              "text": "following the sudden",
-              "translation": "ngay sau khi diễn ra...",
-              "typeFunction": "Logic word",
+              "text": "therefore",
+              "translation": "do đó",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i2_3",
-              "text": "assumed expanded leadership role",
-              "translation": "đảm nhận vai trò lãnh đạo mở rộng",
-              "typeFunction": "Ending",
+              "text": "reliable",
+              "translation": "đáng tin cậy",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -422,23 +422,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i3_1",
-              "text": "financial discrepancies",
-              "translation": "các sai lệch trong sổ sách tài chính",
-              "typeFunction": "Keyword",
+              "text": "team performance",
+              "translation": "hiệu suất nhóm",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i3_2",
-              "text": "in order to eliminate",
-              "translation": "nhằm mục đích dẹp bỏ...",
-              "typeFunction": "Logic word",
+              "text": "in addition",
+              "translation": "hơn nữa",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i3_3",
-              "text": "redesigned verification system",
-              "translation": "thiết kế lại hệ thống đối soát dữ liệu",
-              "typeFunction": "Ending",
+              "text": "exceed",
+              "translation": "vượt chỉ tiêu",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -451,23 +451,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i4_1",
-              "text": "tight deadline pressure",
-              "translation": "áp lực thời hạn bàn giao gấp gáp",
-              "typeFunction": "Keyword",
+              "text": "cash flow",
+              "translation": "dòng tiền",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i4_2",
-              "text": "despite working under",
-              "translation": "mặc dù luôn phải chịu...",
-              "typeFunction": "Logic word",
+              "text": "meanwhile",
+              "translation": "đồng thời",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i4_3",
-              "text": "delivered quarterly report flawlessly",
-              "translation": "hoàn thành báo cáo quý không tì vết",
-              "typeFunction": "Ending",
+              "text": "healthy",
+              "translation": "dồi dào lành mạnh",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -480,23 +480,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i5_1",
-              "text": "training new recruits",
-              "translation": "việc đào tạo nhân sự mới vào",
-              "typeFunction": "Keyword",
+              "text": "data discrepancy",
+              "translation": "chênh lệch số liệu",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i5_2",
-              "text": "being responsible for",
-              "translation": "chịu trách nhiệm chính trong việc...",
-              "typeFunction": "Logic word",
+              "text": "however",
+              "translation": "tuy nhiên",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i5_3",
-              "text": "boosted team productivity greatly",
-              "translation": "nâng cao đáng kể hiệu suất toàn đội ngũ",
-              "typeFunction": "Ending",
+              "text": "resolved",
+              "translation": "được xử lý",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -509,23 +509,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i6_1",
-              "text": "e-commerce campaign",
-              "translation": "chiến dịch bán hàng thương mại điện tử",
-              "typeFunction": "Keyword",
+              "text": "job promotion",
+              "translation": "thăng tiến công việc",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i6_2",
-              "text": "while managing the",
-              "translation": "trong lúc điều hành...",
-              "typeFunction": "Logic word",
+              "text": "as long as",
+              "translation": "miễn là",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i6_3",
-              "text": "doubled monthly sales revenue",
-              "translation": "tăng gấp đôi doanh số bán hàng tháng",
-              "typeFunction": "Ending",
+              "text": "dedicated",
+              "translation": "tận tụy",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -538,23 +538,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i7_1",
-              "text": "academic research honors",
-              "translation": "giải thưởng nghiên cứu học thuật",
-              "typeFunction": "Keyword",
+              "text": "annual budget",
+              "translation": "ngân sách năm",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i7_2",
-              "text": "as a result of winning",
-              "translation": "nhờ đạt được...",
-              "typeFunction": "Logic word",
+              "text": "next",
+              "translation": "tiếp theo",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i7_3",
-              "text": "secured full scholarship grant",
-              "translation": "nhận được suất học bổng toàn phần",
-              "typeFunction": "Ending",
+              "text": "approved",
+              "translation": "được thông qua",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -567,23 +567,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i8_1",
-              "text": "clearance sales campaign",
-              "translation": "chiến dịch xả hàng tồn kho lớn",
-              "typeFunction": "Keyword",
+              "text": "internal control",
+              "translation": "kiểm soát nội bộ",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i8_2",
-              "text": "specifically focusing on",
-              "translation": "tập trung mũi nhọn vào...",
-              "typeFunction": "Logic word",
+              "text": "otherwise",
+              "translation": "nếu không",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i8_3",
-              "text": "liquidated surplus inventory fast",
-              "translation": "giải phóng sạch lượng hàng tồn nhanh chóng",
-              "typeFunction": "Ending",
+              "text": "risky",
+              "translation": "rủi ro cao",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -596,23 +596,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i9_1",
-              "text": "unrelated interview questions",
-              "translation": "những câu hỏi phỏng vấn lạc đề",
-              "typeFunction": "Keyword",
+              "text": "professional growth",
+              "translation": "phát triển chuyên môn",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i9_2",
-              "text": "when confronted with",
-              "translation": "khi bất ngờ đối mặt với...",
-              "typeFunction": "Logic word",
+              "text": "if",
+              "translation": "nếu",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i9_3",
-              "text": "steered back to core skills",
-              "translation": "khéo léo dẫn dắt về kỹ năng trọng tâm",
-              "typeFunction": "Ending",
+              "text": "persistent",
+              "translation": "kiên trì",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -625,23 +625,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i10_1",
-              "text": "interpersonal team conflict",
-              "translation": "bất đồng quan điểm giữa đồng nghiệp",
-              "typeFunction": "Keyword",
+              "text": "accounting books",
+              "translation": "sổ sách kế toán",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i10_2",
-              "text": "stepped in to resolve",
-              "translation": "chủ động đứng ra hòa giải...",
-              "typeFunction": "Logic word",
+              "text": "eventually",
+              "translation": "sau cùng",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i10_3",
-              "text": "restored productive workspace harmony",
-              "translation": "lấy lại bầu không khí làm việc hiệu quả",
-              "typeFunction": "Ending",
+              "text": "transparent",
+              "translation": "minh bạch",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -654,23 +654,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i11_1",
-              "text": "cross-department collaboration",
-              "translation": "sự phối hợp giữa các phòng ban",
-              "typeFunction": "Keyword",
+              "text": "market analysis",
+              "translation": "phân tích thị trường",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i11_2",
-              "text": "by actively promoting",
-              "translation": "bằng cách thúc đẩy mạnh mẽ...",
-              "typeFunction": "Logic word",
+              "text": "in other words",
+              "translation": "nói cách khác",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i11_3",
-              "text": "accelerated product launch timeline",
-              "translation": "đẩy nhanh tiến độ tung sản phẩm mới",
-              "typeFunction": "Ending",
+              "text": "strategic",
+              "translation": "có tính chiến lược",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -683,23 +683,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i12_1",
-              "text": "unexpected budget cuts",
-              "translation": "việc cắt giảm ngân sách bất ngờ",
-              "typeFunction": "Keyword",
+              "text": "heavy workload",
+              "translation": "khối lượng công việc lớn",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i12_2",
-              "text": "adapting quickly to",
-              "translation": "nhanh chóng thích nghi trước...",
-              "typeFunction": "Logic word",
+              "text": "nevertheless",
+              "translation": "dù vậy",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i12_3",
-              "text": "automated manual accounting tasks",
-              "translation": "tự động hóa các thao tác kế toán thủ công",
-              "typeFunction": "Ending",
+              "text": "manageable",
+              "translation": "xoay xở ổn",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -712,23 +712,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i13_1",
-              "text": "demanding client expectations",
-              "translation": "kỳ vọng khắt khe từ phía khách hàng",
-              "typeFunction": "Keyword",
+              "text": "software training",
+              "translation": "đào tạo phần mềm",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i13_2",
-              "text": "in order to exceed",
-              "translation": "với quyết tâm vượt qua...",
-              "typeFunction": "Logic word",
+              "text": "for example",
+              "translation": "ví dụ",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i13_3",
-              "text": "provided continuous project updates",
-              "translation": "liên tục báo cáo tiến độ minh bạch",
-              "typeFunction": "Ending",
+              "text": "productive",
+              "translation": "năng suất",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -741,23 +741,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i14_1",
-              "text": "new software rollout",
-              "translation": "việc triển khai phần mềm nghiệp vụ mới",
-              "typeFunction": "Keyword",
+              "text": "client relationship",
+              "translation": "quan hệ khách hàng",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i14_2",
-              "text": "prior to executing",
-              "translation": "trước thời điểm đưa vào vận hành...",
-              "typeFunction": "Logic word",
+              "text": "then",
+              "translation": "sau đó",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i14_3",
-              "text": "conducted hands-on user training",
-              "translation": "trực tiếp hướng dẫn thao tác cho người dùng",
-              "typeFunction": "Ending",
+              "text": "strengthen",
+              "translation": "củng cố vững chắc",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -770,23 +770,23 @@
           "hints": [
             {
               "id": "h_set02_s2_i15_1",
-              "text": "interview anxiety jitters",
-              "translation": "cảm giác hồi hộp lo lắng khi phỏng vấn",
-              "typeFunction": "Keyword",
+              "text": "project milestone",
+              "translation": "mốc tiến độ dự án",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s2_i15_2",
-              "text": "managed to overcome",
-              "translation": "đã hoàn toàn chiến thắng...",
-              "typeFunction": "Logic word",
+              "text": "besides",
+              "translation": "ngoài ra",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s2_i15_3",
-              "text": "delivered convincing personal pitch",
-              "translation": "trình bày bài giới thiệu bản thân thuyết phục",
-              "typeFunction": "Ending",
+              "text": "completed",
+              "translation": "hoàn tất",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 3
             }
           ]
@@ -798,10 +798,10 @@
       "title": "Session 3 • 4 Hints (Nuance & Professional Skills)",
       "hcTotal": 4,
       "hintTypes": [
-        "Keyword",
-        "Logic word",
-        "Fancy word",
-        "Ending"
+        "Danh từ · Keyword",
+        "Từ nối · Logic word",
+        "Ẩn dụ · Fancy word",
+        "Tính từ · Ending"
       ],
       "items": [
         {
@@ -812,30 +812,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i1_1",
-              "text": "accounting function",
-              "translation": "chức năng kế toán doanh nghiệp",
-              "typeFunction": "Keyword",
+              "text": "risk assessment",
+              "translation": "đánh giá rủi ro",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i1_2",
-              "text": "overseeing the entire",
-              "translation": "chịu trách nhiệm bao quát toàn bộ...",
-              "typeFunction": "Logic word",
+              "text": "while",
+              "translation": "trong khi",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i1_3",
-              "text": "complex corporate ledger",
-              "translation": "hệ thống sổ cái doanh nghiệp phức tạp",
-              "typeFunction": "Fancy word",
+              "text": "red flag",
+              "translation": "dấu hiệu cảnh báo",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i1_4",
-              "text": "eliminated costly financial errors",
-              "translation": "loại bỏ sạch các sai sót tài chính tốn kém",
-              "typeFunction": "Ending",
+              "text": "investigate",
+              "translation": "điều tra kỹ",
+              "typeFunction": "Động từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -848,30 +848,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i2_1",
-              "text": "mentoring junior staff",
-              "translation": "việc dẫn dắt kèm cặp nhân viên mới",
-              "typeFunction": "Keyword",
+              "text": "audit season",
+              "translation": "mùa kiểm toán",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i2_2",
-              "text": "dedicatedly committing to",
-              "translation": "tận tâm cống hiến cho...",
-              "typeFunction": "Logic word",
+              "text": "however",
+              "translation": "tuy nhiên",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i2_3",
-              "text": "structured onboarding curriculum",
-              "translation": "giáo trình đào tạo hội nhập bài bản",
-              "typeFunction": "Fancy word",
+              "text": "lifeline",
+              "translation": "phao cứu cánh",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i2_4",
-              "text": "received man of the month award",
-              "translation": "được nhận danh hiệu nhân viên của tháng",
-              "typeFunction": "Ending",
+              "text": "supportive",
+              "translation": "tương trợ đắc lực",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -884,30 +884,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i3_1",
-              "text": "promotional sales campaign",
-              "translation": "chiến dịch khuyến mãi kích cầu",
-              "typeFunction": "Keyword",
+              "text": "Why accounting",
+              "translation": "Tại sao chọn kế toán",
+              "typeFunction": "Cụm nghi vấn · WH word",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i3_2",
-              "text": "strategically designing a",
-              "translation": "lên chiến lược thiết kế một...",
-              "typeFunction": "Logic word",
+              "text": "finally",
+              "translation": "sau cùng",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i3_3",
-              "text": "viral like-farming promotion",
-              "translation": "chiến dịch tương tác lan tỏa mạnh mẽ",
-              "typeFunction": "Fancy word",
+              "text": "stepping stone",
+              "translation": "bước đệm vững chắc",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i3_4",
-              "text": "drove massive online conversions",
-              "translation": "kéo về lượng đơn hàng trực tuyến khổng lồ",
-              "typeFunction": "Ending",
+              "text": "rewarding",
+              "translation": "xứng đáng",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -920,30 +920,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i4_1",
-              "text": "rigorous audit preparation",
-              "translation": "công tác chuẩn bị kiểm toán gắt gao",
-              "typeFunction": "Keyword",
+              "text": "financial discrepancy",
+              "translation": "bất thường tài chính",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i4_2",
-              "text": "meticulously completing the",
-              "translation": "hoàn thành tỉ mỉ từng hạng mục của...",
-              "typeFunction": "Logic word",
+              "text": "therefore",
+              "translation": "do đó",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i4_3",
-              "text": "monthly balance sheet",
-              "translation": "bảng cân đối kế toán hàng tháng",
-              "typeFunction": "Fancy word",
+              "text": "wake-up call",
+              "translation": "hồi chuông cảnh tỉnh",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i4_4",
-              "text": "earned praise from senior partners",
-              "translation": "được các đối tác cấp cao hết lời khen ngợi",
-              "typeFunction": "Ending",
+              "text": "corrected",
+              "translation": "đã sửa chữa",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -956,30 +956,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i5_1",
-              "text": "senior student leader",
-              "translation": "thủ lĩnh sinh viên năm cuối",
-              "typeFunction": "Keyword",
+              "text": "balance sheet",
+              "translation": "bảng cân đối kế toán",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i5_2",
-              "text": "excelling consistently as a",
-              "translation": "luôn giữ vững phong độ xuất sắc của một...",
-              "typeFunction": "Logic word",
+              "text": "in contrast",
+              "translation": "ngược lại",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i5_3",
-              "text": "top economics university scholar",
-              "translation": "sinh viên ưu tú trường đại học kinh tế",
-              "typeFunction": "Fancy word",
+              "text": "rock solid",
+              "translation": "vững như bàn thạch",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i5_4",
-              "text": "transitioned smoothly into full-time role",
-              "translation": "chuyển tiếp suôn sẻ sang vị trí chính thức",
-              "typeFunction": "Ending",
+              "text": "accurate",
+              "translation": "chuẩn xác",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -992,30 +992,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i6_1",
-              "text": "unforeseen corporate restructuring",
-              "translation": "việc tái cấu trúc doanh nghiệp bất ngờ",
-              "typeFunction": "Keyword",
+              "text": "Which strength",
+              "translation": "Điểm mạnh nào",
+              "typeFunction": "Cụm nghi vấn · WH word",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i6_2",
-              "text": "successfully weathering the",
-              "translation": "vượt qua trọn vẹn giai đoạn...",
-              "typeFunction": "Logic word",
+              "text": "otherwise",
+              "translation": "nếu không",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i6_3",
-              "text": "turbulent managerial transition",
-              "translation": "chuyển giao bộ máy quản lý đầy biến động",
-              "typeFunction": "Fancy word",
+              "text": "trump card",
+              "translation": "con bài chiến lược",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i6_4",
-              "text": "retained key client accounts intact",
-              "translation": "giữ vững các hợp đồng khách hàng trọng điểm",
-              "typeFunction": "Ending",
+              "text": "outstanding",
+              "translation": "vượt trội",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1028,30 +1028,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i7_1",
-              "text": "uncompromising workplace integrity",
-              "translation": "tính chính trực tuyệt đối trong công sở",
-              "typeFunction": "Keyword",
+              "text": "budget deficit",
+              "translation": "thâm hụt ngân sách",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i7_2",
-              "text": "firmly upholding our",
-              "translation": "luôn kiên định giữ vững...",
-              "typeFunction": "Logic word",
+              "text": "nevertheless",
+              "translation": "dù vậy",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i7_3",
-              "text": "transparent governance standards",
-              "translation": "những chuẩn mực quản trị minh bạch",
-              "typeFunction": "Fancy word",
+              "text": "game plan",
+              "translation": "chiến lược bài bản",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i7_4",
-              "text": "earned trust from executive directors",
-              "translation": "tạo dựng niềm tin vững chắc từ hội đồng quản trị",
-              "typeFunction": "Ending",
+              "text": "solved",
+              "translation": "được tháo gỡ",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1064,30 +1064,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i8_1",
-              "text": "behavioral interview pitch",
-              "translation": "phần trả lời phỏng vấn hành vi",
-              "typeFunction": "Keyword",
+              "text": "data integrity",
+              "translation": "tính toàn vẹn dữ liệu",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i8_2",
-              "text": "delivering an articulate",
-              "translation": "trình bày một cách mạch lạc trong...",
-              "typeFunction": "Logic word",
+              "text": "as long as",
+              "translation": "miễn là",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i8_3",
-              "text": "compelling professional narrative",
-              "translation": "câu chuyện phát triển sự nghiệp đầy thuyết phục",
-              "typeFunction": "Fancy word",
+              "text": "cornerstone",
+              "translation": "hòn đá tảng",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i8_4",
-              "text": "impressed recruitment committee deeply",
-              "translation": "gây ấn tượng sâu sắc với hội đồng tuyển dụng",
-              "typeFunction": "Ending",
+              "text": "intact",
+              "translation": "nguyên vẹn",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1100,30 +1100,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i9_1",
-              "text": "cross-functional team synergy",
-              "translation": "sức mạnh gắn kết liên phòng ban",
-              "typeFunction": "Keyword",
+              "text": "How much value",
+              "translation": "Đem lại bao nhiêu giá trị",
+              "typeFunction": "Cụm nghi vấn · WH word",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i9_2",
-              "text": "actively fostering strong",
-              "translation": "tích cực gây dựng và nuôi dưỡng...",
-              "typeFunction": "Logic word",
+              "text": "if",
+              "translation": "nếu",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i9_3",
-              "text": "harmonious workplace collaboration",
-              "translation": "sự cộng tác hài hòa nơi công sở",
-              "typeFunction": "Fancy word",
+              "text": "win-win",
+              "translation": "đôi bên cùng có lợi",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i9_4",
-              "text": "surpassed annual departmental goals",
-              "translation": "hoàn thành vượt mức chỉ tiêu năm của phòng",
-              "typeFunction": "Ending",
+              "text": "measurable",
+              "translation": "đo lường được",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1136,30 +1136,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i10_1",
-              "text": "high-stakes client negotiation",
-              "translation": "cuộc đàm phán hợp đồng cân não",
-              "typeFunction": "Keyword",
+              "text": "executive pitch",
+              "translation": "bài thuyết trình ban giám đốc",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i10_2",
-              "text": "leading the crucial",
-              "translation": "dẫn dắt trực tiếp phiên...",
-              "typeFunction": "Logic word",
+              "text": "before that",
+              "translation": "trước đó",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i10_3",
-              "text": "strategic enterprise partnership",
-              "translation": "hợp tác chiến lược cấp doanh nghiệp",
-              "typeFunction": "Fancy word",
+              "text": "dry run",
+              "translation": "buổi tập dượt kỹ",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i10_4",
-              "text": "secured multi-year service contract",
-              "translation": "ký kết thành công hợp đồng dài hạn nhiều năm",
-              "typeFunction": "Ending",
+              "text": "persuasive",
+              "translation": "thuyết phục",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1172,30 +1172,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i11_1",
-              "text": "proactive workflow automation",
-              "translation": "chủ động tự động hóa luồng công việc",
-              "typeFunction": "Keyword",
+              "text": "system bottleneck",
+              "translation": "nút thắt cổ chai",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i11_2",
-              "text": "spearheading modern",
-              "translation": "tiên phong dẫn dắt quá trình...",
-              "typeFunction": "Logic word",
+              "text": "in addition",
+              "translation": "hơn nữa",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i11_3",
-              "text": "innovative software integration",
-              "translation": "tích hợp phần mềm đổi mới công nghệ",
-              "typeFunction": "Fancy word",
+              "text": "silver bullet",
+              "translation": "phương thuốc đặc trị",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i11_4",
-              "text": "slashed transaction processing time",
-              "translation": "cắt giảm một nửa thời gian xử lý giao dịch",
-              "typeFunction": "Ending",
+              "text": "streamlined",
+              "translation": "tinh gọn",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1208,30 +1208,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i12_1",
-              "text": "challenging open-ended questions",
-              "translation": "những câu hỏi mở đầy thử thách",
-              "typeFunction": "Keyword",
+              "text": "probation period",
+              "translation": "giai đoạn thử việc",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i12_2",
-              "text": "deftly unpacking each",
-              "translation": "khéo léo bóc tách và phân tích từng...",
-              "typeFunction": "Logic word",
+              "text": "next",
+              "translation": "tiếp theo",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i12_3",
-              "text": "intricate scenario dilemma",
-              "translation": "tình huống nghiệp vụ hóc búa",
-              "typeFunction": "Fancy word",
+              "text": "acid test",
+              "translation": "phép thử thực tế",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i12_4",
-              "text": "convinced interview panel decisively",
-              "translation": "thuyết phục hoàn toàn các vị giám khảo",
-              "typeFunction": "Ending",
+              "text": "passed",
+              "translation": "vượt qua xuất sắc",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1244,30 +1244,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i13_1",
-              "text": "rapid market downturn",
-              "translation": "thời kỳ thị trường suy thoái nhanh",
-              "typeFunction": "Keyword",
+              "text": "Where to improve",
+              "translation": "Nên cải thiện mặt nào",
+              "typeFunction": "Cụm nghi vấn · WH word",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i13_2",
-              "text": "remaining agile during",
-              "translation": "giữ vững sự linh hoạt bén nhạy giữa...",
-              "typeFunction": "Logic word",
+              "text": "then",
+              "translation": "sau đó",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i13_3",
-              "text": "severe industry headwind",
-              "translation": "những cơn sóng gió ngành khốc liệt",
-              "typeFunction": "Fancy word",
+              "text": "learning curve",
+              "translation": "quá trình tiếp thu",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i13_4",
-              "text": "maintained positive operating margins",
-              "translation": "duy trì tốt biên lợi nhuận hoạt động dương",
-              "typeFunction": "Ending",
+              "text": "accelerated",
+              "translation": "được đẩy nhanh",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1280,30 +1280,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i14_1",
-              "text": "dynamic project management",
-              "translation": "năng lực điều phối dự án linh hoạt",
-              "typeFunction": "Keyword",
+              "text": "unethical practice",
+              "translation": "hành vi phi đạo đức",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i14_2",
-              "text": "effectively utilizing modern",
-              "translation": "vận dụng hiệu quả những...",
-              "typeFunction": "Logic word",
+              "text": "for that reason",
+              "translation": "chính vì thế",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i14_3",
-              "text": "agile delivery methodologies",
-              "translation": "phương pháp quản trị dự án tinh gọn",
-              "typeFunction": "Fancy word",
+              "text": "line in the sand",
+              "translation": "ranh giới bất khả xâm phạm",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i14_4",
-              "text": "delivered milestone ahead of schedule",
-              "translation": "bàn giao cột mốc công việc trước tiến độ",
-              "typeFunction": "Ending",
+              "text": "rejected",
+              "translation": "bị khước từ dứt khoát",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1316,30 +1316,30 @@
           "hints": [
             {
               "id": "h_set02_s3_i15_1",
-              "text": "long-term career roadmap",
-              "translation": "lộ trình phát triển sự nghiệp lâu dài",
-              "typeFunction": "Keyword",
+              "text": "career opportunity",
+              "translation": "cơ hội nghề nghiệp",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s3_i15_2",
-              "text": "clearly presenting a",
-              "translation": "trình bày rõ ràng và mạch lạc một...",
-              "typeFunction": "Logic word",
+              "text": "besides",
+              "translation": "ngoài ra",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s3_i15_3",
-              "text": "purposeful leadership trajectory",
-              "translation": "định hướng phát triển năng lực lãnh đạo",
-              "typeFunction": "Fancy word",
+              "text": "golden ticket",
+              "translation": "tấm vé vàng đổi đời",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s3_i15_4",
-              "text": "demonstrated strong company commitment",
-              "translation": "khẳng định cam kết gắn bó lâu dài cùng công ty",
-              "typeFunction": "Ending",
+              "text": "seized",
+              "translation": "được nắm bắt",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 4
             }
           ]
@@ -1351,11 +1351,11 @@
       "title": "Session 4 • 5 Hints (Full Spoken Reflex Flow)",
       "hcTotal": 5,
       "hintTypes": [
-        "Intro",
-        "Keyword",
-        "Logic word",
-        "Fancy word",
-        "Ending"
+        "Cụm mào đầu · Intro",
+        "Danh từ · Keyword",
+        "Từ nối · Logic word",
+        "Ẩn dụ · Fancy word",
+        "Tính từ · Ending"
       ],
       "items": [
         {
@@ -1366,37 +1366,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i1_1",
-              "text": "Tell me about yourself",
-              "translation": "hãy giới thiệu về bản thân bạn",
-              "typeFunction": "Intro",
+              "text": "First and foremost",
+              "translation": "Trước hết và quan trọng nhất",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i1_2",
-              "text": "18 years of experience",
-              "translation": "18 năm kinh nghiệm trong ngành",
-              "typeFunction": "Keyword",
+              "text": "professional ethics",
+              "translation": "đạo đức nghề nghiệp",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i1_3",
-              "text": "demonstrates how I",
-              "translation": "chứng minh rõ việc tôi đã...",
-              "typeFunction": "Logic word",
+              "text": "while",
+              "translation": "trong khi",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i1_4",
-              "text": "mastered accounting functions",
-              "translation": "làm chủ các nghiệp vụ kế toán chuyên sâu",
-              "typeFunction": "Fancy word",
+              "text": "moral compass",
+              "translation": "kim chỉ nam dẫn đường",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i1_5",
-              "text": "drove organizational excellence",
-              "translation": "thúc đẩy tổ chức phát triển vượt bậc",
-              "typeFunction": "Ending",
+              "text": "unbending",
+              "translation": "không nhân nhượng",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1409,37 +1409,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i2_1",
-              "text": "I'm not bragging but",
-              "translation": "không phải tôi khoe khoang đâu nhưng",
-              "typeFunction": "Intro",
+              "text": "To tell you the truth",
+              "translation": "Thành thật giãi bày",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i2_2",
-              "text": "man of the month",
-              "translation": "nhân viên xuất sắc của tháng",
-              "typeFunction": "Keyword",
+              "text": "financial modeling",
+              "translation": "mô hình hóa tài chính",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i2_3",
-              "text": "was awarded because of",
-              "translation": "đã được trao tặng nhờ...",
-              "typeFunction": "Logic word",
+              "text": "however",
+              "translation": "tuy nhiên",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i2_4",
-              "text": "exceptional newcomer mentoring",
-              "translation": "thành tích kèm cặp người mới xuất chúng",
-              "typeFunction": "Fancy word",
+              "text": "hard nut",
+              "translation": "bài toán hóc búa",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i2_5",
-              "text": "raised overall department output",
-              "translation": "nâng tầm năng suất cho cả phòng ban",
-              "typeFunction": "Ending",
+              "text": "conquered",
+              "translation": "được chinh phục",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1452,37 +1452,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i3_1",
-              "text": "Specifically speaking",
-              "translation": "nói một cách cụ thể hơn",
-              "typeFunction": "Intro",
+              "text": "In my humble opinion",
+              "translation": "Theo ý kiến khiêm tốn của tôi",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i3_2",
-              "text": "reconciliation of transactions",
-              "translation": "khâu đối chiếu các giao dịch",
-              "typeFunction": "Keyword",
+              "text": "cross-functional team",
+              "translation": "nhóm liên phòng ban",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i3_3",
-              "text": "requires strict diligence and",
-              "translation": "đòi hỏi sự cẩn trọng cao độ và...",
-              "typeFunction": "Logic word",
+              "text": "otherwise",
+              "translation": "nếu không",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i3_4",
-              "text": "flawless bookkeeping precision",
-              "translation": "độ chuẩn xác tuyệt đối trong lưu giữ sổ sách",
-              "typeFunction": "Fancy word",
+              "text": "silo mentality",
+              "translation": "tư duy cục bộ",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i3_5",
-              "text": "prevented multi-million audits",
-              "translation": "ngăn chặn các rủi ro kiểm toán hàng triệu đô",
-              "typeFunction": "Ending",
+              "text": "collaborative",
+              "translation": "hợp tác khăng khít",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1495,37 +1495,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i4_1",
-              "text": "Besides that point",
-              "translation": "bên cạnh điểm sáng đó ra",
-              "typeFunction": "Intro",
+              "text": "As far as I'm concerned",
+              "translation": "Theo góc nhìn chuyên môn của tôi",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i4_2",
-              "text": "energetic senior student",
-              "translation": "sinh viên năm cuối đầy nhiệt huyết",
-              "typeFunction": "Keyword",
+              "text": "cost reduction",
+              "translation": "cắt giảm chi phí",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i4_3",
-              "text": "balanced coursework while",
-              "translation": "đã cân bằng việc học tại trường trong khi...",
-              "typeFunction": "Logic word",
+              "text": "therefore",
+              "translation": "do đó",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i4_4",
-              "text": "leading e-commerce sales",
-              "translation": "dẫn dắt các chiến dịch bán hàng trực tuyến",
-              "typeFunction": "Fancy word",
+              "text": "low-hanging fruit",
+              "translation": "thành quả dễ gặt hái",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i4_5",
-              "text": "surpassed quarterly target goals",
-              "translation": "vượt xa các chỉ tiêu doanh số theo quý",
-              "typeFunction": "Ending",
+              "text": "optimized",
+              "translation": "được tối ưu",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1538,37 +1538,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i5_1",
-              "text": "Soon after that",
-              "translation": "ngay sau cột mốc đó",
-              "typeFunction": "Intro",
+              "text": "Believe it or not",
+              "translation": "Dù tin hay không",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i5_2",
-              "text": "company restructure plan",
-              "translation": "kế hoạch tái cơ cấu doanh nghiệp",
-              "typeFunction": "Keyword",
+              "text": "cloud migration",
+              "translation": "chuyển đổi dữ liệu đám mây",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i5_3",
-              "text": "opened new avenues to",
-              "translation": "đã mở ra cơ hội lớn để...",
-              "typeFunction": "Logic word",
+              "text": "eventually",
+              "translation": "sau cùng",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i5_4",
-              "text": "eliminate redundant procedures",
-              "translation": "loại bỏ các quy trình thừa thãi rườm rà",
-              "typeFunction": "Fancy word",
+              "text": "smooth sailing",
+              "translation": "thuận buồm xuôi gió",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i5_5",
-              "text": "streamlined overall workflow",
-              "translation": "tinh gọn toàn bộ guồng quay công việc",
-              "typeFunction": "Ending",
+              "text": "seamless",
+              "translation": "liền mạch trơn tru",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1581,37 +1581,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i6_1",
-              "text": "In other words",
-              "translation": "nói theo một cách khác",
-              "typeFunction": "Intro",
+              "text": "From my experience",
+              "translation": "Từ kinh nghiệm thực tế của tôi",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i6_2",
-              "text": "uncompromising integrity",
-              "translation": "sự chính trực không bao giờ thỏa hiệp",
-              "typeFunction": "Keyword",
+              "text": "quarterly closing",
+              "translation": "chốt sổ kế toán quý",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i6_3",
-              "text": "serves as my",
-              "translation": "đóng vai trò là...",
-              "typeFunction": "Logic word",
+              "text": "meanwhile",
+              "translation": "đồng thời",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i6_4",
-              "text": "intangible internal anchor",
-              "translation": "điểm tựa nội lực vô hình vững chắc",
-              "typeFunction": "Fancy word",
+              "text": "cool head",
+              "translation": "cái đầu lạnh điềm tĩnh",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i6_5",
-              "text": "guides every ethical decision",
-              "translation": "dẫn lối cho mọi quyết định chuẩn mực đạo đức",
-              "typeFunction": "Ending",
+              "text": "focused",
+              "translation": "tập trung cao độ",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1624,37 +1624,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i7_1",
-              "text": "As long as",
-              "translation": "miễn là chúng ta",
-              "typeFunction": "Intro",
+              "text": "Honestly speaking",
+              "translation": "Nói một cách chân thành",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i7_2",
-              "text": "open-ended questions",
-              "translation": "những câu hỏi phỏng vấn mở",
-              "typeFunction": "Keyword",
+              "text": "junior analyst",
+              "translation": "chuyên viên phân tích trẻ",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i7_3",
-              "text": "are answered with honest",
-              "translation": "được đối đáp bằng sự chân thành cùng...",
-              "typeFunction": "Logic word",
+              "text": "if",
+              "translation": "nếu",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i7_4",
-              "text": "proven track record",
-              "translation": "những chiến tích thực tế đã được kiểm chứng",
-              "typeFunction": "Fancy word",
+              "text": "eager beaver",
+              "translation": "người chăm chỉ nhiệt thành",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i7_5",
-              "text": "convince any hiring panel",
-              "translation": "chắc chắn thuyết phục được mọi nhà tuyển dụng",
-              "typeFunction": "Ending",
+              "text": "promising",
+              "translation": "đầy triển vọng",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1667,37 +1667,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i8_1",
-              "text": "Fortunately enough",
-              "translation": "thật may mắn khi mà",
-              "typeFunction": "Intro",
+              "text": "Don't get me wrong",
+              "translation": "Đừng hiểu sai ý tôi",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i8_2",
-              "text": "monthly balance sheet",
-              "translation": "bảng cân đối kế toán hàng tháng",
-              "typeFunction": "Keyword",
+              "text": "internal audit",
+              "translation": "kiểm toán nội bộ",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i8_3",
-              "text": "was verified thoroughly through",
-              "translation": "đã được thẩm định kỹ lưỡng nhờ...",
-              "typeFunction": "Logic word",
+              "text": "nevertheless",
+              "translation": "dù vậy",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i8_4",
-              "text": "rigorous internal review",
-              "translation": "quy trình rà soát nội bộ gắt gao",
-              "typeFunction": "Fancy word",
+              "text": "fine-tooth comb",
+              "translation": "soi kỹ từng chân tơ kẽ tóc",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i8_5",
-              "text": "passed external audit smoothly",
-              "translation": "vượt qua kỳ kiểm toán bên ngoài trơn tru",
-              "typeFunction": "Ending",
+              "text": "rigorous",
+              "translation": "ngặt nghèo chuẩn chỉ",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1710,37 +1710,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i9_1",
-              "text": "For better or worse",
-              "translation": "dù tình thế có ra sao",
-              "typeFunction": "Intro",
+              "text": "As a matter of fact",
+              "translation": "Trên thực tế kiểm chứng",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i9_2",
-              "text": "unpredictable market shifts",
-              "translation": "những biến động thị trường khôn lường",
-              "typeFunction": "Keyword",
+              "text": "budget variance",
+              "translation": "chênh lệch ngân sách",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i9_3",
-              "text": "demanded that we adopt",
-              "translation": "đòi hỏi chúng tôi phải áp dụng...",
-              "typeFunction": "Logic word",
+              "text": "before that",
+              "translation": "trước đó",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i9_4",
-              "text": "innovative digital strategies",
-              "translation": "những chiến lược chuyển đổi số đột phá",
-              "typeFunction": "Fancy word",
+              "text": "smoking gun",
+              "translation": "bằng chứng rõ mười mươi",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i9_5",
-              "text": "strengthened long-term resilience",
-              "translation": "gia tăng sức bền bỉ dài hạn cho công ty",
-              "typeFunction": "Ending",
+              "text": "detected",
+              "translation": "được phát hiện",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1753,37 +1753,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i10_1",
-              "text": "To be specific",
-              "translation": "nói cụ thể hơn nữa nhé",
-              "typeFunction": "Intro",
+              "text": "Just to clarify",
+              "translation": "Chỉ để làm rõ hơn",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i10_2",
-              "text": "clearance sales promotion",
-              "translation": "đợt khuyến mãi xả hàng quy mô lớn",
-              "typeFunction": "Keyword",
+              "text": "emergency reserve",
+              "translation": "khoản dự phòng khẩn cấp",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i10_3",
-              "text": "succeeded mainly because of",
-              "translation": "thành công vang dội chủ yếu nhờ...",
-              "typeFunction": "Logic word",
+              "text": "in addition",
+              "translation": "hơn nữa",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i10_4",
-              "text": "persuasive marketing copy",
-              "translation": "nội dung quảng bá đánh trúng tâm lý người mua",
-              "typeFunction": "Fancy word",
+              "text": "financial cushion",
+              "translation": "tấm đệm tài chính",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i10_5",
-              "text": "cleared aging warehouse inventory",
-              "translation": "dọn sạch hàng lưu kho lâu ngày trong kho",
-              "typeFunction": "Ending",
+              "text": "safe",
+              "translation": "an toàn tuyệt đối",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1796,37 +1796,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i11_1",
-              "text": "Take your time",
-              "translation": "cứ thong thả xem xét",
-              "typeFunction": "Intro",
+              "text": "By all accounts",
+              "translation": "Theo đánh giá chung",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i11_2",
-              "text": "academic credentials portfolio",
-              "translation": "bộ hồ sơ thành tích học tập",
-              "typeFunction": "Keyword",
+              "text": "project leader",
+              "translation": "người dẫn dắt dự án",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i11_3",
-              "text": "proves how thoroughly I",
-              "translation": "chứng minh việc tôi đã...",
-              "typeFunction": "Logic word",
+              "text": "next",
+              "translation": "tiếp theo",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i11_4",
-              "text": "mastered economic principles",
-              "translation": "lĩnh hội sâu sắc các nguyên lý kinh tế học",
-              "typeFunction": "Fancy word",
+              "text": "driving force",
+              "translation": "đầu tàu kéo tiến độ",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i11_5",
-              "text": "ready for senior responsibilities",
-              "translation": "hoàn toàn sẵn sàng cho các trọng trách lớn",
-              "typeFunction": "Ending",
+              "text": "inspirational",
+              "translation": "truyền cảm hứng",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1839,37 +1839,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i12_1",
-              "text": "People often say",
-              "translation": "người ta thường hay nói rằng",
-              "typeFunction": "Intro",
+              "text": "To put it another way",
+              "translation": "Nói bằng cách khác",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i12_2",
-              "text": "harmonious office collaboration",
-              "translation": "sự đồng lòng gắn kết trong văn phòng",
-              "typeFunction": "Keyword",
+              "text": "client trust",
+              "translation": "niềm tin của khách hàng",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i12_3",
-              "text": "flourishes only when we",
-              "translation": "chỉ đơm hoa kết trái một khi chúng ta...",
-              "typeFunction": "Logic word",
+              "text": "in other words",
+              "translation": "nói cách khác",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i12_4",
-              "text": "cultivate mutual respect",
-              "translation": "biết tôn trọng và lắng nghe lẫn nhau",
-              "typeFunction": "Fancy word",
+              "text": "bread and butter",
+              "translation": "miếng cơm manh áo cốt lõi",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i12_5",
-              "text": "elevates overall team morale",
-              "translation": "vực dậy tinh thần cho toàn thể đồng đội",
-              "typeFunction": "Ending",
+              "text": "vital",
+              "translation": "sống còn",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1882,37 +1882,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i13_1",
-              "text": "No worries at all",
-              "translation": "hoàn toàn không có gì phải lo",
-              "typeFunction": "Intro",
+              "text": "Keep in mind",
+              "translation": "Hãy luôn ghi nhớ",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i13_2",
-              "text": "temporary budget constraint",
-              "translation": "những hạn chế ngân sách tạm thời",
-              "typeFunction": "Keyword",
+              "text": "compliance regulation",
+              "translation": "quy định tuân thủ pháp lý",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i13_3",
-              "text": "can be managed by",
-              "translation": "đều có thể được tháo gỡ nhờ...",
-              "typeFunction": "Logic word",
+              "text": "as long as",
+              "translation": "miễn là",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i13_4",
-              "text": "optimizing core resources",
-              "translation": "việc tối ưu hóa các nguồn lực cốt lõi",
-              "typeFunction": "Fancy word",
+              "text": "ahead of curve",
+              "translation": "đi trước đón đầu",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i13_5",
-              "text": "delivers all project targets",
-              "translation": "vẫn hoàn thành mọi mục tiêu dự án đề ra",
-              "typeFunction": "Ending",
+              "text": "bulletproof",
+              "translation": "vững vàng không sơ hở",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1925,37 +1925,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i14_1",
-              "text": "What do you say",
-              "translation": "bạn nghĩ thế nào nếu",
-              "typeFunction": "Intro",
+              "text": "You can be sure that",
+              "translation": "Bạn có thể chắc chắn rằng",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i14_2",
-              "text": "restructuring accounting team",
-              "translation": "việc tái tổ chức lại bộ phận kế toán",
-              "typeFunction": "Keyword",
+              "text": "final report",
+              "translation": "báo cáo quyết toán cuối cùng",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i14_3",
-              "text": "empowers our staff with",
-              "translation": "sẽ trao quyền cho đội ngũ với...",
-              "typeFunction": "Logic word",
+              "text": "then",
+              "translation": "sau đó",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i14_4",
-              "text": "cutting-edge automation tools",
-              "translation": "những công cụ tự động hóa hàng đầu",
-              "typeFunction": "Fancy word",
+              "text": "clean sheet",
+              "translation": "hồ sơ sạch tinh tươm",
+              "typeFunction": "Cụm gợi hình · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i14_5",
-              "text": "doubles monthly operational efficiency",
-              "translation": "nhân đôi hiệu quả vận hành hằng tháng",
-              "typeFunction": "Ending",
+              "text": "flawless",
+              "translation": "hoàn hảo",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]
@@ -1968,37 +1968,37 @@
           "hints": [
             {
               "id": "h_set02_s4_i15_1",
-              "text": "Shall we conclude",
-              "translation": "chúng ta cùng khép lại bằng việc",
-              "typeFunction": "Intro",
+              "text": "All in all",
+              "translation": "Tóm lại mọi điều",
+              "typeFunction": "Cụm mào đầu · Intro",
               "itemIndex": 1
             },
             {
               "id": "h_set02_s4_i15_2",
-              "text": "consistent work experience",
-              "translation": "bề dày kinh nghiệm công tác vững vàng",
-              "typeFunction": "Keyword",
+              "text": "finance career",
+              "translation": "con đường sự nghiệp tài chính",
+              "typeFunction": "Danh từ · Keyword",
               "itemIndex": 2
             },
             {
               "id": "h_set02_s4_i15_3",
-              "text": "combined harmoniously with",
-              "translation": "kết hợp hài hòa cùng với...",
-              "typeFunction": "Logic word",
+              "text": "finally",
+              "translation": "cuối cùng",
+              "typeFunction": "Từ nối · Logic word",
               "itemIndex": 3
             },
             {
               "id": "h_set02_s4_i15_4",
-              "text": "unrelenting proactive energy",
-              "translation": "nguồn năng lượng chủ động không ngừng nghỉ",
-              "typeFunction": "Fancy word",
+              "text": "true calling",
+              "translation": "tiếng gọi đam mê đích thực",
+              "typeFunction": "Ẩn dụ · Fancy word",
               "itemIndex": 4
             },
             {
               "id": "h_set02_s4_i15_5",
-              "text": "makes me ideal candidate",
-              "translation": "giúp tôi trở thành ứng viên sáng giá nhất",
-              "typeFunction": "Ending",
+              "text": "fulfilling",
+              "translation": "viên mãn trọn vẹn",
+              "typeFunction": "Tính từ · Ending",
               "itemIndex": 5
             }
           ]

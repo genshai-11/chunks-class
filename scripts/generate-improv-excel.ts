@@ -4,8 +4,8 @@ import * as XLSX from 'xlsx';
 import { IMPROV_SET_01, IMPROV_SET_02 } from '../src/data/improvSet01And02';
 import { ImprovPackage } from '../src/types/improv';
 
-function packageToExcelBuffer(pkg: ImprovPackage): Buffer {
-  let maxHints = 4;
+export function packageToExcelBuffer(pkg: ImprovPackage): Buffer {
+  let maxHints = 5;
   pkg.sessions.forEach(s => {
     s.items.forEach(it => {
       if (it.hints.length > maxHints) {
@@ -14,28 +14,62 @@ function packageToExcelBuffer(pkg: ImprovPackage): Buffer {
     });
   });
 
-  const rows: Record<string, any>[] = [];
+  // 1. Build Header row matching Improv-package-sample.xlsx
+  // Format: Session, Item, hc-total, hint-1..N, hint-1..N-translation, hint-1..N-type / function
+  const headers: string[] = ['Session', 'Item', 'hc-total'];
 
+  for (let h = 1; h <= maxHints; h++) {
+    headers.push(`hint-${h}`);
+  }
+  for (let h = 1; h <= maxHints; h++) {
+    headers.push(`hint-${h}-translation`);
+  }
+  for (let h = 1; h <= maxHints; h++) {
+    headers.push(`hint-${h}-type / function`);
+  }
+
+  // 2. Build Data rows
+  const aoa: any[][] = [];
+
+  // Row 0: Package Title
+  aoa.push([pkg.title]);
+  // Row 1: Package Description / Instructions
+  aoa.push([pkg.description]);
+  // Row 2: Header row
+  aoa.push(headers);
+
+  // Row 3+: Items
   pkg.sessions.forEach(session => {
     session.items.forEach(item => {
-      const row: Record<string, any> = {
-        'Session': item.sessionNumber,
-        'Item': item.itemNumber,
-        'hc-total': item.hcTotal || item.hints.length
-      };
+      const rowData: any[] = [
+        item.sessionNumber,
+        item.itemNumber,
+        item.hcTotal || item.hints.length
+      ];
 
+      // hint texts
       for (let h = 1; h <= maxHints; h++) {
         const hint = item.hints.find(hi => hi.itemIndex === h) || item.hints[h - 1];
-        row[`hint-${h}`] = hint ? hint.text : '';
-        row[`hint-${h}-translation`] = hint ? hint.translation : '';
-        row[`hint-${h}-type / function`] = hint ? hint.typeFunction : '';
+        rowData.push(hint ? hint.text : '');
       }
 
-      rows.push(row);
+      // hint translations
+      for (let h = 1; h <= maxHints; h++) {
+        const hint = item.hints.find(hi => hi.itemIndex === h) || item.hints[h - 1];
+        rowData.push(hint ? hint.translation : '');
+      }
+
+      // hint types / functions
+      for (let h = 1; h <= maxHints; h++) {
+        const hint = item.hints.find(hi => hi.itemIndex === h) || item.hints[h - 1];
+        rowData.push(hint ? hint.typeFunction : '');
+      }
+
+      aoa.push(rowData);
     });
   });
 
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const worksheet = XLSX.utils.aoa_to_sheet(aoa);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Improv_Package');
 
