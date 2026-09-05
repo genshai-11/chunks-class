@@ -18,7 +18,7 @@ const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "chunks-voicecloning-genshai.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "chunks-voicecloning-genshai",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "chunks-mirror-audio-284566312743",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "chunks-voicecloning-genshai.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "284566312743",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:284566312743:web:5684ad42-756a-4f59-89ea-08fa00d7a832"
 };
@@ -245,6 +245,20 @@ export async function addOrUpdateChunk(lessonId: string, chunk: ChunkItem): Prom
     categories: distinctCategories
   };
 
+  await saveLesson(updatedLesson);
+  return updatedLesson;
+}
+
+export async function updateLessonChunks(lessonId: string, chunks: ChunkItem[]): Promise<LessonDoc | null> {
+  const lesson = await getLessonById(lessonId);
+  if (!lesson) return null;
+  const distinctCategories = Array.from(new Set(chunks.map(c => c.category)));
+  const updatedLesson: LessonDoc = {
+    ...lesson,
+    chunks,
+    total_chunks: chunks.length,
+    categories: distinctCategories
+  };
   await saveLesson(updatedLesson);
   return updatedLesson;
 }

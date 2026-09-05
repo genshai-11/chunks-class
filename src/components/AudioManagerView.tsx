@@ -17,7 +17,12 @@ import {
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
-import { getAllLessons, addOrUpdateChunk } from '../services/firestoreService';
+import { getAllLessons, addOrUpdateChunk, updateLessonChunks } from '../services/firestoreService';
+import { 
+  uploadBase64AudioToGcs, 
+  syncLessonCachedAudioToCloud, 
+  buildPublicGcsAudioUrl 
+} from '../services/cloudAudioStorageService';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
 import { 
   Volume2, 
@@ -49,7 +54,8 @@ import {
   Cpu,
   Info,
   Edit3,
-  Save
+  Save,
+  CloudUpload
 } from 'lucide-react';
 
 interface AudioManagerViewProps {
@@ -154,6 +160,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   });
   const [batchLogs, setBatchLogs] = useState<BatchLogItem[]>([]);
   const cancelBatchRef = useRef<boolean>(false);
+  const [isSyncingToCloud, setIsSyncingToCloud] = useState<boolean>(false);
+  const [syncCloudProgress, setSyncCloudProgress] = useState<string | null>(null);
 
   // Load available courses on mount
   useEffect(() => {
@@ -329,27 +337,69 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       const enText = sanitizeSpeechText(textEnOverride || chunk.english);
       const viText = sanitizeSpeechText(textViOverride || chunk.vietnamese || '');
 
+      const effectiveLesson = inspectingLesson || lessons.find(l => l.chunks?.some(c => c.chunk_id === chunk.chunk_id)) || lessons[0];
+      const effectiveLessonId = effectiveLesson?.id || '';
+
       if (targetLang === 'en' || targetLang === 'both') {
         if (enText) {
-          await audioPlayer.synthesizeSingleChunk({
+          const synthRes = await audioPlayer.synthesizeSingleChunk({
             text: enText,
             language: 'en',
             voiceName: voiceProfileEn,
             provider: activeProvider,
             forceRegenerate: true
           });
+          if (synthRes?.base64) {
+            try {
+              const gcsUrl = await uploadBase64AudioToGcs({
+                base64Audio: synthRes.base64,
+                levelCode: selectedCourseLevel,
+                lessonId: effectiveLessonId,
+                chunkId: chunk.chunk_id,
+                lang: 'en'
+              });
+              chunk.audio_url = gcsUrl;
+            } catch (uploadErr) {
+              console.warn(`[Regenerate] Upload EN to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
+            }
+          }
         }
       }
 
       if (targetLang === 'vi' || targetLang === 'both') {
         if (viText) {
-          await audioPlayer.synthesizeSingleChunk({
+          const synthResVi = await audioPlayer.synthesizeSingleChunk({
             text: viText,
             language: 'vi',
             voiceName: voiceProfileVi,
             provider: 'GOOGLE_TTS',
             forceRegenerate: true
           });
+          if (synthResVi?.base64) {
+            try {
+              const gcsUrlVi = await uploadBase64AudioToGcs({
+                base64Audio: synthResVi.base64,
+                levelCode: selectedCourseLevel,
+                lessonId: effectiveLessonId,
+                chunkId: chunk.chunk_id,
+                lang: 'vi'
+              });
+              chunk.audio_url_vi = gcsUrlVi;
+            } catch (uploadErr) {
+              console.warn(`[Regenerate] Upload VI to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
+            }
+          }
+        }
+      }
+
+      // Persist to Firestore via addOrUpdateChunk
+      if (effectiveLessonId) {
+        const updatedLesson = await addOrUpdateChunk(effectiveLessonId, chunk);
+        if (updatedLesson) {
+          if (inspectingLesson && inspectingLesson.id === effectiveLessonId) {
+            setInspectingLesson(updatedLesson);
+          }
+          setLessons(prev => prev.map(l => l.id === updatedLesson.id ? updatedLesson : l));
         }
       }
 
@@ -425,7 +475,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     setIsBatchRunning(true);
     setBatchLogs([]);
 
-    let targetChunks: ChunkItem[] = [];
+    interface BatchItem {
+      chunk: ChunkItem;
+      lesson: LessonDoc;
+    }
+
+    let targetItems: BatchItem[] = [];
     let scopeDesc = '';
 
     if (effectiveScope === 'current_lesson') {
@@ -435,15 +490,15 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         setIsBatchRunning(false);
         return;
       }
-      targetChunks = [...lesson.chunks];
-      scopeDesc = `Day ${lesson.day_number} (${lesson.lesson_title}) - ${targetChunks.length} chunks`;
+      targetItems = lesson.chunks.map(chunk => ({ chunk, lesson }));
+      scopeDesc = `Day ${lesson.day_number} (${lesson.lesson_title}) - ${targetItems.length} chunks`;
     } else {
-      targetChunks = lessons.flatMap(l => l.chunks || []);
-      scopeDesc = `Toàn bộ ${selectedCourseLevel} (${lessons.length} bài học) - ${targetChunks.length} chunks`;
+      targetItems = lessons.flatMap(lesson => (lesson.chunks || []).map(chunk => ({ chunk, lesson })));
+      scopeDesc = `Toàn bộ ${selectedCourseLevel} (${lessons.length} bài học) - ${targetItems.length} chunks`;
     }
 
     const multiplier = batchTarget === 'BOTH' ? 2 : 1;
-    const totalOperations = targetChunks.length * multiplier;
+    const totalOperations = targetItems.length * multiplier;
 
     setBatchProgress({
       current: 0,
@@ -462,27 +517,41 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     let cursor = 0;
 
     const worker = async (workerId: number) => {
-      while (cursor < targetChunks.length) {
+      while (cursor < targetItems.length) {
         if (cancelBatchRef.current) {
           break;
         }
 
         const index = cursor++;
-        const chunk = targetChunks[index];
+        const { chunk, lesson: chunkLesson } = targetItems[index];
         const cleanEn = sanitizeSpeechText(chunk.english);
         const cleanVi = chunk.vietnamese ? sanitizeSpeechText(chunk.vietnamese) : '';
 
-        // Synthesize EN (Background synthesis directly into persistent IndexedDB cache)
+        // Synthesize EN (Background synthesis directly into persistent IndexedDB cache + GCS Upload)
         if (batchTarget === 'ENGLISH' || batchTarget === 'BOTH') {
           if (cancelBatchRef.current) break;
           try {
-            await audioPlayer.synthesizeSingleChunk({
+            const synthRes = await audioPlayer.synthesizeSingleChunk({
               text: cleanEn,
               language: 'en',
               voiceName: voiceProfileEn,
               provider: activeProvider,
               forceRegenerate: true
             });
+            if (synthRes?.base64) {
+              try {
+                const gcsUrl = await uploadBase64AudioToGcs({
+                  base64Audio: synthRes.base64,
+                  levelCode: selectedCourseLevel,
+                  lessonId: chunkLesson?.id || effectiveLessonId,
+                  chunkId: chunk.chunk_id,
+                  lang: 'en'
+                });
+                chunk.audio_url = gcsUrl;
+              } catch (uploadErr) {
+                console.warn(`[Batch] Upload to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
+              }
+            }
             successCount++;
           } catch (e: any) {
             failCount++;
@@ -500,17 +569,31 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           }));
         }
 
-        // Synthesize VI (Background synthesis directly into persistent IndexedDB cache)
+        // Synthesize VI (Background synthesis directly into persistent IndexedDB cache + GCS Upload)
         if ((batchTarget === 'VIETNAMESE' || batchTarget === 'BOTH') && cleanVi) {
           if (cancelBatchRef.current) break;
           try {
-            await audioPlayer.synthesizeSingleChunk({
+            const synthResVi = await audioPlayer.synthesizeSingleChunk({
               text: cleanVi,
               language: 'vi',
               voiceName: voiceProfileVi,
               provider: 'GOOGLE_TTS',
               forceRegenerate: true
             });
+            if (synthResVi?.base64) {
+              try {
+                const gcsUrlVi = await uploadBase64AudioToGcs({
+                  base64Audio: synthResVi.base64,
+                  levelCode: selectedCourseLevel,
+                  lessonId: chunkLesson?.id || effectiveLessonId,
+                  chunkId: chunk.chunk_id,
+                  lang: 'vi'
+                });
+                chunk.audio_url_vi = gcsUrlVi;
+              } catch (uploadErr) {
+                console.warn(`[Batch] Upload VI to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
+              }
+            }
             successCount++;
           } catch (e: any) {
             failCount++;
@@ -529,7 +612,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         }
 
         // Periodic UI update
-        if (index % 3 === 0 || cursor >= targetChunks.length) {
+        if (index % 3 === 0 || cursor >= targetItems.length) {
           calculateReadinessStatus();
         }
       }
@@ -537,11 +620,24 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
     try {
       const workers = Array.from(
-        { length: Math.min(batchWorkersCount, targetChunks.length) },
+        { length: Math.min(batchWorkersCount, targetItems.length) },
         (_, i) => worker(i + 1)
       );
       await Promise.all(workers);
 
+      // Persist updated chunks to Firestore for all affected lessons
+      const affectedLessonIds = new Set(targetItems.map(item => item.lesson.id));
+      for (const lesson of lessons) {
+        if (affectedLessonIds.has(lesson.id) && lesson.chunks && lesson.chunks.length > 0) {
+          try {
+            await updateLessonChunks(lesson.id, lesson.chunks);
+          } catch (saveErr) {
+            console.warn(`[Batch] Failed to persist chunks to Firestore for lesson ${lesson.id}:`, saveErr);
+          }
+        }
+      }
+
+      await loadLessons();
       calculateReadinessStatus();
 
       if (cancelBatchRef.current) {
@@ -564,6 +660,49 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const handleStopBatchGeneration = () => {
     cancelBatchRef.current = true;
     addLog('Đang gửi lệnh dừng đến các luồng worker...', 'warning');
+  };
+
+  // Sync IndexedDB Local Cached Audio to GCS Bucket & Firestore
+  const handleSyncCacheToCloud = async () => {
+    if (isSyncingToCloud || isBatchRunning) return;
+    if (!lessons || lessons.length === 0) {
+      addLog('Không có bài học nào để đồng bộ.', 'warning');
+      return;
+    }
+
+    setIsSyncingToCloud(true);
+    setSyncCloudProgress('Bắt đầu đồng bộ cache lên Cloud Storage...');
+    addLog('Bắt đầu đồng bộ toàn bộ cache trình duyệt lên Cloud Storage (gs://chunks-voicecloning-genshai.firebasestorage.app)...', 'info');
+
+    let totalSynced = 0;
+    let totalSyncedEn = 0;
+    let totalSyncedVi = 0;
+
+    try {
+      for (let i = 0; i < lessons.length; i++) {
+        const lesson = lessons[i];
+        setSyncCloudProgress(`Đang sync Day ${lesson.day_number} (${i + 1}/${lessons.length})...`);
+        const result = await syncLessonCachedAudioToCloud(lesson, {
+          voiceEn: voiceProfileEn,
+          voiceVi: voiceProfileVi,
+          onProgress: (current, total, status) => {
+            setSyncCloudProgress(`Day ${lesson.day_number} [${current}/${total}]: ${status}`);
+          }
+        });
+        totalSyncedEn += result.uploadedEn;
+        totalSyncedVi += result.uploadedVi;
+        totalSynced += (result.uploadedEn + result.uploadedVi);
+      }
+
+      await loadLessons();
+      calculateReadinessStatus();
+      addLog(`Đồng bộ thành công ${totalSynced} audio chunks lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app!`, 'success');
+    } catch (err: any) {
+      addLog(`Lỗi đồng bộ cache lên Cloud Storage: ${err?.message || String(err)}`, 'error');
+    } finally {
+      setIsSyncingToCloud(false);
+      setSyncCloudProgress(null);
+    }
   };
 
   // --------------------------------------------------------------------------
@@ -833,13 +972,27 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             </div>
           </div>
 
-          {/* Running Indicator */}
-          {isBatchRunning && (
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-mono font-bold animate-pulse">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
-              <span>Đang xử lý {batchWorkersCount} luồng...</span>
-            </div>
-          )}
+          {/* Top Actions: Sync Cloud & Running Indicator */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={isSyncingToCloud || isBatchRunning}
+              onClick={handleSyncCacheToCloud}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              title="Tải toàn bộ audio đã có trong cache trình duyệt lên Cloud Storage bucket để dùng vĩnh viễn"
+            >
+              <CloudUpload className={`w-3.5 h-3.5 ${isSyncingToCloud ? 'animate-bounce' : ''}`} />
+              <span>{isSyncingToCloud ? 'Đang sync lên Cloud...' : 'Sync Cache ➔ Cloud Bucket'}</span>
+            </button>
+
+            {/* Running Indicator */}
+            {isBatchRunning && (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-mono font-bold animate-pulse">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                <span>Đang xử lý {batchWorkersCount} luồng...</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Configuration Grid */}
@@ -1095,6 +1248,18 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               <option value="missing">Còn thiếu audio</option>
               <option value="has_gcs">Có GCS Master</option>
             </select>
+
+            {/* Sync Cache to Cloud Button */}
+            <button
+              type="button"
+              disabled={isSyncingToCloud || isBatchRunning}
+              onClick={handleSyncCacheToCloud}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              title="Tải toàn bộ audio đã có trong cache trình duyệt lên Cloud Storage bucket để dùng vĩnh viễn"
+            >
+              <CloudUpload className={`w-3.5 h-3.5 ${isSyncingToCloud ? 'animate-bounce' : ''}`} />
+              <span>{isSyncingToCloud ? 'Đang sync lên Cloud...' : 'Sync Cache ➔ Cloud Bucket'}</span>
+            </button>
 
             {/* Refresh Cache Button */}
             <button

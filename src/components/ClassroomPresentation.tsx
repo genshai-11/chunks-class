@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart } from '../types';
 import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
+import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
@@ -242,6 +243,18 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         }
       });
       setPrepSummary(result);
+
+      // If audio was generated, sync to Cloud Storage so it becomes permanent
+      if (activeLesson && result.prepared > 0) {
+        try {
+          await syncLessonCachedAudioToCloud(activeLesson, {
+            voiceEn: selectedVoice,
+            voiceVi: selectedVoiceVi
+          });
+        } catch (syncErr) {
+          console.warn('[Presenter] Cloud Storage sync failed after batch prepare:', syncErr);
+        }
+      }
     } catch (e: any) {
       console.error('Audio preparation failed:', e);
     } finally {

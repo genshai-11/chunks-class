@@ -14,6 +14,7 @@ import {
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { getAllLessons } from '../services/firestoreService';
+import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
 import { 
@@ -38,7 +39,8 @@ import {
   Search,
   Download,
   Upload,
-  Database
+  Database,
+  CloudUpload
 } from 'lucide-react';
 
 interface AudioHubViewProps {
@@ -94,6 +96,8 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
   const [cacheEntriesCount, setCacheEntriesCount] = useState<number>(0);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [isSyncingToCloud, setIsSyncingToCloud] = useState<boolean>(false);
+  const [syncCloudProgress, setSyncCloudProgress] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshCacheCount = useCallback(async () => {
@@ -352,6 +356,51 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
       if (e.target) {
         e.target.value = '';
       }
+    }
+  };
+
+  const handleSyncCacheToCloud = async () => {
+    if (isSyncingToCloud) return;
+    setIsSyncingToCloud(true);
+    setSyncCloudProgress('Bắt đầu đồng bộ...');
+    try {
+      const allCourses = curriculumRegistry.getAllCourses();
+      const levelsToSync = allCourses.length > 0
+        ? allCourses.map(c => c.level_code)
+        : [selectedCourseLevel];
+
+      let totalSyncedEn = 0;
+      let totalSyncedVi = 0;
+      let totalLessonsProcessed = 0;
+
+      for (const level of levelsToSync) {
+        const lessons = await getAllLessons(level);
+        for (let i = 0; i < lessons.length; i++) {
+          const lesson = lessons[i];
+          setSyncCloudProgress(`Sync ${level} Day ${lesson.day_number} (${i + 1}/${lessons.length})...`);
+          const res = await syncLessonCachedAudioToCloud(lesson, {
+            voiceEn: currentSettings.voice_profile_en,
+            voiceVi: currentSettings.voice_profile_vi,
+            onProgress: (cur, tot, status) => {
+              setSyncCloudProgress(`${level} Day ${lesson.day_number} [${cur}/${tot}]: ${status}`);
+            }
+          });
+          totalSyncedEn += res.uploadedEn;
+          totalSyncedVi += res.uploadedVi;
+          totalLessonsProcessed++;
+        }
+      }
+
+      await loadLessonsAndCacheStatus();
+      await refreshCacheCount();
+      const total = totalSyncedEn + totalSyncedVi;
+      alert(`🎉 Đã đồng bộ thành công ${total} audio chunks lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app! (EN: ${totalSyncedEn}, VI: ${totalSyncedVi}, ${totalLessonsProcessed} bài học)`);
+    } catch (err: any) {
+      console.error('Sync cache to cloud error:', err);
+      alert('Lỗi đồng bộ cache lên Cloud Storage: ' + (err?.message || String(err)));
+    } finally {
+      setIsSyncingToCloud(false);
+      setSyncCloudProgress(null);
     }
   };
 
@@ -1108,6 +1157,27 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                   <Upload className="w-3.5 h-3.5 text-white" />
                 )}
                 <span>{isImporting ? 'Đang nạp...' : 'Nhập File Cache (.json)'}</span>
+              </button>
+
+              {/* 3rd Button: Sync Cache Trình Duyệt ➔ Cloud Bucket */}
+              <button
+                type="button"
+                disabled={isSyncingToCloud || cacheEntriesCount === 0}
+                onClick={handleSyncCacheToCloud}
+                className="col-span-1 sm:col-span-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                title="Tải toàn bộ audio đã có trong cache IndexedDB lên Cloud Storage bucket và cập nhật Firestore"
+              >
+                {isSyncingToCloud ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{syncCloudProgress || 'Đang sync lên Cloud...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <CloudUpload className="w-4 h-4 text-white" />
+                    <span>Sync Cache Trình Duyệt ➔ Cloud Bucket (gs://chunks-voicecloning-genshai.firebasestorage.app)</span>
+                  </>
+                )}
               </button>
             </div>
 
