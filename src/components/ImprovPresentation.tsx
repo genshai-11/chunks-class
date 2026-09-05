@@ -27,6 +27,7 @@ import {
   isPackageAudioReady 
 } from '../services/improvTtsService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
+import confetti from 'canvas-confetti';
 import { 
   Volume2, 
   ChevronLeft, 
@@ -54,8 +55,107 @@ import {
   ListFilter,
   CheckCircle2,
   Flame,
-  Globe
+  Globe,
+  FastForward,
+  Trophy,
+  Music
 } from 'lucide-react';
+
+// ============================================================================
+// Native Web Audio API Sound Cues (0ms Latency, Zero Assets, 100% Offline)
+// ============================================================================
+let sharedAudioCtx: AudioContext | null = null;
+
+const getWebAudioContext = (): AudioContext | null => {
+  try {
+    if (typeof window === 'undefined') return null;
+    if (!sharedAudioCtx) {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        sharedAudioCtx = new AudioContextClass();
+      }
+    }
+    if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+      sharedAudioCtx.resume().catch(() => {});
+    }
+    return sharedAudioCtx;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Play gentle arpeggio 4-note chime for session transition:
+ * C5 (523.25Hz) -> E5 (659.25Hz) -> G5 (783.99Hz) -> C6 (1046.50Hz)
+ * Soft sine waves, smooth attack & decay, duration ~0.5s.
+ */
+const playSessionTransitionChime = () => {
+  const ctx = getWebAudioContext();
+  if (!ctx) return;
+
+  const notes = [523.25, 659.25, 783.99, 1046.50];
+  const now = ctx.currentTime;
+  const noteDuration = 0.11;
+
+  notes.forEach((freq, idx) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now + idx * noteDuration);
+
+    const startTime = now + idx * noteDuration;
+    const noteEnd = startTime + 0.22;
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.18, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(startTime);
+    osc.stop(noteEnd);
+  });
+};
+
+/**
+ * Play victory celebration fanfare for package completion:
+ * C5 (523.25Hz) -> E5 (659.25Hz) -> G5 (783.99Hz) -> C6 (1046.50Hz) -> E6 (1318.51Hz)
+ * Triumphant harmonics with triangle/sine, lasting ~0.8s.
+ */
+const playPackageCompletionFanfare = () => {
+  const ctx = getWebAudioContext();
+  if (!ctx) return;
+
+  const notes = [
+    { freq: 523.25, start: 0.00, dur: 0.14 },
+    { freq: 659.25, start: 0.12, dur: 0.14 },
+    { freq: 783.99, start: 0.24, dur: 0.14 },
+    { freq: 1046.50, start: 0.38, dur: 0.20 },
+    { freq: 1318.51, start: 0.54, dur: 0.38 }
+  ];
+  const now = ctx.currentTime;
+
+  notes.forEach(({ freq, start, dur }) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, now + start);
+
+    const startTime = now + start;
+    const endTime = startTime + dur;
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.22, startTime + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(startTime);
+    osc.stop(endTime);
+  });
+};
 
 interface ImprovPresentationProps {
   packageId?: string;
@@ -99,7 +199,53 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const [selectedVoiceVi, setSelectedVoiceVi] = useState<string>(
     audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
   );
-  const [speed, setSpeed] = useState<number>(audioSettings?.default_speed || 1.0);
+  const [speed, setSpeed] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('chunks_improv_playback_speed');
+      if (saved) {
+        const val = parseFloat(saved);
+        if (!isNaN(val) && val >= 0.7 && val <= 2.0) return val;
+      }
+    } catch {}
+    return audioSettings?.default_speed || 1.0;
+  });
+  const [hintPauseSec, setHintPauseSec] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('chunks_improv_hint_pause_sec');
+      if (saved) {
+        const val = parseFloat(saved);
+        if (!isNaN(val) && val >= 0.3 && val <= 1.5) return val;
+      }
+    } catch {}
+    return 0.8;
+  });
+  const [enableSoundCues, setEnableSoundCues] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('chunks_improv_sound_cues');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Persist speed, hintPauseSec & soundCues to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('chunks_improv_playback_speed', String(speed));
+    } catch {}
+  }, [speed]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('chunks_improv_hint_pause_sec', String(hintPauseSec));
+    } catch {}
+  }, [hintPauseSec]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('chunks_improv_sound_cues', String(enableSoundCues));
+    } catch {}
+  }, [enableSoundCues]);
   const [audioProvider, setAudioProvider] = useState<AudioProvider>(audioPlayer.getAudioProvider());
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [activePlayingHintIndex, setActivePlayingHintIndex] = useState<number | null>(null);
@@ -193,6 +339,52 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     return [...currentItem.hints].sort((a, b) => a.itemIndex - b.itemIndex);
   }, [currentItem]);
 
+  // Session Progression & Item Status
+  const currentSessionIdx = useMemo(() => {
+    if (!activePackage || !activePackage.sessions) return -1;
+    return activePackage.sessions.findIndex(s => s.sessionNumber === selectedSessionNum);
+  }, [activePackage, selectedSessionNum]);
+
+  const nextSession: ImprovSession | null = useMemo(() => {
+    if (!activePackage || !activePackage.sessions || currentSessionIdx < 0) return null;
+    if (currentSessionIdx < activePackage.sessions.length - 1) {
+      return activePackage.sessions[currentSessionIdx + 1];
+    }
+    return null;
+  }, [activePackage, currentSessionIdx]);
+
+  const prevSession: ImprovSession | null = useMemo(() => {
+    if (!activePackage || !activePackage.sessions || currentSessionIdx <= 0) return null;
+    return activePackage.sessions[currentSessionIdx - 1];
+  }, [activePackage, currentSessionIdx]);
+
+  const isLastSessionInPackage = useMemo(() => {
+    if (!activePackage || !activePackage.sessions || activePackage.sessions.length === 0) return false;
+    return currentSessionIdx === activePackage.sessions.length - 1;
+  }, [activePackage, currentSessionIdx]);
+
+  const isLastItemInSession = items.length > 0 && currentItemIndex === items.length - 1;
+  const isLastItemFullyRevealed = isLastItemInSession && (revealMode === 'all' || currentRevealStep >= hints.length);
+
+  // Auto celebratory confetti on reaching package completion
+  const hasTriggeredPackageCompletionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isLastItemFullyRevealed && isLastSessionInPackage && activePackage) {
+      const stateKey = `${activePackage.id}_s${selectedSessionNum}_item${currentItemIndex}`;
+      if (hasTriggeredPackageCompletionRef.current !== stateKey) {
+        hasTriggeredPackageCompletionRef.current = stateKey;
+        confetti({
+          particleCount: 100,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+        if (enableSoundCues) {
+          playPackageCompletionFanfare();
+        }
+      }
+    }
+  }, [isLastItemFullyRevealed, isLastSessionInPackage, activePackage, selectedSessionNum, currentItemIndex, enableSoundCues]);
+
   // Sync audioSettings if updated
   useEffect(() => {
     if (audioSettings?.voice_profile_en) {
@@ -203,7 +395,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       setSelectedVoiceVi(audioSettings.voice_profile_vi);
     }
     if (audioSettings?.default_speed) {
-      setSpeed(audioSettings.default_speed);
+      const saved = localStorage.getItem('chunks_improv_playback_speed');
+      if (!saved) {
+        setSpeed(audioSettings.default_speed);
+      }
     }
   }, [audioSettings?.voice_profile_en, audioSettings?.voice_profile_vi, audioSettings?.default_speed]);
 
@@ -430,8 +625,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
         if (activeSequenceRef.current !== seqId) return;
         if (i < hintsToPlay.length - 1) {
-          // 1-second silence gap between hints
-          await new Promise(res => setTimeout(res, 1000));
+          // Configurable pause between hints (0.3s - 1.5s, default 0.8s)
+          await new Promise(res => setTimeout(res, Math.round(hintPauseSec * 1000)));
         }
       }
     } catch (err) {
@@ -563,6 +758,38 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     }
   };
 
+  // Session Transition Controller
+  const goToNextSession = (targetSession: ImprovSession) => {
+    audioPlayer.stop();
+    improvTts.stop();
+    setSelectedSessionNum(targetSession.sessionNumber);
+    setCurrentItemIndex(0);
+    const initialStep = revealMode === 'all' ? (targetSession.items[0]?.hints?.length || 1) : 1;
+    setCurrentRevealStep(initialStep);
+    onSelectPackage?.(selectedPkgId, targetSession.sessionNumber);
+
+    if (enableSoundCues) {
+      playSessionTransitionChime();
+    }
+    confetti({
+      particleCount: 40,
+      spread: 60,
+      origin: { y: 0.7 }
+    });
+
+    // Auto-play audio of first item/hint in new session
+    const firstItem = targetSession.items[0];
+    if (firstItem) {
+      if (revealMode === 'step') {
+        if (firstItem.hints && firstItem.hints[0]) {
+          playSingleHintAudio(firstItem.hints[0], 0, selectedVoice, selectedVoiceVi);
+        }
+      } else {
+        playWholeItemAudio(firstItem, selectedVoice, selectedVoiceVi);
+      }
+    }
+  };
+
   // Navigation Logic
   const handleNext = () => {
     if (isBlackout) {
@@ -580,7 +807,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           playSingleHintAudio(newlyRevealed, nextStep - 1, selectedVoice, selectedVoiceVi);
         }
       } else {
-        // Advance to next item
+        // Advance to next item or next session
         if (currentItemIndex < items.length - 1) {
           const nextIndex = currentItemIndex + 1;
           setCurrentItemIndex(nextIndex);
@@ -589,10 +816,25 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           if (nextItem && nextItem.hints && nextItem.hints[0]) {
             playSingleHintAudio(nextItem.hints[0], 0, selectedVoice, selectedVoiceVi);
           }
+        } else {
+          // Last hint of the final item in session
+          if (nextSession) {
+            goToNextSession(nextSession);
+          } else {
+            // Already last session of package
+            if (enableSoundCues) {
+              playPackageCompletionFanfare();
+            }
+            confetti({
+              particleCount: 150,
+              spread: 100,
+              origin: { y: 0.5 }
+            });
+          }
         }
       }
     } else {
-      // All hints mode: Advance to next item immediately
+      // All hints mode: Advance to next item immediately or next session
       if (currentItemIndex < items.length - 1) {
         const nextIndex = currentItemIndex + 1;
         setCurrentItemIndex(nextIndex);
@@ -600,6 +842,21 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         const nextItem = items[nextIndex];
         if (nextItem) {
           playWholeItemAudio(nextItem, selectedVoice, selectedVoiceVi);
+        }
+      } else {
+        // Final item of the session
+        if (nextSession) {
+          goToNextSession(nextSession);
+        } else {
+          // Already last session of package
+          if (enableSoundCues) {
+            playPackageCompletionFanfare();
+          }
+          confetti({
+            particleCount: 150,
+            spread: 100,
+            origin: { y: 0.5 }
+          });
         }
       }
     }
@@ -621,6 +878,15 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           const prevItem = items[prevIndex];
           const prevTotalHints = prevItem?.hints?.length || 1;
           setCurrentRevealStep(prevTotalHints);
+        } else if (currentItemIndex === 0 && currentRevealStep === 1 && prevSession && prevSession.items.length > 0) {
+          // Step back to the last item of previous session
+          const lastIdx = prevSession.items.length - 1;
+          const lastItem = prevSession.items[lastIdx];
+          const lastItemHintsCount = lastItem?.hints?.length || 1;
+          setSelectedSessionNum(prevSession.sessionNumber);
+          setCurrentItemIndex(lastIdx);
+          setCurrentRevealStep(lastItemHintsCount);
+          onSelectPackage?.(selectedPkgId, prevSession.sessionNumber);
         }
       }
     } else {
@@ -628,6 +894,15 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         const prevIndex = currentItemIndex - 1;
         setCurrentItemIndex(prevIndex);
         setCurrentRevealStep(items[prevIndex]?.hints?.length || 1);
+      } else if (currentItemIndex === 0 && prevSession && prevSession.items.length > 0) {
+        // Step back to the last item of previous session
+        const lastIdx = prevSession.items.length - 1;
+        const lastItem = prevSession.items[lastIdx];
+        const lastItemHintsCount = lastItem?.hints?.length || 1;
+        setSelectedSessionNum(prevSession.sessionNumber);
+        setCurrentItemIndex(lastIdx);
+        setCurrentRevealStep(lastItemHintsCount);
+        onSelectPackage?.(selectedPkgId, prevSession.sessionNumber);
       }
     }
   };
@@ -1026,7 +1301,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
             {isAudioSettingsOpen && (
               <div
-                className={`absolute right-0 mt-2 w-80 rounded-xl shadow-2xl border p-4 z-50 animate-scale-up ${
+                className={`absolute right-0 mt-2 w-84 sm:w-96 max-h-[85vh] overflow-y-auto rounded-xl shadow-2xl border p-4 z-50 animate-scale-up ${
                   highContrastDark
                     ? 'bg-[#18181B] border-zinc-700 text-white'
                     : 'bg-white border-[#E8E8EC] text-zinc-900'
@@ -1202,10 +1477,11 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                   </>
                 )}
 
-                {/* Speed & Language Mode Controls - Always Accessible */}
-                <div className={`pt-3 border-t space-y-3 ${
+                {/* Speed, Pause & Sound Cues Controls - Always Accessible */}
+                <div className={`pt-3 border-t space-y-3.5 ${
                   highContrastDark ? 'border-zinc-800' : 'border-zinc-200'
                 }`}>
+                  {/* 1. Tốc độ đọc (Speed) */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold">
@@ -1215,18 +1491,140 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         {speed.toFixed(1)}x
                       </span>
                     </div>
+                    {/* Quick Presets */}
+                    <div className="grid grid-cols-4 gap-1 mb-2">
+                      {[0.8, 1.0, 1.2, 1.5].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setSpeed(preset)}
+                          className={`py-1 text-[11px] font-mono font-bold rounded-md transition-all cursor-pointer ${
+                            Math.abs(speed - preset) < 0.05
+                              ? 'bg-[#DC2626] text-white shadow-xs'
+                              : highContrastDark
+                              ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+                              : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                          }`}
+                        >
+                          {preset.toFixed(1)}x
+                        </button>
+                      ))}
+                    </div>
+                    {/* Slider */}
                     <input
                       type="range"
-                      min="0.8"
+                      min="0.7"
                       max="2.0"
-                      step="0.1"
+                      step="0.05"
                       value={speed}
                       onChange={(e) => setSpeed(parseFloat(e.target.value))}
                       className="w-full accent-[#DC2626] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg"
                     />
+                    <div className="flex justify-between text-[9px] font-mono text-zinc-400 mt-1">
+                      <span>0.7x (Chậm)</span>
+                      <span>1.0x (Chuẩn)</span>
+                      <span>2.0x (Nhanh)</span>
+                    </div>
                   </div>
 
+                  {/* 2. Khoảng nghỉ giữa các Hints (Pause) */}
                   <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold">
+                        Khoảng nghỉ giữa các Hints (Pause)
+                      </label>
+                      <span className="font-mono text-xs font-extrabold text-[#DC2626]">
+                        {hintPauseSec.toFixed(1)}s
+                      </span>
+                    </div>
+                    {/* Quick Presets */}
+                    <div className="grid grid-cols-5 gap-1 mb-2">
+                      {[
+                        { val: 0.3, label: '0.3s', tip: 'Cực nhanh' },
+                        { val: 0.5, label: '0.5s', tip: 'Nhanh' },
+                        { val: 0.8, label: '0.8s', tip: 'Tự nhiên' },
+                        { val: 1.0, label: '1.0s', tip: 'Chuẩn' },
+                        { val: 1.5, label: '1.5s', tip: 'Chậm' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.val}
+                          type="button"
+                          onClick={() => setHintPauseSec(preset.val)}
+                          title={preset.tip}
+                          className={`py-1 text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer flex flex-col items-center justify-center ${
+                            Math.abs(hintPauseSec - preset.val) < 0.05
+                              ? 'bg-[#DC2626] text-white shadow-xs'
+                              : highContrastDark
+                              ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+                              : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                          }`}
+                        >
+                          <span>{preset.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {/* Slider */}
+                    <input
+                      type="range"
+                      min="0.3"
+                      max="1.5"
+                      step="0.1"
+                      value={hintPauseSec}
+                      onChange={(e) => setHintPauseSec(parseFloat(e.target.value))}
+                      className="w-full accent-[#DC2626] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg"
+                    />
+                    <div className="flex justify-between text-[9px] font-mono text-zinc-400 mt-1">
+                      <span>0.3s (Cực nhanh)</span>
+                      <span>0.8s (Tự nhiên)</span>
+                      <span>1.5s (Chậm)</span>
+                    </div>
+                  </div>
+
+                  {/* 3. Âm đệm chuyển Session (Sound Cues) */}
+                  <div className="pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <Music className="w-3.5 h-3.5 text-[#DC2626]" />
+                        <span className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200">
+                          Âm đệm Web Audio (Sound Cues)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEnableSoundCues(!enableSoundCues)}
+                        className={`w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer flex items-center ${
+                          enableSoundCues ? 'bg-[#DC2626] justify-end' : 'bg-zinc-300 dark:bg-zinc-700 justify-start'
+                        }`}
+                      >
+                        <span className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                      </button>
+                    </div>
+
+                    {/* Audition sound cues buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={playSessionTransitionChime}
+                        className="flex-1 py-1.5 px-2 text-[10px] font-semibold rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer flex items-center justify-center gap-1"
+                        title="Nghe thử âm chuyển Session (Arpeggio 4 nốt C5-E5-G5-C6)"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-500" />
+                        <span>Thử Chime</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={playPackageCompletionFanfare}
+                        className="flex-1 py-1.5 px-2 text-[10px] font-semibold rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer flex items-center justify-center gap-1"
+                        title="Nghe thử âm hoàn thành Package (Hợp âm Fanfare)"
+                      >
+                        <Trophy className="w-3 h-3 text-rose-500" />
+                        <span>Thử Fanfare</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 4. Chế độ đọc (Language Mode) */}
+                  <div className="pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
                     <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
                       Chế độ đọc (Language Mode)
                     </label>
@@ -1327,13 +1725,19 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         ) : (
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 flex flex-col items-center">
             {/* Stage Header Info Pill */}
-            <div className="mb-6 flex items-center gap-3">
+            <div className="mb-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
               <span className="text-xs font-mono font-extrabold uppercase px-3 py-1 rounded-full bg-zinc-200/80 dark:bg-zinc-800/90 text-zinc-700 dark:text-zinc-300 tracking-wider">
                 Session {selectedSessionNum} • {hints.length} hints
               </span>
               <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 font-bold tracking-wider">
                 Item {currentItemIndex + 1}/{totalItemsCount}
               </span>
+              {isLastItemInSession && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 dark:border-amber-400/40 shadow-xs animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400 animate-ping" />
+                  <span>CÂU CUỐI CỦA SESSION</span>
+                </span>
+              )}
             </div>
 
             {/* Horizontal Hints Flow Container (Always Parallel Columns, Projector-Optimized) */}
@@ -1446,6 +1850,94 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 );
               })}
             </div>
+
+            {/* Session Transition or Package Completion Banner */}
+            {isLastItemFullyRevealed && (
+              <div className="w-full max-w-4xl mt-8 animate-fade-in">
+                {nextSession ? (
+                  <div className={`p-5 sm:p-6 rounded-2xl border transition-all shadow-md flex flex-col sm:flex-row items-center justify-between gap-4 ${
+                    highContrastDark
+                      ? 'bg-zinc-900/90 border-amber-500/40 text-zinc-100 shadow-amber-950/20'
+                      : 'bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-amber-300 text-zinc-900 shadow-amber-100'
+                  }`}>
+                    <div className="flex items-center gap-3.5 text-center sm:text-left">
+                      <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 text-2xl shadow-xs">
+                        🎉
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-base sm:text-lg text-zinc-900 dark:text-zinc-100">
+                          Đã hoàn thành Session {selectedSessionNum}!
+                        </div>
+                        <div className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">
+                          Bấm <span className="font-bold text-zinc-900 dark:text-zinc-100">Tiếp tục</span> (Phím <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono text-[11px]">Space</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono text-[11px]">➔</kbd>) để sang Session {nextSession.sessionNumber}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => goToNextSession(nextSession)}
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer active:scale-95 shrink-0"
+                    >
+                      <span>Sang Session {nextSession.sessionNumber}</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className={`p-8 rounded-2xl border transition-all shadow-xl text-center flex flex-col items-center ${
+                    highContrastDark
+                      ? 'bg-zinc-900/90 border-rose-500/40 text-zinc-100 shadow-rose-950/20'
+                      : 'bg-gradient-to-r from-rose-50 via-amber-50 to-rose-50 border-rose-300 text-zinc-900 shadow-rose-100'
+                  }`}>
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white flex items-center justify-center mb-3 shadow-md text-3xl">
+                      🏆
+                    </div>
+                    <h3 className="font-black text-xl sm:text-2xl text-zinc-950 dark:text-white mb-1">
+                      Chúc mừng! Bạn đã hoàn thành toàn bộ Package
+                    </h3>
+                    <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-6">
+                      {activePackage?.title}
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-3">
+                      <button
+                        onClick={() => {
+                          if (activePackage?.sessions && activePackage.sessions.length > 0) {
+                            const firstSess = activePackage.sessions[0];
+                            setSelectedSessionNum(firstSess.sessionNumber);
+                            setCurrentItemIndex(0);
+                            setCurrentRevealStep(revealMode === 'all' ? (firstSess.items[0]?.hints?.length || 1) : 1);
+                            onSelectPackage?.(selectedPkgId, firstSess.sessionNumber);
+                          }
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer active:scale-95"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        <span>Luyện lại từ Session 1</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCurrentItemIndex(0);
+                          setCurrentRevealStep(revealMode === 'all' ? (items[0]?.hints?.length || 1) : 1);
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        <span>Luyện lại Session này</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (enableSoundCues) playPackageCompletionFanfare();
+                          confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+                        }}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-amber-400/60 dark:border-amber-500/40 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <span>Ăn mừng (Confetti)</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -1560,15 +2052,19 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           {/* Previous Button (PageUp / ArrowLeft) */}
           <button
             onClick={handlePrev}
-            disabled={currentItemIndex === 0 && (revealMode === 'all' || currentRevealStep === 1)}
+            disabled={currentItemIndex === 0 && (revealMode === 'all' || currentRevealStep === 1) && !prevSession}
             className={`p-3 rounded-xl border transition-all cursor-pointer ${
-              currentItemIndex === 0 && (revealMode === 'all' || currentRevealStep === 1)
+              currentItemIndex === 0 && (revealMode === 'all' || currentRevealStep === 1) && !prevSession
                 ? 'opacity-30 cursor-not-allowed border-transparent'
                 : highContrastDark
                 ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 text-white'
                 : 'bg-zinc-50 border-zinc-200 hover:bg-zinc-100 text-zinc-900'
             }`}
-            title="Lùi lại (PageUp / Mũi tên trái)"
+            title={
+              currentItemIndex === 0 && (revealMode === 'all' || currentRevealStep === 1) && prevSession
+                ? `Lùi về Session ${prevSession.sessionNumber} (PageUp / Mũi tên trái)`
+                : "Lùi lại (PageUp / Mũi tên trái)"
+            }
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -1582,7 +2078,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 ? 'bg-[#DC2626] ring-4 ring-[#DC2626]/30 animate-pulse'
                 : 'bg-[#DC2626] hover:bg-[#B91C1C]'
             }`}
-            title="Phát lại toàn bộ gợi ý kèm khoảng nghỉ 1 giây (Phím R)"
+            title={`Phát lại toàn bộ gợi ý kèm khoảng nghỉ ${hintPauseSec.toFixed(1)}s (Phím R)`}
           >
             <Volume2 className="w-4 h-4" />
             <span>{isPlayingAudio ? 'Đang đọc...' : 'Phát âm (R)'}</span>
@@ -1591,36 +2087,67 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           {/* Next Button (PageDown / Space / ArrowRight) */}
           <button
             onClick={handleNext}
-            disabled={currentItemIndex >= items.length - 1 && currentRevealStep >= hints.length}
-            className={`p-3 rounded-xl border transition-all cursor-pointer ${
-              currentItemIndex >= items.length - 1 && currentRevealStep >= hints.length
-                ? 'opacity-30 cursor-not-allowed border-transparent'
+            className={`flex items-center gap-1.5 p-3 rounded-xl border transition-all cursor-pointer shadow-xs active:scale-95 ${
+              isLastItemFullyRevealed
+                ? nextSession
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-amber-400 ring-2 ring-amber-400/30 px-4'
+                  : 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white border-rose-400 ring-2 ring-rose-400/30 px-4 animate-pulse'
                 : highContrastDark
                 ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 text-white'
                 : 'bg-zinc-50 border-zinc-200 hover:bg-zinc-100 text-zinc-900'
             }`}
-            title="Tiếp tục (PageDown / Phím Space / Mũi tên phải)"
+            title={
+              isLastItemFullyRevealed
+                ? nextSession
+                  ? `Sang Session ${nextSession.sessionNumber} (Space / ➔)`
+                  : 'Hoàn thành Package! (Bấm để ăn mừng)'
+                : 'Tiếp tục (PageDown / Phím Space / Mũi tên phải)'
+            }
           >
-            <ChevronRight className="w-5 h-5" />
+            {isLastItemFullyRevealed ? (
+              nextSession ? (
+                <>
+                  <span className="text-xs font-bold hidden sm:inline">Sang Session {nextSession.sessionNumber}</span>
+                  <FastForward className="w-5 h-5 animate-pulse" />
+                </>
+              ) : (
+                <>
+                  <span className="text-xs font-bold hidden sm:inline">Hoàn thành</span>
+                  <Trophy className="w-5 h-5" />
+                </>
+              )
+            ) : (
+              <ChevronRight className="w-5 h-5" />
+            )}
           </button>
         </div>
 
-        {/* Right: Audio Speed Slider & Blackout Toggle */}
+        {/* Right: Audio Speed, Pause & Blackout Toggle */}
         <div className="flex items-center gap-3">
           {/* Audio Speed Slider */}
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900" title="Tốc độ phát âm">
             <span className="text-[10px] font-mono font-bold text-zinc-400">
               {speed.toFixed(1)}x
             </span>
             <input
               type="range"
-              min="0.8"
+              min="0.7"
               max="2.0"
-              step="0.1"
+              step="0.05"
               value={speed}
               onChange={(e) => setSpeed(parseFloat(e.target.value))}
-              className="w-20 accent-[#DC2626] cursor-pointer"
+              className="w-16 sm:w-20 accent-[#DC2626] cursor-pointer"
             />
+          </div>
+
+          {/* Hint Pause Indicator */}
+          <div
+            onClick={() => setIsAudioSettingsOpen(true)}
+            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+            title="Khoảng nghỉ giữa các Hints (bấm để chỉnh)"
+          >
+            <span className="text-[10px] font-mono font-bold text-zinc-400">Pause:</span>
+            <span className="text-xs font-mono font-extrabold text-[#DC2626]">{hintPauseSec.toFixed(1)}s</span>
           </div>
 
           {/* Blackout Button (Key B) */}
@@ -1669,19 +2196,19 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
             <div className="mt-4 space-y-2.5 text-xs font-sans">
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="text-zinc-500">Mở gợi ý tiếp / Sang câu kế</span>
+                <span className="text-zinc-500">Mở gợi ý tiếp / Sang câu & Session kế</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
                   Space / PageDown / →
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="text-zinc-500">Quay lại gợi ý / Câu trước</span>
+                <span className="text-zinc-500">Quay lại gợi ý / Câu & Session trước</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
                   PageUp / ←
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="text-zinc-500">Đọc lại âm thanh (kèm 1s gap)</span>
+                <span className="text-zinc-500">Đọc lại gợi ý (kèm khoảng nghỉ)</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
                   Key R
                 </span>
