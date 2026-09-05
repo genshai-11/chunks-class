@@ -8,6 +8,7 @@ import {
 import { 
   ImprovItem, 
   ImprovHint,
+  ImprovSession,
   ImprovPackage, 
   LanguageMode 
 } from '../types';
@@ -523,6 +524,42 @@ class ImprovTtsEngine {
   }
 
   /**
+   * Checks if all items in an ImprovSession have their combined continuous audio cached
+   */
+  async isSessionAudioReady(
+    session: ImprovSession, 
+    voiceEn: string = 'aura-asteria-en', 
+    voiceVi: string = 'vi-VN-Neural2-A', 
+    langMode: LanguageMode = 'EN_ONLY'
+  ): Promise<boolean> {
+    if (!session.items || session.items.length === 0) return false;
+    const normalizedMode = normalizeLanguageMode(langMode);
+    for (const item of session.items) {
+      const itemCacheKey = `improv_item_${item.id}_${voiceEn}_${voiceVi}_${normalizedMode}`;
+      const cached = await audioPlayer.getCachedAudioAsync(itemCacheKey);
+      if (!cached) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Checks if all sessions in an ImprovPackage have their audio cached
+   */
+  async isPackageAudioReady(
+    pkg: ImprovPackage, 
+    voiceEn: string = 'aura-asteria-en', 
+    voiceVi: string = 'vi-VN-Neural2-A', 
+    langMode: LanguageMode = 'EN_ONLY'
+  ): Promise<boolean> {
+    if (!pkg.sessions || pkg.sessions.length === 0) return false;
+    for (const s of pkg.sessions) {
+      const ready = await this.isSessionAudioReady(s, voiceEn, voiceVi, langMode);
+      if (!ready) return false;
+    }
+    return true;
+  }
+
+  /**
    * Immediately stops any ongoing audio playback.
    */
   stop(): void {
@@ -575,5 +612,19 @@ export const playItemAudio = (
   voiceVi?: string,
   langMode?: LanguageMode
 ) => improvTts.playItemAudio(item, speed, onEnded, voiceEn, voiceVi, langMode);
+
+export const isSessionAudioReady = (
+  session: ImprovSession,
+  voiceEn?: string,
+  voiceVi?: string,
+  langMode?: LanguageMode
+) => improvTts.isSessionAudioReady(session, voiceEn, voiceVi, langMode);
+
+export const isPackageAudioReady = (
+  pkg: ImprovPackage,
+  voiceEn?: string,
+  voiceVi?: string,
+  langMode?: LanguageMode
+) => improvTts.isPackageAudioReady(pkg, voiceEn, voiceVi, langMode);
 
 export const stopImprovAudio = () => improvTts.stop();

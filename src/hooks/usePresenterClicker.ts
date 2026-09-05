@@ -16,6 +16,7 @@ export interface ClickerHandlers {
 export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean = true) {
   const handlersRef = useRef<ClickerHandlers>(handlers);
   handlersRef.current = handlers;
+  const prevClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -41,11 +42,26 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
         case 'PageDown':
         case 'ArrowRight':
         case 'Space':
+          if (prevClickTimerRef.current) {
+            clearTimeout(prevClickTimerRef.current);
+            prevClickTimerRef.current = null;
+          }
           h.onNext();
           break;
         case 'PageUp':
         case 'ArrowLeft':
-          h.onPrev();
+          if (prevClickTimerRef.current) {
+            // Double-click detected within 380ms: cancel pending timer and replay audio!
+            clearTimeout(prevClickTimerRef.current);
+            prevClickTimerRef.current = null;
+            h.onReplayAudio();
+          } else {
+            // First press: start 380ms timer; invoke onPrev if no second press occurs
+            prevClickTimerRef.current = setTimeout(() => {
+              prevClickTimerRef.current = null;
+              handlersRef.current.onPrev();
+            }, 380);
+          }
           break;
         case 'KeyB':
         case 'Period':
@@ -81,6 +97,12 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (prevClickTimerRef.current) {
+        clearTimeout(prevClickTimerRef.current);
+        prevClickTimerRef.current = null;
+      }
+    };
   }, [enabled]); // Attached ONCE per enablement change — eliminates render thrashing!
 }

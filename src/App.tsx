@@ -13,6 +13,7 @@ import { ImprovPresentation } from './components/ImprovPresentation';
 import { LessonExcelUploader } from './components/LessonExcelUploader';
 import { getFirestoreCohorts, saveFirestoreCohort, deleteFirestoreCohort, DEFAULT_COURSES } from './services/firestoreService';
 import { useAppRouter } from './hooks/useAppRouter';
+import { IMPROV_SET_01 } from './data/improvSet01And02';
 
 function sanitizeCohort(cohort: Cohort): Cohort {
   let levelCode = cohort.level_code;
@@ -59,7 +60,7 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [drillLessonId, setDrillLessonId] = useState<string>('level_b_eres_day_1');
   const [drillSessionNumber, setDrillSessionNumber] = useState<number>(1);
-  const [improvPackageId, setImprovPackageId] = useState<string>('pkg_level_b_reflex_mastery');
+  const [improvPackageId, setImprovPackageId] = useState<string>(IMPROV_SET_01.id);
   const [improvSessionNumber, setImprovSessionNumber] = useState<number>(1);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState<boolean>(false);
 
@@ -71,10 +72,11 @@ export const App: React.FC = () => {
         if (loadedCohorts.length > 0) {
           const sanitized = loadedCohorts.map(sanitizeCohort);
           setCohorts(sanitized);
-          setActiveCohortId(sanitized[0].id);
-          if (sanitized[0].sessions?.[0]) {
-            setDrillLessonId(sanitized[0].sessions[0].lesson_id);
-            setDrillSessionNumber(sanitized[0].sessions[0].session_number);
+          const defaultActive = sanitized.find(c => c.level_code === 'LEVEL_B_ERES' || c.title.includes('ERES')) || sanitized[0];
+          setActiveCohortId(defaultActive.id);
+          if (defaultActive.sessions?.[0]) {
+            setDrillLessonId(defaultActive.sessions[0].lesson_id);
+            setDrillSessionNumber(defaultActive.sessions[0].session_number);
           }
         } else {
           const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
@@ -97,6 +99,10 @@ export const App: React.FC = () => {
         const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
         setCohorts([defaultEres, defaultErel, defaultA]);
         setActiveCohortId(defaultEres.id);
+        if (defaultEres.sessions?.[0]) {
+          setDrillLessonId(defaultEres.sessions[0].lesson_id);
+          setDrillSessionNumber(defaultEres.sessions[0].session_number);
+        }
       } finally {
         setIsLoading(false);
       }
