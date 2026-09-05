@@ -72,8 +72,9 @@ export interface SingleKeyTestResult {
 
 export const BUILTIN_GOOGLE_KEYS: string[] = [
   "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4",
+  (typeof atob !== 'undefined' ? atob('QVEuQWI4Uk42Smd3UVhxWVFTSTkxRXdYc1BVWlpEaWhBLWJrR0ZEcWxoUy1kOUJXSU5Gc0E=') : ''),
   import.meta.env.VITE_GEMINI_API_KEY || (typeof atob !== 'undefined' ? atob('QVEuQWI4Uk42SmU3d2NZQTZLLWs0YmlnOUprZDRrd3RfOUJlbE1WT3VzU2J5a3ZFWnRkYVE=') : '')
-];
+].filter(Boolean);
 
 export function detectGoogleKeyType(key: string): 'GOOGLE_CLOUD_TTS' | 'GEMINI_AI_STUDIO' {
   return key.trim().startsWith('AQ.') ? 'GEMINI_AI_STUDIO' : 'GOOGLE_CLOUD_TTS';
@@ -202,63 +203,349 @@ export const GOOGLE_TTS_VOICES: VoiceOption[] = [
     description: 'Dynamic conversational inflection.',
     provider: 'GOOGLE'
   },
+  // =========================================================================
+  // Google Cloud Text-to-Speech: Full 40 Vietnamese Models (vi-VN)
+  // =========================================================================
+
+  // --- 30 Google Chirp3-HD Models (Studio Quality) ---
+  // Female (14)
   {
-    id: 'vi-VN-Chirp3-HD-Vindemiatrix',
-    name: 'vi-VN-Chirp3-HD-Vindemiatrix (Google Chirp3-HD Studio Nữ)',
+    id: 'vi-VN-Chirp3-HD-Achernar',
+    name: 'vi-VN-Chirp3-HD-Achernar (Chirp3-HD Nữ)',
     languageCode: 'vi-VN',
     gender: 'FEMALE',
-    description: 'Next-generation ultra-realistic Studio Chirp3-HD Vietnamese female voice.',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Achernar).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Aoede',
+    name: 'vi-VN-Chirp3-HD-Aoede (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Aoede).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Autonoe',
+    name: 'vi-VN-Chirp3-HD-Autonoe (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Autonoe).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Callirrhoe',
+    name: 'vi-VN-Chirp3-HD-Callirrhoe (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Callirrhoe).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Despina',
+    name: 'vi-VN-Chirp3-HD-Despina (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Despina).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Erinome',
+    name: 'vi-VN-Chirp3-HD-Erinome (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Erinome).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Gacrux',
+    name: 'vi-VN-Chirp3-HD-Gacrux (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Gacrux).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Kore',
+    name: 'vi-VN-Chirp3-HD-Kore (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Kore).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Laomedeia',
+    name: 'vi-VN-Chirp3-HD-Laomedeia (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Laomedeia).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Leda',
+    name: 'vi-VN-Chirp3-HD-Leda (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Leda).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Pulcherrima',
+    name: 'vi-VN-Chirp3-HD-Pulcherrima (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Pulcherrima).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Sulafat',
+    name: 'vi-VN-Chirp3-HD-Sulafat (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Sulafat).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Vindemiatrix',
+    name: 'vi-VN-Chirp3-HD-Vindemiatrix (Chirp3-HD Nữ Khuyên Dùng)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice, highly natural and clear.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Zephyr',
+    name: 'vi-VN-Chirp3-HD-Zephyr (Chirp3-HD Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese female voice (Zephyr).',
+    provider: 'GOOGLE'
+  },
+  // Male (16)
+  {
+    id: 'vi-VN-Chirp3-HD-Achird',
+    name: 'vi-VN-Chirp3-HD-Achird (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Achird).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Algenib',
+    name: 'vi-VN-Chirp3-HD-Algenib (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Algenib).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Algieba',
+    name: 'vi-VN-Chirp3-HD-Algieba (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Algieba).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Alnilam',
+    name: 'vi-VN-Chirp3-HD-Alnilam (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Alnilam).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Charon',
+    name: 'vi-VN-Chirp3-HD-Charon (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Charon).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Enceladus',
+    name: 'vi-VN-Chirp3-HD-Enceladus (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Enceladus).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Fenrir',
+    name: 'vi-VN-Chirp3-HD-Fenrir (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Fenrir).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Iapetus',
+    name: 'vi-VN-Chirp3-HD-Iapetus (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Iapetus).',
     provider: 'GOOGLE'
   },
   {
     id: 'vi-VN-Chirp3-HD-Orus',
-    name: 'vi-VN-Chirp3-HD-Orus (Google Chirp3-HD Studio Nam)',
+    name: 'vi-VN-Chirp3-HD-Orus (Chirp3-HD Nam Khuyên Dùng)',
     languageCode: 'vi-VN',
     gender: 'MALE',
-    description: 'Next-generation ultra-realistic Studio Chirp3-HD Vietnamese male voice.',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice, resonant and clear.',
     provider: 'GOOGLE'
   },
   {
+    id: 'vi-VN-Chirp3-HD-Puck',
+    name: 'vi-VN-Chirp3-HD-Puck (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Puck).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Rasalgethi',
+    name: 'vi-VN-Chirp3-HD-Rasalgethi (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Rasalgethi).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Sadachbia',
+    name: 'vi-VN-Chirp3-HD-Sadachbia (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Sadachbia).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Sadaltager',
+    name: 'vi-VN-Chirp3-HD-Sadaltager (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Sadaltager).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Schedar',
+    name: 'vi-VN-Chirp3-HD-Schedar (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Schedar).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Umbriel',
+    name: 'vi-VN-Chirp3-HD-Umbriel (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Umbriel).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Chirp3-HD-Zubenelgenubi',
+    name: 'vi-VN-Chirp3-HD-Zubenelgenubi (Chirp3-HD Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Next-gen Ultra-HD Studio Vietnamese male voice (Zubenelgenubi).',
+    provider: 'GOOGLE'
+  },
+
+  // --- 2 Google Neural2 Models (Chuẩn Tự Nhiên) ---
+  {
     id: 'vi-VN-Neural2-A',
-    name: 'vi-VN-Neural2-A (Vietnamese Neural2 Standard Nữ)',
+    name: 'vi-VN-Neural2-A (Neural2 Nữ Chuẩn Bắc)',
     languageCode: 'vi-VN',
     gender: 'FEMALE',
-    description: 'Neural2 Vietnamese standard female voice.',
+    description: 'Neural2 Vietnamese standard female voice with natural Northern intonation.',
     provider: 'GOOGLE'
   },
   {
     id: 'vi-VN-Neural2-D',
-    name: 'vi-VN-Neural2-D (Vietnamese Neural2 Standard Nam)',
+    name: 'vi-VN-Neural2-D (Neural2 Nam Chuẩn Nam)',
     languageCode: 'vi-VN',
     gender: 'MALE',
-    description: 'Neural2 Vietnamese standard male voice.',
+    description: 'Neural2 Vietnamese standard male voice with clear Southern intonation.',
     provider: 'GOOGLE'
   },
+
+  // --- 4 Google WaveNet Models ---
   {
     id: 'vi-VN-Wavenet-A',
-    name: 'vi-VN-Wavenet-A (Vietnamese WaveNet Nữ)',
+    name: 'vi-VN-Wavenet-A (WaveNet Nữ)',
     languageCode: 'vi-VN',
     gender: 'FEMALE',
-    description: 'WaveNet high-fidelity Northern female pronunciation.',
+    description: 'WaveNet high-fidelity Vietnamese female pronunciation.',
     provider: 'GOOGLE'
   },
   {
     id: 'vi-VN-Wavenet-B',
-    name: 'vi-VN-Wavenet-B (Vietnamese WaveNet Nam)',
+    name: 'vi-VN-Wavenet-B (WaveNet Nam)',
     languageCode: 'vi-VN',
     gender: 'MALE',
-    description: 'WaveNet natural Northern male pronunciation.',
+    description: 'WaveNet natural Vietnamese male pronunciation.',
     provider: 'GOOGLE'
   },
   {
-    id: 'vi-VN-Standard-A',
-    name: 'vi-VN-Standard-A (Vietnamese Standard Nữ Bắc)',
+    id: 'vi-VN-Wavenet-C',
+    name: 'vi-VN-Wavenet-C (WaveNet Nữ)',
     languageCode: 'vi-VN',
     gender: 'FEMALE',
-    description: 'Standard Northern Vietnamese pronunciation.',
+    description: 'WaveNet natural Vietnamese female pronunciation (Alternative).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Wavenet-D',
+    name: 'vi-VN-Wavenet-D (WaveNet Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'WaveNet crisp Vietnamese male pronunciation (Alternative).',
+    provider: 'GOOGLE'
+  },
+
+  // --- 4 Google Standard Models ---
+  {
+    id: 'vi-VN-Standard-A',
+    name: 'vi-VN-Standard-A (Standard Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Standard Vietnamese female voice.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Standard-B',
+    name: 'vi-VN-Standard-B (Standard Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Standard Vietnamese male voice.',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Standard-C',
+    name: 'vi-VN-Standard-C (Standard Nữ)',
+    languageCode: 'vi-VN',
+    gender: 'FEMALE',
+    description: 'Standard Vietnamese female voice (Alternative).',
+    provider: 'GOOGLE'
+  },
+  {
+    id: 'vi-VN-Standard-D',
+    name: 'vi-VN-Standard-D (Standard Nam)',
+    languageCode: 'vi-VN',
+    gender: 'MALE',
+    description: 'Standard Vietnamese male voice (Alternative).',
     provider: 'GOOGLE'
   }
 ];
+
+export type ViVoiceSubcategory = 'CHIRP3_HD' | 'NEURAL2' | 'WAVENET' | 'STANDARD';
+
+export function getViVoiceSubcategory(voiceId: string): ViVoiceSubcategory {
+  if (voiceId.includes('Chirp3-HD')) return 'CHIRP3_HD';
+  if (voiceId.includes('Neural2')) return 'NEURAL2';
+  if (voiceId.includes('Wavenet')) return 'WAVENET';
+  return 'STANDARD';
+}
 
 export const ALL_VOICES: VoiceOption[] = [
   ...GOOGLE_TTS_VOICES,
@@ -1463,7 +1750,16 @@ class AudioPlayService {
 
     // Prioritize active keys that are NOT currently rate-limited
     const activeKeys = this.apiKeyPool.filter(k => !k.rateLimitedUntil || k.rateLimitedUntil <= now);
-    const candidateKeys = activeKeys.length > 0 ? activeKeys : this.apiKeyPool;
+    let candidateKeys = activeKeys.length > 0 ? activeKeys : this.apiKeyPool;
+
+    if (isVi) {
+      // Prioritize GOOGLE_CLOUD_TTS keys for Vietnamese models (Chirp3-HD, Neural2, WaveNet, Standard)
+      candidateKeys = [...candidateKeys].sort((a, b) => {
+        if (a.type === 'GOOGLE_CLOUD_TTS' && b.type !== 'GOOGLE_CLOUD_TTS') return -1;
+        if (a.type !== 'GOOGLE_CLOUD_TTS' && b.type === 'GOOGLE_CLOUD_TTS') return 1;
+        return 0;
+      });
+    }
 
     if (candidateKeys.length === 0) {
       throw new Error('No API keys configured in pool.');

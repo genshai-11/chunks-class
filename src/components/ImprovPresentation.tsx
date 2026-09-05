@@ -420,8 +420,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const handleAuditionVoice = async (voiceId: string) => {
     setIsAuditioningVoice(true);
     try {
+      const isVi = voiceId.startsWith('vi');
+      const sampleText = isVi
+        ? "Chào mừng bạn đến với chế độ luyện phản xạ CHUNKS Improv."
+        : "Welcome to CHUNKS Improv Focus Mode.";
       await audioPlayer.playChunk(
-        "Welcome to CHUNKS Improv Focus Mode.",
+        sampleText,
         null,
         voiceId,
         speed,
@@ -827,25 +831,57 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                     }`}
                   >
                     <optgroup label="Google Chirp3-HD (Studio Studio Quality)">
-                      <option value="vi-VN-Chirp3-HD-Vindemiatrix">vi-VN-Chirp3-HD-Vindemiatrix (Nữ)</option>
-                      <option value="vi-VN-Chirp3-HD-Orus">vi-VN-Chirp3-HD-Orus (Nam)</option>
+                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Chirp3-HD')).map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
+                        </option>
+                      ))}
                     </optgroup>
                     <optgroup label="Google Neural2 (Chuẩn Tự Nhiên)">
-                      <option value="vi-VN-Neural2-A">vi-VN-Neural2-A (Nữ Chuẩn)</option>
-                      <option value="vi-VN-Neural2-D">vi-VN-Neural2-D (Nam Chuẩn)</option>
+                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Neural2')).map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.id} ({v.gender === 'FEMALE' ? 'Nữ Chuẩn' : 'Nam Chuẩn'})
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Google WaveNet">
+                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Wavenet')).map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Google Standard">
+                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Standard')).map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
+                        </option>
+                      ))}
                     </optgroup>
                   </select>
                 </div>
 
-                {/* Audition Test Button */}
-                <button
-                  onClick={() => handleAuditionVoice(selectedVoice)}
-                  disabled={isAuditioningVoice}
-                  className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-semibold rounded-lg transition-all cursor-pointer"
-                >
-                  <Radio className={`w-3.5 h-3.5 text-[#DC2626] ${isAuditioningVoice ? 'animate-spin' : ''}`} />
-                  <span>{isAuditioningVoice ? 'Đang phát thử giọng...' : 'Thử giọng đọc mẫu'}</span>
-                </button>
+                {/* Audition Test Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleAuditionVoice(selectedVoice)}
+                    disabled={isAuditioningVoice}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-semibold rounded-lg transition-all cursor-pointer"
+                    title="Thử phát âm tiếng Anh"
+                  >
+                    <Radio className={`w-3.5 h-3.5 text-[#DC2626] ${isAuditioningVoice ? 'animate-spin' : ''}`} />
+                    <span>Thử EN</span>
+                  </button>
+                  <button
+                    onClick={() => handleAuditionVoice(selectedVoiceVi)}
+                    disabled={isAuditioningVoice}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-semibold rounded-lg transition-all cursor-pointer"
+                    title="Thử phát âm tiếng Việt"
+                  >
+                    <Radio className={`w-3.5 h-3.5 text-emerald-600 ${isAuditioningVoice ? 'animate-spin' : ''}`} />
+                    <span>Thử VI</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>

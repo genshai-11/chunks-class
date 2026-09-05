@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { CohortAudioSettings, LanguageMode, CourseLevel, LessonDoc } from '../types';
 import { 
   audioPlayer, 
   AudioSourceType, 
   AudioProvider, 
   AudioBatchTarget,
-  sanitizeSpeechText 
+  sanitizeSpeechText,
+  GOOGLE_TTS_VOICES
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { getAllLessons } from '../services/firestoreService';
@@ -29,7 +30,8 @@ import {
   RotateCcw,
   Loader2,
   Check,
-  AlertCircle
+  AlertCircle,
+  Search
 } from 'lucide-react';
 
 interface AudioHubViewProps {
@@ -134,13 +136,36 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
     { id: 'en-US-Studio-O', name: 'Google Studio Narrator', desc: 'Giọng đọc chuẩn phòng thu cho tài liệu học thuật', tag: 'STUDIO' }
   ];
 
-  const voiceProfilesVi = [
-    { id: 'vi-VN-Chirp3-HD-Vindemiatrix', name: 'Google Chirp3-HD Studio (Nữ)', desc: 'Next-gen Ultra-HD, tự nhiên, sống động nhất hiện nay' },
-    { id: 'vi-VN-Chirp3-HD-Orus', name: 'Google Chirp3-HD Studio (Nam)', desc: 'Next-gen Ultra-HD, trầm ấm, chuẩn mực phát thanh' },
-    { id: 'vi-VN-Neural2-A', name: 'Google Vietnamese Neural2 (Nữ)', desc: 'Mượt mà, tự nhiên, giọng Bắc chuẩn' },
-    { id: 'vi-VN-Neural2-D', name: 'Google Vietnamese Neural2 (Nam)', desc: 'Rõ ràng, dứt khoát, giọng Nam chuẩn' },
-    { id: 'vi-VN-Standard-A', name: 'Google Vietnamese Standard (Nữ)', desc: 'Rõ ràng, rành mạch từng từ' }
-  ];
+  // Vietnamese Voice Category Filter & Dynamic List
+  const [viCategoryFilter, setViCategoryFilter] = useState<'ALL' | 'CHIRP3_HD' | 'NEURAL2' | 'WAVENET' | 'STANDARD'>('ALL');
+  const [viGenderFilter, setViGenderFilter] = useState<'ALL' | 'FEMALE' | 'MALE'>('ALL');
+  const [viSearchQuery, setViSearchQuery] = useState<string>('');
+
+  const allViVoices = useMemo(() => {
+    return GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN');
+  }, []);
+
+  const filteredViVoices = useMemo(() => {
+    return allViVoices.filter(voice => {
+      if (viCategoryFilter === 'CHIRP3_HD' && !voice.id.includes('Chirp3-HD')) return false;
+      if (viCategoryFilter === 'NEURAL2' && !voice.id.includes('Neural2')) return false;
+      if (viCategoryFilter === 'WAVENET' && !voice.id.includes('Wavenet')) return false;
+      if (viCategoryFilter === 'STANDARD' && !voice.id.includes('Standard')) return false;
+
+      if (viGenderFilter === 'FEMALE' && voice.gender !== 'FEMALE') return false;
+      if (viGenderFilter === 'MALE' && voice.gender !== 'MALE') return false;
+
+      if (viSearchQuery.trim()) {
+        const q = viSearchQuery.toLowerCase().trim();
+        const matchesName = voice.name.toLowerCase().includes(q);
+        const matchesId = voice.id.toLowerCase().includes(q);
+        const matchesDesc = voice.description.toLowerCase().includes(q);
+        if (!matchesName && !matchesId && !matchesDesc) return false;
+      }
+
+      return true;
+    });
+  }, [allViVoices, viCategoryFilter, viGenderFilter, viSearchQuery]);
 
   const handleTestPlaySequence = async () => {
     setIsPlayingSequence(true);
@@ -371,45 +396,236 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
             </div>
 
             {/* Vietnamese Translation Voice */}
-            <div className="space-y-2 pt-2 border-t border-zinc-100">
-              <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider">
-                Giọng Đọc Tiếng Việt (Google Cloud Neural2 / Standard)
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {voiceProfilesVi.map((voice) => {
-                  const isSelected = currentSettings.voice_profile_vi === voice.id;
-                  return (
-                    <div
-                      key={voice.id}
-                      onClick={() => onUpdateSettings({ ...currentSettings, voice_profile_vi: voice.id })}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
-                        isSelected
-                          ? 'bg-emerald-50/40 border-emerald-600 ring-1 ring-emerald-600'
-                          : 'bg-zinc-50 border-zinc-200 hover:bg-zinc-100'
-                      }`}
+            <div className="space-y-3 pt-3 border-t border-zinc-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider">
+                      Giọng Đọc Tiếng Việt (Google Cloud - 40 Mẫu Giọng)
+                    </label>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                      {filteredViVoices.length} / {allViVoices.length}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    Đang chọn: <span className="font-semibold text-emerald-700">{currentSettings.voice_profile_vi}</span>
+                  </p>
+                </div>
+
+                {/* Search Box */}
+                <div className="relative w-full sm:w-52">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  <input
+                    type="text"
+                    value={viSearchQuery}
+                    onChange={(e) => setViSearchQuery(e.target.value)}
+                    placeholder="Tìm tên / ID giọng..."
+                    className="w-full pl-8 pr-7 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-emerald-600"
+                  />
+                  {viSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setViSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 hover:text-zinc-600"
                     >
-                      <div>
-                        <div className="font-bold text-xs text-zinc-900">{voice.name}</div>
-                        <div className="text-[11px] text-zinc-500">{voice.desc}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePreviewVoice(voice.id);
-                          }}
-                          className="text-xs font-bold text-emerald-700 hover:underline p-1"
-                          title="Nghe thử giọng Việt"
-                        >
-                          {playingVoiceId === voice.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Volume2 className="w-3.5 h-3.5" />}
-                        </button>
-                        {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                      </div>
-                    </div>
-                  );
-                })}
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {/* Filter Tabs & Gender Pills */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
+                {/* Category Tabs */}
+                <div className="flex flex-wrap items-center gap-1 bg-zinc-100/80 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setViCategoryFilter('ALL')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viCategoryFilter === 'ALL'
+                        ? 'bg-white text-emerald-700 shadow-xs'
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    Tất cả ({allViVoices.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViCategoryFilter('CHIRP3_HD')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viCategoryFilter === 'CHIRP3_HD'
+                        ? 'bg-white text-emerald-700 shadow-xs'
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    Chirp3-HD Studio ({allViVoices.filter(v => v.id.includes('Chirp3-HD')).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViCategoryFilter('NEURAL2')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viCategoryFilter === 'NEURAL2'
+                        ? 'bg-white text-emerald-700 shadow-xs'
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    Neural2 ({allViVoices.filter(v => v.id.includes('Neural2')).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViCategoryFilter('WAVENET')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viCategoryFilter === 'WAVENET'
+                        ? 'bg-white text-emerald-700 shadow-xs'
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    WaveNet ({allViVoices.filter(v => v.id.includes('Wavenet')).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViCategoryFilter('STANDARD')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viCategoryFilter === 'STANDARD'
+                        ? 'bg-white text-emerald-700 shadow-xs'
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    Standard ({allViVoices.filter(v => v.id.includes('Standard')).length})
+                  </button>
+                </div>
+
+                {/* Gender Toggle Pills */}
+                <div className="flex items-center gap-1 bg-zinc-100/80 p-1 rounded-xl text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setViGenderFilter('ALL')}
+                    className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                      viGenderFilter === 'ALL'
+                        ? 'bg-white text-zinc-900 shadow-xs'
+                        : 'text-zinc-500 hover:text-zinc-800'
+                    }`}
+                  >
+                    Tất cả
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViGenderFilter('FEMALE')}
+                    className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                      viGenderFilter === 'FEMALE'
+                        ? 'bg-pink-100 text-pink-700 shadow-xs'
+                        : 'text-zinc-500 hover:text-zinc-800'
+                    }`}
+                  >
+                    Nữ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViGenderFilter('MALE')}
+                    className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                      viGenderFilter === 'MALE'
+                        ? 'bg-blue-100 text-blue-700 shadow-xs'
+                        : 'text-zinc-500 hover:text-zinc-800'
+                    }`}
+                  >
+                    Nam
+                  </button>
+                </div>
+              </div>
+
+              {/* Filtered Voices Grid */}
+              {filteredViVoices.length === 0 ? (
+                <div className="p-8 text-center bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
+                  <p className="text-xs text-zinc-500">Không tìm thấy giọng đọc phù hợp với bộ lọc hiện tại.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViCategoryFilter('ALL');
+                      setViGenderFilter('ALL');
+                      setViSearchQuery('');
+                    }}
+                    className="mt-2 text-xs text-emerald-600 font-bold hover:underline"
+                  >
+                    Đặt lại bộ lọc
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+                  {filteredViVoices.map((voice) => {
+                    const isSelected = currentSettings.voice_profile_vi === voice.id;
+                    const isChirp = voice.id.includes('Chirp3-HD');
+                    const isNeural = voice.id.includes('Neural2');
+                    const isWavenet = voice.id.includes('Wavenet');
+                    const categoryTag = isChirp ? 'CHIRP3-HD' : isNeural ? 'NEURAL2' : isWavenet ? 'WAVENET' : 'STANDARD';
+
+                    return (
+                      <div
+                        key={voice.id}
+                        onClick={() => onUpdateSettings({ ...currentSettings, voice_profile_vi: voice.id })}
+                        className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'bg-emerald-50/50 border-emerald-600 ring-1 ring-emerald-600 shadow-xs'
+                            : 'bg-zinc-50/70 border-zinc-200 hover:bg-zinc-100/80'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-start justify-between gap-1.5 mb-1">
+                            <div className="font-bold text-xs text-zinc-900 leading-tight">
+                              {voice.name}
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                                isChirp 
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : isNeural 
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : isWavenet
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-zinc-200 text-zinc-700'
+                              }`}>
+                                {categoryTag}
+                              </span>
+                              <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${
+                                voice.gender === 'FEMALE' ? 'bg-pink-100 text-pink-700' : 'bg-cyan-100 text-cyan-700'
+                              }`}>
+                                {voice.gender === 'FEMALE' ? 'Nữ' : 'Nam'}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-zinc-500 line-clamp-1 leading-normal">
+                            {voice.description}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 mt-2 border-t border-zinc-200/50">
+                          <span className="text-[10px] font-mono text-zinc-400 truncate max-w-[170px]" title={voice.id}>
+                            {voice.id}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePreviewVoice(voice.id);
+                              }}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline p-1 cursor-pointer"
+                              title="Nghe thử giọng mẫu"
+                            >
+                              {playingVoiceId === voice.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Volume2 className="w-3.5 h-3.5" />}
+                              <span className="text-[11px]">Nghe thử</span>
+                            </button>
+                            {isSelected && (
+                              <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Drill Sequence & Speed Options */}
