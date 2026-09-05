@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart } from '../types';
 import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
-import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption } from '../services/googleTtsService';
+import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
 import { PartsDrawer, groupChunksIntoParts } from './PartsDrawer';
@@ -56,6 +56,7 @@ interface ClassroomPresentationProps {
   audioSettings?: CohortAudioSettings;
   courseLevel?: string;
   onSelectLesson?: (lessonId: string, sessionNumber?: number) => void;
+  onUpdateAudioSettings?: (settings: CohortAudioSettings) => void;
 }
 
 export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
@@ -65,7 +66,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   onExit,
   audioSettings,
   courseLevel = 'LEVEL_B_ERES',
-  onSelectLesson
+  onSelectLesson,
+  onUpdateAudioSettings
 }) => {
   const [currentLessonId, setCurrentLessonId] = useState<string>(() => {
     if (providedLesson?.id) return providedLesson.id;
@@ -102,10 +104,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   );
   const [speed, setSpeed] = useState<number>(audioSettings?.default_speed || 1.0);
   const [repeatCount, setRepeatCount] = useState<number>(audioSettings?.repeat_count || 1);
-  const [languageMode, setLanguageMode] = useState<LanguageMode>(() => {
-    if (audioSettings?.language_mode === 'VI_ONLY') return 'VI_ONLY';
-    return 'EN_ONLY';
-  });
+  const [languageMode, setLanguageMode] = useState<LanguageMode>(
+    audioSettings?.language_mode || 'EN_ONLY'
+  );
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const [gcsConnectionStatus, setGcsConnectionStatus] = useState<'Connected' | 'Reconnecting'>('Connected');
@@ -119,6 +120,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   
   // Audio Provider & Batch Pre-generation Engine
   const [audioProvider, setAudioProvider] = useState<AudioProvider>(audioPlayer.getAudioProvider());
+  const [prepTarget, setPrepTarget] = useState<AudioBatchTarget>('BOTH');
   const [isPreparingAudio, setIsPreparingAudio] = useState<boolean>(false);
   const [prepProgress, setPrepProgress] = useState<{ current: number; total: number; text: string } | null>(null);
   const [isPrepModalOpen, setIsPrepModalOpen] = useState<boolean>(false);
@@ -166,6 +168,61 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     }
   }, [providedLesson]);
 
+  // Sync when audioSettings prop updates externally
+  useEffect(() => {
+    if (audioSettings) {
+      if (audioSettings.voice_profile_en && audioSettings.voice_profile_en !== selectedVoice) {
+        setSelectedVoice(audioSettings.voice_profile_en);
+      }
+      if (audioSettings.voice_profile_vi && audioSettings.voice_profile_vi !== selectedVoiceVi) {
+        setSelectedVoiceVi(audioSettings.voice_profile_vi);
+      }
+      if (audioSettings.language_mode && audioSettings.language_mode !== languageMode) {
+        setLanguageMode(audioSettings.language_mode);
+      }
+      if (audioSettings.default_speed && audioSettings.default_speed !== speed) {
+        setSpeed(audioSettings.default_speed);
+      }
+      if (audioSettings.repeat_count && audioSettings.repeat_count !== repeatCount) {
+        setRepeatCount(audioSettings.repeat_count);
+      }
+    }
+  }, [audioSettings]);
+
+  // Notify parent whenever audio parameters change
+  const isInitialAudioSettingsMount = useRef(true);
+  useEffect(() => {
+    if (isInitialAudioSettingsMount.current) {
+      isInitialAudioSettingsMount.current = false;
+      return;
+    }
+    const hasChanged =
+      !audioSettings ||
+      audioSettings.voice_profile_en !== selectedVoice ||
+      audioSettings.voice_profile_vi !== selectedVoiceVi ||
+      audioSettings.language_mode !== languageMode ||
+      audioSettings.default_speed !== speed ||
+      audioSettings.repeat_count !== repeatCount;
+
+    if (hasChanged) {
+      onUpdateAudioSettings?.({
+        ...(audioSettings || {
+          voice_profile_en: selectedVoice,
+          voice_profile_vi: selectedVoiceVi,
+          language_mode: languageMode,
+          auto_advance_delay_sec: 0,
+          default_speed: speed,
+          repeat_count: repeatCount
+        }),
+        voice_profile_en: selectedVoice,
+        voice_profile_vi: selectedVoiceVi,
+        language_mode: languageMode,
+        default_speed: speed,
+        repeat_count: repeatCount
+      });
+    }
+  }, [selectedVoice, selectedVoiceVi, speed, repeatCount, languageMode]);
+
   const handleStartPrepareAudio = async () => {
     if (chunks.length === 0) return;
     setIsPreparingAudio(true);
@@ -173,14 +230,17 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     setPrepProgress({ current: 0, total: chunks.length, text: 'Starting synthesis...' });
 
     try {
-      const result = await audioPlayer.prepareChunksAudio(
-        chunks,
-        selectedVoice,
-        audioProvider,
-        (curr, tot, text) => {
+      const result = await audioPlayer.prepareChunksAudio(chunks, {
+        voiceEn: selectedVoice,
+        voiceVi: selectedVoiceVi,
+        provider: audioProvider,
+        target: prepTarget,
+        forceRegenerate: true,
+        concurrency: 4,
+        onProgress: (curr, tot, text) => {
           setPrepProgress({ current: curr, total: tot, text });
         }
-      );
+      });
       setPrepSummary(result);
     } catch (e: any) {
       console.error('Audio preparation failed:', e);
@@ -1146,6 +1206,59 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   <div className={`pt-3 border-t space-y-3 ${
                     highContrastDark ? 'border-zinc-800' : 'border-zinc-100'
                   }`}>
+                    {/* Language Mode Selector */}
+                    <div>
+                      <label className="block font-bold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5">
+                        Chế độ phát âm thanh (Language Mode)
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setLanguageMode('EN_ONLY')}
+                          className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            languageMode === 'EN_ONLY'
+                              ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Chỉ Tiếng Anh (EN)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLanguageMode('VI_ONLY')}
+                          className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            languageMode === 'VI_ONLY'
+                              ? 'bg-white dark:bg-zinc-800 text-emerald-600 shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Chỉ Tiếng Việt (VI)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLanguageMode('EN_THEN_VI')}
+                          className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            languageMode === 'EN_THEN_VI'
+                              ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Song ngữ (EN ➔ VI)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLanguageMode('VI_THEN_EN')}
+                          className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            languageMode === 'VI_THEN_EN'
+                              ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Song ngữ (VI ➔ EN)
+                        </button>
+                      </div>
+                    </div>
+
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
@@ -1644,15 +1757,59 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   <span className="text-zinc-500">Total Chunks:</span>
                   <span className="font-mono font-bold text-[#DC2626]">{chunks.length} chunks</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Audio Engine:</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500">Engine EN:</span>
                   <span className="font-mono font-bold text-zinc-800">
-                    {audioProvider === 'DEEPGRAM_AURA' ? 'Deepgram Aura AI' : 'Google Cloud TTS'}
+                    {audioProvider === 'DEEPGRAM_AURA' ? 'Deepgram Aura AI' : 'Google Cloud TTS'} ({selectedVoice})
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Selected Voice:</span>
-                  <span className="font-mono font-bold text-zinc-800">{selectedVoice}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500">Engine VI:</span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    Google Cloud TTS ({selectedVoiceVi})
+                  </span>
+                </div>
+              </div>
+
+              {/* Target Audio Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-zinc-700 mb-1.5">
+                  Mục tiêu tổng hợp (Target Chunks):
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPrepTarget('BOTH')}
+                    className={`py-1.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
+                      prepTarget === 'BOTH'
+                        ? 'border-[#DC2626] bg-red-50 text-[#DC2626]'
+                        : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
+                    }`}
+                  >
+                    Cả EN & VI
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrepTarget('ENGLISH')}
+                    className={`py-1.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
+                      prepTarget === 'ENGLISH'
+                        ? 'border-[#DC2626] bg-red-50 text-[#DC2626]'
+                        : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
+                    }`}
+                  >
+                    Chỉ EN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrepTarget('VIETNAMESE')}
+                    className={`py-1.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
+                      prepTarget === 'VIETNAMESE'
+                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                        : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
+                    }`}
+                  >
+                    Chỉ VI
+                  </button>
                 </div>
               </div>
 

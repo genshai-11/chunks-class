@@ -179,7 +179,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       const fetchedLessons = await getAllLessons(selectedCourseLevel);
       setLessons(fetchedLessons);
       if (fetchedLessons.length > 0) {
-        setBatchTargetLessonId(fetchedLessons[0].id);
+        setBatchTargetLessonId(prev => {
+          if (!prev || !fetchedLessons.some(l => l.id === prev)) {
+            return fetchedLessons[0].id;
+          }
+          return prev;
+        });
       }
     } catch (e) {
       console.error('Failed to load lessons for audio manager:', e);
@@ -406,8 +411,15 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   ) => {
     if (isBatchRunning) return;
 
-    const effectiveScope = overrideScope || batchScope;
-    const effectiveLessonId = overrideLessonId || batchTargetLessonId;
+    const effectiveScope: 'current_lesson' | 'entire_course' = 
+      (overrideScope === 'current_lesson' || overrideScope === 'entire_course') 
+        ? overrideScope 
+        : batchScope;
+
+    const effectiveLessonId: string = 
+      (typeof overrideLessonId === 'string' && overrideLessonId) 
+        ? overrideLessonId 
+        : (batchTargetLessonId || lessons[0]?.id || '');
 
     cancelBatchRef.current = false;
     setIsBatchRunning(true);
@@ -969,7 +981,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               {!isBatchRunning ? (
                 <button
                   type="button"
-                  onClick={handleStartBatchGeneration}
+                  onClick={() => handleStartBatchGeneration()}
                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />

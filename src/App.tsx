@@ -245,6 +245,7 @@ export const App: React.FC = () => {
               setDrillSessionNumber(sessionNumber);
             }
           }}
+          onUpdateAudioSettings={handleUpdateAudioSettings}
         />
       )}
 
