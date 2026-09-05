@@ -616,7 +616,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               await audioPlayer.playChunk(textToSpeak, hint.audioUrlVi, effectiveVoiceVi, speed);
             } else {
               const hintKeyVi = `improv_hint_${hint.id}_${effectiveVoiceVi}_vi`;
-              const cachedVi = (await audioPlayer.getCachedAudioAsync(hintKeyVi)) ||
+              const cachedVi = (await audioPlayer.getCachedAudioAsync(hintKeyVi, effectiveVoiceVi)) ||
                                (await audioPlayer.getCachedAudioAsync(viText, effectiveVoiceVi));
               if (cachedVi) {
                 await audioPlayer.playBase64(cachedVi, speed);
@@ -632,8 +632,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               await audioPlayer.playChunk(enText, hint.audioUrl, effectiveVoiceEn, speed);
             } else {
               const hintKeyEn = `improv_hint_${hint.id}_${effectiveVoiceEn}_en`;
-              const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn)) ||
-                               (await audioPlayer.getCachedAudioAsync(`improv_hint_${hint.id}_aura-asteria-en_en`)) ||
+              const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn, effectiveVoiceEn)) ||
+                               (await audioPlayer.getCachedAudioAsync(`improv_hint_${hint.id}_aura-asteria-en_en`, 'aura-asteria-en')) ||
                                (await audioPlayer.getCachedAudioAsync(enText, effectiveVoiceEn));
               if (cachedEn) {
                 await audioPlayer.playBase64(cachedEn, speed);
@@ -691,7 +691,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             await audioPlayer.playChunk(textToSpeak, hint.audioUrlVi, effectiveVoiceVi, speed);
           } else {
             const hintKeyVi = `improv_hint_${hint.id}_${effectiveVoiceVi}_vi`;
-            const cachedVi = (await audioPlayer.getCachedAudioAsync(hintKeyVi)) ||
+            const cachedVi = (await audioPlayer.getCachedAudioAsync(hintKeyVi, effectiveVoiceVi)) ||
                              (await audioPlayer.getCachedAudioAsync(viText, effectiveVoiceVi));
             if (cachedVi) {
               await audioPlayer.playBase64(cachedVi, speed);
@@ -707,8 +707,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             await audioPlayer.playChunk(enText, hint.audioUrl, effectiveVoiceEn, speed);
           } else {
             const hintKeyEn = `improv_hint_${hint.id}_${effectiveVoiceEn}_en`;
-            const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn)) ||
-                             (await audioPlayer.getCachedAudioAsync(`improv_hint_${hint.id}_aura-asteria-en_en`)) ||
+            const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn, effectiveVoiceEn)) ||
+                             (await audioPlayer.getCachedAudioAsync(`improv_hint_${hint.id}_aura-asteria-en_en`, 'aura-asteria-en')) ||
                              (await audioPlayer.getCachedAudioAsync(enText, effectiveVoiceEn));
             if (cachedEn) {
               await audioPlayer.playBase64(cachedEn, speed);
