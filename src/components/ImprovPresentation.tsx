@@ -89,71 +89,98 @@ const getWebAudioContext = (): AudioContext | null => {
  * C5 (523.25Hz) -> E5 (659.25Hz) -> G5 (783.99Hz) -> C6 (1046.50Hz)
  * Soft sine waves, smooth attack & decay, duration ~0.5s.
  */
-const playSessionTransitionChime = () => {
-  const ctx = getWebAudioContext();
-  if (!ctx) return;
+/**
+ * Play gentle arpeggio 4-note chime for session transition:
+ * C5 (523.25Hz) -> E5 (659.25Hz) -> G5 (783.99Hz) -> C6 (1046.50Hz)
+ * Soft sine waves, smooth attack & decay, duration ~0.55s.
+ * Returns Promise<void> that resolves when chime finishes completely.
+ */
+const playSessionTransitionChime = (): Promise<void> => {
+  return new Promise<void>((resolve) => {
+    const ctx = getWebAudioContext();
+    if (!ctx) {
+      resolve();
+      return;
+    }
 
-  const notes = [523.25, 659.25, 783.99, 1046.50];
-  const now = ctx.currentTime;
-  const noteDuration = 0.11;
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    const now = ctx.currentTime;
+    const noteDuration = 0.11;
 
-  notes.forEach((freq, idx) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, now + idx * noteDuration);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * noteDuration);
 
-    const startTime = now + idx * noteDuration;
-    const noteEnd = startTime + 0.22;
-    gain.gain.setValueAtTime(0.0001, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.18, startTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
+      const startTime = now + idx * noteDuration;
+      const noteEnd = startTime + 0.22;
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.18, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    osc.start(startTime);
-    osc.stop(noteEnd);
+      osc.start(startTime);
+      osc.stop(noteEnd);
+    });
+
+    // Notes: last note starts at 3 * 0.11 = 0.33s and ends at 0.33 + 0.22 = 0.55s
+    setTimeout(() => {
+      resolve();
+    }, 550);
   });
 };
 
 /**
  * Play victory celebration fanfare for package completion:
  * C5 (523.25Hz) -> E5 (659.25Hz) -> G5 (783.99Hz) -> C6 (1046.50Hz) -> E6 (1318.51Hz)
- * Triumphant harmonics with triangle/sine, lasting ~0.8s.
+ * Triumphant harmonics with triangle/sine, lasting ~0.85s.
+ * Returns Promise<void> that resolves when fanfare completes.
  */
-const playPackageCompletionFanfare = () => {
-  const ctx = getWebAudioContext();
-  if (!ctx) return;
+const playPackageCompletionFanfare = (): Promise<void> => {
+  return new Promise<void>((resolve) => {
+    const ctx = getWebAudioContext();
+    if (!ctx) {
+      resolve();
+      return;
+    }
 
-  const notes = [
-    { freq: 523.25, start: 0.00, dur: 0.14 },
-    { freq: 659.25, start: 0.12, dur: 0.14 },
-    { freq: 783.99, start: 0.24, dur: 0.14 },
-    { freq: 1046.50, start: 0.38, dur: 0.20 },
-    { freq: 1318.51, start: 0.54, dur: 0.38 }
-  ];
-  const now = ctx.currentTime;
+    const notes = [
+      { freq: 523.25, start: 0.00, dur: 0.14 },
+      { freq: 659.25, start: 0.12, dur: 0.14 },
+      { freq: 783.99, start: 0.24, dur: 0.14 },
+      { freq: 1046.50, start: 0.38, dur: 0.20 },
+      { freq: 1318.51, start: 0.54, dur: 0.38 }
+    ];
+    const now = ctx.currentTime;
 
-  notes.forEach(({ freq, start, dur }) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    notes.forEach(({ freq, start, dur }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(freq, now + start);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + start);
 
-    const startTime = now + start;
-    const endTime = startTime + dur;
-    gain.gain.setValueAtTime(0.0001, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.22, startTime + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
+      const startTime = now + start;
+      const endTime = startTime + dur;
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.22, startTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    osc.start(startTime);
-    osc.stop(endTime);
+      osc.start(startTime);
+      osc.stop(endTime);
+    });
+
+    // Final note ends at 0.54 + 0.38 = 0.92s
+    setTimeout(() => {
+      resolve();
+    }, 850);
   });
 };
 
@@ -214,10 +241,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       const saved = localStorage.getItem('chunks_improv_hint_pause_sec');
       if (saved) {
         const val = parseFloat(saved);
-        if (!isNaN(val) && val >= 0.3 && val <= 1.5) return val;
+        if (!isNaN(val) && val >= 0.0 && val <= 1.5) return val;
       }
     } catch {}
-    return 0.8;
+    return 1.0;
   });
   const [enableSoundCues, setEnableSoundCues] = useState<boolean>(() => {
     try {
@@ -625,8 +652,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
         if (activeSequenceRef.current !== seqId) return;
         if (i < hintsToPlay.length - 1) {
-          // Configurable pause between hints (0.3s - 1.5s, default 0.8s)
-          await new Promise(res => setTimeout(res, Math.round(hintPauseSec * 1000)));
+          // Configurable pause between hints (0.0s - 1.5s, default 1.0s)
+          // When 0.0s: no setTimeout, advance immediately to offset TTS tail-silence
+          if (hintPauseSec > 0) {
+            await new Promise(res => setTimeout(res, Math.round(hintPauseSec * 1000)));
+            if (activeSequenceRef.current !== seqId) return;
+          }
         }
       }
     } catch (err) {
@@ -703,89 +734,57 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     }
   };
 
-  // Play continuous combined item audio or fallback to revealed hints
+  // Play continuous revealed hints sequentially with dynamic hintPauseSec
+  // Bypasses pre-baked 1.0s combined item audio files so custom hintPauseSec takes immediate effect
   const playWholeItemAudio = async (
     item: ImprovItem,
     voiceEn: string = selectedVoice,
     voiceVi: string = selectedVoiceVi
   ) => {
-    audioPlayer.stop();
-    improvTts.stop();
-    const seqId = ++activeSequenceRef.current;
-    setIsPlayingAudio(true);
-
     const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'aura-asteria-en';
     const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
-      if (languageMode === 'VI_ONLY') {
-        if (item.audioUrlVi && item.audioUrlVi.startsWith('http')) {
-          await improvTts.playItemAudio(item, speed, undefined, effectiveVoiceEn, effectiveVoiceVi, 'VI_ONLY');
-          return;
-        }
-        const itemCacheKeyVi = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_VI_ONLY`;
-        const cachedVi = (await audioPlayer.getCachedAudioAsync(itemCacheKeyVi)) ||
-                         (await audioPlayer.getCachedAudioAsync(`improv_item_${item.id}_aura-asteria-en_${effectiveVoiceVi}_VI_ONLY`));
-        if (cachedVi) {
-          await audioPlayer.playBase64(cachedVi, speed);
-          return;
-        }
-      } else {
-        // EN_ONLY
-        if (item.audioUrl && item.audioUrl.startsWith('http')) {
-          await improvTts.playItemAudio(item, speed, undefined, effectiveVoiceEn, effectiveVoiceVi, 'EN_ONLY');
-          return;
-        }
-        const itemCacheKeyEn = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_EN_ONLY`;
-        const cachedEn = (await audioPlayer.getCachedAudioAsync(itemCacheKeyEn)) ||
-                         (await audioPlayer.getCachedAudioAsync(`improv_item_${item.id}_aura-asteria-en_${effectiveVoiceVi}_EN_ONLY`));
-        if (cachedEn) {
-          await audioPlayer.playBase64(cachedEn, speed);
-          return;
-        }
-      }
-
-      // If neither GCS stream URL nor combined continuous cache exists: play hints sequentially
       if (item.hints && item.hints.length > 0) {
         await playRevealedHintsAudio(item.hints, effectiveVoiceEn, effectiveVoiceVi);
       }
     } catch (err) {
       console.warn('[ImprovPresentation] Whole item audio playback notice:', err);
-    } finally {
-      if (activeSequenceRef.current === seqId) {
-        setIsPlayingAudio(false);
-      }
     }
   };
 
   // Session Transition Controller
-  const goToNextSession = (targetSession: ImprovSession) => {
+  const goToNextSession = async (targetSession: ImprovSession) => {
     audioPlayer.stop();
     improvTts.stop();
+    const seqId = ++activeSequenceRef.current;
+
     setSelectedSessionNum(targetSession.sessionNumber);
     setCurrentItemIndex(0);
     const initialStep = revealMode === 'all' ? (targetSession.items[0]?.hints?.length || 1) : 1;
     setCurrentRevealStep(initialStep);
     onSelectPackage?.(selectedPkgId, targetSession.sessionNumber);
 
-    if (enableSoundCues) {
-      playSessionTransitionChime();
-    }
     confetti({
       particleCount: 40,
       spread: 60,
       origin: { y: 0.7 }
     });
 
-    // Auto-play audio of first item/hint in new session
+    if (enableSoundCues) {
+      await playSessionTransitionChime();
+    }
+    if (activeSequenceRef.current !== seqId) return; // Chống race condition nếu người dùng bấm tiếp
+
+    // Sau khi âm đệm dứt hẳn mới phát âm câu đầu tiên của session mới:
     const firstItem = targetSession.items[0];
     if (firstItem) {
       if (revealMode === 'step') {
         if (firstItem.hints && firstItem.hints[0]) {
-          playSingleHintAudio(firstItem.hints[0], 0, selectedVoice, selectedVoiceVi);
+          await playSingleHintAudio(firstItem.hints[0], 0, selectedVoice, selectedVoiceVi);
         }
       } else {
-        playWholeItemAudio(firstItem, selectedVoice, selectedVoiceVi);
+        await playWholeItemAudio(firstItem, selectedVoice, selectedVoiceVi);
       }
     }
   };
@@ -1533,26 +1532,81 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                       <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold">
                         Khoảng nghỉ giữa các Hints (Pause)
                       </label>
-                      <span className="font-mono text-xs font-extrabold text-[#DC2626]">
-                        {hintPauseSec.toFixed(1)}s
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-xs font-extrabold text-[#DC2626]">
+                          {hintPauseSec % 0.1 === 0 ? hintPauseSec.toFixed(1) : hintPauseSec.toFixed(2)}s
+                        </span>
+                        {Math.abs(hintPauseSec - 1.0) >= 0.02 && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono">
+                            Custom
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {/* Quick Presets */}
-                    <div className="grid grid-cols-5 gap-1 mb-2">
+
+                    {/* Nút chuyển đổi linh hoạt: Mặc định 1.0s / Tùy chỉnh Custom & Nút "Về mặc định 1.0s" */}
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <div className="flex-1 grid grid-cols-2 gap-1 p-0.5 bg-zinc-100 dark:bg-zinc-800/80 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => setHintPauseSec(1.0)}
+                          className={`py-1 px-2 text-[10px] font-bold rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                            Math.abs(hintPauseSec - 1.0) < 0.02
+                              ? 'bg-white dark:bg-zinc-700 text-[#DC2626] shadow-xs font-extrabold'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          <Check className={`w-3 h-3 ${Math.abs(hintPauseSec - 1.0) < 0.02 ? 'opacity-100 text-[#DC2626]' : 'opacity-0'}`} />
+                          <span>Mặc định (1.0s)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (Math.abs(hintPauseSec - 1.0) < 0.02) {
+                              setHintPauseSec(0.3);
+                            }
+                          }}
+                          className={`py-1 px-2 text-[10px] font-bold rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                            Math.abs(hintPauseSec - 1.0) >= 0.02
+                              ? 'bg-white dark:bg-zinc-700 text-[#DC2626] shadow-xs font-extrabold'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          <Sliders className={`w-3 h-3 ${Math.abs(hintPauseSec - 1.0) >= 0.02 ? 'opacity-100 text-[#DC2626]' : 'opacity-0'}`} />
+                          <span>Tùy chỉnh (Custom)</span>
+                        </button>
+                      </div>
+
+                      {Math.abs(hintPauseSec - 1.0) >= 0.02 && (
+                        <button
+                          type="button"
+                          onClick={() => setHintPauseSec(1.0)}
+                          className="py-1 px-2.5 text-[10px] font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1 shrink-0 animate-fade-in active:scale-95"
+                          title="Quay về khoảng nghỉ chuẩn 1.0s với 1 cú click"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>Về mặc định 1.0s</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Quick Presets (6 presets: 0.0s, 0.1s, 0.3s, 0.5s, 0.8s, 1.0s) */}
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 mb-2">
                       {[
-                        { val: 0.3, label: '0.3s', tip: 'Cực nhanh' },
-                        { val: 0.5, label: '0.5s', tip: 'Nhanh' },
+                        { val: 0.0, label: '0.0s', tip: 'Liền mạch' },
+                        { val: 0.1, label: '0.1s', tip: 'Siêu tốc' },
+                        { val: 0.3, label: '0.3s', tip: 'Nhanh' },
+                        { val: 0.5, label: '0.5s', tip: 'Vừa phải' },
                         { val: 0.8, label: '0.8s', tip: 'Tự nhiên' },
-                        { val: 1.0, label: '1.0s', tip: 'Chuẩn' },
-                        { val: 1.5, label: '1.5s', tip: 'Chậm' }
+                        { val: 1.0, label: '1.0s', tip: 'Chuẩn' }
                       ].map((preset) => (
                         <button
                           key={preset.val}
                           type="button"
                           onClick={() => setHintPauseSec(preset.val)}
-                          title={preset.tip}
-                          className={`py-1 text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer flex flex-col items-center justify-center ${
-                            Math.abs(hintPauseSec - preset.val) < 0.05
+                          title={`${preset.label} - ${preset.tip}`}
+                          className={`py-1.5 px-1 text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer flex flex-col items-center justify-center leading-tight ${
+                            Math.abs(hintPauseSec - preset.val) < 0.025
                               ? 'bg-[#DC2626] text-white shadow-xs'
                               : highContrastDark
                               ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
@@ -1560,22 +1614,25 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                           }`}
                         >
                           <span>{preset.label}</span>
+                          <span className="text-[8px] font-sans font-medium opacity-85 mt-0.5">{preset.tip}</span>
                         </button>
                       ))}
                     </div>
-                    {/* Slider */}
+
+                    {/* Slider (0.0s - 1.5s, step 0.05) */}
                     <input
                       type="range"
-                      min="0.3"
+                      min="0.0"
                       max="1.5"
-                      step="0.1"
+                      step="0.05"
                       value={hintPauseSec}
                       onChange={(e) => setHintPauseSec(parseFloat(e.target.value))}
                       className="w-full accent-[#DC2626] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg"
                     />
                     <div className="flex justify-between text-[9px] font-mono text-zinc-400 mt-1">
-                      <span>0.3s (Cực nhanh)</span>
-                      <span>0.8s (Tự nhiên)</span>
+                      <span>0.0s (Liền mạch)</span>
+                      <span>0.5s (Vừa phải)</span>
+                      <span>1.0s (Chuẩn)</span>
                       <span>1.5s (Chậm)</span>
                     </div>
                   </div>
@@ -2078,7 +2135,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 ? 'bg-[#DC2626] ring-4 ring-[#DC2626]/30 animate-pulse'
                 : 'bg-[#DC2626] hover:bg-[#B91C1C]'
             }`}
-            title={`Phát lại toàn bộ gợi ý kèm khoảng nghỉ ${hintPauseSec.toFixed(1)}s (Phím R)`}
+            title={`Phát lại toàn bộ gợi ý kèm khoảng nghỉ ${hintPauseSec % 0.1 === 0 ? hintPauseSec.toFixed(1) : hintPauseSec.toFixed(2)}s (Phím R)`}
           >
             <Volume2 className="w-4 h-4" />
             <span>{isPlayingAudio ? 'Đang đọc...' : 'Phát âm (R)'}</span>
@@ -2147,7 +2204,23 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             title="Khoảng nghỉ giữa các Hints (bấm để chỉnh)"
           >
             <span className="text-[10px] font-mono font-bold text-zinc-400">Pause:</span>
-            <span className="text-xs font-mono font-extrabold text-[#DC2626]">{hintPauseSec.toFixed(1)}s</span>
+            <span className="text-xs font-mono font-extrabold text-[#DC2626]">
+              {hintPauseSec % 0.1 === 0 ? hintPauseSec.toFixed(1) : hintPauseSec.toFixed(2)}s
+            </span>
+            {Math.abs(hintPauseSec - 1.0) >= 0.02 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setHintPauseSec(1.0);
+                }}
+                className="ml-1 px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-500 hover:bg-amber-600 text-white transition-all flex items-center gap-0.5 cursor-pointer shadow-xs active:scale-95"
+                title="Quay về chuẩn 1.0s"
+              >
+                <RotateCcw className="w-2.5 h-2.5" />
+                <span>1.0s</span>
+              </button>
+            )}
           </div>
 
           {/* Blackout Button (Key B) */}
