@@ -206,8 +206,53 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
   // Audio Readiness State
   const [readyPackageMap, setReadyPackageMap] = useState<Record<string, boolean>>({});
-  const [readySessionMap, setReadySessionMap] = useState<Record<number, boolean>>({});
-  const [isActiveSessionAudioReady, setIsActiveSessionAudioReady] = useState<boolean>(false);
+  const [readySessionMap, setReadySessionMap] = useState<Record<string, boolean>>({});
+  const [isSessionReady, setIsSessionReady] = useState<boolean>(false);
+
+  // Helper to check if an ImprovSession has audio ready (either GCS/HTTP audioUrl or cached TTS)
+  const checkSessionAudioReady = async (
+    s: ImprovSession | null,
+    vEn: string,
+    vVi: string,
+    lMode: 'EN_ONLY' | 'VI_ONLY'
+  ): Promise<boolean> => {
+    if (!s || !s.items || s.items.length === 0) return false;
+
+    // Check if all items already have a valid audioUrl
+    const allHaveAudioUrl = s.items.every(
+      it => Boolean(it.audioUrl && (it.audioUrl.startsWith('http://') || it.audioUrl.startsWith('https://') || it.audioUrl.startsWith('data:')))
+    );
+    if (allHaveAudioUrl) return true;
+
+    // Check through improvTts with active voice and fallback voice
+    try {
+      let ready = await isSessionAudioReady(s, vEn, vVi, lMode);
+      if (ready) return true;
+      if (vEn !== 'aura-asteria-en' || vVi !== 'vi-VN-Neural2-A') {
+        ready = await isSessionAudioReady(s, 'aura-asteria-en', 'vi-VN-Neural2-A', lMode);
+        if (ready) return true;
+      }
+    } catch {
+      // Continue to direct cache check
+    }
+
+    // Direct cache key check
+    try {
+      const normalizedMode = lMode === 'VI_ONLY' ? 'VI_ONLY' : 'EN_ONLY';
+      for (const item of s.items) {
+        if (item.audioUrl && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) {
+          continue;
+        }
+        const k1 = `improv_item_${item.id}_${vEn}_${vVi}_${normalizedMode}`;
+        const k2 = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_${normalizedMode}`;
+        const cached = (await audioPlayer.getCachedAudioAsync(k1)) || (await audioPlayer.getCachedAudioAsync(k2));
+        if (!cached) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   // Scan audio readiness for packages
   useEffect(() => {
@@ -220,6 +265,17 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           let ready = await isPackageAudioReady(p, selectedVoice, selectedVoiceVi, languageMode);
           if (!ready && (selectedVoice !== 'aura-asteria-en' || selectedVoiceVi !== 'vi-VN-Neural2-A')) {
             ready = await isPackageAudioReady(p, 'aura-asteria-en', 'vi-VN-Neural2-A', languageMode);
+          }
+          if (!ready && p.sessions && p.sessions.length > 0) {
+            let allSessionsReady = true;
+            for (const sess of p.sessions) {
+              const sReady = await checkSessionAudioReady(sess, selectedVoice, selectedVoiceVi, languageMode);
+              if (!sReady) {
+                allSessionsReady = false;
+                break;
+              }
+            }
+            if (allSessionsReady) ready = true;
           }
           map[p.id] = ready;
         } catch {
@@ -244,27 +300,29 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       if (!activePackage?.sessions || activePackage.sessions.length === 0) {
         if (isMounted) {
           setReadySessionMap({});
-          setIsActiveSessionAudioReady(false);
+          setIsSessionReady(false);
         }
         return;
       }
 
-      const map: Record<number, boolean> = {};
+      const map: Record<string, boolean> = {};
       for (const s of activePackage.sessions) {
         if (!isMounted) return;
         try {
-          let ready = await isSessionAudioReady(s, selectedVoice, selectedVoiceVi, languageMode);
-          if (!ready && (selectedVoice !== 'aura-asteria-en' || selectedVoiceVi !== 'vi-VN-Neural2-A')) {
-            ready = await isSessionAudioReady(s, 'aura-asteria-en', 'vi-VN-Neural2-A', languageMode);
-          }
-          map[s.sessionNumber] = ready;
+          const ready = await checkSessionAudioReady(s, selectedVoice, selectedVoiceVi, languageMode);
+          const sId = (s as any).id || String(s.sessionNumber);
+          map[sId] = ready;
+          map[String(s.sessionNumber)] = ready;
         } catch {
-          map[s.sessionNumber] = false;
+          const sId = (s as any).id || String(s.sessionNumber);
+          map[sId] = false;
+          map[String(s.sessionNumber)] = false;
         }
       }
       if (isMounted) {
         setReadySessionMap(map);
-        setIsActiveSessionAudioReady(Boolean(map[selectedSessionNum]));
+        const activeKey = (activeSession as any)?.id || String(selectedSessionNum);
+        setIsSessionReady(Boolean(map[activeKey] || map[String(selectedSessionNum)]));
       }
     };
 
@@ -278,23 +336,22 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   useEffect(() => {
     let isMounted = true;
     if (!activeSession) {
-      setIsActiveSessionAudioReady(false);
+      setIsSessionReady(false);
       return;
     }
-    const checkActive = async () => {
-      try {
-        let ready = await isSessionAudioReady(activeSession, selectedVoice, selectedVoiceVi, languageMode);
-        if (!ready && (selectedVoice !== 'aura-asteria-en' || selectedVoiceVi !== 'vi-VN-Neural2-A')) {
-          ready = await isSessionAudioReady(activeSession, 'aura-asteria-en', 'vi-VN-Neural2-A', languageMode);
-        }
-        if (isMounted) {
-          setIsActiveSessionAudioReady(ready);
-        }
-      } catch {
-        if (isMounted) setIsActiveSessionAudioReady(false);
+    checkSessionAudioReady(activeSession, selectedVoice, selectedVoiceVi, languageMode).then((ready) => {
+      if (isMounted) {
+        setIsSessionReady(ready);
+        const activeKey = (activeSession as any)?.id || String(activeSession.sessionNumber);
+        setReadySessionMap(prev => ({
+          ...prev,
+          [activeKey]: ready,
+          [String(activeSession.sessionNumber)]: ready
+        }));
       }
-    };
-    checkActive();
+    }).catch(() => {
+      if (isMounted) setIsSessionReady(false);
+    });
     return () => {
       isMounted = false;
     };
@@ -620,6 +677,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               <span>
                 Session {selectedSessionNum} • {activeSession?.hcTotal || hints.length || 2} Hints
               </span>
+              {isSessionReady && (
+                <Volume2 className="w-4 h-4 text-emerald-500 shrink-0 animate-in fade-in" title="Session đã sẵn sàng audio" />
+              )}
               <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
             </button>
 
@@ -637,7 +697,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 <div className="space-y-1 mt-1">
                   {(activePackage?.sessions || []).map((s) => {
                     const isSelected = s.sessionNumber === selectedSessionNum;
-                    const isSessReady = Boolean(readySessionMap[s.sessionNumber]);
+                    const sId = (s as any).id || String(s.sessionNumber);
+                    const isSessReady = Boolean(readySessionMap[sId] || readySessionMap[String(s.sessionNumber)]);
                     return (
                       <button
                         key={s.sessionNumber}
@@ -834,13 +895,13 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               }`}
               title="Cài đặt giọng đọc & TTS"
             >
-              {isActiveSessionAudioReady ? (
+              {isSessionReady ? (
                 <Volume2 className="w-3.5 h-3.5 text-emerald-500" />
               ) : (
                 <Volume2 className="w-3.5 h-3.5 text-[#DC2626]" />
               )}
               <span className="hidden sm:inline-block font-mono text-[11px]">
-                {isActiveSessionAudioReady
+                {isSessionReady
                   ? 'Audio Ready'
                   : selectedVoice.replace('en-US-', '').replace('aura-', '')}
               </span>
@@ -868,16 +929,19 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                   </button>
                 </div>
 
-                {isActiveSessionAudioReady ? (
+                {isSessionReady ? (
                   /* Audio Ready Banner */
-                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2.5 mb-3">
+                  <div className="p-3 mb-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0">
                       <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-emerald-800 dark:text-emerald-200">Audio Đã Sẵn Sàng</div>
+                      <div className="text-xs font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5">
+                        <span>Audio Đã Sẵn Sàng</span>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded font-mono bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">Cache Sẵn Có</span>
+                      </div>
                       <div className="text-[11px] text-emerald-600 dark:text-emerald-400 leading-snug mt-0.5">
-                        Session đang sử dụng audio Improv đã tạo sẵn trong cache. Tùy chọn model TTS được ẩn.
+                        Session đang sử dụng audio Improv đã tạo sẵn. Tùy chọn model TTS được ẩn.
                       </div>
                     </div>
                   </div>

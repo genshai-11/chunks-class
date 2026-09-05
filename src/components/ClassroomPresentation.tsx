@@ -326,6 +326,63 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       .filter(group => group.lessons.length > 0);
   }, [groupedCourses, lessonSearchQuery]);
 
+  // Track audio readiness for all lessons in the popover (both GCS and IndexedDB cache)
+  const [lessonReadyMap, setLessonReadyMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let isCancelled = false;
+    const allLessons = groupedCourses.flatMap(g => g.lessons);
+
+    const initialMap: Record<string, boolean> = {};
+    const pendingLessons: LessonDoc[] = [];
+
+    for (const l of allLessons) {
+      const isGcs = audioPlayer.isLessonAudioReady(l) || Boolean(l.chunks && l.chunks.length > 0 && l.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http'))));
+      if (isGcs) {
+        initialMap[l.id] = true;
+      } else if (l.chunks && l.chunks.length > 0) {
+        pendingLessons.push(l);
+      }
+    }
+
+    setLessonReadyMap(prev => ({ ...prev, ...initialMap }));
+
+    if (pendingLessons.length > 0) {
+      Promise.all(
+        pendingLessons.map(async (l) => {
+          try {
+            const status = await audioPlayer.checkLessonAudioStatus(l.chunks!);
+            return { id: l.id, isReady: status.isFullyCached };
+          } catch {
+            return { id: l.id, isReady: false };
+          }
+        })
+      ).then(results => {
+        if (!isCancelled) {
+          setLessonReadyMap(prev => {
+            const updated = { ...prev };
+            for (const res of results) {
+              if (res.isReady) {
+                updated[res.id] = true;
+              }
+            }
+            return updated;
+          });
+        }
+      });
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [groupedCourses, activeLesson?.id, isLessonSwitcherOpen, isSoundSettingsOpen]);
+
+  useEffect(() => {
+    if (isCurrentLessonAudioReady && activeLesson?.id) {
+      setLessonReadyMap(prev => prev[activeLesson.id] ? prev : { ...prev, [activeLesson.id]: true });
+    }
+  }, [isCurrentLessonAudioReady, activeLesson?.id]);
+
   const handleSwitchLesson = (newLessonId: string) => {
     let cleanId = newLessonId;
     if (cleanId.startsWith('level_b_day_')) {
@@ -683,6 +740,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               <span className="truncate font-semibold text-left">
                 {activeLesson?.day_number === 0 ? 'Day 0: Word List' : `Day ${activeLesson?.day_number ?? 1}`}: {activeLesson?.lesson_title || 'Chọn bài học'}
               </span>
+              {isCurrentLessonAudioReady && (
+                <Volume2 className="w-4 h-4 text-emerald-500 shrink-0 animate-in fade-in" title="Audio bài học đã sẵn sàng" />
+              )}
               <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform ${isLessonSwitcherOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -767,7 +827,11 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                         <div className="mt-1 space-y-1">
                           {lessons.map(l => {
                             const isCurrent = l.id === normalizedId || l.id === currentLessonId;
-                            const isLessonReady = audioPlayer.isLessonAudioReady(l) || Boolean(l.chunks && l.chunks.length > 0 && l.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http'))));
+                            const isLessonReady = Boolean(
+                              lessonReadyMap[l.id] ||
+                              audioPlayer.isLessonAudioReady(l) ||
+                              (l.chunks && l.chunks.length > 0 && l.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http'))))
+                            );
                             return (
                               <button
                                 key={l.id}

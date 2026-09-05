@@ -680,6 +680,82 @@ async function clearAudioBlobsFromDB(): Promise<void> {
   });
 }
 
+export interface AudioCacheExportData {
+  version: number;
+  exportedAt: string;
+  count: number;
+  entries: { key: string; base64: string; timestamp?: number }[];
+}
+
+export async function getStoredAudioBlobsCount(): Promise<number> {
+  const db = await openIndexedDB();
+  if (!db) return 0;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.count();
+      req.onsuccess = () => resolve(req.result || 0);
+      req.onerror = () => resolve(0);
+    } catch {
+      resolve(0);
+    }
+  });
+}
+
+export async function exportAllAudioBlobs(): Promise<AudioCacheExportData> {
+  const db = await openIndexedDB();
+  if (!db) return { version: 1, exportedAt: new Date().toISOString(), count: 0, entries: [] };
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.getAll();
+      request.onsuccess = (e: any) => {
+        const records = e.target.result || [];
+        const entries = records.map((r: any) => ({
+          key: r.key,
+          base64: r.base64,
+          timestamp: r.timestamp
+        }));
+        resolve({
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          count: entries.length,
+          entries
+        });
+      };
+      request.onerror = () => resolve({ version: 1, exportedAt: new Date().toISOString(), count: 0, entries: [] });
+    } catch {
+      resolve({ version: 1, exportedAt: new Date().toISOString(), count: 0, entries: [] });
+    }
+  });
+}
+
+export async function importAudioBlobs(data: AudioCacheExportData): Promise<number> {
+  if (!data || !Array.isArray(data.entries)) return 0;
+  const db = await openIndexedDB();
+  if (!db) return 0;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      let imported = 0;
+      for (const entry of data.entries) {
+        if (entry.key && entry.base64) {
+          store.put({ key: entry.key, base64: entry.base64, timestamp: entry.timestamp || Date.now() });
+          audioPlayer.setCache(entry.key, entry.base64);
+          imported++;
+        }
+      }
+      tx.oncomplete = () => resolve(imported);
+      tx.onerror = () => resolve(imported);
+    } catch {
+      resolve(0);
+    }
+  });
+}
+
 class AudioPlayService {
   private currentAudio: HTMLAudioElement | null = null;
   private audioCache = new Map<string, string>(); // key (model::text) -> base64 dataUri or blobUrl
@@ -831,6 +907,22 @@ class AudioPlayService {
   public clearAllCache() {
     this.audioCache.clear();
     clearAudioBlobsFromDB().catch(() => {});
+  }
+
+  public async exportAudioBlobs(): Promise<AudioCacheExportData> {
+    return exportAllAudioBlobs();
+  }
+
+  public async importAudioBlobs(data: AudioCacheExportData): Promise<number> {
+    return importAudioBlobs(data);
+  }
+
+  public async getStoredBlobsCount(): Promise<number> {
+    return getStoredAudioBlobsCount();
+  }
+
+  public getCacheCount(): number {
+    return this.audioCache.size;
   }
 
   public setAudioProvider(provider: AudioProvider) {
