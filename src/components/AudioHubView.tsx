@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { CohortAudioSettings, LanguageMode, CourseLevel, LessonDoc } from '../types';
 import { 
   audioPlayer, 
@@ -6,10 +6,15 @@ import {
   AudioProvider, 
   AudioBatchTarget,
   sanitizeSpeechText,
-  GOOGLE_TTS_VOICES
+  GOOGLE_TTS_VOICES,
+  exportAllAudioBlobs,
+  importAudioBlobs,
+  getStoredAudioBlobsCount,
+  AudioCacheExportData
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { getAllLessons } from '../services/firestoreService';
+import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
 import { 
@@ -31,7 +36,11 @@ import {
   Loader2,
   Check,
   AlertCircle,
-  Search
+  Search,
+  Download,
+  Upload,
+  Database,
+  CloudUpload
 } from 'lucide-react';
 
 interface AudioHubViewProps {
@@ -83,7 +92,24 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
   const [courseLessons, setCourseLessons] = useState<LessonDoc[]>([]);
   const [cacheStatusMap, setCacheStatusMap] = useState<Record<string, { en: number; vi: number; total: number }>>({});
 
-  // 4. API Key & Provider State
+  // 4. Audio Cache Migration & Backup State
+  const [cacheEntriesCount, setCacheEntriesCount] = useState<number>(0);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [isSyncingToCloud, setIsSyncingToCloud] = useState<boolean>(false);
+  const [syncCloudProgress, setSyncCloudProgress] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const refreshCacheCount = useCallback(async () => {
+    try {
+      const count = await getStoredAudioBlobsCount();
+      setCacheEntriesCount(count);
+    } catch (e) {
+      console.error('Failed to get cache count:', e);
+    }
+  }, []);
+
+  // 5. API Key & Provider State
   const [audioProvider, setAudioProvider] = useState<AudioProvider>(audioPlayer.getAudioProvider());
   const [deepgramKeyInput, setDeepgramKeyInput] = useState<string>(
     localStorage.getItem('chunks_deepgram_api_key') || '51d7d8b230bf742178e681e7836a3dc1571b1c11'
@@ -105,14 +131,16 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
         statusMap[l.id] = { en: status.enCached, vi: status.viCached, total: status.total };
       }
       setCacheStatusMap(statusMap);
+      await refreshCacheCount();
     } catch (e) {
       console.error(e);
     }
-  }, [selectedCourseLevel, currentSettings.voice_profile_en, currentSettings.voice_profile_vi]);
+  }, [selectedCourseLevel, currentSettings.voice_profile_en, currentSettings.voice_profile_vi, refreshCacheCount]);
 
   useEffect(() => {
     loadLessonsAndCacheStatus();
-  }, [loadLessonsAndCacheStatus]);
+    refreshCacheCount();
+  }, [loadLessonsAndCacheStatus, refreshCacheCount]);
 
   useEffect(() => {
     const unsub = audioPlayer.onSourceChange((source) => {
@@ -266,6 +294,113 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
       setBatchSummary(`Lỗi: ${err?.message || String(err)}`);
     } finally {
       setIsBatchPrepping(false);
+    }
+  };
+
+  const handleExportCache = async () => {
+    setIsExporting(true);
+    try {
+      const data = await exportAllAudioBlobs();
+      if (!data.entries || data.entries.length === 0) {
+        alert("Bộ nhớ đệm IndexedDB hiện chưa có audio nào để xuất. Vui lòng tạo hoặc nạp audio trước!");
+        return;
+      }
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().split('T')[0];
+      a.href = url;
+      a.download = `chunks-audio-cache-backup-${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Export cache error:', err);
+      alert('Có lỗi khi xuất file cache: ' + (err?.message || String(err)));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      let data: AudioCacheExportData;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        alert("File tải lên không phải là định dạng JSON hợp lệ.");
+        return;
+      }
+
+      if (!data || !Array.isArray(data.entries)) {
+        alert("Định dạng file không đúng. Cần file backup JSON chứa danh sách entries audio.");
+        return;
+      }
+
+      const count = await importAudioBlobs(data);
+      alert(`🎉 Đã nạp thành công ${count} audio chunks vào trình duyệt!`);
+      await loadLessonsAndCacheStatus();
+      await refreshCacheCount();
+    } catch (err: any) {
+      console.error('Import cache error:', err);
+      alert('Lỗi khi nạp file cache: ' + (err?.message || String(err)));
+    } finally {
+      setIsImporting(false);
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleSyncCacheToCloud = async () => {
+    if (isSyncingToCloud) return;
+    setIsSyncingToCloud(true);
+    setSyncCloudProgress('Bắt đầu đồng bộ...');
+    try {
+      const allCourses = curriculumRegistry.getAllCourses();
+      const levelsToSync = allCourses.length > 0
+        ? allCourses.map(c => c.level_code)
+        : [selectedCourseLevel];
+
+      let totalSyncedEn = 0;
+      let totalSyncedVi = 0;
+      let totalLessonsProcessed = 0;
+
+      for (const level of levelsToSync) {
+        const lessons = await getAllLessons(level);
+        for (let i = 0; i < lessons.length; i++) {
+          const lesson = lessons[i];
+          setSyncCloudProgress(`Sync ${level} Day ${lesson.day_number} (${i + 1}/${lessons.length})...`);
+          const res = await syncLessonCachedAudioToCloud(lesson, {
+            voiceEn: currentSettings.voice_profile_en,
+            voiceVi: currentSettings.voice_profile_vi,
+            onProgress: (cur, tot, status) => {
+              setSyncCloudProgress(`${level} Day ${lesson.day_number} [${cur}/${tot}]: ${status}`);
+            }
+          });
+          totalSyncedEn += res.uploadedEn;
+          totalSyncedVi += res.uploadedVi;
+          totalLessonsProcessed++;
+        }
+      }
+
+      await loadLessonsAndCacheStatus();
+      await refreshCacheCount();
+      const total = totalSyncedEn + totalSyncedVi;
+      alert(`🎉 Đã đồng bộ thành công ${total} audio chunks lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app! (EN: ${totalSyncedEn}, VI: ${totalSyncedVi}, ${totalLessonsProcessed} bài học)`);
+    } catch (err: any) {
+      console.error('Sync cache to cloud error:', err);
+      alert('Lỗi đồng bộ cache lên Cloud Storage: ' + (err?.message || String(err)));
+    } finally {
+      setIsSyncingToCloud(false);
+      setSyncCloudProgress(null);
     }
   };
 
@@ -950,6 +1085,110 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                 <span>{isKeySaved ? 'Đã Lưu Token!' : 'Lưu Token Mới'}</span>
               </button>
             </div>
+          </div>
+
+          {/* Card: Audio Cache Migration & Backup (Cross-Domain Sync) */}
+          <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                  <Database className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-xs text-zinc-900">
+                    Audio Cache Migration / Backup
+                  </h3>
+                  <span className="text-[10px] text-zinc-400">Đồng bộ Cache giữa các Domain</span>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800">
+                {cacheEntriesCount} chunks
+              </span>
+            </div>
+
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              Dễ dàng xuất toàn bộ audio đã tạo từ localhost sang file JSON và nạp vào bất kỳ domain nào (Preview channel, production) trong 2 giây mà không cần tốn quota API hay chờ nạp lại!
+            </p>
+
+            <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-600 font-medium">Trạng thái bộ nhớ đệm:</span>
+                <span className="font-mono font-bold text-zinc-900">
+                  {cacheEntriesCount > 0 ? (
+                    <span className="text-emerald-600">● {cacheEntriesCount} audio sẵn sàng</span>
+                  ) : (
+                    <span className="text-zinc-400">○ Chưa có dữ liệu</span>
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1 border-t border-zinc-200/50">
+                <span>Storage: IndexedDB</span>
+                <span className="font-mono">chunks_audio_db</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                disabled={isExporting || cacheEntriesCount === 0}
+                onClick={handleExportCache}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                title="Tải về file backup JSON chứa tất cả audio chunks"
+              >
+                {isExporting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 text-emerald-400" />
+                )}
+                <span>{isExporting ? 'Đang xuất...' : 'Xuất File Cache (.json)'}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isImporting}
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                title="Nạp file backup JSON vào trình duyệt"
+              >
+                {isImporting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5 text-white" />
+                )}
+                <span>{isImporting ? 'Đang nạp...' : 'Nhập File Cache (.json)'}</span>
+              </button>
+
+              {/* 3rd Button: Sync Cache Trình Duyệt ➔ Cloud Bucket */}
+              <button
+                type="button"
+                disabled={isSyncingToCloud || cacheEntriesCount === 0}
+                onClick={handleSyncCacheToCloud}
+                className="col-span-1 sm:col-span-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                title="Tải toàn bộ audio đã có trong cache IndexedDB lên Cloud Storage bucket và cập nhật Firestore"
+              >
+                {isSyncingToCloud ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{syncCloudProgress || 'Đang sync lên Cloud...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <CloudUpload className="w-4 h-4 text-white" />
+                    <span>Sync Cache Trình Duyệt ➔ Cloud Bucket (gs://chunks-voicecloning-genshai.firebasestorage.app)</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Hidden File Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
           </div>
         </div>
       </div>

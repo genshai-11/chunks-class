@@ -90,7 +90,7 @@ export async function parseExcelLessonFile(
             vietnamese: vie,
             speaker: speaker ? String(speaker).trim() : null,
             beat_prosody: prosody ? String(prosody).trim() : null,
-            audio_url: `https://storage.googleapis.com/chunks-mirror-audio-284566312743/${levelCode.toLowerCase()}/day_${dayNumber}/${chunkId}.mp3`
+            audio_url: `https://storage.googleapis.com/chunks-voicecloning-genshai.firebasestorage.app/chunks-audio/${levelCode.toLowerCase()}/day_${dayNumber}/${chunkId}_en.mp3`
           };
         }).filter(c => c.english.length > 0 || c.vietnamese.length > 0);
 

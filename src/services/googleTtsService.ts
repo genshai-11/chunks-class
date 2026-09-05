@@ -1,5 +1,5 @@
 import { deepgramTts, DEEPGRAM_AURA_VOICES, sanitizeSpeechText } from './deepgramTtsService';
-import { LanguageMode } from '../types';
+import { LanguageMode, ChunkItem } from '../types';
 
 export { sanitizeSpeechText };
 
@@ -680,6 +680,82 @@ async function clearAudioBlobsFromDB(): Promise<void> {
   });
 }
 
+export interface AudioCacheExportData {
+  version: number;
+  exportedAt: string;
+  count: number;
+  entries: { key: string; base64: string; timestamp?: number }[];
+}
+
+export async function getStoredAudioBlobsCount(): Promise<number> {
+  const db = await openIndexedDB();
+  if (!db) return 0;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.count();
+      req.onsuccess = () => resolve(req.result || 0);
+      req.onerror = () => resolve(0);
+    } catch {
+      resolve(0);
+    }
+  });
+}
+
+export async function exportAllAudioBlobs(): Promise<AudioCacheExportData> {
+  const db = await openIndexedDB();
+  if (!db) return { version: 1, exportedAt: new Date().toISOString(), count: 0, entries: [] };
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.getAll();
+      request.onsuccess = (e: any) => {
+        const records = e.target.result || [];
+        const entries = records.map((r: any) => ({
+          key: r.key,
+          base64: r.base64,
+          timestamp: r.timestamp
+        }));
+        resolve({
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          count: entries.length,
+          entries
+        });
+      };
+      request.onerror = () => resolve({ version: 1, exportedAt: new Date().toISOString(), count: 0, entries: [] });
+    } catch {
+      resolve({ version: 1, exportedAt: new Date().toISOString(), count: 0, entries: [] });
+    }
+  });
+}
+
+export async function importAudioBlobs(data: AudioCacheExportData): Promise<number> {
+  if (!data || !Array.isArray(data.entries)) return 0;
+  const db = await openIndexedDB();
+  if (!db) return 0;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      let imported = 0;
+      for (const entry of data.entries) {
+        if (entry.key && entry.base64) {
+          store.put({ key: entry.key, base64: entry.base64, timestamp: entry.timestamp || Date.now() });
+          audioPlayer.setCache(entry.key, entry.base64);
+          imported++;
+        }
+      }
+      tx.oncomplete = () => resolve(imported);
+      tx.onerror = () => resolve(imported);
+    } catch {
+      resolve(0);
+    }
+  });
+}
+
 class AudioPlayService {
   private currentAudio: HTMLAudioElement | null = null;
   private audioCache = new Map<string, string>(); // key (model::text) -> base64 dataUri or blobUrl
@@ -831,6 +907,22 @@ class AudioPlayService {
   public clearAllCache() {
     this.audioCache.clear();
     clearAudioBlobsFromDB().catch(() => {});
+  }
+
+  public async exportAudioBlobs(): Promise<AudioCacheExportData> {
+    return exportAllAudioBlobs();
+  }
+
+  public async importAudioBlobs(data: AudioCacheExportData): Promise<number> {
+    return importAudioBlobs(data);
+  }
+
+  public async getStoredBlobsCount(): Promise<number> {
+    return getStoredAudioBlobsCount();
+  }
+
+  public getCacheCount(): number {
+    return this.audioCache.size;
   }
 
   public setAudioProvider(provider: AudioProvider) {
@@ -1253,6 +1345,76 @@ class AudioPlayService {
   }
 
   /**
+   * Asynchronously check full audio status (memory cache + IndexedDB + GCS) for a set of chunks
+   */
+  async checkLessonAudioStatus(
+    chunks: { chunk_id?: string; english: string; vietnamese?: string; audio_url?: string | null }[],
+    voiceEn: string = 'aura-asteria-en',
+    voiceVi: string = 'vi-VN-Neural2-A'
+  ): Promise<LessonAudioStatus> {
+    let enCached = 0;
+    let viCached = 0;
+    const details: ChunkAudioStatus[] = [];
+
+    const effectiveVoiceEn = voiceEn && !voiceEn.startsWith('vi-') ? voiceEn : 'aura-asteria-en';
+    const effectiveVoiceVi = voiceVi && voiceVi.startsWith('vi-') ? voiceVi : 'vi-VN-Neural2-A';
+
+    for (let i = 0; i < chunks.length; i++) {
+      const c = chunks[i];
+      const cleanEn = sanitizeSpeechText(c.english);
+      const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
+
+      const enAudio = cleanEn ? await this.getCachedAudioAsync(cleanEn, effectiveVoiceEn) : null;
+      const hasEnAudio = Boolean(enAudio);
+
+      const viAudio = cleanVi ? await this.getCachedAudioAsync(cleanVi, effectiveVoiceVi) : null;
+      const hasViAudio = Boolean(viAudio);
+
+      const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http'));
+
+      if (hasEnAudio) enCached++;
+      if (hasViAudio) viCached++;
+
+      details.push({
+        chunk_id: c.chunk_id || `chunk_${i + 1}`,
+        english: c.english,
+        vietnamese: c.vietnamese || '',
+        hasEnAudio,
+        hasViAudio,
+        hasGcsAudio,
+        enSource: hasEnAudio ? (effectiveVoiceEn.startsWith('aura-') ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
+        viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : undefined
+      });
+    }
+
+    return {
+      total: chunks.length,
+      enCached,
+      viCached,
+      isFullyCached: chunks.length > 0 && enCached === chunks.length && viCached === chunks.length,
+      details
+    };
+  }
+
+  /**
+   * Check if all chunks in a lesson have permanent GCS audio URLs
+   */
+  isLessonAudioReady(lesson: { chunks?: ChunkItem[] }): boolean {
+    if (!lesson.chunks || lesson.chunks.length === 0) return false;
+    return lesson.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http')));
+  }
+
+  /**
+   * Asynchronously check if a lesson is fully ready with either permanent GCS URLs or prepared/cached audio
+   */
+  async isLessonFullyReadyAsync(lesson: { chunks?: ChunkItem[] }): Promise<boolean> {
+    if (!lesson.chunks || lesson.chunks.length === 0) return false;
+    const status = await this.checkLessonAudioStatus(lesson.chunks);
+    const allGcs = lesson.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http')));
+    return allGcs || status.isFullyCached;
+  }
+
+  /**
    * Play Chunk Audio with clean Engine Prioritization:
    * 1. Check in-memory preparation cache (Instant 0ms).
    * 2. Vietnamese routing:
@@ -1328,6 +1490,17 @@ class AudioPlayService {
         ? (isAuraVoice ? voiceName : 'aura-asteria-en')
         : (isGoogleEnVoice ? voiceName : (voiceName && !voiceName.startsWith('vi-') ? voiceName : 'en-US-Journey-F'));
 
+      // Step 1: GCS Master Permanent Audio (Priority #1 if available and not forced to cloud TTS)
+      if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
+        try {
+          this.setLastSource('GCS_MASTER');
+          await this.playUrl(permanentAudioUrl, speed);
+          return;
+        } catch (err) {
+          console.warn(`[Audio] GCS master audio unreachable (${permanentAudioUrl}), falling back to Deepgram Aura or Google Cloud TTS...`, err);
+        }
+      }
+
       const cacheKey = this.getCacheKey(effectiveEnVoice, cleanText);
       const cached = await this.getCachedAudioAsync(cleanText, effectiveEnVoice);
 
@@ -1337,7 +1510,7 @@ class AudioPlayService {
         return;
       }
 
-      // Step 1: Deepgram Aura Engine (if provider or voice is aura-*)
+      // Step 2: Deepgram Aura Engine (if provider or voice is aura-*)
       if (isDeepgram) {
         try {
           const dgModel = effectiveEnVoice;
@@ -1349,19 +1522,7 @@ class AudioPlayService {
             return;
           }
         } catch (dgErr: any) {
-          console.warn(`[Audio] Deepgram Aura synthesis failed (${dgErr?.message}), trying GCS master or Google Cloud TTS...`, dgErr);
-        }
-      }
-
-      // Step 2: GCS Master Permanent Audio (if not forced to TTS and GCS URL exists and not custom voice)
-      const isCustomVoice = (isAuraVoice && effectiveEnVoice !== 'aura-asteria-en') || (isGoogleEnVoice && effectiveEnVoice !== 'en-US-Journey-F');
-      if (!forceCloudTts && !isDeepgram && !isCustomVoice && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
-        try {
-          this.setLastSource('GCS_MASTER');
-          await this.playUrl(permanentAudioUrl, speed);
-          return;
-        } catch (err) {
-          console.warn(`[Audio] GCS master audio unreachable (${permanentAudioUrl}), synthesizing via Google Cloud TTS...`);
+          console.warn(`[Audio] Deepgram Aura synthesis failed (${dgErr?.message}), trying Google Cloud TTS...`, dgErr);
         }
       }
 
@@ -1417,13 +1578,13 @@ class AudioPlayService {
 
       if (normalizedMode === 'EN_ONLY') {
         onStepChange?.('en');
-        await this.playChunk(englishText, isDeepgram ? null : englishAudioUrl, effectiveVoiceEn, speed);
+        await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed);
       } else if (normalizedMode === 'VI_ONLY') {
         onStepChange?.('vi');
         await this.playChunk(vietnameseText, null, effectiveVoiceVi, speed);
       } else if (normalizedMode === 'EN_THEN_VI') {
         onStepChange?.('en');
-        await this.playChunk(englishText, isDeepgram ? null : englishAudioUrl, effectiveVoiceEn, speed);
+        await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed);
         
         if (this.activeSequenceId !== seqId) return;
         // Natural 500ms cadence pause between English and Vietnamese
@@ -1442,7 +1603,7 @@ class AudioPlayService {
         if (this.activeSequenceId !== seqId) return;
 
         onStepChange?.('en');
-        await this.playChunk(englishText, isDeepgram ? null : englishAudioUrl, effectiveVoiceEn, speed);
+        await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed);
       }
 
       if (r < repeatCount - 1) {
@@ -1928,3 +2089,11 @@ class AudioPlayService {
 }
 
 export const audioPlayer = new AudioPlayService();
+
+export const isLessonAudioReady = (lesson: { chunks?: ChunkItem[] }): boolean =>
+  audioPlayer.isLessonAudioReady(lesson);
+
+export const isLessonFullyReadyAsync = (lesson: { chunks?: ChunkItem[] }): Promise<boolean> =>
+  audioPlayer.isLessonFullyReadyAsync(lesson);
+
+export { AudioPlayService, AudioPlayService as GoogleTtsService };

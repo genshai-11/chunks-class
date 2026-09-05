@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart } from '../types';
 import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
+import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
-import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption } from '../services/googleTtsService';
+import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
 import { PartsDrawer, groupChunksIntoParts } from './PartsDrawer';
@@ -56,6 +57,7 @@ interface ClassroomPresentationProps {
   audioSettings?: CohortAudioSettings;
   courseLevel?: string;
   onSelectLesson?: (lessonId: string, sessionNumber?: number) => void;
+  onUpdateAudioSettings?: (settings: CohortAudioSettings) => void;
 }
 
 export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
@@ -65,7 +67,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   onExit,
   audioSettings,
   courseLevel = 'LEVEL_B_ERES',
-  onSelectLesson
+  onSelectLesson,
+  onUpdateAudioSettings
 }) => {
   const [currentLessonId, setCurrentLessonId] = useState<string>(() => {
     if (providedLesson?.id) return providedLesson.id;
@@ -102,10 +105,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   );
   const [speed, setSpeed] = useState<number>(audioSettings?.default_speed || 1.0);
   const [repeatCount, setRepeatCount] = useState<number>(audioSettings?.repeat_count || 1);
-  const [languageMode, setLanguageMode] = useState<LanguageMode>(() => {
-    if (audioSettings?.language_mode === 'VI_ONLY') return 'VI_ONLY';
-    return 'EN_ONLY';
-  });
+  const [languageMode, setLanguageMode] = useState<LanguageMode>(
+    audioSettings?.language_mode || 'EN_ONLY'
+  );
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const [gcsConnectionStatus, setGcsConnectionStatus] = useState<'Connected' | 'Reconnecting'>('Connected');
@@ -119,6 +121,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   
   // Audio Provider & Batch Pre-generation Engine
   const [audioProvider, setAudioProvider] = useState<AudioProvider>(audioPlayer.getAudioProvider());
+  const [prepTarget, setPrepTarget] = useState<AudioBatchTarget>('BOTH');
   const [isPreparingAudio, setIsPreparingAudio] = useState<boolean>(false);
   const [prepProgress, setPrepProgress] = useState<{ current: number; total: number; text: string } | null>(null);
   const [isPrepModalOpen, setIsPrepModalOpen] = useState<boolean>(false);
@@ -166,6 +169,61 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     }
   }, [providedLesson]);
 
+  // Sync when audioSettings prop updates externally
+  useEffect(() => {
+    if (audioSettings) {
+      if (audioSettings.voice_profile_en && audioSettings.voice_profile_en !== selectedVoice) {
+        setSelectedVoice(audioSettings.voice_profile_en);
+      }
+      if (audioSettings.voice_profile_vi && audioSettings.voice_profile_vi !== selectedVoiceVi) {
+        setSelectedVoiceVi(audioSettings.voice_profile_vi);
+      }
+      if (audioSettings.language_mode && audioSettings.language_mode !== languageMode) {
+        setLanguageMode(audioSettings.language_mode);
+      }
+      if (audioSettings.default_speed && audioSettings.default_speed !== speed) {
+        setSpeed(audioSettings.default_speed);
+      }
+      if (audioSettings.repeat_count && audioSettings.repeat_count !== repeatCount) {
+        setRepeatCount(audioSettings.repeat_count);
+      }
+    }
+  }, [audioSettings]);
+
+  // Notify parent whenever audio parameters change
+  const isInitialAudioSettingsMount = useRef(true);
+  useEffect(() => {
+    if (isInitialAudioSettingsMount.current) {
+      isInitialAudioSettingsMount.current = false;
+      return;
+    }
+    const hasChanged =
+      !audioSettings ||
+      audioSettings.voice_profile_en !== selectedVoice ||
+      audioSettings.voice_profile_vi !== selectedVoiceVi ||
+      audioSettings.language_mode !== languageMode ||
+      audioSettings.default_speed !== speed ||
+      audioSettings.repeat_count !== repeatCount;
+
+    if (hasChanged) {
+      onUpdateAudioSettings?.({
+        ...(audioSettings || {
+          voice_profile_en: selectedVoice,
+          voice_profile_vi: selectedVoiceVi,
+          language_mode: languageMode,
+          auto_advance_delay_sec: 0,
+          default_speed: speed,
+          repeat_count: repeatCount
+        }),
+        voice_profile_en: selectedVoice,
+        voice_profile_vi: selectedVoiceVi,
+        language_mode: languageMode,
+        default_speed: speed,
+        repeat_count: repeatCount
+      });
+    }
+  }, [selectedVoice, selectedVoiceVi, speed, repeatCount, languageMode]);
+
   const handleStartPrepareAudio = async () => {
     if (chunks.length === 0) return;
     setIsPreparingAudio(true);
@@ -173,15 +231,30 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     setPrepProgress({ current: 0, total: chunks.length, text: 'Starting synthesis...' });
 
     try {
-      const result = await audioPlayer.prepareChunksAudio(
-        chunks,
-        selectedVoice,
-        audioProvider,
-        (curr, tot, text) => {
+      const result = await audioPlayer.prepareChunksAudio(chunks, {
+        voiceEn: selectedVoice,
+        voiceVi: selectedVoiceVi,
+        provider: audioProvider,
+        target: prepTarget,
+        forceRegenerate: true,
+        concurrency: 4,
+        onProgress: (curr, tot, text) => {
           setPrepProgress({ current: curr, total: tot, text });
         }
-      );
+      });
       setPrepSummary(result);
+
+      // If audio was generated, sync to Cloud Storage so it becomes permanent
+      if (activeLesson && result.prepared > 0) {
+        try {
+          await syncLessonCachedAudioToCloud(activeLesson, {
+            voiceEn: selectedVoice,
+            voiceVi: selectedVoiceVi
+          });
+        } catch (syncErr) {
+          console.warn('[Presenter] Cloud Storage sync failed after batch prepare:', syncErr);
+        }
+      }
     } catch (e: any) {
       console.error('Audio preparation failed:', e);
     } finally {
@@ -257,6 +330,42 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     curriculumRegistry.getLessonById(currentLessonId) || 
     curriculumRegistry.getAllLessons()[0];
 
+  // Check whether the active lesson has audio ready (GCS master or IndexedDB cached)
+  const isCurrentLessonGcsReady = useMemo(() => {
+    return (
+      audioPlayer.isLessonAudioReady(activeLesson) ||
+      Boolean(
+        activeLesson?.chunks &&
+        activeLesson.chunks.length > 0 &&
+        activeLesson.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http')))
+      )
+    );
+  }, [activeLesson]);
+
+  const [isCurrentLessonFullyCached, setIsCurrentLessonFullyCached] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isCurrentLessonGcsReady) {
+      setIsCurrentLessonFullyCached(true);
+      return;
+    }
+    let isCancelled = false;
+    if (activeLesson?.chunks && activeLesson.chunks.length > 0) {
+      audioPlayer.checkLessonAudioStatus(activeLesson.chunks).then(status => {
+        if (!isCancelled) {
+          setIsCurrentLessonFullyCached(status.isFullyCached);
+        }
+      }).catch(() => {});
+    } else {
+      setIsCurrentLessonFullyCached(false);
+    }
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeLesson, isCurrentLessonGcsReady, isSoundSettingsOpen]);
+
+  const isCurrentLessonAudioReady = isCurrentLessonGcsReady || isCurrentLessonFullyCached;
+
   const rawChunks: ChunkItem[] = activeLesson?.chunks || [];
   const chunks: ChunkItem[] = rawChunks.length > 0 
     ? rawChunks 
@@ -289,6 +398,63 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       }))
       .filter(group => group.lessons.length > 0);
   }, [groupedCourses, lessonSearchQuery]);
+
+  // Track audio readiness for all lessons in the popover (both GCS and IndexedDB cache)
+  const [lessonReadyMap, setLessonReadyMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let isCancelled = false;
+    const allLessons = groupedCourses.flatMap(g => g.lessons);
+
+    const initialMap: Record<string, boolean> = {};
+    const pendingLessons: LessonDoc[] = [];
+
+    for (const l of allLessons) {
+      const isGcs = audioPlayer.isLessonAudioReady(l) || Boolean(l.chunks && l.chunks.length > 0 && l.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http'))));
+      if (isGcs) {
+        initialMap[l.id] = true;
+      } else if (l.chunks && l.chunks.length > 0) {
+        pendingLessons.push(l);
+      }
+    }
+
+    setLessonReadyMap(prev => ({ ...prev, ...initialMap }));
+
+    if (pendingLessons.length > 0) {
+      Promise.all(
+        pendingLessons.map(async (l) => {
+          try {
+            const status = await audioPlayer.checkLessonAudioStatus(l.chunks!);
+            return { id: l.id, isReady: status.isFullyCached };
+          } catch {
+            return { id: l.id, isReady: false };
+          }
+        })
+      ).then(results => {
+        if (!isCancelled) {
+          setLessonReadyMap(prev => {
+            const updated = { ...prev };
+            for (const res of results) {
+              if (res.isReady) {
+                updated[res.id] = true;
+              }
+            }
+            return updated;
+          });
+        }
+      });
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [groupedCourses, activeLesson?.id, isLessonSwitcherOpen, isSoundSettingsOpen]);
+
+  useEffect(() => {
+    if (isCurrentLessonAudioReady && activeLesson?.id) {
+      setLessonReadyMap(prev => prev[activeLesson.id] ? prev : { ...prev, [activeLesson.id]: true });
+    }
+  }, [isCurrentLessonAudioReady, activeLesson?.id]);
 
   const handleSwitchLesson = (newLessonId: string) => {
     let cleanId = newLessonId;
@@ -647,6 +813,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               <span className="truncate font-semibold text-left">
                 {activeLesson?.day_number === 0 ? 'Day 0: Word List' : `Day ${activeLesson?.day_number ?? 1}`}: {activeLesson?.lesson_title || 'Chọn bài học'}
               </span>
+              {isCurrentLessonAudioReady && (
+                <Volume2 className="w-4 h-4 text-emerald-500 shrink-0 animate-in fade-in" title="Audio bài học đã sẵn sàng" />
+              )}
               <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform ${isLessonSwitcherOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -731,6 +900,11 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                         <div className="mt-1 space-y-1">
                           {lessons.map(l => {
                             const isCurrent = l.id === normalizedId || l.id === currentLessonId;
+                            const isLessonReady = Boolean(
+                              lessonReadyMap[l.id] ||
+                              audioPlayer.isLessonAudioReady(l) ||
+                              (l.chunks && l.chunks.length > 0 && l.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http'))))
+                            );
                             return (
                               <button
                                 key={l.id}
@@ -756,6 +930,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                                 </div>
 
                                 <div className="flex items-center gap-1.5 shrink-0">
+                                  {isLessonReady && (
+                                    <Volume2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" title="Audio đã sẵn sàng" />
+                                  )}
                                   <span className="font-mono text-[10px] text-zinc-400">
                                     {l.total_chunks || l.chunks?.length || 0} chunks
                                   </span>
@@ -827,9 +1004,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               }`}
               title="Cài Đặt Âm Thanh / Audio Setup"
             >
-              <Sliders className="w-4 h-4 text-[#DC2626]" />
+              {isCurrentLessonAudioReady ? (
+                <Volume2 className="w-4 h-4 text-emerald-500" />
+              ) : (
+                <Sliders className="w-4 h-4 text-[#DC2626]" />
+              )}
               <span className="hidden sm:inline text-xs font-bold font-mono">
-                {audioProvider === 'DEEPGRAM_AURA' ? 'Aura AI' : 'Google TTS'}
+                {isCurrentLessonAudioReady ? 'Audio Ready' : (audioProvider === 'DEEPGRAM_AURA' ? 'Aura AI' : 'Google TTS')}
               </span>
             </button>
 
@@ -862,156 +1043,278 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
                 {/* Popover Body */}
                 <div className="p-4 space-y-4 overflow-y-auto text-xs">
-                  {/* 1. Audio Engine Provider Switcher */}
-                  <div>
-                    <label className="block font-bold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5">
-                      1. Chọn Engine Tổng Hợp Giọng (Provider)
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAudioProvider('DEEPGRAM_AURA');
-                          audioPlayer.setAudioProvider('DEEPGRAM_AURA');
-                          setSelectedVoice('aura-asteria-en');
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                          audioProvider === 'DEEPGRAM_AURA'
-                            ? 'border-purple-500 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 font-bold ring-2 ring-purple-500/20'
-                            : highContrastDark ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800' : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-extrabold text-xs">Deepgram Aura</span>
-                          <Zap className="w-3.5 h-3.5 text-purple-600 fill-purple-500" />
+                  {isCurrentLessonAudioReady ? (
+                    /* High-contrast readiness banner */
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0">
+                        <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5">
+                          <span>Audio Đã Sẵn Sàng</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded font-mono bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">GCS Master</span>
                         </div>
-                        <p className="text-[10px] text-zinc-500 leading-tight">Neural Natural Voice AI (Khuyên dùng)</p>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAudioProvider('GOOGLE_TTS');
-                          audioPlayer.setAudioProvider('GOOGLE_TTS');
-                          setSelectedVoice('en-US-Journey-F');
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                          audioProvider === 'GOOGLE_TTS'
-                            ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold ring-2 ring-blue-500/20'
-                            : highContrastDark ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800' : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-extrabold text-xs">Google Cloud TTS</span>
-                          <Cloud className="w-3.5 h-3.5 text-blue-600" />
+                        <div className="text-[11px] text-emerald-600 dark:text-emerald-400 leading-snug mt-0.5">
+                          Bài học đang phát từ audio chuẩn studio, không cần cấu hình model TTS.
                         </div>
-                        <p className="text-[10px] text-zinc-500 leading-tight">Journey & Studio Models</p>
-                      </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      {/* 1. Audio Engine Provider Switcher */}
+                      <div>
+                        <label className="block font-bold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5">
+                          1. Chọn Engine Tổng Hợp Giọng (Provider)
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAudioProvider('DEEPGRAM_AURA');
+                              audioPlayer.setAudioProvider('DEEPGRAM_AURA');
+                              setSelectedVoice('aura-asteria-en');
+                            }}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                              audioProvider === 'DEEPGRAM_AURA'
+                                ? 'border-purple-500 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 font-bold ring-2 ring-purple-500/20'
+                                : highContrastDark ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800' : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-extrabold text-xs">Deepgram Aura</span>
+                              <Zap className="w-3.5 h-3.5 text-purple-600 fill-purple-500" />
+                            </div>
+                            <p className="text-[10px] text-zinc-500 leading-tight">Neural Natural Voice AI (Khuyên dùng)</p>
+                          </button>
 
-                  {/* 2. English Voice Model */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
-                        2. Giọng Đọc Tiếng Anh (English Model)
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAudioProvider('GOOGLE_TTS');
+                              audioPlayer.setAudioProvider('GOOGLE_TTS');
+                              setSelectedVoice('en-US-Journey-F');
+                            }}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                              audioProvider === 'GOOGLE_TTS'
+                                ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold ring-2 ring-blue-500/20'
+                                : highContrastDark ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800' : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-extrabold text-xs">Google Cloud TTS</span>
+                              <Cloud className="w-3.5 h-3.5 text-blue-600" />
+                            </div>
+                            <p className="text-[10px] text-zinc-500 leading-tight">Journey & Studio Models</p>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 2. English Voice Model */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
+                            2. Giọng Đọc Tiếng Anh (English Model)
+                          </label>
+                          <button
+                            type="button"
+                            disabled={isAuditioningEn}
+                            onClick={async () => {
+                              setIsAuditioningEn(true);
+                              try {
+                                await audioPlayer.playChunk(
+                                  "Master English chunk by chunk with natural rhythm.",
+                                  null,
+                                  selectedVoice,
+                                  speed,
+                                  true
+                                );
+                              } finally {
+                                setIsAuditioningEn(false);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#DC2626] hover:text-red-700 cursor-pointer disabled:opacity-50"
+                            title="Nghe thử giọng tiếng Anh đã chọn"
+                          >
+                            <Play className={`w-3 h-3 fill-current ${isAuditioningEn ? 'animate-pulse' : ''}`} />
+                            <span>{isAuditioningEn ? 'Đang phát...' : 'Nghe thử EN'}</span>
+                          </button>
+                        </div>
+
+                        <select
+                          value={selectedVoice}
+                          onChange={(e) => setSelectedVoice(e.target.value)}
+                          className={`w-full text-xs font-medium rounded-xl p-2.5 border transition-all cursor-pointer outline-none ${
+                            highContrastDark
+                              ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-[#DC2626]'
+                              : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-[#DC2626]'
+                          }`}
+                        >
+                          {audioProvider === 'DEEPGRAM_AURA' ? (
+                            DEEPGRAM_AURA_VOICES.map(v => (
+                              <option key={v.id} value={v.id}>
+                                {v.name} ({v.accent} - {v.gender})
+                              </option>
+                            ))
+                          ) : (
+                            GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
+                              <option key={v.id} value={v.id}>
+                                {v.name}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+
+                      {/* 3. Vietnamese Voice Model */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
+                            3. Giọng Đọc Tiếng Việt (Vietnamese Model)
+                          </label>
+                          <button
+                            type="button"
+                            disabled={isAuditioningVi}
+                            onClick={async () => {
+                              setIsAuditioningVi(true);
+                              try {
+                                await audioPlayer.playChunk(
+                                  "Luyện tập phản xạ tiếng Anh tự nhiên theo cụm từ.",
+                                  null,
+                                  selectedVoiceVi,
+                                  speed,
+                                  true
+                                );
+                              } finally {
+                                setIsAuditioningVi(false);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer disabled:opacity-50"
+                            title="Nghe thử giọng tiếng Việt đã chọn"
+                          >
+                            <Play className={`w-3 h-3 fill-current ${isAuditioningVi ? 'animate-pulse' : ''}`} />
+                            <span>{isAuditioningVi ? 'Đang phát...' : 'Nghe thử VI'}</span>
+                          </button>
+                        </div>
+
+                        <select
+                          value={selectedVoiceVi}
+                          onChange={(e) => setSelectedVoiceVi(e.target.value)}
+                          className={`w-full text-xs font-medium rounded-xl p-2.5 border transition-all cursor-pointer outline-none ${
+                            highContrastDark
+                              ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-emerald-600'
+                              : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-emerald-600'
+                          }`}
+                        >
+                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN').map(v => (
+                            <option key={v.id} value={v.id}>
+                              {v.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Speed & Repeat Controls - Always Accessible */}
+                  <div className={`pt-3 border-t space-y-3 ${
+                    highContrastDark ? 'border-zinc-800' : 'border-zinc-100'
+                  }`}>
+                    {/* Language Mode Selector */}
+                    <div>
+                      <label className="block font-bold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5">
+                        Chế độ phát âm thanh (Language Mode)
                       </label>
-                      <button
-                        type="button"
-                        disabled={isAuditioningEn}
-                        onClick={async () => {
-                          setIsAuditioningEn(true);
-                          try {
-                            await audioPlayer.playChunk(
-                              "Master English chunk by chunk with natural rhythm.",
-                              null,
-                              selectedVoice,
-                              speed,
-                              true
-                            );
-                          } finally {
-                            setIsAuditioningEn(false);
-                          }
-                        }}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#DC2626] hover:text-red-700 cursor-pointer disabled:opacity-50"
-                        title="Nghe thử giọng tiếng Anh đã chọn"
-                      >
-                        <Play className={`w-3 h-3 fill-current ${isAuditioningEn ? 'animate-pulse' : ''}`} />
-                        <span>{isAuditioningEn ? 'Đang phát...' : 'Nghe thử EN'}</span>
-                      </button>
+                      <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setLanguageMode('EN_ONLY')}
+                          className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            languageMode === 'EN_ONLY'
+                              ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Chỉ Tiếng Anh (EN)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLanguageMode('VI_ONLY')}
+                          className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            languageMode === 'VI_ONLY'
+                              ? 'bg-white dark:bg-zinc-800 text-emerald-600 shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Chỉ Tiếng Việt (VI)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLanguageMode('EN_THEN_VI')}
+                          className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            languageMode === 'EN_THEN_VI'
+                              ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Song ngữ (EN ➔ VI)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLanguageMode('VI_THEN_EN')}
+                          className={`py-1.5 px-2 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                            languageMode === 'VI_THEN_EN'
+                              ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Song ngữ (VI ➔ EN)
+                        </button>
+                      </div>
                     </div>
 
-                    <select
-                      value={selectedVoice}
-                      onChange={(e) => setSelectedVoice(e.target.value)}
-                      className={`w-full text-xs font-medium rounded-xl p-2.5 border transition-all cursor-pointer outline-none ${
-                        highContrastDark
-                          ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-[#DC2626]'
-                          : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-[#DC2626]'
-                      }`}
-                    >
-                      {audioProvider === 'DEEPGRAM_AURA' ? (
-                        DEEPGRAM_AURA_VOICES.map(v => (
-                          <option key={v.id} value={v.id}>
-                            {v.name} ({v.accent} - {v.gender})
-                          </option>
-                        ))
-                      ) : (
-                        GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
-                          <option key={v.id} value={v.id}>
-                            {v.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
+                          Tốc độ đọc (Speed)
+                        </label>
+                        <span className="font-mono text-xs font-extrabold text-[#DC2626]">
+                          {speed.toFixed(1)}x
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.8"
+                        max="2.0"
+                        step="0.1"
+                        value={speed}
+                        onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                        className="w-full accent-[#DC2626] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg"
+                      />
+                    </div>
 
-                  {/* 3. Vietnamese Voice Model */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
-                        3. Giọng Đọc Tiếng Việt (Vietnamese Model)
+                    <div>
+                      <label className="block font-bold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5">
+                        Số lần lặp (Repeat)
                       </label>
-                      <button
-                        type="button"
-                        disabled={isAuditioningVi}
-                        onClick={async () => {
-                          setIsAuditioningVi(true);
-                          try {
-                            await audioPlayer.playChunk(
-                              "Luyện tập phản xạ tiếng Anh tự nhiên theo cụm từ.",
-                              null,
-                              selectedVoiceVi,
-                              speed,
-                              true
-                            );
-                          } finally {
-                            setIsAuditioningVi(false);
-                          }
-                        }}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer disabled:opacity-50"
-                        title="Nghe thử giọng tiếng Việt đã chọn"
-                      >
-                        <Play className={`w-3 h-3 fill-current ${isAuditioningVi ? 'animate-pulse' : ''}`} />
-                        <span>{isAuditioningVi ? 'Đang phát...' : 'Nghe thử VI'}</span>
-                      </button>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[1, 2, 3].map((r) => (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => setRepeatCount(r)}
+                            className={`py-1.5 px-3 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer text-center ${
+                              repeatCount === r
+                                ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                                : highContrastDark
+                                ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
+                                : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                            }`}
+                          >
+                            {r} lần ({r}x)
+                          </button>
+                        ))}
+                      </div>
                     </div>
-
-                    <select
-                      value={selectedVoiceVi}
-                      onChange={(e) => setSelectedVoiceVi(e.target.value)}
-                      className={`w-full text-xs font-medium rounded-xl p-2.5 border transition-all cursor-pointer outline-none ${
-                        highContrastDark
-                          ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-emerald-600'
-                          : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-emerald-600'
-                      }`}
-                    >
-                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN').map(v => (
-                        <option key={v.id} value={v.id}>
-                          {v.name}
-                        </option>
-                      ))}
-                    </select>
                   </div>
 
                   {/* Quick Actions Footer */}
@@ -1467,15 +1770,59 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   <span className="text-zinc-500">Total Chunks:</span>
                   <span className="font-mono font-bold text-[#DC2626]">{chunks.length} chunks</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Audio Engine:</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500">Engine EN:</span>
                   <span className="font-mono font-bold text-zinc-800">
-                    {audioProvider === 'DEEPGRAM_AURA' ? 'Deepgram Aura AI' : 'Google Cloud TTS'}
+                    {audioProvider === 'DEEPGRAM_AURA' ? 'Deepgram Aura AI' : 'Google Cloud TTS'} ({selectedVoice})
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Selected Voice:</span>
-                  <span className="font-mono font-bold text-zinc-800">{selectedVoice}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500">Engine VI:</span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    Google Cloud TTS ({selectedVoiceVi})
+                  </span>
+                </div>
+              </div>
+
+              {/* Target Audio Selector */}
+              <div>
+                <label className="block text-[11px] font-bold text-zinc-700 mb-1.5">
+                  Mục tiêu tổng hợp (Target Chunks):
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPrepTarget('BOTH')}
+                    className={`py-1.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
+                      prepTarget === 'BOTH'
+                        ? 'border-[#DC2626] bg-red-50 text-[#DC2626]'
+                        : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
+                    }`}
+                  >
+                    Cả EN & VI
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrepTarget('ENGLISH')}
+                    className={`py-1.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
+                      prepTarget === 'ENGLISH'
+                        ? 'border-[#DC2626] bg-red-50 text-[#DC2626]'
+                        : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
+                    }`}
+                  >
+                    Chỉ EN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrepTarget('VIETNAMESE')}
+                    className={`py-1.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
+                      prepTarget === 'VIETNAMESE'
+                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                        : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
+                    }`}
+                  >
+                    Chỉ VI
+                  </button>
                 </div>
               </div>
 

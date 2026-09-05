@@ -27,17 +27,49 @@ export function loadDefaultPresets(): ImprovPackage[] {
   return [IMPROV_SET_01, IMPROV_SET_02];
 }
 
+export const LOCAL_STORAGE_DELETED_IMPROV_KEY = 'chunks_improv_deleted_packages';
+
+export function getDeletedPackageIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_DELETED_IMPROV_KEY);
+    const legacyRaw = localStorage.getItem('chunks_improv_deleted_package_ids');
+    const ids = new Set<string>();
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) parsed.forEach((id: string) => ids.add(id));
+    }
+    if (legacyRaw) {
+      const legacyParsed = JSON.parse(legacyRaw);
+      if (Array.isArray(legacyParsed)) legacyParsed.forEach((id: string) => ids.add(id));
+    }
+    return ids;
+  } catch {
+    return new Set();
+  }
+}
+
+export function markPackageDeleted(id: string): void {
+  try {
+    const ids = getDeletedPackageIds();
+    ids.add(id);
+    const arr = Array.from(ids);
+    localStorage.setItem(LOCAL_STORAGE_DELETED_IMPROV_KEY, JSON.stringify(arr));
+    localStorage.setItem('chunks_improv_deleted_package_ids', JSON.stringify(arr));
+  } catch {}
+}
+
 export function ensureDefaultSetsPresent(packages: ImprovPackage[]): ImprovPackage[] {
+  const deletedIds = getDeletedPackageIds();
   const result = [...packages];
   const existingIds = new Set(result.map(p => p.id));
 
-  // If IMPROV_SET_02 is missing, prepend it
-  if (!existingIds.has(IMPROV_SET_02.id)) {
+  // If IMPROV_SET_02 is missing, prepend it (only if not deleted)
+  if (!existingIds.has(IMPROV_SET_02.id) && !deletedIds.has(IMPROV_SET_02.id)) {
     result.unshift(IMPROV_SET_02);
   }
 
-  // If IMPROV_SET_01 is missing, prepend it (so Set 01 comes first)
-  if (!existingIds.has(IMPROV_SET_01.id)) {
+  // If IMPROV_SET_01 is missing, prepend it (so Set 01 comes first, only if not deleted)
+  if (!existingIds.has(IMPROV_SET_01.id) && !deletedIds.has(IMPROV_SET_01.id)) {
     result.unshift(IMPROV_SET_01);
   }
 
@@ -155,10 +187,12 @@ function generateId(prefix: string = 'improv'): string {
 // --------------------------------------------------------------------------
 
 export async function getAllImprovPackages(): Promise<ImprovPackage[]> {
+  const deletedIds = getDeletedPackageIds();
   try {
     const snapshot = await getDocs(collection(db, 'improv_packages'));
     if (!snapshot.empty) {
       let packages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ImprovPackage));
+      packages = packages.filter(p => !deletedIds.has(p.id));
       packages = ensureDefaultSetsPresent(packages);
       // Save local backup
       try {
@@ -176,6 +210,7 @@ export async function getAllImprovPackages(): Promise<ImprovPackage[]> {
     if (saved) {
       let parsed: ImprovPackage[] = JSON.parse(saved);
       if (parsed && parsed.length > 0) {
+        parsed = parsed.filter(p => !deletedIds.has(p.id));
         parsed = ensureDefaultSetsPresent(parsed);
         try {
           localStorage.setItem(LOCAL_STORAGE_IMPROV_KEY, JSON.stringify(parsed));
@@ -185,7 +220,7 @@ export async function getAllImprovPackages(): Promise<ImprovPackage[]> {
     }
   } catch {}
 
-  const fallback = ensureDefaultSetsPresent(DEFAULT_IMPROV_PACKAGES);
+  const fallback = ensureDefaultSetsPresent(DEFAULT_IMPROV_PACKAGES.filter(p => !deletedIds.has(p.id)));
   try {
     localStorage.setItem(LOCAL_STORAGE_IMPROV_KEY, JSON.stringify(fallback));
   } catch {}
@@ -249,6 +284,7 @@ export async function saveImprovPackage(pkg: ImprovPackage): Promise<void> {
 }
 
 export async function deleteImprovPackage(id: string): Promise<void> {
+  markPackageDeleted(id);
   try {
     const docRef = doc(db, 'improv_packages', id);
     await deleteDoc(docRef);

@@ -20,7 +20,11 @@ import {
   AudioProvider 
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
-import { getHintTextByLanguage } from '../services/improvTtsService';
+import { 
+  getHintTextByLanguage, 
+  isSessionAudioReady, 
+  isPackageAudioReady 
+} from '../services/improvTtsService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
 import { 
   Volume2, 
@@ -199,6 +203,159 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       setSpeed(audioSettings.default_speed);
     }
   }, [audioSettings?.voice_profile_en, audioSettings?.voice_profile_vi, audioSettings?.default_speed]);
+
+  // Audio Readiness State
+  const [readyPackageMap, setReadyPackageMap] = useState<Record<string, boolean>>({});
+  const [readySessionMap, setReadySessionMap] = useState<Record<string, boolean>>({});
+  const [isSessionReady, setIsSessionReady] = useState<boolean>(false);
+
+  // Helper to check if an ImprovSession has audio ready (either GCS/HTTP audioUrl or cached TTS)
+  const checkSessionAudioReady = async (
+    s: ImprovSession | null,
+    vEn: string,
+    vVi: string,
+    lMode: 'EN_ONLY' | 'VI_ONLY'
+  ): Promise<boolean> => {
+    if (!s || !s.items || s.items.length === 0) return false;
+
+    // Check if all items already have a valid audioUrl
+    const allHaveAudioUrl = s.items.every(
+      it => Boolean(it.audioUrl && (it.audioUrl.startsWith('http://') || it.audioUrl.startsWith('https://') || it.audioUrl.startsWith('data:')))
+    );
+    if (allHaveAudioUrl) return true;
+
+    // Check through improvTts with active voice and fallback voice
+    try {
+      let ready = await isSessionAudioReady(s, vEn, vVi, lMode);
+      if (ready) return true;
+      if (vEn !== 'aura-asteria-en' || vVi !== 'vi-VN-Neural2-A') {
+        ready = await isSessionAudioReady(s, 'aura-asteria-en', 'vi-VN-Neural2-A', lMode);
+        if (ready) return true;
+      }
+    } catch {
+      // Continue to direct cache check
+    }
+
+    // Direct cache key check
+    try {
+      const normalizedMode = lMode === 'VI_ONLY' ? 'VI_ONLY' : 'EN_ONLY';
+      for (const item of s.items) {
+        if (item.audioUrl && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) {
+          continue;
+        }
+        const k1 = `improv_item_${item.id}_${vEn}_${vVi}_${normalizedMode}`;
+        const k2 = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_${normalizedMode}`;
+        const cached = (await audioPlayer.getCachedAudioAsync(k1)) || (await audioPlayer.getCachedAudioAsync(k2));
+        if (!cached) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Scan audio readiness for packages
+  useEffect(() => {
+    let isMounted = true;
+    const scanPackages = async () => {
+      const map: Record<string, boolean> = {};
+      for (const p of packages) {
+        if (!isMounted) return;
+        try {
+          let ready = await isPackageAudioReady(p, selectedVoice, selectedVoiceVi, languageMode);
+          if (!ready && (selectedVoice !== 'aura-asteria-en' || selectedVoiceVi !== 'vi-VN-Neural2-A')) {
+            ready = await isPackageAudioReady(p, 'aura-asteria-en', 'vi-VN-Neural2-A', languageMode);
+          }
+          if (!ready && p.sessions && p.sessions.length > 0) {
+            let allSessionsReady = true;
+            for (const sess of p.sessions) {
+              const sReady = await checkSessionAudioReady(sess, selectedVoice, selectedVoiceVi, languageMode);
+              if (!sReady) {
+                allSessionsReady = false;
+                break;
+              }
+            }
+            if (allSessionsReady) ready = true;
+          }
+          map[p.id] = ready;
+        } catch {
+          map[p.id] = false;
+        }
+      }
+      if (isMounted) {
+        setReadyPackageMap(map);
+      }
+    };
+
+    scanPackages();
+    return () => {
+      isMounted = false;
+    };
+  }, [packages, selectedVoice, selectedVoiceVi, languageMode, isPackagePopoverOpen]);
+
+  // Scan audio readiness for sessions in active package
+  useEffect(() => {
+    let isMounted = true;
+    const scanSessions = async () => {
+      if (!activePackage?.sessions || activePackage.sessions.length === 0) {
+        if (isMounted) {
+          setReadySessionMap({});
+          setIsSessionReady(false);
+        }
+        return;
+      }
+
+      const map: Record<string, boolean> = {};
+      for (const s of activePackage.sessions) {
+        if (!isMounted) return;
+        try {
+          const ready = await checkSessionAudioReady(s, selectedVoice, selectedVoiceVi, languageMode);
+          const sId = (s as any).id || String(s.sessionNumber);
+          map[sId] = ready;
+          map[String(s.sessionNumber)] = ready;
+        } catch {
+          const sId = (s as any).id || String(s.sessionNumber);
+          map[sId] = false;
+          map[String(s.sessionNumber)] = false;
+        }
+      }
+      if (isMounted) {
+        setReadySessionMap(map);
+        const activeKey = (activeSession as any)?.id || String(selectedSessionNum);
+        setIsSessionReady(Boolean(map[activeKey] || map[String(selectedSessionNum)]));
+      }
+    };
+
+    scanSessions();
+    return () => {
+      isMounted = false;
+    };
+  }, [activePackage, selectedSessionNum, selectedVoice, selectedVoiceVi, languageMode, isSessionPopoverOpen, isAudioSettingsOpen]);
+
+  // Re-check active session readiness specifically
+  useEffect(() => {
+    let isMounted = true;
+    if (!activeSession) {
+      setIsSessionReady(false);
+      return;
+    }
+    checkSessionAudioReady(activeSession, selectedVoice, selectedVoiceVi, languageMode).then((ready) => {
+      if (isMounted) {
+        setIsSessionReady(ready);
+        const activeKey = (activeSession as any)?.id || String(activeSession.sessionNumber);
+        setReadySessionMap(prev => ({
+          ...prev,
+          [activeKey]: ready,
+          [String(activeSession.sessionNumber)]: ready
+        }));
+      }
+    }).catch(() => {
+      if (isMounted) setIsSessionReady(false);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [activeSession, selectedVoice, selectedVoiceVi, languageMode, isAudioSettingsOpen]);
 
   // Filtered packages for switcher popover
   const filteredPackages = useMemo(() => {
@@ -520,6 +677,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               <span>
                 Session {selectedSessionNum} • {activeSession?.hcTotal || hints.length || 2} Hints
               </span>
+              {isSessionReady && (
+                <Volume2 className="w-4 h-4 text-emerald-500 shrink-0 animate-in fade-in" title="Session đã sẵn sàng audio" />
+              )}
               <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
             </button>
 
@@ -537,6 +697,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 <div className="space-y-1 mt-1">
                   {(activePackage?.sessions || []).map((s) => {
                     const isSelected = s.sessionNumber === selectedSessionNum;
+                    const sId = (s as any).id || String(s.sessionNumber);
+                    const isSessReady = Boolean(readySessionMap[sId] || readySessionMap[String(s.sessionNumber)]);
                     return (
                       <button
                         key={s.sessionNumber}
@@ -550,7 +712,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         }`}
                       >
                         <div>
-                          <div>{s.title || `Session ${s.sessionNumber}`}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span>{s.title || `Session ${s.sessionNumber}`}</span>
+                            {isSessReady && (
+                              <Volume2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" title="Audio đã sẵn sàng" />
+                            )}
+                          </div>
                           <div className={`text-[10px] font-mono ${isSelected ? 'text-red-100' : 'text-zinc-400'}`}>
                             {s.hcTotal || 2} hints • {s.items.length} items
                           </div>
@@ -616,6 +783,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 <div className="max-h-64 overflow-y-auto space-y-1 py-1">
                   {filteredPackages.map((pkg) => {
                     const isSelected = pkg.id === activePackage?.id;
+                    const isPkgReady = Boolean(readyPackageMap[pkg.id]);
                     return (
                       <button
                         key={pkg.id}
@@ -629,7 +797,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         }`}
                       >
                         <div className="min-w-0 mr-2">
-                          <div className="truncate font-semibold">{pkg.title}</div>
+                          <div className="truncate font-semibold flex items-center gap-1.5">
+                            <span>{pkg.title}</span>
+                            {isPkgReady && (
+                              <Volume2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" title="Audio đã sẵn sàng" />
+                            )}
+                          </div>
                           <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
                             {pkg.sessionsCount || pkg.sessions?.length || 1} sessions • {pkg.totalItems} items
                           </div>
@@ -722,9 +895,15 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               }`}
               title="Cài đặt giọng đọc & TTS"
             >
-              <Volume2 className="w-3.5 h-3.5 text-[#DC2626]" />
+              {isSessionReady ? (
+                <Volume2 className="w-3.5 h-3.5 text-emerald-500" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5 text-[#DC2626]" />
+              )}
               <span className="hidden sm:inline-block font-mono text-[11px]">
-                {selectedVoice.replace('en-US-', '').replace('aura-', '')}
+                {isSessionReady
+                  ? 'Audio Ready'
+                  : selectedVoice.replace('en-US-', '').replace('aura-', '')}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
             </button>
@@ -744,143 +923,222 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                   </div>
                   <button
                     onClick={() => setIsAudioSettingsOpen(false)}
-                    className="p-1 rounded text-zinc-400 hover:text-zinc-200"
+                    className="p-1 rounded text-zinc-400 hover:text-zinc-200 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                {/* TTS Provider Segmented Switch */}
-                <div className="mb-3">
-                  <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
-                    TTS Speech Engine
-                  </label>
-                  <div className="grid grid-cols-2 gap-1 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-lg">
-                    <button
-                      onClick={() => {
-                        setAudioProvider('DEEPGRAM_AURA');
-                        audioPlayer.setAudioProvider('DEEPGRAM_AURA');
-                      }}
-                      className={`py-1 text-[11px] font-bold rounded-md transition-all ${
-                        audioProvider === 'DEEPGRAM_AURA'
-                          ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
-                          : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-                      }`}
-                    >
-                      Deepgram Aura
-                    </button>
-                    <button
-                      onClick={() => {
-                        setAudioProvider('GOOGLE_TTS');
-                        audioPlayer.setAudioProvider('GOOGLE_TTS');
-                      }}
-                      className={`py-1 text-[11px] font-bold rounded-md transition-all ${
-                        audioProvider === 'GOOGLE_TTS'
-                          ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
-                          : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-                      }`}
-                    >
-                      Google Cloud TTS
-                    </button>
+                {isSessionReady ? (
+                  /* Audio Ready Banner */
+                  <div className="p-3 mb-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0">
+                      <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5">
+                        <span>Audio Đã Sẵn Sàng</span>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded font-mono bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">Cache Sẵn Có</span>
+                      </div>
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 leading-snug mt-0.5">
+                        Session đang sử dụng audio Improv đã tạo sẵn. Tùy chọn model TTS được ẩn.
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* TTS Provider Segmented Switch */}
+                    <div className="mb-3">
+                      <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
+                        TTS Speech Engine
+                      </label>
+                      <div className="grid grid-cols-2 gap-1 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAudioProvider('DEEPGRAM_AURA');
+                            audioPlayer.setAudioProvider('DEEPGRAM_AURA');
+                          }}
+                          className={`py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                            audioProvider === 'DEEPGRAM_AURA'
+                              ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Deepgram Aura
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAudioProvider('GOOGLE_TTS');
+                            audioPlayer.setAudioProvider('GOOGLE_TTS');
+                          }}
+                          className={`py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                            audioProvider === 'GOOGLE_TTS'
+                              ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                          }`}
+                        >
+                          Google Cloud TTS
+                        </button>
+                      </div>
+                    </div>
 
-                {/* English Voice Selector */}
-                <div className="mb-3">
-                  <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
-                    English Voice Model
-                  </label>
-                  <select
-                    value={selectedVoice}
-                    onChange={(e) => setSelectedVoice(e.target.value)}
-                    className={`w-full p-2 text-xs rounded-lg border focus:outline-none focus:border-[#DC2626] ${
-                      highContrastDark
-                        ? 'bg-zinc-900 border-zinc-700 text-white'
-                        : 'bg-white border-zinc-200 text-zinc-900'
-                    }`}
-                  >
-                    <optgroup label="Deepgram Aura (Ultra-Fast 0ms)">
-                      {DEEPGRAM_AURA_VOICES.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.name} ({v.gender})
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Google Cloud TTS (Journey / Studio)">
-                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode.startsWith('en')).map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.name} ({v.gender})
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
+                    {/* English Voice Selector */}
+                    <div className="mb-3">
+                      <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
+                        English Voice Model
+                      </label>
+                      <select
+                        value={selectedVoice}
+                        onChange={(e) => setSelectedVoice(e.target.value)}
+                        className={`w-full p-2 text-xs rounded-lg border focus:outline-none focus:border-[#DC2626] cursor-pointer ${
+                          highContrastDark
+                            ? 'bg-zinc-900 border-zinc-700 text-white'
+                            : 'bg-white border-zinc-200 text-zinc-900'
+                        }`}
+                      >
+                        <optgroup label="Deepgram Aura (Ultra-Fast 0ms)">
+                          {DEEPGRAM_AURA_VOICES.map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name} ({v.gender})
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Google Cloud TTS (Journey / Studio)">
+                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode.startsWith('en')).map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name} ({v.gender})
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    </div>
 
-                {/* Vietnamese Voice Selector */}
-                <div className="mb-4">
-                  <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
-                    Vietnamese Voice Model (Google Cloud)
-                  </label>
-                  <select
-                    value={selectedVoiceVi}
-                    onChange={(e) => setSelectedVoiceVi(e.target.value)}
-                    className={`w-full p-2 text-xs rounded-lg border focus:outline-none focus:border-[#DC2626] ${
-                      highContrastDark
-                        ? 'bg-zinc-900 border-zinc-700 text-white'
-                        : 'bg-white border-zinc-200 text-zinc-900'
-                    }`}
-                  >
-                    <optgroup label="Google Chirp3-HD (Studio Studio Quality)">
-                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Chirp3-HD')).map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Google Neural2 (Chuẩn Tự Nhiên)">
-                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Neural2')).map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.id} ({v.gender === 'FEMALE' ? 'Nữ Chuẩn' : 'Nam Chuẩn'})
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Google WaveNet">
-                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Wavenet')).map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Google Standard">
-                      {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Standard')).map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
+                    {/* Vietnamese Voice Selector */}
+                    <div className="mb-4">
+                      <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
+                        Vietnamese Voice Model (Google Cloud)
+                      </label>
+                      <select
+                        value={selectedVoiceVi}
+                        onChange={(e) => setSelectedVoiceVi(e.target.value)}
+                        className={`w-full p-2 text-xs rounded-lg border focus:outline-none focus:border-[#DC2626] cursor-pointer ${
+                          highContrastDark
+                            ? 'bg-zinc-900 border-zinc-700 text-white'
+                            : 'bg-white border-zinc-200 text-zinc-900'
+                        }`}
+                      >
+                        <optgroup label="Google Chirp3-HD (Studio Studio Quality)">
+                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Chirp3-HD')).map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Google Neural2 (Chuẩn Tự Nhiên)">
+                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Neural2')).map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ Chuẩn' : 'Nam Chuẩn'})
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Google WaveNet">
+                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Wavenet')).map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Google Standard">
+                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Standard')).map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    </div>
 
-                {/* Audition Test Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleAuditionVoice(selectedVoice)}
-                    disabled={isAuditioningVoice}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-semibold rounded-lg transition-all cursor-pointer"
-                    title="Thử phát âm tiếng Anh"
-                  >
-                    <Radio className={`w-3.5 h-3.5 text-[#DC2626] ${isAuditioningVoice ? 'animate-spin' : ''}`} />
-                    <span>Thử EN</span>
-                  </button>
-                  <button
-                    onClick={() => handleAuditionVoice(selectedVoiceVi)}
-                    disabled={isAuditioningVoice}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-semibold rounded-lg transition-all cursor-pointer"
-                    title="Thử phát âm tiếng Việt"
-                  >
-                    <Radio className={`w-3.5 h-3.5 text-emerald-600 ${isAuditioningVoice ? 'animate-spin' : ''}`} />
-                    <span>Thử VI</span>
-                  </button>
+                    {/* Audition Test Buttons */}
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => handleAuditionVoice(selectedVoice)}
+                        disabled={isAuditioningVoice}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-semibold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                        title="Thử phát âm tiếng Anh"
+                      >
+                        <Radio className={`w-3.5 h-3.5 text-[#DC2626] ${isAuditioningVoice ? 'animate-spin' : ''}`} />
+                        <span>Thử EN</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAuditionVoice(selectedVoiceVi)}
+                        disabled={isAuditioningVoice}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-semibold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                        title="Thử phát âm tiếng Việt"
+                      >
+                        <Radio className={`w-3.5 h-3.5 text-emerald-600 ${isAuditioningVoice ? 'animate-spin' : ''}`} />
+                        <span>Thử VI</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Speed & Language Mode Controls - Always Accessible */}
+                <div className={`pt-3 border-t space-y-3 ${
+                  highContrastDark ? 'border-zinc-800' : 'border-zinc-200'
+                }`}>
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold">
+                        Tốc độ đọc (Speed)
+                      </label>
+                      <span className="font-mono text-xs font-extrabold text-[#DC2626]">
+                        {speed.toFixed(1)}x
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.8"
+                      max="2.0"
+                      step="0.1"
+                      value={speed}
+                      onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                      className="w-full accent-[#DC2626] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
+                      Chế độ đọc (Language Mode)
+                    </label>
+                    <div className="grid grid-cols-2 gap-1 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setLanguageMode('EN_ONLY')}
+                        className={`py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                          languageMode === 'EN_ONLY'
+                            ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        English (1)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLanguageMode('VI_ONLY')}
+                        className={`py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                          languageMode === 'VI_ONLY'
+                            ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
+                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        Tiếng Việt (2)
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
