@@ -97,9 +97,10 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const soundSettingsRef = useRef<HTMLDivElement>(null);
 
   // Audio parameters & Real Google Cloud TTS Models
-  const [selectedVoice, setSelectedVoice] = useState<string>(
-    audioSettings?.voice_profile_en || 'aura-asteria-en'
-  );
+  const [selectedVoice, setSelectedVoice] = useState<string>(() => {
+    const v = audioSettings?.voice_profile_en;
+    return (v && v !== 'aura-theia-en') ? v : 'aura-asteria-en';
+  });
   const [selectedVoiceVi, setSelectedVoiceVi] = useState<string>(
     audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
   );
@@ -173,7 +174,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   useEffect(() => {
     if (audioSettings) {
       if (audioSettings.voice_profile_en && audioSettings.voice_profile_en !== selectedVoice) {
-        setSelectedVoice(audioSettings.voice_profile_en);
+        const cleanEn = audioSettings.voice_profile_en === 'aura-theia-en' ? 'aura-asteria-en' : audioSettings.voice_profile_en;
+        setSelectedVoice(cleanEn);
       }
       if (audioSettings.voice_profile_vi && audioSettings.voice_profile_vi !== selectedVoiceVi) {
         setSelectedVoiceVi(audioSettings.voice_profile_vi);
@@ -558,13 +560,14 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         targetChunk.vietnamese,
         m,
         targetChunk.audio_url,
-        selectedVoice,
+        selectedVoice === 'aura-theia-en' ? 'aura-asteria-en' : selectedVoice,
         selectedVoiceVi,
         s,
         r,
         (step) => {
           setActiveSpeechStep(step);
-        }
+        },
+        targetChunk.audio_url_vi || null
       );
     } catch (err) {
       console.error('[Presenter Audio] Playback notice:', err);
@@ -1150,7 +1153,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                           }`}
                         >
                           {audioProvider === 'DEEPGRAM_AURA' ? (
-                            DEEPGRAM_AURA_VOICES.map(v => (
+                            DEEPGRAM_AURA_VOICES.filter(v => v.id !== 'aura-theia-en').map(v => (
                               <option key={v.id} value={v.id}>
                                 {v.name} ({v.accent} - {v.gender})
                               </option>

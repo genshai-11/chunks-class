@@ -990,14 +990,7 @@ class AudioPlayService {
 
   public isChunkCached(text: string, voiceName?: string): boolean {
     if (!text) return false;
-    if (this.audioCache.has(text)) return true;
-    const clean = sanitizeSpeechText(text);
-    if (clean && this.audioCache.has(clean)) return true;
-    if (voiceName) {
-      if (this.audioCache.has(this.getCacheKey(voiceName, clean))) return true;
-      if (this.audioCache.has(this.getCacheKey(voiceName, text))) return true;
-    }
-    return false;
+    return this.getCachedAudio(text, voiceName) !== null;
   }
 
   /**
@@ -1006,18 +999,26 @@ class AudioPlayService {
    */
   public getCachedAudio(text: string, voiceName?: string): string | null {
     if (!text) return null;
-    if (this.audioCache.has(text)) {
-      return this.audioCache.get(text)!;
-    }
+    // 1. Direct text check
+    if (this.audioCache.has(text)) return this.audioCache.get(text)!;
     const clean = sanitizeSpeechText(text);
-    if (clean && this.audioCache.has(clean)) {
-      return this.audioCache.get(clean)!;
-    }
+    if (clean && this.audioCache.has(clean)) return this.audioCache.get(clean)!;
+    
+    // 2. Specific voice check
     if (voiceName) {
-      const k1 = this.getCacheKey(voiceName, clean);
+      const cleanVoice = voiceName === 'aura-theia-en' ? 'aura-asteria-en' : voiceName;
+      const k1 = this.getCacheKey(cleanVoice, clean);
       if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
-      const k2 = this.getCacheKey(voiceName, text);
+      const k2 = this.getCacheKey(cleanVoice, text);
       if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
+    }
+
+    // 3. Fallback: check ANY cached entry matching ::clean or ::text
+    const targetSuffix = `::${clean.toLowerCase()}`;
+    for (const [k, v] of this.audioCache) {
+      if (k.endsWith(targetSuffix) || k === clean || k === text) {
+        return v;
+      }
     }
     return null;
   }
@@ -1033,17 +1034,32 @@ class AudioPlayService {
     if (memCached) return memCached;
 
     const clean = sanitizeSpeechText(text);
-    const keysToCheck: string[] = [text];
-    if (clean && clean !== text) keysToCheck.push(clean);
-    if (voiceName) {
-      keysToCheck.push(this.getCacheKey(voiceName, clean));
-      if (clean !== text) keysToCheck.push(this.getCacheKey(voiceName, text));
+    const cleanVoice = (voiceName === 'aura-theia-en' || !voiceName) ? 'aura-asteria-en' : voiceName;
+
+    const keysToCheck: string[] = [
+      text,
+      clean,
+      this.getCacheKey(cleanVoice, clean),
+      this.getCacheKey(cleanVoice, text)
+    ];
+
+    // Also check common standard voices so changing voices doesn't drop 100% prepared audio!
+    if (cleanVoice.startsWith('aura-') || cleanVoice.startsWith('en-US-')) {
+      keysToCheck.push(this.getCacheKey('aura-asteria-en', clean));
+      keysToCheck.push(this.getCacheKey('aura-athena-en', clean));
+      keysToCheck.push(this.getCacheKey('en-US-Journey-F', clean));
+      keysToCheck.push(this.getCacheKey('en-US-Neural2-A', clean));
+    } else if (cleanVoice.startsWith('vi-')) {
+      keysToCheck.push(this.getCacheKey('vi-VN-Neural2-A', clean));
+      keysToCheck.push(this.getCacheKey('vi-VN-Standard-A', clean));
+      keysToCheck.push(this.getCacheKey('vi-VN-WaveNet-A', clean));
     }
 
     for (const key of keysToCheck) {
       const fromDb = await getAudioBlobFromDB(key);
       if (fromDb) {
         this.audioCache.set(key, fromDb);
+        this.audioCache.set(clean, fromDb); // Also cache by clean text for instant access
         return fromDb;
       }
     }
@@ -1444,12 +1460,17 @@ class AudioPlayService {
     this.stop();
     if (!text || !text.trim()) return;
 
+    let effectiveVoice = voiceName || 'aura-asteria-en';
+    if (effectiveVoice === 'aura-theia-en') {
+      effectiveVoice = 'aura-asteria-en';
+    }
+
     const cleanText = sanitizeSpeechText(text);
     if (!cleanText) return;
 
     this.setAudioLoading(true);
     try {
-      const isVietnamese = isVietnameseText(cleanText, voiceName);
+      const isVietnamese = isVietnameseText(cleanText, effectiveVoice);
 
       // ======================================================================
       // 1. VIETNAMESE PLAYBACK PIPELINE
@@ -1458,7 +1479,7 @@ class AudioPlayService {
       // ======================================================================
       if (isVietnamese) {
         // Step 0: GCS Master Permanent Audio for Vietnamese if available
-        if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
+        if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http') && !permanentAudioUrl.includes('placeholder')) {
           try {
             this.setLastSource('GCS_MASTER');
             await this.playUrl(permanentAudioUrl, speed);
@@ -1468,7 +1489,7 @@ class AudioPlayService {
           }
         }
 
-        const effectiveViVoice = (voiceName && voiceName.startsWith('vi-')) ? voiceName : 'vi-VN-Neural2-A';
+        const effectiveViVoice = (effectiveVoice && effectiveVoice.startsWith('vi-')) ? effectiveVoice : 'vi-VN-Neural2-A';
         const cacheKey = this.getCacheKey(effectiveViVoice, cleanText);
         const cached = await this.getCachedAudioAsync(cleanText, effectiveViVoice);
 
@@ -1502,15 +1523,15 @@ class AudioPlayService {
       // Routes to Deepgram Aura (if aura-* voice or provider is DEEPGRAM_AURA and not en-US-*)
       // Or Google Cloud TTS (if en-US-* voice or provider is GOOGLE_TTS)
       // ======================================================================
-      const isAuraVoice = Boolean(voiceName && voiceName.startsWith('aura-'));
-      const isGoogleEnVoice = Boolean(voiceName && voiceName.startsWith('en-US-'));
+      const isAuraVoice = Boolean(effectiveVoice && effectiveVoice.startsWith('aura-'));
+      const isGoogleEnVoice = Boolean(effectiveVoice && effectiveVoice.startsWith('en-US-'));
       const isDeepgram = !forceCloudTts && (isAuraVoice || (!isGoogleEnVoice && this.activeProvider === 'DEEPGRAM_AURA'));
       const effectiveEnVoice = isDeepgram
-        ? (isAuraVoice ? voiceName : 'aura-asteria-en')
-        : (isGoogleEnVoice ? voiceName : (voiceName && !voiceName.startsWith('vi-') ? voiceName : 'en-US-Journey-F'));
+        ? (isAuraVoice ? effectiveVoice : 'aura-asteria-en')
+        : (isGoogleEnVoice ? effectiveVoice : (effectiveVoice && !effectiveVoice.startsWith('vi-') ? effectiveVoice : 'en-US-Journey-F'));
 
       // Step 1: GCS Master Permanent Audio (Priority #1 if available and not forced to cloud TTS)
-      if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
+      if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http') && !permanentAudioUrl.includes('placeholder')) {
         try {
           this.setLastSource('GCS_MASTER');
           await this.playUrl(permanentAudioUrl, speed);
@@ -1532,7 +1553,7 @@ class AudioPlayService {
       // Step 2: Deepgram Aura Engine (if provider or voice is aura-*)
       if (isDeepgram) {
         try {
-          const dgModel = effectiveEnVoice;
+          const dgModel = (effectiveEnVoice === 'aura-theia-en' || !effectiveEnVoice) ? 'aura-asteria-en' : effectiveEnVoice;
           const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
           if (base64) {
             this.setCache(cacheKey, base64);
@@ -1581,7 +1602,8 @@ class AudioPlayService {
     voiceVi: string = 'vi-VN-Neural2-A',
     speed: number = 1.0,
     repeatCount: number = 1,
-    onStepChange?: (step: 'en' | 'vi' | 'idle') => void
+    onStepChange?: (step: 'en' | 'vi' | 'idle') => void,
+    vietnameseAudioUrl?: string | null
   ): Promise<void> {
     this.stop();
     const seqId = this.activeSequenceId;
@@ -1589,7 +1611,8 @@ class AudioPlayService {
 
     // Determine effective voices
     const isDeepgram = this.activeProvider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-');
-    const effectiveVoiceEn = isDeepgram && !voiceEn.startsWith('aura-') ? 'aura-asteria-en' : (voiceEn || 'aura-asteria-en');
+    const rawVoiceEn = (voiceEn === 'aura-theia-en') ? 'aura-asteria-en' : voiceEn;
+    const effectiveVoiceEn = isDeepgram && !rawVoiceEn.startsWith('aura-') ? 'aura-asteria-en' : (rawVoiceEn || 'aura-asteria-en');
     const effectiveVoiceVi = (voiceVi && voiceVi.startsWith('vi-')) ? voiceVi : 'vi-VN-Neural2-A';
 
     for (let r = 0; r < repeatCount; r++) {
@@ -1600,7 +1623,7 @@ class AudioPlayService {
         await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed);
       } else if (normalizedMode === 'VI_ONLY') {
         onStepChange?.('vi');
-        await this.playChunk(vietnameseText, null, effectiveVoiceVi, speed);
+        await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed);
       } else if (normalizedMode === 'EN_THEN_VI') {
         onStepChange?.('en');
         await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed);
@@ -1611,10 +1634,10 @@ class AudioPlayService {
         if (this.activeSequenceId !== seqId) return;
 
         onStepChange?.('vi');
-        await this.playChunk(vietnameseText, null, effectiveVoiceVi, speed);
+        await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed);
       } else if (normalizedMode === 'VI_THEN_EN') {
         onStepChange?.('vi');
-        await this.playChunk(vietnameseText, null, effectiveVoiceVi, speed);
+        await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed);
         
         if (this.activeSequenceId !== seqId) return;
         // Natural 500ms cadence pause between Vietnamese and English
@@ -2036,7 +2059,7 @@ class AudioPlayService {
     throw new Error(`All ${candidateKeys.length} Google/Gemini TTS keys in pool failed. Last error: ${lastErrorMsg || 'Unknown error'}`);
   }
 
-  private playUrl(url: string, speed: number): Promise<void> {
+  public playUrl(url: string, speed: number): Promise<void> {
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
       audio.playbackRate = speed;
@@ -2047,7 +2070,7 @@ class AudioPlayService {
     });
   }
 
-  private playBase64(base64Audio: string, speed: number = 1.0): Promise<void> {
+  public playBase64(base64Audio: string, speed: number = 1.0): Promise<void> {
     return new Promise((resolve, reject) => {
       const dataUri = base64Audio.startsWith('data:') ? base64Audio : `data:audio/mp3;base64,${base64Audio}`;
       const audio = new Audio(dataUri);

@@ -337,7 +337,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           voiceProfileEn,
           voiceProfileVi,
           1.0,
-          1
+          1,
+          undefined,
+          chunk.audio_url_vi || null
         );
       }
     } catch (e: any) {

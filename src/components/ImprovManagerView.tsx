@@ -164,7 +164,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   defaultPackageId,
   audioSettings
 }) => {
-  const currentVoiceEn = audioSettings?.voice_profile_en || 'aura-asteria-en';
+  const rawVoiceEn = audioSettings?.voice_profile_en;
+  const currentVoiceEn = (rawVoiceEn && rawVoiceEn !== 'aura-theia-en') ? rawVoiceEn : 'aura-asteria-en';
   const currentVoiceVi = audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A';
   // --------------------------------------------------------------------------
   // A. Packages & Active Selection State
@@ -202,7 +203,9 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   // Batch Audio Worker State & Custom Voices
   const [batchWorkersCount, setBatchWorkersCount] = useState<number>(4);
   const [batchTargetLang, setBatchTargetLang] = useState<'en' | 'vi' | 'both'>('both');
-  const [batchVoiceEn, setBatchVoiceEn] = useState<string>(currentVoiceEn || 'aura-asteria-en');
+  const [batchVoiceEn, setBatchVoiceEn] = useState<string>(() => {
+    return (currentVoiceEn && currentVoiceEn !== 'aura-theia-en') ? currentVoiceEn : 'aura-asteria-en';
+  });
   const [batchVoiceVi, setBatchVoiceVi] = useState<string>(currentVoiceVi || 'vi-VN-Neural2-A');
   const [isBatchRunning, setIsBatchRunning] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<{
@@ -220,7 +223,9 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
   // Keep batch voice in sync if prop changes
   useEffect(() => {
-    if (currentVoiceEn) setBatchVoiceEn(currentVoiceEn);
+    if (currentVoiceEn) {
+      setBatchVoiceEn(currentVoiceEn === 'aura-theia-en' ? 'aura-asteria-en' : currentVoiceEn);
+    }
   }, [currentVoiceEn]);
 
   useEffect(() => {
@@ -229,7 +234,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
   // Voice options for batch generation modal
   const enVoiceOptions = useMemo(() => {
-    return ALL_VOICES.filter(v => v.languageCode === 'en-US' || v.id.startsWith('aura-') || v.id.startsWith('en-US-'));
+    return ALL_VOICES.filter(v => (v.languageCode === 'en-US' || v.id.startsWith('aura-') || v.id.startsWith('en-US-')) && v.id !== 'aura-theia-en');
   }, []);
 
   const viVoiceOptions = useMemo(() => {
@@ -616,17 +621,32 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       s.items.forEach(it => {
         totalItems++;
         totalHints += it.hints.length;
-        const isReady = Boolean(
+        const hasItemGcs = Boolean(it.audioUrl && it.audioUrl.startsWith('http'));
+        const hasAllHintsGcs = Boolean(
+          it.hints && 
+          it.hints.length > 0 && 
+          it.hints.every(h => Boolean(h.audioUrl && h.audioUrl.startsWith('http')))
+        );
+        const isCached = Boolean(
           (it.audioUrl && (it.audioUrl.startsWith('http') || it.audioUrl === 'cached')) ||
           (it.audioUrlVi && it.audioUrlVi.startsWith('http')) ||
           audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
           audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
+          audioPlayer.getCachedAudio(`improv_item_${it.id}_aura-asteria-en_${currentVoiceVi}_EN_ONLY`, 'aura-asteria-en') ||
           (it.hints && it.hints.length > 0 && it.hints.every(h => {
             const t = h.text?.trim();
-            return !t || Boolean((h.audioUrl && h.audioUrl.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+            const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
+            return !t || Boolean(
+              (h.audioUrl && h.audioUrl.startsWith('http')) || 
+              audioPlayer.getCachedAudio(hKey, currentVoiceEn) ||
+              audioPlayer.getCachedAudio(`improv_hint_${h.id}_aura-asteria-en_en`, 'aura-asteria-en') ||
+              audioPlayer.getCachedAudio(t, currentVoiceEn) || 
+              audioPlayer.isChunkCached(t, currentVoiceEn)
+            );
           }))
         );
-        if (isReady) {
+
+        if (hasItemGcs || hasAllHintsGcs || isCached) {
           audioPreparedCount++;
         }
       });
@@ -702,18 +722,21 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     voiceEnOverride?: string,
     voiceViOverride?: string
   ) => {
-    const effectiveVoiceEn = voiceEnOverride || itemVoiceEn[item.id] || currentVoiceEn;
+    const rawVoiceEn = voiceEnOverride || itemVoiceEn[item.id] || currentVoiceEn;
+    const effectiveVoiceEn = (rawVoiceEn && rawVoiceEn !== 'aura-theia-en') ? rawVoiceEn : 'aura-asteria-en';
     const effectiveVoiceVi = voiceViOverride || itemVoiceVi[item.id] || currentVoiceVi;
     setSynthesizingItemIds(prev => ({ ...prev, [item.id]: true }));
     try {
+      let base64En = '';
+      let base64Vi = '';
       if (target === 'en' || target === 'both') {
-        await synthesizeItemCombinedAudio(item, effectiveVoiceEn, effectiveVoiceVi, 'EN_ONLY', true);
+        base64En = await synthesizeItemCombinedAudio(item, effectiveVoiceEn, effectiveVoiceVi, 'EN_ONLY', true);
       }
       if (target === 'vi' || target === 'both') {
-        await synthesizeItemCombinedAudio(item, effectiveVoiceEn, effectiveVoiceVi, 'VI_ONLY', true);
+        base64Vi = await synthesizeItemCombinedAudio(item, effectiveVoiceEn, effectiveVoiceVi, 'VI_ONLY', true);
       }
 
-      // Check if base64 audio exists in cache and upload to Cloud Storage
+      // Check if base64 audio exists and upload to Cloud Storage
       if (activePackage) {
         let hasCloudUpdates = false;
         const updatedItem: ImprovItem = {
@@ -724,20 +747,22 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         // 1. Upload EN combined audio and hint audios to Cloud Storage
         if (target === 'en' || target === 'both') {
           const kEn = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_EN_ONLY`;
-          const cachedEn = await audioPlayer.getCachedAudioAsync(kEn);
-          if (cachedEn) {
+          const base64ToUploadEn = base64En || await audioPlayer.getCachedAudioAsync(kEn);
+          if (base64ToUploadEn) {
             try {
-              const gcsUrlEn = await uploadImprovBase64AudioToGcs({
-                base64Audio: cachedEn,
+              const gcsUrl = await uploadImprovBase64AudioToGcs({
+                base64Audio: base64ToUploadEn,
                 pkgId: activePackage.id,
                 id: item.id,
                 lang: 'en',
                 isHint: false
               });
-              updatedItem.audioUrl = gcsUrlEn;
+              item.audioUrl = gcsUrl;
+              updatedItem.audioUrl = gcsUrl;
               hasCloudUpdates = true;
-            } catch (cloudErr) {
-              console.warn(`[GCS Single Item Sync] Failed item EN ${item.id}:`, cloudErr);
+              await saveImprovPackage(activePackage);
+            } catch (uploadErr) {
+              console.warn('[ImprovManagerView] Upload synthesized item to GCS failed:', uploadErr);
             }
           }
 
@@ -755,6 +780,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     isHint: true
                   });
                   h.audioUrl = gcsHintUrlEn;
+                  const matchingHint = item.hints?.find(mh => mh.id === h.id);
+                  if (matchingHint) matchingHint.audioUrl = gcsHintUrlEn;
                   hasCloudUpdates = true;
                 } catch (hintErr) {
                   console.warn(`[GCS Single Item Sync] Failed hint EN ${h.id}:`, hintErr);
@@ -767,20 +794,22 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         // 2. Upload VI combined audio and hint audios to Cloud Storage
         if (target === 'vi' || target === 'both') {
           const kVi = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_VI_ONLY`;
-          const cachedVi = await audioPlayer.getCachedAudioAsync(kVi);
-          if (cachedVi) {
+          const base64ToUploadVi = base64Vi || await audioPlayer.getCachedAudioAsync(kVi);
+          if (base64ToUploadVi) {
             try {
               const gcsUrlVi = await uploadImprovBase64AudioToGcs({
-                base64Audio: cachedVi,
+                base64Audio: base64ToUploadVi,
                 pkgId: activePackage.id,
                 id: item.id,
                 lang: 'vi',
                 isHint: false
               });
+              item.audioUrlVi = gcsUrlVi;
               updatedItem.audioUrlVi = gcsUrlVi;
               hasCloudUpdates = true;
-            } catch (cloudErr) {
-              console.warn(`[GCS Single Item Sync] Failed item VI ${item.id}:`, cloudErr);
+              await saveImprovPackage(activePackage);
+            } catch (uploadErr) {
+              console.warn('[ImprovManagerView] Upload synthesized item VI to GCS failed:', uploadErr);
             }
           }
 
@@ -798,6 +827,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     isHint: true
                   });
                   h.audioUrlVi = gcsHintUrlVi;
+                  const matchingHint = item.hints?.find(mh => mh.id === h.id);
+                  if (matchingHint) matchingHint.audioUrlVi = gcsHintUrlVi;
                   hasCloudUpdates = true;
                 } catch (hintErr) {
                   console.warn(`[GCS Single Item Sync] Failed hint VI ${h.id}:`, hintErr);
@@ -845,7 +876,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     const hintKey = `${hint.id}_${lang}`;
     setSynthesizingHintIds(prev => ({ ...prev, [hintKey]: true }));
     try {
-      const effectiveVoice = voiceOverride || (lang === 'vi' ? (itemVoiceVi[item.id] || currentVoiceVi) : (itemVoiceEn[item.id] || currentVoiceEn));
+      const rawVoice = voiceOverride || (lang === 'vi' ? (itemVoiceVi[item.id] || currentVoiceVi) : (itemVoiceEn[item.id] || currentVoiceEn));
+      const effectiveVoice = (rawVoice && rawVoice !== 'aura-theia-en') ? rawVoice : (lang === 'vi' ? 'vi-VN-Neural2-A' : 'aura-asteria-en');
       const base64 = await synthesizeSingleHintAudio(hint, lang, effectiveVoice, true);
 
       let gcsUrl = '';
@@ -854,11 +886,17 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           base64Audio: base64,
           pkgId: activePackage.id,
           id: hint.id,
-          lang: lang,
+          lang: lang === 'vi' ? 'vi' : 'en',
           isHint: true
         });
+        if (lang === 'vi') {
+          hint.audioUrlVi = gcsUrl;
+        } else {
+          hint.audioUrl = gcsUrl;
+        }
+        await saveImprovPackage(activePackage);
       } catch (uploadErr) {
-        console.warn(`[GCS Hint Sync] Failed upload for hint ${hint.id} (${lang}):`, uploadErr);
+        console.warn('[ImprovManagerView] Upload regenerated hint to GCS failed:', uploadErr);
       }
 
       const updatedSessions = activePackage.sessions.map(s => {
@@ -897,6 +935,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setSynthesizingHintIds(prev => ({ ...prev, [hintKey]: false }));
     }
   };
+
+  // Named aliases matching specification requirements
+  const handleRegenerateSingleHint = handleSynthesizeSingleHint;
+  const handleSynthesizeSingleItemAudio = handleSynthesizeSingleItem;
 
   // --------------------------------------------------------------------------
   // 3. Item Management CRUD Helpers (Thêm, Xóa, Sửa)

@@ -1,9 +1,10 @@
 import { storage } from './firebase';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { ChunkItem, LessonDoc, ImprovPackage } from '../types';
+import { ChunkItem, LessonDoc, ImprovPackage, ImprovHint, ImprovItem } from '../types';
 import { updateLessonChunks } from './firestoreService';
 import { audioPlayer } from './googleTtsService';
 import { saveImprovPackage, getAllImprovPackages } from './improvService';
+import { improvTts } from './improvTtsService';
 
 export const CLOUD_STORAGE_BUCKET_NAME = 'chunks-voicecloning-genshai.firebasestorage.app';
 
@@ -190,7 +191,7 @@ export async function syncImprovPackageCachedAudioToCloud(
     return { uploadedItemsEn: 0, uploadedItemsVi: 0, uploadedHints: 0, total: 0 };
   }
 
-  const voiceEn = options?.voiceEn || 'aura-asteria-en';
+  const voiceEn = (options?.voiceEn === 'aura-theia-en' || !options?.voiceEn) ? 'aura-asteria-en' : options.voiceEn;
   const voiceVi = options?.voiceVi || 'vi-VN-Neural2-A';
 
   let uploadedItemsEn = 0;
@@ -221,58 +222,29 @@ export async function syncImprovPackageCachedAudioToCloud(
       processedItemsCount++;
       options?.onProgress?.(processedItemsCount, total, `Kiểm tra Session ${session.sessionNumber} - Item #${item.itemNumber}...`);
 
-      // 1. Sync item EN combined audio if needed
-      if (options?.forceOverwrite || !item.audioUrl || !item.audioUrl.startsWith('http') || item.audioUrl === 'cached') {
-        const k1 = `improv_item_${item.id}_${voiceEn}_${voiceVi}_EN_ONLY`;
-        const k2 = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`;
-        const cached = (await audioPlayer.getCachedAudioAsync(k1)) || (await audioPlayer.getCachedAudioAsync(k2));
-        if (cached) {
-          try {
-            const gcsUrl = await uploadImprovBase64AudioToGcs({
-              base64Audio: cached,
-              pkgId: pkg.id,
-              id: item.id,
-              lang: 'en',
-              isHint: false
-            });
-            item.audioUrl = gcsUrl;
-            hasModifications = true;
-            uploadedItemsEn++;
-          } catch (err) {
-            console.warn(`[GCS Improv Sync] Failed item EN ${item.id}:`, err);
-          }
-        }
-      }
-
-      // 2. Sync item VI combined audio if needed
-      if (options?.forceOverwrite || !item.audioUrlVi || !item.audioUrlVi.startsWith('http')) {
-        const kVi = `improv_item_${item.id}_${voiceEn}_${voiceVi}_VI_ONLY`;
-        const cachedVi = await audioPlayer.getCachedAudioAsync(kVi);
-        if (cachedVi) {
-          try {
-            const gcsUrlVi = await uploadImprovBase64AudioToGcs({
-              base64Audio: cachedVi,
-              pkgId: pkg.id,
-              id: item.id,
-              lang: 'vi',
-              isHint: false
-            });
-            item.audioUrlVi = gcsUrlVi;
-            hasModifications = true;
-            uploadedItemsVi++;
-          } catch (err) {
-            console.warn(`[GCS Improv Sync] Failed item VI ${item.id}:`, err);
-          }
-        }
-      }
-
-      // 3. Sync individual hints
+      // 1. Sync individual hints FIRST so item combined synthesis has ready access
       if (item.hints && item.hints.length > 0) {
         for (let hIdx = 0; hIdx < item.hints.length; hIdx++) {
           const hint = item.hints[hIdx];
+
+          // EN Hint
           if (options?.forceOverwrite || !hint.audioUrl || !hint.audioUrl.startsWith('http')) {
-            const hKeyEn = `improv_hint_${hint.id}_${voiceEn}_en`;
-            const hCached = await audioPlayer.getCachedAudioAsync(hKeyEn);
+            const hKeysEn = [
+              `improv_hint_${hint.id}_${voiceEn}_en`,
+              `improv_hint_${hint.id}_aura-asteria-en_en`,
+              `improv_hint_${hint.id}_aura-athena-en_en`,
+              `improv_hint_${hint.id}_en-US-Journey-F_en`,
+              `improv_hint_${hint.id}_en-US-Neural2-A_en`
+            ];
+            let hCached: string | null = null;
+            for (const k of hKeysEn) {
+              hCached = await audioPlayer.getCachedAudioAsync(k);
+              if (hCached) break;
+            }
+            if (!hCached && hint.text) {
+              hCached = (await audioPlayer.getCachedAudioAsync(hint.text, voiceEn)) || (await audioPlayer.getCachedAudioAsync(hint.text));
+            }
+
             if (hCached) {
               try {
                 const gcsHintUrl = await uploadImprovBase64AudioToGcs({
@@ -291,9 +263,24 @@ export async function syncImprovPackageCachedAudioToCloud(
             }
           }
 
+          // VI Hint
           if (options?.forceOverwrite || !hint.audioUrlVi || !hint.audioUrlVi.startsWith('http')) {
-            const hKeyVi = `improv_hint_${hint.id}_${voiceVi}_vi`;
-            const hCachedVi = await audioPlayer.getCachedAudioAsync(hKeyVi);
+            const hKeysVi = [
+              `improv_hint_${hint.id}_${voiceVi}_vi`,
+              `improv_hint_${hint.id}_vi-VN-Neural2-A_vi`,
+              `improv_hint_${hint.id}_vi-VN-Standard-A_vi`,
+              `improv_hint_${hint.id}_vi-VN-WaveNet-A_vi`
+            ];
+            let hCachedVi: string | null = null;
+            for (const k of hKeysVi) {
+              hCachedVi = await audioPlayer.getCachedAudioAsync(k);
+              if (hCachedVi) break;
+            }
+            const viText = hint.translation || hint.text;
+            if (!hCachedVi && viText) {
+              hCachedVi = (await audioPlayer.getCachedAudioAsync(viText, voiceVi)) || (await audioPlayer.getCachedAudioAsync(viText));
+            }
+
             if (hCachedVi) {
               try {
                 const gcsHintUrlVi = await uploadImprovBase64AudioToGcs({
@@ -310,6 +297,90 @@ export async function syncImprovPackageCachedAudioToCloud(
                 console.warn(`[GCS Improv Sync] Failed hint VI ${hint.id}:`, err);
               }
             }
+          }
+        }
+      }
+
+      // 2. Sync item EN combined audio if needed
+      if (options?.forceOverwrite || !item.audioUrl || !item.audioUrl.startsWith('http') || item.audioUrl === 'cached') {
+        const itemEnKeys = [
+          `improv_item_${item.id}_${voiceEn}_${voiceVi}_EN_ONLY`,
+          `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_EN_ONLY`,
+          `improv_item_${item.id}_aura-athena-en_vi-VN-Neural2-A_EN_ONLY`,
+          `improv_item_${item.id}_en-US-Journey-F_vi-VN-Neural2-A_EN_ONLY`
+        ];
+        let itemBase64: string | null = null;
+        for (const k of itemEnKeys) {
+          itemBase64 = await audioPlayer.getCachedAudioAsync(k);
+          if (itemBase64) break;
+        }
+
+        // IF NOT IN CACHE, BUT hints are present: dynamically synthesize item audio on-the-fly!
+        if (!itemBase64 && item.hints && item.hints.length > 0) {
+          try {
+            itemBase64 = await improvTts.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, 'EN_ONLY');
+          } catch (synthErr) {
+            console.warn(`[GCS Improv Sync] Dynamic synthesis of item EN ${item.id} skipped/failed:`, synthErr);
+          }
+        }
+
+        if (itemBase64) {
+          try {
+            const gcsUrl = await uploadImprovBase64AudioToGcs({
+              base64Audio: itemBase64,
+              pkgId: pkg.id,
+              id: item.id,
+              lang: 'en',
+              isHint: false
+            });
+            item.audioUrl = gcsUrl;
+            hasModifications = true;
+            uploadedItemsEn++;
+          } catch (err) {
+            console.warn(`[GCS Improv Sync] Failed item EN ${item.id}:`, err);
+          }
+        }
+      }
+
+      // 3. Sync item VI combined audio if needed
+      if (options?.forceOverwrite || !item.audioUrlVi || !item.audioUrlVi.startsWith('http')) {
+        const itemViKeys = [
+          `improv_item_${item.id}_${voiceEn}_${voiceVi}_VI_ONLY`,
+          `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_VI_ONLY`,
+          `improv_item_${item.id}_aura-athena-en_vi-VN-Neural2-A_VI_ONLY`,
+          `improv_item_${item.id}_en-US-Journey-F_vi-VN-Neural2-A_VI_ONLY`
+        ];
+        let itemBase64Vi: string | null = null;
+        for (const k of itemViKeys) {
+          itemBase64Vi = await audioPlayer.getCachedAudioAsync(k);
+          if (itemBase64Vi) break;
+        }
+
+        if (!itemBase64Vi && item.hints && item.hints.length > 0) {
+          const hasVi = item.hints.some(h => (h.translation && h.translation.trim()) || /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(h.text));
+          if (hasVi) {
+            try {
+              itemBase64Vi = await improvTts.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, 'VI_ONLY');
+            } catch (synthErr) {
+              console.warn(`[GCS Improv Sync] Dynamic synthesis of item VI ${item.id} skipped/failed:`, synthErr);
+            }
+          }
+        }
+
+        if (itemBase64Vi) {
+          try {
+            const gcsUrlVi = await uploadImprovBase64AudioToGcs({
+              base64Audio: itemBase64Vi,
+              pkgId: pkg.id,
+              id: item.id,
+              lang: 'vi',
+              isHint: false
+            });
+            item.audioUrlVi = gcsUrlVi;
+            hasModifications = true;
+            uploadedItemsVi++;
+          } catch (err) {
+            console.warn(`[GCS Improv Sync] Failed item VI ${item.id}:`, err);
           }
         }
       }

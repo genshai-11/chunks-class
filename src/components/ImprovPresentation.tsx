@@ -21,6 +21,7 @@ import {
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { 
+  improvTts,
   getHintTextByLanguage, 
   isSessionAudioReady, 
   isPackageAudioReady 
@@ -91,9 +92,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
   // Audio Engine & Synthesis State
   const [languageMode, setLanguageMode] = useState<'EN_ONLY' | 'VI_ONLY'>('EN_ONLY');
-  const [selectedVoice, setSelectedVoice] = useState<string>(
-    audioSettings?.voice_profile_en || 'aura-asteria-en'
-  );
+  const [selectedVoice, setSelectedVoice] = useState<string>(() => {
+    const v = audioSettings?.voice_profile_en;
+    return (v && v !== 'aura-theia-en') ? v : 'aura-asteria-en';
+  });
   const [selectedVoiceVi, setSelectedVoiceVi] = useState<string>(
     audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
   );
@@ -194,7 +196,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   // Sync audioSettings if updated
   useEffect(() => {
     if (audioSettings?.voice_profile_en) {
-      setSelectedVoice(audioSettings.voice_profile_en);
+      const v = audioSettings.voice_profile_en;
+      setSelectedVoice((v && v !== 'aura-theia-en') ? v : 'aura-asteria-en');
     }
     if (audioSettings?.voice_profile_vi) {
       setSelectedVoiceVi(audioSettings.voice_profile_vi);
@@ -367,15 +370,19 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     );
   }, [packages, packageSearchQuery]);
 
-  // Audio Playback Engine: Sequential Hints with 1-second gap
+  // Audio Playback Engine: Sequential Hints with 1-second gap (Cache & GCS First)
   const playRevealedHintsAudio = async (
     hintsToPlay: ImprovHint[],
     voiceEn: string = selectedVoice,
     voiceVi: string = selectedVoiceVi
   ) => {
     audioPlayer.stop();
+    improvTts.stop();
     const seqId = ++activeSequenceRef.current;
     setIsPlayingAudio(true);
+
+    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'aura-asteria-en';
+    const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
       for (let i = 0; i < hintsToPlay.length; i++) {
@@ -389,14 +396,35 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         if (languageMode === 'VI_ONLY') {
           const textToSpeak = viText || enText;
           if (textToSpeak) {
-            const streamUrlVi = hint.audioUrlVi && hint.audioUrlVi.startsWith('http') ? hint.audioUrlVi : null;
-            await audioPlayer.playChunk(textToSpeak, streamUrlVi, voiceVi || 'vi-VN-Neural2-A', speed);
+            if (hint.audioUrlVi && hint.audioUrlVi.startsWith('http')) {
+              await audioPlayer.playChunk(textToSpeak, hint.audioUrlVi, effectiveVoiceVi, speed);
+            } else {
+              const hintKeyVi = `improv_hint_${hint.id}_${effectiveVoiceVi}_vi`;
+              const cachedVi = (await audioPlayer.getCachedAudioAsync(hintKeyVi)) ||
+                               (await audioPlayer.getCachedAudioAsync(viText || hint.translation, effectiveVoiceVi));
+              if (cachedVi) {
+                await audioPlayer.playBase64(cachedVi, speed);
+              } else {
+                await audioPlayer.playChunk(textToSpeak, null, effectiveVoiceVi, speed);
+              }
+            }
           }
         } else {
           // EN_ONLY
           if (enText) {
-            const streamUrlEn = hint.audioUrl && hint.audioUrl.startsWith('http') ? hint.audioUrl : null;
-            await audioPlayer.playChunk(enText, streamUrlEn, voiceEn, speed, voiceEn.startsWith('en-US'));
+            if (hint.audioUrl && hint.audioUrl.startsWith('http')) {
+              await audioPlayer.playChunk(enText, hint.audioUrl, effectiveVoiceEn, speed);
+            } else {
+              const hintKeyEn = `improv_hint_${hint.id}_${effectiveVoiceEn}_en`;
+              const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn)) ||
+                               (await audioPlayer.getCachedAudioAsync(`improv_hint_${hint.id}_aura-asteria-en_en`)) ||
+                               (await audioPlayer.getCachedAudioAsync(enText, effectiveVoiceEn));
+              if (cachedEn) {
+                await audioPlayer.playBase64(cachedEn, speed);
+              } else {
+                await audioPlayer.playChunk(enText, null, effectiveVoiceEn, speed);
+              }
+            }
           }
         }
 
@@ -416,7 +444,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     }
   };
 
-  // Play single hint audio
+  // Play single hint audio (Cache & GCS First)
   const playSingleHintAudio = async (
     hint: ImprovHint,
     index: number,
@@ -424,9 +452,13 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     voiceVi: string = selectedVoiceVi
   ) => {
     audioPlayer.stop();
+    improvTts.stop();
     const seqId = ++activeSequenceRef.current;
     setIsPlayingAudio(true);
     setActivePlayingHintIndex(index);
+
+    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'aura-asteria-en';
+    const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
       const enText = getHintTextByLanguage(hint, 'en') || hint.text;
@@ -435,14 +467,35 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       if (languageMode === 'VI_ONLY') {
         const textToSpeak = viText || enText;
         if (textToSpeak) {
-          const streamUrlVi = hint.audioUrlVi && hint.audioUrlVi.startsWith('http') ? hint.audioUrlVi : null;
-          await audioPlayer.playChunk(textToSpeak, streamUrlVi, voiceVi || 'vi-VN-Neural2-A', speed);
+          if (hint.audioUrlVi && hint.audioUrlVi.startsWith('http')) {
+            await audioPlayer.playChunk(textToSpeak, hint.audioUrlVi, effectiveVoiceVi, speed);
+          } else {
+            const hintKeyVi = `improv_hint_${hint.id}_${effectiveVoiceVi}_vi`;
+            const cachedVi = (await audioPlayer.getCachedAudioAsync(hintKeyVi)) ||
+                             (await audioPlayer.getCachedAudioAsync(viText || hint.translation, effectiveVoiceVi));
+            if (cachedVi) {
+              await audioPlayer.playBase64(cachedVi, speed);
+            } else {
+              await audioPlayer.playChunk(textToSpeak, null, effectiveVoiceVi, speed);
+            }
+          }
         }
       } else {
         // EN_ONLY
         if (enText) {
-          const streamUrlEn = hint.audioUrl && hint.audioUrl.startsWith('http') ? hint.audioUrl : null;
-          await audioPlayer.playChunk(enText, streamUrlEn, voiceEn, speed, voiceEn.startsWith('en-US'));
+          if (hint.audioUrl && hint.audioUrl.startsWith('http')) {
+            await audioPlayer.playChunk(enText, hint.audioUrl, effectiveVoiceEn, speed);
+          } else {
+            const hintKeyEn = `improv_hint_${hint.id}_${effectiveVoiceEn}_en`;
+            const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn)) ||
+                             (await audioPlayer.getCachedAudioAsync(`improv_hint_${hint.id}_aura-asteria-en_en`)) ||
+                             (await audioPlayer.getCachedAudioAsync(enText, effectiveVoiceEn));
+            if (cachedEn) {
+              await audioPlayer.playBase64(cachedEn, speed);
+            } else {
+              await audioPlayer.playChunk(enText, null, effectiveVoiceEn, speed);
+            }
+          }
         }
       }
     } catch (err) {
@@ -451,6 +504,61 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       if (activeSequenceRef.current === seqId) {
         setIsPlayingAudio(false);
         setActivePlayingHintIndex(null);
+      }
+    }
+  };
+
+  // Play continuous combined item audio or fallback to revealed hints
+  const playWholeItemAudio = async (
+    item: ImprovItem,
+    voiceEn: string = selectedVoice,
+    voiceVi: string = selectedVoiceVi
+  ) => {
+    audioPlayer.stop();
+    improvTts.stop();
+    const seqId = ++activeSequenceRef.current;
+    setIsPlayingAudio(true);
+
+    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'aura-asteria-en';
+    const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
+
+    try {
+      if (languageMode === 'VI_ONLY') {
+        if (item.audioUrlVi && item.audioUrlVi.startsWith('http')) {
+          await improvTts.playItemAudio(item, speed, undefined, effectiveVoiceEn, effectiveVoiceVi, 'VI_ONLY');
+          return;
+        }
+        const itemCacheKeyVi = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_VI_ONLY`;
+        const cachedVi = (await audioPlayer.getCachedAudioAsync(itemCacheKeyVi)) ||
+                         (await audioPlayer.getCachedAudioAsync(`improv_item_${item.id}_aura-asteria-en_${effectiveVoiceVi}_VI_ONLY`));
+        if (cachedVi) {
+          await audioPlayer.playBase64(cachedVi, speed);
+          return;
+        }
+      } else {
+        // EN_ONLY
+        if (item.audioUrl && item.audioUrl.startsWith('http')) {
+          await improvTts.playItemAudio(item, speed, undefined, effectiveVoiceEn, effectiveVoiceVi, 'EN_ONLY');
+          return;
+        }
+        const itemCacheKeyEn = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_EN_ONLY`;
+        const cachedEn = (await audioPlayer.getCachedAudioAsync(itemCacheKeyEn)) ||
+                         (await audioPlayer.getCachedAudioAsync(`improv_item_${item.id}_aura-asteria-en_${effectiveVoiceVi}_EN_ONLY`));
+        if (cachedEn) {
+          await audioPlayer.playBase64(cachedEn, speed);
+          return;
+        }
+      }
+
+      // If neither GCS stream URL nor combined continuous cache exists: play hints sequentially
+      if (item.hints && item.hints.length > 0) {
+        await playRevealedHintsAudio(item.hints, effectiveVoiceEn, effectiveVoiceVi);
+      }
+    } catch (err) {
+      console.warn('[ImprovPresentation] Whole item audio playback notice:', err);
+    } finally {
+      if (activeSequenceRef.current === seqId) {
+        setIsPlayingAudio(false);
       }
     }
   };
@@ -490,8 +598,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         setCurrentItemIndex(nextIndex);
         setCurrentRevealStep(items[nextIndex]?.hints?.length || 1);
         const nextItem = items[nextIndex];
-        if (nextItem && nextItem.hints) {
-          playRevealedHintsAudio(nextItem.hints, selectedVoice, selectedVoiceVi);
+        if (nextItem) {
+          playWholeItemAudio(nextItem, selectedVoice, selectedVoiceVi);
         }
       }
     }
@@ -529,7 +637,11 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       const revealed = hints.slice(0, currentRevealStep);
       playRevealedHintsAudio(revealed, selectedVoice, selectedVoiceVi);
     } else {
-      playRevealedHintsAudio(hints, selectedVoice, selectedVoiceVi);
+      if (currentItem) {
+        playWholeItemAudio(currentItem, selectedVoice, selectedVoiceVi);
+      } else {
+        playRevealedHintsAudio(hints, selectedVoice, selectedVoiceVi);
+      }
     }
   };
 
@@ -1003,7 +1115,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         }`}
                       >
                         <optgroup label="Deepgram Aura (Ultra-Fast 0ms)">
-                          {DEEPGRAM_AURA_VOICES.map((v) => (
+                          {DEEPGRAM_AURA_VOICES.filter(v => v.id !== 'aura-theia-en').map((v) => (
                             <option key={v.id} value={v.id}>
                               {v.name} ({v.gender})
                             </option>

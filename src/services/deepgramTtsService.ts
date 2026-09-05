@@ -92,13 +92,15 @@ export const DEEPGRAM_AURA_VOICES: DeepgramVoiceOption[] = [
     description: 'Commanding, deep male articulation for presentations.'
   },
   {
-    id: 'aura-theia-en',
-    name: 'Aura Theia (Female - Warm & Engaging)',
+    id: 'aura-athena-en',
+    name: 'Aura Athena (Female - Calm & Clear)',
     gender: 'FEMALE',
     accent: 'US',
-    description: 'Polite, expressive, and engaging conversational voice.'
+    description: 'Calm, clear, and confident conversational female voice.'
   }
 ];
+
+export const DEEPGRAM_VOICES = DEEPGRAM_AURA_VOICES;
 
 /**
  * Natural Prosody & Speech Text Sanitizer:
@@ -162,7 +164,16 @@ class DeepgramTtsService {
     const cleanText = sanitizeSpeechText(text);
     if (!cleanText) throw new Error('Text to synthesize is empty');
 
-    const cacheKey = `dg_${modelName}_${cleanText}`;
+    let effectiveModel = modelName;
+    if (!effectiveModel || effectiveModel === 'aura-theia-en') {
+      effectiveModel = 'aura-asteria-en';
+    }
+    const validModelIds = DEEPGRAM_VOICES.map(v => v.id);
+    if (!validModelIds.includes(effectiveModel)) {
+      effectiveModel = 'aura-asteria-en';
+    }
+
+    const cacheKey = `dg_${effectiveModel}_${cleanText}`;
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!;
     }
@@ -172,7 +183,7 @@ class DeepgramTtsService {
       throw new Error('Deepgram API Key is missing. Please configure VITE_DEEPGRAM_API_KEY.');
     }
 
-    const url = `https://api.deepgram.com/v1/speak?model=${modelName}&encoding=mp3`;
+    const url = `https://api.deepgram.com/v1/speak?model=${effectiveModel}&encoding=mp3`;
 
     const response = await fetch(url, {
       method: 'POST',
