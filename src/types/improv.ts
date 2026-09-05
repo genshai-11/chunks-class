@@ -10,6 +10,8 @@ export interface ImprovHint {
   translation: string;
   typeFunction: string;
   itemIndex: number;
+  audioUrl?: string;
+  audioUrlVi?: string;
 }
 
 export interface ImprovItem {
@@ -19,6 +21,7 @@ export interface ImprovItem {
   hcTotal: number;
   hints: ImprovHint[];
   audioUrl?: string;
+  audioUrlVi?: string;
   createdAt?: string;
 }
 

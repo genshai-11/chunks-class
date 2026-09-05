@@ -13,6 +13,7 @@ import {
   AudioSourceType, 
   AudioBatchTarget,
   GOOGLE_TTS_VOICES,
+  ALL_VOICES,
   sanitizeSpeechText 
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
@@ -39,6 +40,7 @@ import {
   Search, 
   X, 
   ChevronRight, 
+  ChevronDown, 
   Headphones, 
   Radio, 
   FileAudio, 
@@ -163,6 +165,18 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [isSyncingToCloud, setIsSyncingToCloud] = useState<boolean>(false);
   const [syncCloudProgress, setSyncCloudProgress] = useState<string | null>(null);
 
+  // Per-chunk custom voice model overrides & expandable settings
+  const [chunkVoiceEn, setChunkVoiceEn] = useState<Record<string, string>>({});
+  const [chunkVoiceVi, setChunkVoiceVi] = useState<Record<string, string>>({});
+  const [expandedChunkVoiceConfig, setExpandedChunkVoiceConfig] = useState<Record<string, boolean>>({});
+
+  // Check if all lessons in current level have 100% GCS Master audio
+  const isAllLessonsGcsSynced = lessons.length > 0 && lessons.every(lesson => {
+    const chunks = lesson.chunks || [];
+    if (chunks.length === 0) return false;
+    return chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder')));
+  });
+
   // Load available courses on mount
   useEffect(() => {
     const allCourses = curriculumRegistry.getAllCourses();
@@ -180,22 +194,32 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     return unsub;
   }, []);
 
-  // Fetch lessons for the selected course level
+  // Fetch all lessons for the selected course level
   const loadLessons = useCallback(async () => {
     setIsLoadingLessons(true);
     try {
-      const fetchedLessons = await getAllLessons(selectedCourseLevel);
-      setLessons(fetchedLessons);
-      if (fetchedLessons.length > 0) {
-        setBatchTargetLessonId(prev => {
-          if (!prev || !fetchedLessons.some(l => l.id === prev)) {
-            return fetchedLessons[0].id;
-          }
-          return prev;
-        });
+      const fetched = await getAllLessons(selectedCourseLevel);
+      if (fetched && fetched.length > 0) {
+        setLessons(fetched);
+        setBatchTargetLessonId(prev => (!prev || !fetched.some(l => l.id === prev)) ? fetched[0].id : prev);
+        if (!inspectingLesson) {
+          setInspectingLesson(fetched[0]);
+        }
+      } else {
+        const defaultLessons = curriculumRegistry.getLessons(selectedCourseLevel);
+        setLessons(defaultLessons);
+        if (defaultLessons.length > 0) {
+          setBatchTargetLessonId(prev => (!prev || !defaultLessons.some(l => l.id === prev)) ? defaultLessons[0].id : prev);
+        }
+        if (!inspectingLesson && defaultLessons.length > 0) {
+          setInspectingLesson(defaultLessons[0]);
+        }
       }
-    } catch (e) {
-      console.error('Failed to load lessons for audio manager:', e);
+    } catch (e: any) {
+      console.error('Failed to load lessons for AudioManager:', e);
+      const fallback = curriculumRegistry.getLessons(selectedCourseLevel);
+      setLessons(fallback);
+      if (fallback.length > 0) setInspectingLesson(fallback[0]);
     } finally {
       setIsLoadingLessons(false);
     }
@@ -215,8 +239,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     const calculated = lessons.map((lesson) => {
       const chunks = lesson.chunks || [];
       const status = audioPlayer.getLessonAudioStatus(chunks, voiceProfileEn, voiceProfileVi);
-      const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http'))).length;
-      const enPercent = chunks.length > 0 ? Math.round((status.enCached / chunks.length) * 100) : 0;
+      const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+      const isEnReady = status.enCached === chunks.length || gcsCount === chunks.length;
+      const enPercent = chunks.length > 0 ? (isEnReady ? 100 : Math.round((status.enCached / chunks.length) * 100)) : 0;
       const viPercent = chunks.length > 0 ? Math.round((status.viCached / chunks.length) * 100) : 0;
 
       return {
@@ -224,12 +249,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         dayNumber: lesson.day_number,
         title: lesson.lesson_title || `Day ${lesson.day_number}`,
         totalChunks: chunks.length,
-        enCached: status.enCached,
+        enCached: isEnReady ? chunks.length : status.enCached,
         viCached: status.viCached,
         gcsCount,
         enPercent,
         viPercent,
-        isFullyCached: status.isFullyCached
+        isFullyCached: status.isFullyCached || isEnReady
       };
     });
 
@@ -324,18 +349,24 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     }
   };
 
-  // Single chunk regeneration handler with explicit language target (EN, VI, or BOTH) and text override
+  // Single chunk regeneration handler with explicit language target (EN, VI, or BOTH), text override, and voice override
   const handleRegenerateChunkAudio = async (
     chunk: ChunkItem, 
     targetLang: 'en' | 'vi' | 'both' = 'both',
     textEnOverride?: string,
-    textViOverride?: string
+    textViOverride?: string,
+    voiceEnOverride?: string,
+    voiceViOverride?: string
   ) => {
     setRegeneratingChunkId(chunk.chunk_id);
     setRegeneratingTarget(targetLang);
     try {
       const enText = sanitizeSpeechText(textEnOverride || chunk.english);
       const viText = sanitizeSpeechText(textViOverride || chunk.vietnamese || '');
+
+      const effectiveVoiceEn = voiceEnOverride || voiceProfileEn;
+      const effectiveVoiceVi = voiceViOverride || voiceProfileVi;
+      const effectiveProvider: AudioProvider = effectiveVoiceEn.startsWith('aura-') ? 'DEEPGRAM_AURA' : 'GOOGLE_TTS';
 
       const effectiveLesson = inspectingLesson || lessons.find(l => l.chunks?.some(c => c.chunk_id === chunk.chunk_id)) || lessons[0];
       const effectiveLessonId = effectiveLesson?.id || '';
@@ -345,8 +376,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           const synthRes = await audioPlayer.synthesizeSingleChunk({
             text: enText,
             language: 'en',
-            voiceName: voiceProfileEn,
-            provider: activeProvider,
+            voiceName: effectiveVoiceEn,
+            provider: effectiveProvider,
             forceRegenerate: true
           });
           if (synthRes?.base64) {
@@ -371,7 +402,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           const synthResVi = await audioPlayer.synthesizeSingleChunk({
             text: viText,
             language: 'vi',
-            voiceName: voiceProfileVi,
+            voiceName: effectiveVoiceVi,
             provider: 'GOOGLE_TTS',
             forceRegenerate: true
           });
@@ -978,11 +1009,21 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               type="button"
               disabled={isSyncingToCloud || isBatchRunning}
               onClick={handleSyncCacheToCloud}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
-              title="Tải toàn bộ audio đã có trong cache trình duyệt lên Cloud Storage bucket để dùng vĩnh viễn"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 ${
+                isAllLessonsGcsSynced
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+              title={isAllLessonsGcsSynced ? "Toàn bộ bài học trong level đã được đồng bộ 100% lên Cloud Storage" : "Tải toàn bộ audio đã có trong cache trình duyệt lên Cloud Storage bucket để dùng vĩnh viễn"}
             >
-              <CloudUpload className={`w-3.5 h-3.5 ${isSyncingToCloud ? 'animate-bounce' : ''}`} />
-              <span>{isSyncingToCloud ? 'Đang sync lên Cloud...' : 'Sync Cache ➔ Cloud Bucket'}</span>
+              {isSyncingToCloud ? (
+                <CloudUpload className="w-3.5 h-3.5 animate-bounce" />
+              ) : isAllLessonsGcsSynced ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+              ) : (
+                <CloudUpload className="w-3.5 h-3.5" />
+              )}
+              <span>{isSyncingToCloud ? 'Đang sync lên Cloud...' : isAllLessonsGcsSynced ? '✓ Đã đồng bộ Cloud (100%)' : 'Sync Cache ➔ Cloud Bucket'}</span>
             </button>
 
             {/* Running Indicator */}
@@ -1254,11 +1295,21 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               type="button"
               disabled={isSyncingToCloud || isBatchRunning}
               onClick={handleSyncCacheToCloud}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
-              title="Tải toàn bộ audio đã có trong cache trình duyệt lên Cloud Storage bucket để dùng vĩnh viễn"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 ${
+                isAllLessonsGcsSynced
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+              title={isAllLessonsGcsSynced ? "Toàn bộ bài học trong level đã được đồng bộ 100% lên Cloud Storage" : "Tải toàn bộ audio đã có trong cache trình duyệt lên Cloud Storage bucket để dùng vĩnh viễn"}
             >
-              <CloudUpload className={`w-3.5 h-3.5 ${isSyncingToCloud ? 'animate-bounce' : ''}`} />
-              <span>{isSyncingToCloud ? 'Đang sync lên Cloud...' : 'Sync Cache ➔ Cloud Bucket'}</span>
+              {isSyncingToCloud ? (
+                <CloudUpload className="w-3.5 h-3.5 animate-bounce" />
+              ) : isAllLessonsGcsSynced ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+              ) : (
+                <CloudUpload className="w-3.5 h-3.5" />
+              )}
+              <span>{isSyncingToCloud ? 'Đang sync lên Cloud...' : isAllLessonsGcsSynced ? '✓ Đã đồng bộ Cloud (100%)' : 'Sync Cache ➔ Cloud Bucket'}</span>
             </button>
 
             {/* Refresh Cache Button */}
@@ -1376,11 +1427,18 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
                       {/* GCS Master */}
                       <td className="py-3.5 px-4 text-center">
-                        <span className={`px-2 py-0.5 rounded-md font-mono text-[11px] font-bold ${
-                          item.gcsCount > 0 ? 'bg-blue-50 text-blue-700' : 'text-zinc-400'
-                        }`}>
-                          {item.gcsCount > 0 ? `${item.gcsCount} files` : '—'}
-                        </span>
+                        {item.totalChunks > 0 && item.gcsCount === item.totalChunks ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-mono text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>100% GCS Master</span>
+                          </span>
+                        ) : (
+                          <span className={`px-2 py-0.5 rounded-md font-mono text-[11px] font-bold ${
+                            item.gcsCount > 0 ? 'bg-blue-50 text-blue-700' : 'text-zinc-400'
+                          }`}>
+                            {item.gcsCount > 0 ? `${item.gcsCount} files` : '—'}
+                          </span>
+                        )}
                       </td>
 
                       {/* Action Buttons */}
@@ -1454,9 +1512,24 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   Day {inspectingLesson.day_number}
                 </span>
                 <div>
-                  <h3 className="font-display font-bold text-lg text-zinc-900">
-                    {inspectingLesson.lesson_title}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display font-bold text-lg text-zinc-900">
+                      {inspectingLesson.lesson_title}
+                    </h3>
+                    {(() => {
+                      const chunks = inspectingLesson.chunks || [];
+                      const gcs = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+                      if (chunks.length > 0 && gcs === chunks.length) {
+                        return (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>100% GCS Master</span>
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                   <div className="text-xs text-zinc-500 font-mono mt-0.5">
                     ID: {inspectingLesson.id} • Tổng: {inspectingLesson.chunks?.length || 0} Chunks
                   </div>
@@ -1552,6 +1625,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   const isEditingThis = editingChunkId === chunk.chunk_id;
                   const isEnCached = audioPlayer.getLessonAudioStatus([chunk], voiceProfileEn, voiceProfileVi).enCached > 0;
                   const isViCached = audioPlayer.getLessonAudioStatus([chunk], voiceProfileEn, voiceProfileVi).viCached > 0;
+                  const isVoiceConfigOpen = Boolean(expandedChunkVoiceConfig[chunk.chunk_id]);
+                  const selectedVoiceEn = chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
+                  const selectedVoiceVi = chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
 
                   if (isEditingThis) {
                     return (
@@ -1665,168 +1741,269 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   return (
                     <div
                       key={chunk.chunk_id}
-                      className="pt-3 first:pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 p-3 rounded-xl hover:bg-zinc-50 transition-colors"
+                      className="pt-3 first:pt-0 flex flex-col p-3 rounded-xl hover:bg-zinc-50 transition-colors border border-transparent hover:border-zinc-200/60"
                     >
-                      {/* Left: Text & Info */}
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono font-bold text-xs text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded">
-                            #{chunk.item_number}
-                          </span>
-                          <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-200/80 text-zinc-700">
-                            {chunk.category || 'vocab'}
-                          </span>
-                          {chunk.audio_url && (
-                            <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                              GCS Master
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        {/* Left: Text & Info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono font-bold text-xs text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded">
+                              #{chunk.item_number}
                             </span>
-                          )}
+                            <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-200/80 text-zinc-700">
+                              {chunk.category || 'vocab'}
+                            </span>
+                            {chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder') && (
+                              <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                                GCS Master
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingChunkId(chunk.chunk_id);
+                                setEditEnText(chunk.english);
+                                setEditViText(chunk.vietnamese || '');
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-blue-600 text-[11px] font-semibold transition-colors cursor-pointer"
+                              title="Sửa nhanh nội dung câu tiếng Anh & tiếng Việt"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              <span>Sửa Text</span>
+                            </button>
+                          </div>
+
+                          {/* English with Highlighted Prosody */}
+                          <div className="text-sm font-bold text-zinc-900 leading-snug">
+                            {chunk.english.split('//').map((part, idx, arr) => (
+                              <React.Fragment key={idx}>
+                                <span>{part}</span>
+                                {idx < arr.length - 1 && (
+                                  <span className="text-[#DC2626] font-bold px-1 select-none">
+                                    //
+                                  </span>
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </div>
+
+                          {/* Vietnamese Translation */}
+                          <div className="text-xs text-zinc-600 font-medium">
+                            {chunk.vietnamese}
+                          </div>
+                        </div>
+
+                        {/* Right: Audio Audition & Regeneration Controls */}
+                        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                          {/* Play EN */}
                           <button
                             type="button"
-                            onClick={() => {
-                              setEditingChunkId(chunk.chunk_id);
-                              setEditEnText(chunk.english);
-                              setEditViText(chunk.vietnamese || '');
-                            }}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-blue-600 text-[11px] font-semibold transition-colors cursor-pointer"
-                            title="Sửa nhanh nội dung câu tiếng Anh & tiếng Việt"
+                            disabled={isPlayingThis && playingLang === 'en'}
+                            onClick={() => handlePlayChunk(chunk, 'en')}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
+                              isPlayingThis && playingLang === 'en'
+                                ? 'bg-[#DC2626] text-white'
+                                : isEnCached
+                                ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800'
+                                : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200'
+                            }`}
+                            title="Nghe thử tiếng Anh"
                           >
-                            <Edit3 className="w-3 h-3" />
-                            <span>Sửa Text</span>
+                            {isPlayingThis && playingLang === 'en' ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Volume2 className="w-3.5 h-3.5 text-[#DC2626]" />
+                            )}
+                            <span>EN {isEnCached && '✓'}</span>
+                          </button>
+
+                          {/* Play VI */}
+                          <button
+                            type="button"
+                            disabled={isPlayingThis && playingLang === 'vi'}
+                            onClick={() => handlePlayChunk(chunk, 'vi')}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
+                              isPlayingThis && playingLang === 'vi'
+                                ? 'bg-emerald-600 text-white'
+                                : isViCached
+                                ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900'
+                                : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                            }`}
+                            title="Nghe thử tiếng Việt (Google Cloud TTS)"
+                          >
+                            {isPlayingThis && playingLang === 'vi' ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Volume2 className="w-3.5 h-3.5 text-emerald-600" />
+                            )}
+                            <span>VI {isViCached && '✓'}</span>
+                          </button>
+
+                          {/* Play Sequence EN -> VI */}
+                          <button
+                            type="button"
+                            disabled={isPlayingThis && playingLang === 'sequence'}
+                            onClick={() => handlePlayChunk(chunk, 'sequence')}
+                            className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 transition-colors cursor-pointer"
+                            title="Nghe chuỗi song ngữ EN ➔ VI"
+                          >
+                            {isPlayingThis && playingLang === 'sequence' ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
+                            ) : (
+                              <Play className="w-4 h-4 fill-current text-zinc-700" />
+                            )}
+                          </button>
+
+                          {/* Separator */}
+                          <div className="h-4 w-px bg-zinc-200 mx-0.5 hidden sm:block" />
+
+                          {/* Toggle Model & Language selector */}
+                          <button
+                            type="button"
+                            onClick={() => setExpandedChunkVoiceConfig(prev => ({
+                              ...prev,
+                              [chunk.chunk_id]: !prev[chunk.chunk_id]
+                            }))}
+                            className={`p-1.5 px-2 rounded-xl text-[11px] font-bold border transition-all cursor-pointer inline-flex items-center gap-1 ${
+                              isVoiceConfigOpen 
+                                ? 'bg-zinc-900 text-white border-zinc-900 shadow-2xs' 
+                                : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200'
+                            }`}
+                            title="Chọn Model & Giọng đọc riêng cho câu này"
+                          >
+                            <SlidersHorizontal className="w-3 h-3" />
+                            <span className="hidden sm:inline">Model</span>
+                            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isVoiceConfigOpen ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          {/* Regenerate EN Button */}
+                          <button
+                            type="button"
+                            disabled={isRegeneratingThis}
+                            onClick={() => handleRegenerateChunkAudio(chunk, 'en', undefined, undefined, selectedVoiceEn, selectedVoiceVi)}
+                            className="px-2 py-1 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            title="Tạo lại âm thanh tiếng Anh"
+                          >
+                            {isRegeneratingThis && regeneratingTarget === 'en' ? (
+                              <Loader2 className="w-3 h-3 animate-spin text-[#DC2626]" />
+                            ) : (
+                              <Zap className="w-3 h-3 text-[#DC2626]" />
+                            )}
+                            <span>Tạo EN</span>
+                          </button>
+
+                          {/* Regenerate VI Button */}
+                          <button
+                            type="button"
+                            disabled={isRegeneratingThis}
+                            onClick={() => handleRegenerateChunkAudio(chunk, 'vi', undefined, undefined, selectedVoiceEn, selectedVoiceVi)}
+                            className="px-2 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                            title="Tạo lại âm thanh tiếng Việt"
+                          >
+                            {isRegeneratingThis && regeneratingTarget === 'vi' ? (
+                              <Loader2 className="w-3 h-3 animate-spin text-emerald-600" />
+                            ) : (
+                              <Zap className="w-3 h-3 text-emerald-600" />
+                            )}
+                            <span>Tạo VI</span>
+                          </button>
+
+                          {/* Regenerate Both (EN + VI) Button */}
+                          <button
+                            type="button"
+                            disabled={isRegeneratingThis}
+                            onClick={() => handleRegenerateChunkAudio(chunk, 'both', undefined, undefined, selectedVoiceEn, selectedVoiceVi)}
+                            className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-amber-600 transition-colors cursor-pointer"
+                            title="Tạo lại cả 2 tiếng (EN + VI)"
+                          >
+                            {isRegeneratingThis && regeneratingTarget === 'both' ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                            ) : (
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            )}
                           </button>
                         </div>
-
-                        {/* English with Highlighted Prosody */}
-                        <div className="text-sm font-bold text-zinc-900 leading-snug">
-                          {chunk.english.split('//').map((part, idx, arr) => (
-                            <React.Fragment key={idx}>
-                              <span>{part}</span>
-                              {idx < arr.length - 1 && (
-                                <span className="text-[#DC2626] font-bold px-1 select-none">
-                                  //
-                                </span>
-                              )}
-                            </React.Fragment>
-                          ))}
-                        </div>
-
-                        {/* Vietnamese Translation */}
-                        <div className="text-xs text-zinc-600 font-medium">
-                          {chunk.vietnamese}
-                        </div>
                       </div>
 
-                      {/* Right: Audio Audition & Regeneration Controls */}
-                      <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-                        {/* Play EN */}
-                        <button
-                          type="button"
-                          disabled={isPlayingThis && playingLang === 'en'}
-                          onClick={() => handlePlayChunk(chunk, 'en')}
-                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
-                            isPlayingThis && playingLang === 'en'
-                              ? 'bg-[#DC2626] text-white'
-                              : isEnCached
-                              ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800'
-                              : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200'
-                          }`}
-                          title="Nghe thử tiếng Anh"
-                        >
-                          {isPlayingThis && playingLang === 'en' ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Volume2 className="w-3.5 h-3.5 text-[#DC2626]" />
-                          )}
-                          <span>EN {isEnCached && '✓'}</span>
-                        </button>
+                      {/* Expandable Model & Language Selector Bar */}
+                      {isVoiceConfigOpen && (
+                        <div className="mt-3 pt-3 border-t border-zinc-200/80 bg-zinc-50/90 p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 animate-fade-in shadow-2xs">
+                          <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+                            {/* EN Voice Select */}
+                            <div className="flex items-center gap-1.5 flex-1 min-w-[200px]">
+                              <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model EN:</span>
+                              <select
+                                value={selectedVoiceEn}
+                                onChange={(e) => setChunkVoiceEn(prev => ({ ...prev, [chunk.chunk_id]: e.target.value }))}
+                                className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#DC2626] cursor-pointer"
+                              >
+                                <optgroup label="Deepgram Aura">
+                                  {DEEPGRAM_AURA_VOICES.map(v => (
+                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                  ))}
+                                </optgroup>
+                                <optgroup label="Google Cloud TTS (en-US)">
+                                  {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
+                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                  ))}
+                                </optgroup>
+                              </select>
+                            </div>
 
-                        {/* Play VI */}
-                        <button
-                          type="button"
-                          disabled={isPlayingThis && playingLang === 'vi'}
-                          onClick={() => handlePlayChunk(chunk, 'vi')}
-                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
-                            isPlayingThis && playingLang === 'vi'
-                              ? 'bg-emerald-600 text-white'
-                              : isViCached
-                              ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900'
-                              : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
-                          }`}
-                          title="Nghe thử tiếng Việt (Google Cloud TTS)"
-                        >
-                          {isPlayingThis && playingLang === 'vi' ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Volume2 className="w-3.5 h-3.5 text-emerald-600" />
-                          )}
-                          <span>VI {isViCached && '✓'}</span>
-                        </button>
+                            {/* VI Voice Select */}
+                            <div className="flex items-center gap-1.5 flex-1 min-w-[200px]">
+                              <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model VI:</span>
+                              <select
+                                value={selectedVoiceVi}
+                                onChange={(e) => setChunkVoiceVi(prev => ({ ...prev, [chunk.chunk_id]: e.target.value }))}
+                                className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-emerald-600 cursor-pointer"
+                              >
+                                <optgroup label="Google Neural2 & WaveNet (vi-VN)">
+                                  {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && !v.id.includes('Chirp')).map(v => (
+                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                  ))}
+                                </optgroup>
+                                <optgroup label="Google Chirp3-HD (vi-VN)">
+                                  {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Chirp')).map(v => (
+                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                  ))}
+                                </optgroup>
+                              </select>
+                            </div>
+                          </div>
 
-                        {/* Play Sequence EN -> VI */}
-                        <button
-                          type="button"
-                          disabled={isPlayingThis && playingLang === 'sequence'}
-                          onClick={() => handlePlayChunk(chunk, 'sequence')}
-                          className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 transition-colors cursor-pointer"
-                          title="Nghe chuỗi song ngữ EN ➔ VI"
-                        >
-                          {isPlayingThis && playingLang === 'sequence' ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
-                          ) : (
-                            <Play className="w-4 h-4 fill-current text-zinc-700" />
-                          )}
-                        </button>
-
-                        {/* Separator */}
-                        <div className="h-4 w-px bg-zinc-200 mx-0.5 hidden sm:block" />
-
-                        {/* Regenerate EN Button */}
-                        <button
-                          type="button"
-                          disabled={isRegeneratingThis}
-                          onClick={() => handleRegenerateChunkAudio(chunk, 'en')}
-                          className="px-2 py-1 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                          title="Tạo lại âm thanh tiếng Anh (Deepgram / Google TTS)"
-                        >
-                          {isRegeneratingThis && regeneratingTarget === 'en' ? (
-                            <Loader2 className="w-3 h-3 animate-spin text-[#DC2626]" />
-                          ) : (
-                            <Zap className="w-3 h-3 text-[#DC2626]" />
-                          )}
-                          <span>Tạo EN</span>
-                        </button>
-
-                        {/* Regenerate VI Button */}
-                        <button
-                          type="button"
-                          disabled={isRegeneratingThis}
-                          onClick={() => handleRegenerateChunkAudio(chunk, 'vi')}
-                          className="px-2 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                          title="Tạo lại âm thanh tiếng Việt (Google Cloud TTS)"
-                        >
-                          {isRegeneratingThis && regeneratingTarget === 'vi' ? (
-                            <Loader2 className="w-3 h-3 animate-spin text-emerald-600" />
-                          ) : (
-                            <Zap className="w-3 h-3 text-emerald-600" />
-                          )}
-                          <span>Tạo VI</span>
-                        </button>
-
-                        {/* Regenerate Both (EN + VI) Button */}
-                        <button
-                          type="button"
-                          disabled={isRegeneratingThis}
-                          onClick={() => handleRegenerateChunkAudio(chunk, 'both')}
-                          className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-amber-600 transition-colors cursor-pointer"
-                          title="Tạo lại cả 2 tiếng (EN + VI)"
-                        >
-                          {isRegeneratingThis && regeneratingTarget === 'both' ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
-                          ) : (
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      </div>
+                          {/* Quick Generation Action Buttons inside panel */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              disabled={isRegeneratingThis}
+                              onClick={() => handleRegenerateChunkAudio(chunk, 'en', undefined, undefined, selectedVoiceEn, selectedVoiceVi)}
+                              className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                            >
+                              {isRegeneratingThis && regeneratingTarget === 'en' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                              <span>Tạo EN</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isRegeneratingThis}
+                              onClick={() => handleRegenerateChunkAudio(chunk, 'vi', undefined, undefined, selectedVoiceEn, selectedVoiceVi)}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                            >
+                              {isRegeneratingThis && regeneratingTarget === 'vi' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                              <span>Tạo VI</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isRegeneratingThis}
+                              onClick={() => handleRegenerateChunkAudio(chunk, 'both', undefined, undefined, selectedVoiceEn, selectedVoiceVi)}
+                              className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                            >
+                              {isRegeneratingThis && regeneratingTarget === 'both' ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                              <span>Tạo Cả 2</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })

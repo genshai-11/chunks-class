@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   ImprovPackage, 
   ImprovSession, 
@@ -38,12 +38,17 @@ import {
 import { 
   improvTts, 
   synthesizeItemCombinedAudio, 
+  synthesizeSingleHintAudio,
   playItemAudio, 
   stopImprovAudio,
   getHintTextByLanguage
 } from '../services/improvTtsService';
 import { audioPlayer, sanitizeSpeechText, ALL_VOICES, GOOGLE_TTS_VOICES } from '../services/googleTtsService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
+import { 
+  syncImprovPackageCachedAudioToCloud, 
+  uploadImprovBase64AudioToGcs 
+} from '../services/cloudAudioStorageService';
 import * as XLSX from 'xlsx';
 import confetti from 'canvas-confetti';
 import { 
@@ -95,7 +100,8 @@ import {
   Maximize2,
   Minimize2,
   Moon,
-  Sun
+  Sun,
+  CloudUpload
 } from 'lucide-react';
 
 // --------------------------------------------------------------------------
@@ -209,6 +215,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   }>({ current: 0, total: 0, prepared: 0, skipped: 0, failed: 0, statusText: '' });
   const [batchLogs, setBatchLogs] = useState<string[]>([]);
   const cancelBatchAudioRef = useRef<boolean>(false);
+  const [isSyncingToCloud, setIsSyncingToCloud] = useState<boolean>(false);
+  const [cloudSyncProgress, setCloudSyncProgress] = useState<string | null>(null);
 
   // Keep batch voice in sync if prop changes
   useEffect(() => {
@@ -227,6 +235,12 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const viVoiceOptions = useMemo(() => {
     return GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN');
   }, []);
+
+  // Per-item voice model overrides & expandable config
+  const [itemVoiceEn, setItemVoiceEn] = useState<Record<string, string>>({});
+  const [itemVoiceVi, setItemVoiceVi] = useState<Record<string, string>>({});
+  const [expandedItemVoiceConfig, setExpandedItemVoiceConfig] = useState<Record<string, boolean>>({});
+  const [synthesizingHintIds, setSynthesizingHintIds] = useState<Record<string, boolean>>({});
 
   // UI Feedback Toast & Fullscreen / Dark Mode State
   const [deleteSuccessToast, setDeleteSuccessToast] = useState<string | null>(null);
@@ -603,12 +617,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         totalItems++;
         totalHints += it.hints.length;
         const isReady = Boolean(
-          it.audioUrl ||
+          (it.audioUrl && (it.audioUrl.startsWith('http') || it.audioUrl === 'cached')) ||
+          (it.audioUrlVi && it.audioUrlVi.startsWith('http')) ||
           audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
           audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
           (it.hints && it.hints.length > 0 && it.hints.every(h => {
             const t = h.text?.trim();
-            return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+            return !t || Boolean((h.audioUrl && h.audioUrl.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
           }))
         );
         if (isReady) {
@@ -680,22 +695,206 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     }
   };
 
-  // Synthesize audio for single item (EN, VI, or BOTH)
-  const handleSynthesizeSingleItem = async (item: ImprovItem, target: 'en' | 'vi' | 'both' = 'both') => {
+  // Synthesize audio for single item (EN, VI, or BOTH) with optional voice model overrides
+  const handleSynthesizeSingleItem = async (
+    item: ImprovItem, 
+    target: 'en' | 'vi' | 'both' = 'both',
+    voiceEnOverride?: string,
+    voiceViOverride?: string
+  ) => {
+    const effectiveVoiceEn = voiceEnOverride || itemVoiceEn[item.id] || currentVoiceEn;
+    const effectiveVoiceVi = voiceViOverride || itemVoiceVi[item.id] || currentVoiceVi;
     setSynthesizingItemIds(prev => ({ ...prev, [item.id]: true }));
     try {
       if (target === 'en' || target === 'both') {
-        await synthesizeItemCombinedAudio(item, currentVoiceEn, currentVoiceVi, 'EN_ONLY', true);
+        await synthesizeItemCombinedAudio(item, effectiveVoiceEn, effectiveVoiceVi, 'EN_ONLY', true);
       }
       if (target === 'vi' || target === 'both') {
-        await synthesizeItemCombinedAudio(item, currentVoiceEn, currentVoiceVi, 'VI_ONLY', true);
+        await synthesizeItemCombinedAudio(item, effectiveVoiceEn, effectiveVoiceVi, 'VI_ONLY', true);
       }
+
+      // Check if base64 audio exists in cache and upload to Cloud Storage
+      if (activePackage) {
+        let hasCloudUpdates = false;
+        const updatedItem: ImprovItem = {
+          ...item,
+          hints: item.hints ? item.hints.map(h => ({ ...h })) : []
+        };
+
+        // 1. Upload EN combined audio and hint audios to Cloud Storage
+        if (target === 'en' || target === 'both') {
+          const kEn = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_EN_ONLY`;
+          const cachedEn = await audioPlayer.getCachedAudioAsync(kEn);
+          if (cachedEn) {
+            try {
+              const gcsUrlEn = await uploadImprovBase64AudioToGcs({
+                base64Audio: cachedEn,
+                pkgId: activePackage.id,
+                id: item.id,
+                lang: 'en',
+                isHint: false
+              });
+              updatedItem.audioUrl = gcsUrlEn;
+              hasCloudUpdates = true;
+            } catch (cloudErr) {
+              console.warn(`[GCS Single Item Sync] Failed item EN ${item.id}:`, cloudErr);
+            }
+          }
+
+          if (updatedItem.hints) {
+            for (const h of updatedItem.hints) {
+              const hKeyEn = `improv_hint_${h.id}_${effectiveVoiceEn}_en`;
+              const hCachedEn = await audioPlayer.getCachedAudioAsync(hKeyEn);
+              if (hCachedEn) {
+                try {
+                  const gcsHintUrlEn = await uploadImprovBase64AudioToGcs({
+                    base64Audio: hCachedEn,
+                    pkgId: activePackage.id,
+                    id: h.id,
+                    lang: 'en',
+                    isHint: true
+                  });
+                  h.audioUrl = gcsHintUrlEn;
+                  hasCloudUpdates = true;
+                } catch (hintErr) {
+                  console.warn(`[GCS Single Item Sync] Failed hint EN ${h.id}:`, hintErr);
+                }
+              }
+            }
+          }
+        }
+
+        // 2. Upload VI combined audio and hint audios to Cloud Storage
+        if (target === 'vi' || target === 'both') {
+          const kVi = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_VI_ONLY`;
+          const cachedVi = await audioPlayer.getCachedAudioAsync(kVi);
+          if (cachedVi) {
+            try {
+              const gcsUrlVi = await uploadImprovBase64AudioToGcs({
+                base64Audio: cachedVi,
+                pkgId: activePackage.id,
+                id: item.id,
+                lang: 'vi',
+                isHint: false
+              });
+              updatedItem.audioUrlVi = gcsUrlVi;
+              hasCloudUpdates = true;
+            } catch (cloudErr) {
+              console.warn(`[GCS Single Item Sync] Failed item VI ${item.id}:`, cloudErr);
+            }
+          }
+
+          if (updatedItem.hints) {
+            for (const h of updatedItem.hints) {
+              const hKeyVi = `improv_hint_${h.id}_${effectiveVoiceVi}_vi`;
+              const hCachedVi = await audioPlayer.getCachedAudioAsync(hKeyVi);
+              if (hCachedVi) {
+                try {
+                  const gcsHintUrlVi = await uploadImprovBase64AudioToGcs({
+                    base64Audio: hCachedVi,
+                    pkgId: activePackage.id,
+                    id: h.id,
+                    lang: 'vi',
+                    isHint: true
+                  });
+                  h.audioUrlVi = gcsHintUrlVi;
+                  hasCloudUpdates = true;
+                } catch (hintErr) {
+                  console.warn(`[GCS Single Item Sync] Failed hint VI ${h.id}:`, hintErr);
+                }
+              }
+            }
+          }
+        }
+
+        if (hasCloudUpdates) {
+          const updatedSessions = activePackage.sessions.map(s => {
+            if (s.sessionNumber !== updatedItem.sessionNumber) return s;
+            return {
+              ...s,
+              items: s.items.map(it => it.id === updatedItem.id ? updatedItem : it)
+            };
+          });
+          const updatedPkg: ImprovPackage = {
+            ...activePackage,
+            sessions: updatedSessions,
+            updatedAt: new Date().toISOString()
+          };
+          await saveImprovPackage(updatedPkg);
+          setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
+        }
+      }
+
       // Trigger small confetti
       confetti({ particleCount: 20, spread: 40, origin: { y: 0.8 } });
     } catch (err: any) {
       alert(`Lỗi tạo audio: ${err?.message || 'Không thể tạo âm thanh cho item này'}`);
     } finally {
       setSynthesizingItemIds(prev => ({ ...prev, [item.id]: false }));
+    }
+  };
+
+  // Synthesize/regenerate audio specifically for a single hint
+  const handleSynthesizeSingleHint = async (
+    item: ImprovItem,
+    hint: ImprovHint,
+    lang: 'en' | 'vi',
+    voiceOverride?: string
+  ) => {
+    if (!activePackage) return;
+    const hintKey = `${hint.id}_${lang}`;
+    setSynthesizingHintIds(prev => ({ ...prev, [hintKey]: true }));
+    try {
+      const effectiveVoice = voiceOverride || (lang === 'vi' ? (itemVoiceVi[item.id] || currentVoiceVi) : (itemVoiceEn[item.id] || currentVoiceEn));
+      const base64 = await synthesizeSingleHintAudio(hint, lang, effectiveVoice, true);
+
+      let gcsUrl = '';
+      try {
+        gcsUrl = await uploadImprovBase64AudioToGcs({
+          base64Audio: base64,
+          pkgId: activePackage.id,
+          id: hint.id,
+          lang: lang,
+          isHint: true
+        });
+      } catch (uploadErr) {
+        console.warn(`[GCS Hint Sync] Failed upload for hint ${hint.id} (${lang}):`, uploadErr);
+      }
+
+      const updatedSessions = activePackage.sessions.map(s => {
+        if (s.sessionNumber !== item.sessionNumber) return s;
+        return {
+          ...s,
+          items: s.items.map(it => {
+            if (it.id !== item.id) return it;
+            return {
+              ...it,
+              hints: (it.hints || []).map(h => {
+                if (h.id !== hint.id) return h;
+                return {
+                  ...h,
+                  ...(lang === 'en' 
+                    ? { audioUrl: gcsUrl || h.audioUrl } 
+                    : { audioUrlVi: gcsUrl || h.audioUrlVi })
+                };
+              })
+            };
+          })
+        };
+      });
+
+      const updatedPkg: ImprovPackage = {
+        ...activePackage,
+        sessions: updatedSessions,
+        updatedAt: new Date().toISOString()
+      };
+      await saveImprovPackage(updatedPkg);
+      setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
+      confetti({ particleCount: 15, spread: 30, origin: { y: 0.8 } });
+    } catch (err: any) {
+      alert(`Lỗi tạo audio gợi ý: ${err?.message || 'Không thể tạo âm thanh'}`);
+    } finally {
+      setSynthesizingHintIds(prev => ({ ...prev, [hintKey]: false }));
     }
   };
 
@@ -945,10 +1144,53 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
       addLog('Đã hoàn tất tạo toàn bộ âm thanh cho package!');
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+
+      addLog('Đang đồng bộ audio lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app...');
+      try {
+        const syncRes = await syncImprovPackageCachedAudioToCloud(updatedPkg, {
+          voiceEn: batchVoiceEn,
+          voiceVi: batchVoiceVi,
+          onProgress: (_c, _t, status) => addLog(`[Cloud Sync] ${status}`)
+        });
+        addLog(`Đồng bộ Cloud Storage thành công: ${syncRes.uploadedItemsEn} items EN, ${syncRes.uploadedItemsVi} items VI, ${syncRes.uploadedHints} hints.`);
+        // Refresh packages state
+        const latestPackages = await getAllImprovPackages();
+        setPackages(latestPackages);
+      } catch (syncErr: any) {
+        addLog(`Lưu ý: Không thể tự động đồng bộ lên Cloud Storage: ${syncErr?.message || syncErr}`);
+      }
     } catch (err: any) {
       addLog(`Lỗi batch audio: ${err?.message || 'Không xác định'}`);
     } finally {
       setIsBatchRunning(false);
+    }
+  };
+
+  const handleSyncActivePackageToCloud = async () => {
+    if (!activePackage) return;
+    setIsSyncingToCloud(true);
+    setCloudSyncProgress('Đang chuẩn bị đồng bộ...');
+    try {
+      const res = await syncImprovPackageCachedAudioToCloud(activePackage, {
+        voiceEn: currentVoiceEn,
+        voiceVi: currentVoiceVi,
+        onProgress: (cur, tot, status) => {
+          setCloudSyncProgress(`[${cur}/${tot}] ${status}`);
+        }
+      });
+      // Reload packages
+      const updatedPackages = await getAllImprovPackages();
+      setPackages(updatedPackages);
+      const refreshed = updatedPackages.find(p => p.id === activePackage.id);
+      if (refreshed) setActivePackageId(refreshed.id);
+      confetti({ particleCount: 50, spread: 60 });
+      alert(`🎉 Đã đồng bộ thành công lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app!\n- Items EN: ${res.uploadedItemsEn}\n- Items VI: ${res.uploadedItemsVi}\n- Hints: ${res.uploadedHints}`);
+    } catch (err: any) {
+      console.error('Improv cloud sync failed:', err);
+      alert('Lỗi đồng bộ lên Cloud Storage: ' + (err?.message || String(err)));
+    } finally {
+      setIsSyncingToCloud(false);
+      setCloudSyncProgress(null);
     }
   };
 
@@ -1690,6 +1932,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 <span>{showVietnamese ? 'Hiện Tiếng Việt' : 'Ẩn Tiếng Việt'}</span>
               </button>
 
+              {/* Sync Cache to Cloud Storage Bucket */}
+              <button
+                type="button"
+                disabled={isSyncingToCloud || isBatchRunning || !activePackage}
+                onClick={handleSyncActivePackageToCloud}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                title="Tải toàn bộ audio Improv đã có trong cache trình duyệt lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app để dùng vĩnh viễn"
+              >
+                <CloudUpload className={`w-3.5 h-3.5 ${isSyncingToCloud ? 'animate-bounce' : ''}`} />
+                <span>{isSyncingToCloud ? (cloudSyncProgress || 'Đang sync lên Cloud...') : 'Sync Cache ➔ Cloud Bucket'}</span>
+              </button>
+
               {/* Batch Audio Trigger */}
               <button
                 onClick={() => setIsBatchAudioModalOpen(true)}
@@ -1774,6 +2028,17 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </button>
 
               <button
+                type="button"
+                disabled={isSyncingToCloud || isBulkOperating || !activePackage}
+                onClick={handleSyncActivePackageToCloud}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                title="Tải toàn bộ audio Improv đã có trong cache trình duyệt lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app để dùng vĩnh viễn"
+              >
+                <CloudUpload className={`w-3.5 h-3.5 ${isSyncingToCloud ? 'animate-bounce' : ''}`} />
+                <span>{isSyncingToCloud ? 'Đang sync...' : 'Sync Cloud Bucket'}</span>
+              </button>
+
+              <button
                 onClick={handleBulkDelete}
                 disabled={isBulkOperating}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-red-950/80 hover:text-red-400 text-zinc-300 text-xs font-bold rounded-xl border border-zinc-700 hover:border-red-800 transition-all cursor-pointer disabled:opacity-50"
@@ -1844,193 +2109,356 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     const isSynthesizing = synthesizingItemIds[item.id] || false;
                     const isSelected = selectedItemIds.includes(item.id);
                     const isAudioEnReady = Boolean(
-                      item.audioUrl ||
+                      (item.audioUrl && (item.audioUrl.startsWith('http') || item.audioUrl === 'cached')) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
                       (item.hints && item.hints.length > 0 && item.hints.every(h => {
                         const t = h.text?.trim();
-                        return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+                        return !t || Boolean((h.audioUrl && h.audioUrl.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
                       }))
                     );
                     const isAudioViReady = Boolean(
-                      item.audioUrl ||
+                      (item.audioUrlVi && item.audioUrlVi.startsWith('http')) ||
+                      item.audioUrl === 'cached' ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
                       (item.hints && item.hints.length > 0 && item.hints.every(h => {
                         const t = (h.translation || '').trim();
-                        return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
+                        return !t || Boolean((h.audioUrlVi && h.audioUrlVi.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
                       }))
                     );
 
                     return (
-                      <tr 
-                        key={item.id}
-                        className={`hover:bg-zinc-50/80 transition-colors ${
-                          isPlayingThis ? 'bg-red-50/40' : isSelected ? 'bg-red-50/20' : ''
-                        }`}
-                      >
-                        {/* Checkbox Column */}
-                        <td className="p-3.5 text-center">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelectItem(item.id)}
-                            className="rounded text-[#DC2626] focus:ring-[#DC2626] cursor-pointer"
-                          />
-                        </td>
+                      <React.Fragment key={item.id}>
+                        <tr 
+                          className={`hover:bg-zinc-50/80 transition-colors ${
+                            isPlayingThis ? 'bg-red-50/40' : isSelected ? 'bg-red-50/20' : ''
+                          }`}
+                        >
+                          {/* Checkbox Column */}
+                          <td className="p-3.5 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectItem(item.id)}
+                              className="rounded text-[#DC2626] focus:ring-[#DC2626] cursor-pointer"
+                            />
+                          </td>
 
-                        {/* STT Column */}
-                        <td className="p-3.5 text-center font-mono font-bold text-zinc-700">
-                          <span className="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-zinc-100 border border-zinc-200 text-xs">
-                            #{item.itemNumber}
-                          </span>
-                        </td>
-
-                        {/* Session Badge */}
-                        <td className="p-3.5">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-xs font-bold text-zinc-900">
-                              Session {item.sessionNumber}
+                          {/* STT Column */}
+                          <td className="p-3.5 text-center font-mono font-bold text-zinc-700">
+                            <span className="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-zinc-100 border border-zinc-200 text-xs">
+                              #{item.itemNumber}
                             </span>
-                            <span className="text-[10px] font-mono text-zinc-400">
-                              {item.hints.length} hints
-                            </span>
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* Hints Stream Column */}
-                        <td className="p-3.5">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {item.hints.map((hint, hIdx) => {
-                              const badge = getHintTypeBadgeClasses(hint.typeFunction);
-                              const isHintActive = isPlayingThis && playingHintIndex === hint.itemIndex;
+                          {/* Session Badge */}
+                          <td className="p-3.5">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-xs font-bold text-zinc-900">
+                                Session {item.sessionNumber}
+                              </span>
+                              <span className="text-[10px] font-mono text-zinc-400">
+                                {item.hints.length} hints
+                              </span>
+                            </div>
+                          </td>
 
-                              return (
-                                <React.Fragment key={hint.id || hIdx}>
-                                  <div
-                                    className={`p-2 rounded-xl border transition-all ${
-                                      isHintActive
-                                        ? 'bg-red-50 border-[#DC2626] ring-2 ring-red-500/20'
-                                        : 'bg-zinc-50/80 border-zinc-200/80'
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-1 mb-1">
-                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex items-center gap-1 ${badge.bg} ${badge.text} ${badge.border}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                                        <span>{badge.label}</span>
-                                      </span>
-                                    </div>
-                                    <div className="font-bold text-zinc-900 text-xs leading-snug">
-                                      {hint.text}
-                                    </div>
-                                    {showVietnamese && hint.translation && (
-                                      <div className="text-[11px] text-zinc-700 font-medium mt-1 leading-tight">
-                                        {hint.translation}
+                          {/* Hints Stream Column */}
+                          <td className="p-3.5">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {item.hints.map((hint, hIdx) => {
+                                const badge = getHintTypeBadgeClasses(hint.typeFunction);
+                                const isHintActive = isPlayingThis && playingHintIndex === hint.itemIndex;
+                                const isHintEnLoading = synthesizingHintIds[`${hint.id}_en`];
+                                const isHintViLoading = synthesizingHintIds[`${hint.id}_vi`];
+                                const hasHintEnGcs = Boolean(hint.audioUrl && hint.audioUrl.startsWith('http'));
+                                const hasHintViGcs = Boolean(hint.audioUrlVi && hint.audioUrlVi.startsWith('http'));
+
+                                return (
+                                  <React.Fragment key={hint.id || hIdx}>
+                                    <div
+                                      className={`p-2 rounded-xl border transition-all ${
+                                        isHintActive
+                                          ? 'bg-red-50 border-[#DC2626] ring-2 ring-red-500/20'
+                                          : 'bg-zinc-50/80 border-zinc-200/80'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-1 mb-1">
+                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex items-center gap-1 ${badge.bg} ${badge.text} ${badge.border}`}>
+                                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                                          <span>{badge.label}</span>
+                                        </span>
                                       </div>
+                                      <div className="font-bold text-zinc-900 text-xs leading-snug">
+                                        {hint.text}
+                                      </div>
+                                      {showVietnamese && hint.translation && (
+                                        <div className="text-[11px] text-zinc-700 font-medium mt-1 leading-tight">
+                                          {hint.translation}
+                                        </div>
+                                      )}
+
+                                      {/* Single Hint Audio Controls */}
+                                      <div className="flex items-center gap-1 mt-1.5 pt-1 border-t border-zinc-200/60">
+                                        <button
+                                          type="button"
+                                          disabled={isHintEnLoading}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSynthesizeSingleHint(item, hint, 'en');
+                                          }}
+                                          className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition-all cursor-pointer inline-flex items-center gap-0.5 ${
+                                            hasHintEnGcs
+                                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                              : 'bg-zinc-200/80 text-zinc-700 hover:bg-red-100 hover:text-red-700'
+                                          }`}
+                                          title={`Tạo audio EN cho gợi ý này (${hasHintEnGcs ? 'Đã có Cloud GCS' : 'Chưa có'})`}
+                                        >
+                                          {isHintEnLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Zap className="w-2.5 h-2.5" />}
+                                          <span>EN{hasHintEnGcs ? ' ✓' : ''}</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          disabled={isHintViLoading}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSynthesizeSingleHint(item, hint, 'vi');
+                                          }}
+                                          className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition-all cursor-pointer inline-flex items-center gap-0.5 ${
+                                            hasHintViGcs
+                                              ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                              : 'bg-zinc-200/80 text-zinc-700 hover:bg-blue-100 hover:text-blue-700'
+                                          }`}
+                                          title={`Tạo audio VI cho gợi ý này (${hasHintViGcs ? 'Đã có Cloud GCS' : 'Chưa có'})`}
+                                        >
+                                          {isHintViLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Zap className="w-2.5 h-2.5" />}
+                                          <span>VI{hasHintViGcs ? ' ✓' : ''}</span>
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {hIdx < item.hints.length - 1 && (
+                                      <span className="text-[#DC2626] font-black text-xs mx-1 select-none">➔</span>
                                     )}
+                                  </React.Fragment>
+                                );
+                              })}
+                            </div>
+                          </td>
+
+                          {/* Audio Status Column */}
+                          <td className="p-3.5 text-center">
+                            <div className="flex flex-col items-center gap-1">
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                                isAudioEnReady
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : 'bg-zinc-100 text-zinc-400 border-zinc-200'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isAudioEnReady ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+                                <span>EN {isAudioEnReady ? (item.audioUrl && item.audioUrl.startsWith('http') ? 'GCS' : '✓') : '—'}</span>
+                              </span>
+
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                                isAudioViReady
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : 'bg-zinc-100 text-zinc-400 border-zinc-200'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isAudioViReady ? 'bg-blue-500' : 'bg-zinc-400'}`} />
+                                <span>VI {isAudioViReady ? (item.audioUrlVi && item.audioUrlVi.startsWith('http') ? 'GCS' : '✓') : '—'}</span>
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Actions Column */}
+                          <td className="p-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                              {/* Nghe EN */}
+                              <button
+                                onClick={() => handlePlayItemWithPause(item, 'en')}
+                                className={`p-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                  isPlayingThis && playingLang === 'en'
+                                    ? 'bg-zinc-900 text-white border-zinc-900'
+                                    : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
+                                }`}
+                                title="Nghe tiếng Anh kèm khoảng nghỉ 1s"
+                              >
+                                <Play className="w-3 h-3 text-[#DC2626] fill-current" />
+                                <span>EN</span>
+                              </button>
+
+                              {/* Nghe VI */}
+                              <button
+                                onClick={() => handlePlayItemWithPause(item, 'vi')}
+                                className={`p-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                  isPlayingThis && playingLang === 'vi'
+                                    ? 'bg-zinc-900 text-white border-zinc-900'
+                                    : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
+                                }`}
+                                title="Nghe tiếng Việt chuẩn Google TTS kèm khoảng nghỉ 1s"
+                              >
+                                <Play className="w-3 h-3 text-blue-600 fill-current" />
+                                <span>VI</span>
+                              </button>
+
+                              {/* Tạo EN */}
+                              <button
+                                onClick={() => handleSynthesizeSingleItem(item, 'en')}
+                                disabled={isSynthesizing}
+                                className="p-1.5 px-2 rounded-lg bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1"
+                                title="Tạo âm thanh EN cho câu này (GCS Cloud)"
+                              >
+                                {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                                <span>Tạo EN</span>
+                              </button>
+
+                              {/* Tạo VI */}
+                              <button
+                                onClick={() => handleSynthesizeSingleItem(item, 'vi')}
+                                disabled={isSynthesizing}
+                                className="p-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1"
+                                title="Tạo âm thanh VI cho câu này (GCS Cloud)"
+                              >
+                                {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                                <span>Tạo VI</span>
+                              </button>
+
+                              {/* Tạo Cả 2 */}
+                              <button
+                                onClick={() => handleSynthesizeSingleItem(item, 'both')}
+                                disabled={isSynthesizing}
+                                className="p-1.5 px-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1"
+                                title="Tạo cả âm thanh EN và VI cho item này (GCS Cloud)"
+                              >
+                                {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                <span>Cả 2</span>
+                              </button>
+
+                              {/* Voice Model Selector Toggle */}
+                              <button
+                                type="button"
+                                onClick={() => setExpandedItemVoiceConfig(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                                className={`p-1.5 px-2 rounded-lg border text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
+                                  expandedItemVoiceConfig[item.id]
+                                    ? 'bg-red-50 border-red-300 text-[#DC2626]'
+                                    : 'bg-zinc-100 hover:bg-zinc-200 border-zinc-200 text-zinc-700'
+                                }`}
+                                title="Chọn Voice Model riêng cho câu này"
+                              >
+                                <Sliders className="w-3 h-3" />
+                                <ChevronDown className={`w-3 h-3 transition-transform ${expandedItemVoiceConfig[item.id] ? 'rotate-180' : ''}`} />
+                              </button>
+
+                              {/* Sửa Text */}
+                              <button
+                                onClick={() => setEditingItem(JSON.parse(JSON.stringify(item)))}
+                                className="p-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-100 text-zinc-600 hover:text-zinc-900 cursor-pointer transition-all"
+                                title="Chỉnh sửa câu"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Xóa Câu */}
+                              <button
+                                onClick={() => setItemToDelete({
+                                  sessionNumber: item.sessionNumber,
+                                  itemId: item.id,
+                                  itemNumber: item.itemNumber
+                                })}
+                                className="p-1.5 rounded-lg border border-zinc-200 hover:bg-red-50 text-zinc-400 hover:text-[#DC2626] hover:border-red-200 cursor-pointer transition-all"
+                                title="Xóa câu này khỏi session"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Expandable Model & Language Selector Sub-row */}
+                        {expandedItemVoiceConfig[item.id] && (
+                          <tr className="bg-zinc-50/90 border-b border-zinc-200">
+                            <td colSpan={6} className="p-3.5">
+                              <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-zinc-200/90 shadow-2xs">
+                                <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+                                  {/* EN Voice Select */}
+                                  <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+                                    <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model EN:</span>
+                                    <select
+                                      value={itemVoiceEn[item.id] || currentVoiceEn}
+                                      onChange={(e) => setItemVoiceEn(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                      className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#DC2626] cursor-pointer"
+                                    >
+                                      <optgroup label="Deepgram Aura">
+                                        {enVoiceOptions.filter(v => v.provider === 'DEEPGRAM_AURA').map(v => (
+                                          <option key={v.id} value={v.id}>{v.name}</option>
+                                        ))}
+                                      </optgroup>
+                                      <optgroup label="Google Cloud TTS (en-US)">
+                                        {enVoiceOptions.filter(v => v.provider !== 'DEEPGRAM_AURA').map(v => (
+                                          <option key={v.id} value={v.id}>{v.name}</option>
+                                        ))}
+                                      </optgroup>
+                                    </select>
                                   </div>
 
-                                  {hIdx < item.hints.length - 1 && (
-                                    <span className="text-[#DC2626] font-black text-xs mx-1 select-none">➔</span>
-                                  )}
-                                </React.Fragment>
-                              );
-                            })}
-                          </div>
-                        </td>
+                                  {/* VI Voice Select */}
+                                  <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+                                    <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model VI:</span>
+                                    <select
+                                      value={itemVoiceVi[item.id] || currentVoiceVi}
+                                      onChange={(e) => setItemVoiceVi(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                      className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-blue-600 cursor-pointer"
+                                    >
+                                      <optgroup label="Google Neural2 & WaveNet (vi-VN)">
+                                        {viVoiceOptions.filter(v => !v.id.includes('Chirp')).map(v => (
+                                          <option key={v.id} value={v.id}>{v.name}</option>
+                                        ))}
+                                      </optgroup>
+                                      <optgroup label="Google Chirp3-HD (vi-VN)">
+                                        {viVoiceOptions.filter(v => v.id.includes('Chirp')).map(v => (
+                                          <option key={v.id} value={v.id}>{v.name}</option>
+                                        ))}
+                                      </optgroup>
+                                    </select>
+                                  </div>
+                                </div>
 
-                        {/* Audio Status Column */}
-                        <td className="p-3.5 text-center">
-                          <div className="flex flex-col items-center gap-1">
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                              isAudioEnReady
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-zinc-100 text-zinc-400 border-zinc-200'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${isAudioEnReady ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
-                              <span>EN {isAudioEnReady ? '✓' : '—'}</span>
-                            </span>
-
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                              isAudioViReady
-                                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                : 'bg-zinc-100 text-zinc-400 border-zinc-200'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${isAudioViReady ? 'bg-blue-500' : 'bg-zinc-400'}`} />
-                              <span>VI {isAudioViReady ? '✓' : '—'}</span>
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* Actions Column */}
-                        <td className="p-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                            {/* Nghe EN */}
-                            <button
-                              onClick={() => handlePlayItemWithPause(item, 'en')}
-                              className={`p-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1 ${
-                                isPlayingThis && playingLang === 'en'
-                                  ? 'bg-zinc-900 text-white border-zinc-900'
-                                  : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
-                              }`}
-                              title="Nghe tiếng Anh kèm khoảng nghỉ 1s"
-                            >
-                              <Play className="w-3 h-3 text-[#DC2626] fill-current" />
-                              <span>EN</span>
-                            </button>
-
-                            {/* Nghe VI */}
-                            <button
-                              onClick={() => handlePlayItemWithPause(item, 'vi')}
-                              className={`p-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1 ${
-                                isPlayingThis && playingLang === 'vi'
-                                  ? 'bg-zinc-900 text-white border-zinc-900'
-                                  : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
-                              }`}
-                              title="Nghe tiếng Việt chuẩn Google TTS kèm khoảng nghỉ 1s"
-                            >
-                              <Play className="w-3 h-3 text-blue-600 fill-current" />
-                              <span>VI</span>
-                            </button>
-
-                            {/* Tạo Audio Dropdown / Direct */}
-                            <button
-                              onClick={() => handleSynthesizeSingleItem(item, 'both')}
-                              disabled={isSynthesizing}
-                              className="p-1.5 px-2 rounded-lg bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold cursor-pointer transition-all disabled:opacity-50"
-                              title="Tạo cả âm thanh EN và VI cho item này"
-                            >
-                              {isSynthesizing ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Volume2 className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-
-                            {/* Sửa Text */}
-                            <button
-                              onClick={() => setEditingItem(JSON.parse(JSON.stringify(item)))}
-                              className="p-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-100 text-zinc-600 hover:text-zinc-900 cursor-pointer transition-all"
-                              title="Chỉnh sửa câu"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Xóa Câu */}
-                            <button
-                              onClick={() => setItemToDelete({
-                                sessionNumber: item.sessionNumber,
-                                itemId: item.id,
-                                itemNumber: item.itemNumber
-                              })}
-                              className="p-1.5 rounded-lg border border-zinc-200 hover:bg-red-50 text-zinc-400 hover:text-[#DC2626] hover:border-red-200 cursor-pointer transition-all"
-                              title="Xóa câu này khỏi session"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                                {/* Quick Generation Action Buttons */}
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button
+                                    type="button"
+                                    disabled={isSynthesizing}
+                                    onClick={() => handleSynthesizeSingleItem(item, 'en')}
+                                    className="px-2.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                                  >
+                                    {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                                    <span>Tạo EN</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isSynthesizing}
+                                    onClick={() => handleSynthesizeSingleItem(item, 'vi')}
+                                    className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                                  >
+                                    {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                                    <span>Tạo VI</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isSynthesizing}
+                                    onClick={() => handleSynthesizeSingleItem(item, 'both')}
+                                    className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                                  >
+                                    {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                                    <span>Tạo Cả 2</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
@@ -2047,21 +2475,22 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               const isSynthesizing = synthesizingItemIds[item.id] || false;
               const isSelected = selectedItemIds.includes(item.id);
               const isAudioEnReady = Boolean(
-                item.audioUrl ||
+                (item.audioUrl && (item.audioUrl.startsWith('http') || item.audioUrl === 'cached')) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
                 (item.hints && item.hints.length > 0 && item.hints.every(h => {
                   const t = h.text?.trim();
-                  return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+                  return !t || Boolean((h.audioUrl && h.audioUrl.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
                 }))
               );
               const isAudioViReady = Boolean(
-                item.audioUrl ||
+                (item.audioUrlVi && item.audioUrlVi.startsWith('http')) ||
+                item.audioUrl === 'cached' ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
                 (item.hints && item.hints.length > 0 && item.hints.every(h => {
                   const t = (h.translation || '').trim();
-                  return !t || Boolean(audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
+                  return !t || Boolean((h.audioUrlVi && h.audioUrlVi.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
                 }))
               );
 
@@ -2102,11 +2531,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className={`text-[10px] font-mono font-semibold ${isAudioEnReady ? 'text-emerald-600' : 'text-zinc-400'}`}>
-                            EN {isAudioEnReady ? '✓' : '—'}
+                            EN {isAudioEnReady ? (item.audioUrl && item.audioUrl.startsWith('http') ? 'GCS' : '✓') : '—'}
                           </span>
                           <span className="text-zinc-300">•</span>
                           <span className={`text-[10px] font-mono font-semibold ${isAudioViReady ? 'text-blue-600' : 'text-zinc-400'}`}>
-                            VI {isAudioViReady ? '✓' : '—'}
+                            VI {isAudioViReady ? (item.audioUrlVi && item.audioUrlVi.startsWith('http') ? 'GCS' : '✓') : '—'}
                           </span>
                         </div>
                       </div>
@@ -2118,6 +2547,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         {item.hints.map((hint) => {
                           const badge = getHintTypeBadgeClasses(hint.typeFunction);
                           const isHintActive = isPlayingThis && playingHintIndex === hint.itemIndex;
+                          const isHintEnLoading = synthesizingHintIds[`${hint.id}_en`];
+                          const isHintViLoading = synthesizingHintIds[`${hint.id}_vi`];
+                          const hasHintEnGcs = Boolean(hint.audioUrl && hint.audioUrl.startsWith('http'));
+                          const hasHintViGcs = Boolean(hint.audioUrlVi && hint.audioUrlVi.startsWith('http'));
 
                           return (
                             <div
@@ -2150,6 +2583,48 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                   {hint.translation}
                                 </div>
                               )}
+
+                              {/* Single Hint Audio Controls */}
+                              <div className="flex items-center justify-between gap-1.5 mt-2 pt-1.5 border-t border-zinc-200/60">
+                                <span className="text-[9px] font-mono text-zinc-400 font-semibold">Audio Hint:</span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={isHintEnLoading}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSynthesizeSingleHint(item, hint, 'en');
+                                    }}
+                                    className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
+                                      hasHintEnGcs 
+                                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' 
+                                        : 'bg-zinc-200/80 text-zinc-700 hover:bg-red-100 hover:text-red-700'
+                                    }`}
+                                    title={`Tạo audio EN cho gợi ý này (${hasHintEnGcs ? 'Đã có Cloud GCS' : 'Chưa có'})`}
+                                  >
+                                    {isHintEnLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Zap className="w-2.5 h-2.5" />}
+                                    <span>EN{hasHintEnGcs ? ' ✓' : ''}</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={isHintViLoading}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSynthesizeSingleHint(item, hint, 'vi');
+                                    }}
+                                    className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition-all cursor-pointer inline-flex items-center gap-1 ${
+                                      hasHintViGcs 
+                                        ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' 
+                                        : 'bg-zinc-200/80 text-zinc-700 hover:bg-blue-100 hover:text-blue-700'
+                                    }`}
+                                    title={`Tạo audio VI cho gợi ý này (${hasHintViGcs ? 'Đã có Cloud GCS' : 'Chưa có'})`}
+                                  >
+                                    {isHintViLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Zap className="w-2.5 h-2.5" />}
+                                    <span>VI{hasHintViGcs ? ' ✓' : ''}</span>
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           );
                         })}
@@ -2157,7 +2632,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     </div>
 
                     {/* Right: Actions */}
-                    <div className="flex items-center gap-2 shrink-0 self-end xl:self-center">
+                    <div className="flex items-center gap-2 shrink-0 self-end xl:self-center flex-wrap">
                       {/* Play EN */}
                       <button
                         onClick={() => handlePlayItemWithPause(item, 'en')}
@@ -2186,18 +2661,52 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <span>Nghe VI</span>
                       </button>
 
-                      {/* Synthesize Audio */}
+                      {/* Synthesize EN */}
+                      <button
+                        onClick={() => handleSynthesizeSingleItem(item, 'en')}
+                        disabled={isSynthesizing}
+                        className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                        title="Tạo audio EN cho item này (GCS Cloud)"
+                      >
+                        {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                        <span>Tạo EN</span>
+                      </button>
+
+                      {/* Synthesize VI */}
+                      <button
+                        onClick={() => handleSynthesizeSingleItem(item, 'vi')}
+                        disabled={isSynthesizing}
+                        className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                        title="Tạo audio VI cho item này (GCS Cloud)"
+                      >
+                        {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                        <span>Tạo VI</span>
+                      </button>
+
+                      {/* Synthesize Both */}
                       <button
                         onClick={() => handleSynthesizeSingleItem(item, 'both')}
                         disabled={isSynthesizing}
-                        className="p-2 rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-100 text-zinc-600 disabled:opacity-50 cursor-pointer transition-all"
-                        title="Tổng hợp audio EN & VI mới cho item này"
+                        className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                        title="Tạo cả âm thanh EN & VI mới cho item này (GCS Cloud)"
                       >
-                        {isSynthesizing ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
-                        ) : (
-                          <Volume2 className="w-4 h-4" />
-                        )}
+                        {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                        <span>Cả 2</span>
+                      </button>
+
+                      {/* Voice Model Selector Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedItemVoiceConfig(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                        className={`p-2 rounded-xl border text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
+                          expandedItemVoiceConfig[item.id]
+                            ? 'bg-red-50 border-red-300 text-[#DC2626]'
+                            : 'border-zinc-200 hover:border-zinc-300 hover:bg-zinc-100 text-zinc-700'
+                        }`}
+                        title="Chọn Voice Model riêng cho câu này"
+                      >
+                        <Sliders className="w-4 h-4" />
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedItemVoiceConfig[item.id] ? 'rotate-180' : ''}`} />
                       </button>
 
                       {/* Edit Item */}
@@ -2223,6 +2732,86 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       </button>
                     </div>
                   </div>
+
+                  {/* Expandable Model & Language Selector for Card */}
+                  {expandedItemVoiceConfig[item.id] && (
+                    <div className="mt-3 pt-3 border-t border-zinc-200/80 bg-zinc-50/90 p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 animate-fade-in shadow-2xs">
+                      <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+                        {/* EN Voice Select */}
+                        <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model EN:</span>
+                          <select
+                            value={itemVoiceEn[item.id] || currentVoiceEn}
+                            onChange={(e) => setItemVoiceEn(prev => ({ ...prev, [item.id]: e.target.value }))}
+                            className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#DC2626] cursor-pointer"
+                          >
+                            <optgroup label="Deepgram Aura">
+                              {enVoiceOptions.filter(v => v.provider === 'DEEPGRAM_AURA').map(v => (
+                                <option key={v.id} value={v.id}>{v.name}</option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="Google Cloud TTS (en-US)">
+                              {enVoiceOptions.filter(v => v.provider !== 'DEEPGRAM_AURA').map(v => (
+                                <option key={v.id} value={v.id}>{v.name}</option>
+                              ))}
+                            </optgroup>
+                          </select>
+                        </div>
+
+                        {/* VI Voice Select */}
+                        <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model VI:</span>
+                          <select
+                            value={itemVoiceVi[item.id] || currentVoiceVi}
+                            onChange={(e) => setItemVoiceVi(prev => ({ ...prev, [item.id]: e.target.value }))}
+                            className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-blue-600 cursor-pointer"
+                          >
+                            <optgroup label="Google Neural2 & WaveNet (vi-VN)">
+                              {viVoiceOptions.filter(v => !v.id.includes('Chirp')).map(v => (
+                                <option key={v.id} value={v.id}>{v.name}</option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="Google Chirp3-HD (vi-VN)">
+                              {viVoiceOptions.filter(v => v.id.includes('Chirp')).map(v => (
+                                <option key={v.id} value={v.id}>{v.name}</option>
+                              ))}
+                            </optgroup>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Quick Generation Action Buttons inside panel */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          disabled={isSynthesizing}
+                          onClick={() => handleSynthesizeSingleItem(item, 'en')}
+                          className="px-2.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                          <span>Tạo EN</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isSynthesizing}
+                          onClick={() => handleSynthesizeSingleItem(item, 'vi')}
+                          className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                          <span>Tạo VI</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isSynthesizing}
+                          onClick={() => handleSynthesizeSingleItem(item, 'both')}
+                          className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                          <span>Tạo Cả 2</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -243,6 +243,36 @@ class ImprovTtsEngine {
     const seqId = ++this.activeSequenceId;
 
     try {
+      const streamUrl = lang === 'en'
+        ? (hint.audioUrl && hint.audioUrl.startsWith('http') ? hint.audioUrl : null)
+        : (hint.audioUrlVi && hint.audioUrlVi.startsWith('http') ? hint.audioUrlVi : null);
+
+      if (streamUrl) {
+        if (this.activeSequenceId !== seqId) return;
+
+        const audio = new Audio(streamUrl);
+        audio.playbackRate = speed;
+        this.currentAudio = audio;
+
+        audio.onended = () => {
+          if (this.activeSequenceId === seqId) {
+            this.currentAudio = null;
+            onEnded?.();
+          }
+        };
+
+        audio.onerror = (e) => {
+          console.warn(`[Improv TTS] Streaming hint audio playback error (Hint: ${hint.id}):`, e);
+          if (this.activeSequenceId === seqId) {
+            this.currentAudio = null;
+            onEnded?.();
+          }
+        };
+
+        await audio.play();
+        return;
+      }
+
       const effectiveVoice = voice || (lang === 'vi' ? 'vi-VN-Neural2-A' : 'aura-asteria-en');
       const base64Audio = await this.synthesizeSingleHintAudio(hint, lang, effectiveVoice, false);
 
@@ -487,6 +517,40 @@ class ImprovTtsEngine {
     const seqId = ++this.activeSequenceId;
 
     try {
+      const normalizedMode = normalizeLanguageMode(langMode);
+      let streamUrl: string | null = null;
+      if (normalizedMode === 'EN_ONLY' && item.audioUrl && item.audioUrl.startsWith('http')) {
+        streamUrl = item.audioUrl;
+      } else if (normalizedMode === 'VI_ONLY' && item.audioUrlVi && item.audioUrlVi.startsWith('http')) {
+        streamUrl = item.audioUrlVi;
+      }
+
+      if (streamUrl) {
+        if (this.activeSequenceId !== seqId) return;
+
+        const audio = new Audio(streamUrl);
+        audio.playbackRate = speed;
+        this.currentAudio = audio;
+
+        audio.onended = () => {
+          if (this.activeSequenceId === seqId) {
+            this.currentAudio = null;
+            onEnded?.();
+          }
+        };
+
+        audio.onerror = (e) => {
+          console.warn(`[Improv TTS] Streaming item audio playback error (Item: ${item.id}):`, e);
+          if (this.activeSequenceId === seqId) {
+            this.currentAudio = null;
+            onEnded?.();
+          }
+        };
+
+        await audio.play();
+        return;
+      }
+
       const audioDataUri = await this.synthesizeItemCombinedAudio(
         item,
         voiceEn,
@@ -524,7 +588,7 @@ class ImprovTtsEngine {
   }
 
   /**
-   * Checks if all items in an ImprovSession have their combined continuous audio cached
+   * Checks if all items in an ImprovSession have their combined continuous audio cached or streamed
    */
   async isSessionAudioReady(
     session: ImprovSession, 
@@ -535,6 +599,12 @@ class ImprovTtsEngine {
     if (!session.items || session.items.length === 0) return false;
     const normalizedMode = normalizeLanguageMode(langMode);
     for (const item of session.items) {
+      if (normalizedMode === 'EN_ONLY' && item.audioUrl && item.audioUrl.startsWith('http')) {
+        continue;
+      }
+      if (normalizedMode === 'VI_ONLY' && item.audioUrlVi && item.audioUrlVi.startsWith('http')) {
+        continue;
+      }
       const itemCacheKey = `improv_item_${item.id}_${voiceEn}_${voiceVi}_${normalizedMode}`;
       const cached = await audioPlayer.getCachedAudioAsync(itemCacheKey);
       if (!cached) return false;

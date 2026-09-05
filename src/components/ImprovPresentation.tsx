@@ -389,12 +389,14 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         if (languageMode === 'VI_ONLY') {
           const textToSpeak = viText || enText;
           if (textToSpeak) {
-            await audioPlayer.playChunk(textToSpeak, null, voiceVi || 'vi-VN-Neural2-A', speed);
+            const streamUrlVi = hint.audioUrlVi && hint.audioUrlVi.startsWith('http') ? hint.audioUrlVi : null;
+            await audioPlayer.playChunk(textToSpeak, streamUrlVi, voiceVi || 'vi-VN-Neural2-A', speed);
           }
         } else {
           // EN_ONLY
           if (enText) {
-            await audioPlayer.playChunk(enText, null, voiceEn, speed, voiceEn.startsWith('en-US'));
+            const streamUrlEn = hint.audioUrl && hint.audioUrl.startsWith('http') ? hint.audioUrl : null;
+            await audioPlayer.playChunk(enText, streamUrlEn, voiceEn, speed, voiceEn.startsWith('en-US'));
           }
         }
 
@@ -433,12 +435,14 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       if (languageMode === 'VI_ONLY') {
         const textToSpeak = viText || enText;
         if (textToSpeak) {
-          await audioPlayer.playChunk(textToSpeak, null, voiceVi || 'vi-VN-Neural2-A', speed);
+          const streamUrlVi = hint.audioUrlVi && hint.audioUrlVi.startsWith('http') ? hint.audioUrlVi : null;
+          await audioPlayer.playChunk(textToSpeak, streamUrlVi, voiceVi || 'vi-VN-Neural2-A', speed);
         }
       } else {
         // EN_ONLY
         if (enText) {
-          await audioPlayer.playChunk(enText, null, voiceEn, speed, voiceEn.startsWith('en-US'));
+          const streamUrlEn = hint.audioUrl && hint.audioUrl.startsWith('http') ? hint.audioUrl : null;
+          await audioPlayer.playChunk(enText, streamUrlEn, voiceEn, speed, voiceEn.startsWith('en-US'));
         }
       }
     } catch (err) {

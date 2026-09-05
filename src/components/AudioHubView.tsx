@@ -14,7 +14,7 @@ import {
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { getAllLessons } from '../services/firestoreService';
-import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
+import { syncLessonCachedAudioToCloud, syncAllImprovPackagesCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
 import { 
@@ -391,10 +391,27 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
         }
       }
 
+      setSyncCloudProgress('Đang đồng bộ audio Improv Packages lên Cloud Storage...');
+      let improvItemsSynced = 0;
+      let improvHintsSynced = 0;
+      try {
+        const improvSyncRes = await syncAllImprovPackagesCachedAudioToCloud({
+          voiceEn: currentSettings.voice_profile_en,
+          voiceVi: currentSettings.voice_profile_vi,
+          onProgress: (pkgIdx, pkgTot, status) => {
+            setSyncCloudProgress(`Improv [${pkgIdx}/${pkgTot}]: ${status}`);
+          }
+        });
+        improvItemsSynced = improvSyncRes.totalItemsSynced;
+        improvHintsSynced = improvSyncRes.totalHintsSynced;
+      } catch (improvErr) {
+        console.warn('Improv cloud sync warning:', improvErr);
+      }
+
       await loadLessonsAndCacheStatus();
       await refreshCacheCount();
-      const total = totalSyncedEn + totalSyncedVi;
-      alert(`🎉 Đã đồng bộ thành công ${total} audio chunks lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app! (EN: ${totalSyncedEn}, VI: ${totalSyncedVi}, ${totalLessonsProcessed} bài học)`);
+      const totalLessonsAudio = totalSyncedEn + totalSyncedVi;
+      alert(`🎉 Đã đồng bộ thành công lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app!\n- Lessons Audio: ${totalLessonsAudio} chunks (EN: ${totalSyncedEn}, VI: ${totalSyncedVi}, ${totalLessonsProcessed} bài học)\n- Improv Audio: ${improvItemsSynced} items, ${improvHintsSynced} hints`);
     } catch (err: any) {
       console.error('Sync cache to cloud error:', err);
       alert('Lỗi đồng bộ cache lên Cloud Storage: ' + (err?.message || String(err)));

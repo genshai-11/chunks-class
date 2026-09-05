@@ -1318,10 +1318,14 @@ class AudioPlayService {
         )
       );
 
-      const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http'));
+      const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
+      const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
 
-      if (hasEnAudio) enCached++;
-      if (hasViAudio) viCached++;
+      const isEnReady = hasEnAudio || hasGcsAudio;
+      const isViReady = hasViAudio || hasGcsAudioVi;
+
+      if (isEnReady) enCached++;
+      if (isViReady) viCached++;
 
       details.push({
         chunk_id: c.chunk_id || `chunk_${i + 1}`,
@@ -1331,7 +1335,7 @@ class AudioPlayService {
         hasViAudio,
         hasGcsAudio,
         enSource: hasEnAudio ? (effectiveVoiceEn.startsWith('aura-') ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
-        viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : undefined
+        viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : (hasGcsAudioVi ? 'GCS_MASTER' : undefined)
       });
     }
 
@@ -1339,7 +1343,7 @@ class AudioPlayService {
       total: chunks.length,
       enCached,
       viCached,
-      isFullyCached: chunks.length > 0 && enCached === chunks.length && viCached === chunks.length,
+      isFullyCached: chunks.length > 0 && enCached === chunks.length,
       details
     };
   }
@@ -1370,10 +1374,14 @@ class AudioPlayService {
       const viAudio = cleanVi ? await this.getCachedAudioAsync(cleanVi, effectiveVoiceVi) : null;
       const hasViAudio = Boolean(viAudio);
 
-      const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http'));
+      const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
+      const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
 
-      if (hasEnAudio) enCached++;
-      if (hasViAudio) viCached++;
+      const isEnReady = hasEnAudio || hasGcsAudio;
+      const isViReady = hasViAudio || hasGcsAudioVi;
+
+      if (isEnReady) enCached++;
+      if (isViReady) viCached++;
 
       details.push({
         chunk_id: c.chunk_id || `chunk_${i + 1}`,
@@ -1383,7 +1391,7 @@ class AudioPlayService {
         hasViAudio,
         hasGcsAudio,
         enSource: hasEnAudio ? (effectiveVoiceEn.startsWith('aura-') ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
-        viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : undefined
+        viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : (hasGcsAudioVi ? 'GCS_MASTER' : undefined)
       });
     }
 
@@ -1391,7 +1399,7 @@ class AudioPlayService {
       total: chunks.length,
       enCached,
       viCached,
-      isFullyCached: chunks.length > 0 && enCached === chunks.length && viCached === chunks.length,
+      isFullyCached: chunks.length > 0 && enCached === chunks.length,
       details
     };
   }
@@ -1449,6 +1457,17 @@ class AudioPlayService {
       // Never sends Deepgram voices or en-US languageCode to Vietnamese text.
       // ======================================================================
       if (isVietnamese) {
+        // Step 0: GCS Master Permanent Audio for Vietnamese if available
+        if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http')) {
+          try {
+            this.setLastSource('GCS_MASTER');
+            await this.playUrl(permanentAudioUrl, speed);
+            return;
+          } catch (err) {
+            console.warn(`[Audio] GCS master audio unreachable (${permanentAudioUrl}), falling back to Google Cloud TTS...`, err);
+          }
+        }
+
         const effectiveViVoice = (voiceName && voiceName.startsWith('vi-')) ? voiceName : 'vi-VN-Neural2-A';
         const cacheKey = this.getCacheKey(effectiveViVoice, cleanText);
         const cached = await this.getCachedAudioAsync(cleanText, effectiveViVoice);
