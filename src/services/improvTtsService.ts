@@ -170,17 +170,37 @@ function blobToBase64(blob: Blob): Promise<string> {
 
 /**
  * Helper to determine English vs Vietnamese text for a given hint.
+ * Rigorously inspects both hint.text and hint.translation for Vietnamese diacritics
+ * and falls back safely to prevent language mismatches.
  */
 export function getHintTextByLanguage(hint: ImprovHint, lang: 'en' | 'vi'): string {
-  const isTextVi = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(hint.text);
+  if (!hint) return '';
+  const text = (hint.text || '').trim();
+  const translation = (hint.translation || '').trim();
+
+  // Strict regex detecting all standard Vietnamese accented vowels and consonants
+  const VI_DIACRITICS_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\u00C0-\u1EF9\u0102\u0103\u0110\u0111\u0128\u0129\u0168\u0169\u01A0\u01A1\u01AF\u01B0]/i;
+  const isTextVi = VI_DIACRITICS_REGEX.test(text);
+  const isTransVi = VI_DIACRITICS_REGEX.test(translation);
+
   if (lang === 'vi') {
-    if (isTextVi) return hint.text;
-    if (hint.translation && hint.translation.trim()) return hint.translation;
-    return hint.text;
+    // 1. Prioritize whichever field has Vietnamese diacritics
+    if (isTextVi) return text;
+    if (isTransVi) return translation;
+    // 2. In standard datasets, hint.translation is the Vietnamese meaning (even without accents, e.g. 'xe', 'an')
+    if (translation) return translation;
+    // 3. Fallback to text
+    return text;
   } else {
-    if (!isTextVi) return hint.text;
-    if (hint.translation && hint.translation.trim()) return hint.translation;
-    return hint.text;
+    // English
+    // 1. If text has Vietnamese diacritics and translation exists without diacritics, translation is English
+    if (isTextVi && translation && !isTransVi) return translation;
+    // 2. If text is English (no diacritics), return text
+    if (!isTextVi && text) return text;
+    // 3. If translation has no diacritics, return translation
+    if (!isTransVi && translation) return translation;
+    // 4. Fallback
+    return text || translation;
   }
 }
 

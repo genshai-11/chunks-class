@@ -1509,10 +1509,20 @@ class AudioPlayService {
             return;
           }
         } catch (cloudErr: any) {
-          console.warn(`[Audio] Google Cloud TTS (VI) failed (${cloudErr?.message}), falling back to local Browser Speech Synthesis...`);
+          console.warn(`[Audio] Google Cloud TTS (VI) failed (${cloudErr?.message}), falling back to Public Google Vietnamese TTS...`);
         }
 
-        // Tier 2: Local Browser Speech Synthesis Fallback (lang: 'vi-VN')
+        // Tier 2: Public Google Vietnamese TTS (translate.google.com) - 100% free, natural Vietnamese voice
+        try {
+          const fallbackUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+          this.setLastSource('GOOGLE_CLOUD_AI');
+          await this.playUrl(fallbackUrl, speed);
+          return;
+        } catch (translateErr: any) {
+          console.warn(`[Audio] Public Google Translate TTS failed (${translateErr?.message}), falling back to local Browser Speech Synthesis...`);
+        }
+
+        // Tier 3: Local Browser Speech Synthesis Fallback (lang: 'vi-VN')
         this.setLastSource('BROWSER_LOCAL');
         await this.playBrowserTts(cleanText, 'vi-VN', speed);
         return;
@@ -1956,16 +1966,14 @@ class AudioPlayService {
     let candidateKeys = activeKeys.length > 0 ? activeKeys : this.apiKeyPool;
 
     if (isVi) {
-      // Prioritize GOOGLE_CLOUD_TTS keys for Vietnamese models (Chirp3-HD, Neural2, WaveNet, Standard)
-      candidateKeys = [...candidateKeys].sort((a, b) => {
-        if (a.type === 'GOOGLE_CLOUD_TTS' && b.type !== 'GOOGLE_CLOUD_TTS') return -1;
-        if (a.type !== 'GOOGLE_CLOUD_TTS' && b.type === 'GOOGLE_CLOUD_TTS') return 1;
-        return 0;
-      });
+      // Gemini Flash TTS ONLY supports English. Filter OUT all GEMINI_AI_STUDIO keys for Vietnamese text!
+      candidateKeys = candidateKeys.filter(k => k.type === 'GOOGLE_CLOUD_TTS');
     }
 
     if (candidateKeys.length === 0) {
-      throw new Error('No API keys configured in pool.');
+      throw new Error(isVi 
+        ? 'No valid Google Cloud TTS keys available for Vietnamese synthesis.' 
+        : 'No API keys configured in pool.');
     }
 
     let lastErrorMsg = '';
@@ -2030,6 +2038,10 @@ class AudioPlayService {
           continue;
         }
       } else if (candidate.type === 'GEMINI_AI_STUDIO') {
+        if (isVi) {
+          // Absolute safety guard: Never synthesize Vietnamese with Gemini Flash TTS
+          continue;
+        }
         try {
           const wavDataUri = await this.synthesizeWithGeminiTTS(cleanText, candidate.key, effectiveVoice);
           if (wavDataUri) {
@@ -2084,10 +2096,29 @@ class AudioPlayService {
 
   private playBrowserTts(text: string, voiceName: string, speed: number): Promise<void> {
     const cleanText = sanitizeSpeechText(text);
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       if (typeof window === 'undefined' || !window.speechSynthesis) {
         resolve();
         return;
+      }
+
+      const isVi = voiceName.startsWith('vi') || isVietnameseText(cleanText);
+
+      if (isVi) {
+        const voices = window.speechSynthesis.getVoices();
+        const viVoice = voices.find(v => v.lang.startsWith('vi') || v.lang.replace('_', '-').startsWith('vi'));
+        if (!viVoice) {
+          // On Windows Chrome/Edge without Vietnamese voice pack, browser falls back to default English voice (Microsoft David).
+          // NEVER let browser speak Vietnamese with an English voice! Fallback to Public Google Translate TTS.
+          try {
+            const fallbackUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+            await this.playUrl(fallbackUrl, speed);
+          } catch (e) {
+            console.warn('[Audio] Fallback translate_tts in playBrowserTts failed:', e);
+          }
+          resolve();
+          return;
+        }
       }
 
       window.speechSynthesis.cancel();
@@ -2097,8 +2128,6 @@ class AudioPlayService {
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.rate = speed;
-
-      const isVi = voiceName.startsWith('vi') || isVietnameseText(cleanText);
       utterance.lang = isVi ? 'vi-VN' : 'en-US';
 
       if (isVi) {
