@@ -1775,51 +1775,46 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           </div>
 
           {/* Right: Primary Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {/* Fullscreen Button */}
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 rounded-xl border border-[#E8E8EC] bg-white text-zinc-600 hover:text-zinc-900 transition-all cursor-pointer shadow-2xs"
-              title={isFullscreen ? 'Thoát toàn màn hình' : 'Bật toàn màn hình (Fullscreen)'}
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
+            {/* Quick View Controls: Fullscreen & Theme */}
+            <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200">
+              <button onClick={toggleFullscreen} className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-white transition-all cursor-pointer" title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}>
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+              <button onClick={toggleDarkMode} className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-white transition-all cursor-pointer" title={isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'}>
+                {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
+              </button>
+            </div>
 
-            {/* Dark Mode Theme Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-xl border border-[#E8E8EC] bg-white text-zinc-600 hover:text-zinc-900 transition-all cursor-pointer shadow-2xs"
-              title={isDarkMode ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
-            >
-              {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
-            </button>
-
-            {/* Create New (AI Generator) */}
+            {/* Create New Package AI */}
             <button
               onClick={() => setIsGeneratorOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
+              title="Tạo Package Mới với AI Generator"
             >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Tạo Package Mới (AI Generator)</span>
+              <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+              <span>Tạo Package AI</span>
             </button>
 
-            {/* Import Excel */}
-            <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
-            >
-              <Upload className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Import Excel</span>
-            </button>
-
-            {/* Export Excel */}
-            <button
-              onClick={handleExportExcel}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
-            >
-              <Download className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Export Excel</span>
-            </button>
+            {/* Import / Export Excel */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
+                title="Import danh sách từ Excel"
+              >
+                <Upload className="w-3.5 h-3.5 text-zinc-500" />
+                <span className="hidden sm:inline">Import</span>
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
+                title="Export danh sách ra file Excel"
+              >
+                <Download className="w-3.5 h-3.5 text-zinc-500" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
+            </div>
 
             {/* Delete Package */}
             <button
@@ -1919,62 +1914,47 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             </div>
 
             {/* Quick Controls: View Switcher, Add Item, Subtitle Toggle & Batch Audio Trigger */}
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               {/* View Mode Toggle */}
-              <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200">
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'table'
-                      ? 'bg-white text-[#DC2626] shadow-xs'
-                      : 'text-zinc-600 hover:text-zinc-900'
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'table' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                   }`}
                   title="Chế độ xem bảng danh sách chi tiết"
                 >
                   <TableIcon className="w-3.5 h-3.5" />
-                  <span>Dạng Bảng</span>
+                  <span className="hidden sm:inline">Bảng</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode('cards')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'cards'
-                      ? 'bg-white text-[#DC2626] shadow-xs'
-                      : 'text-zinc-600 hover:text-zinc-900'
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'cards' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                   }`}
                   title="Chế độ xem dạng thẻ dòng chảy"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
-                  <span>Dạng Thẻ</span>
+                  <span className="hidden sm:inline">Thẻ</span>
                 </button>
               </div>
 
-              {/* Add Item Button */}
-              <button
-                onClick={() => handleOpenAddItemModal()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold shadow-2xs transition-all cursor-pointer"
-                title="Thêm câu hỏi/bài tập mới vào session"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Thêm Câu</span>
-              </button>
-
               {/* Subtitle Toggle */}
               <button
+                type="button"
                 onClick={() => setShowVietnamese(!showVietnamese)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                  showVietnamese
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-zinc-50 text-zinc-500 border-zinc-200'
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  showVietnamese ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-50 text-zinc-500 border-zinc-200'
                 }`}
                 title="Bật/Tắt hiển thị nghĩa tiếng Việt"
               >
-                {showVietnamese ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                <span>{showVietnamese ? 'Hiện Tiếng Việt' : 'Ẩn Tiếng Việt'}</span>
+                {showVietnamese ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5" />}
+                <span className="hidden md:inline">{showVietnamese ? 'Hiện VI' : 'Ẩn VI'}</span>
               </button>
 
-              {/* Sync Cache to Cloud Storage Bucket */}
+              {/* Cloud Sync */}
               <button
                 type="button"
                 disabled={isSyncingToCloud || isBatchRunning || !activePackage}
@@ -1983,16 +1963,29 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 title="Tải toàn bộ audio Improv đã có trong cache trình duyệt lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app để dùng vĩnh viễn"
               >
                 <CloudUpload className={`w-3.5 h-3.5 ${isSyncingToCloud ? 'animate-bounce' : ''}`} />
-                <span>{isSyncingToCloud ? (cloudSyncProgress || 'Đang sync lên Cloud...') : 'Sync Cache ➔ Cloud Bucket'}</span>
+                <span>{isSyncingToCloud ? (cloudSyncProgress || 'Đang sync...') : 'Sync Cloud'}</span>
               </button>
 
-              {/* Batch Audio Trigger */}
+              {/* Batch TTS */}
               <button
+                type="button"
                 onClick={() => setIsBatchAudioModalOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
+                title="Tạo âm thanh hàng loạt cho Session / Package"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-300" />
-                <span>Tạo Batch Audio Package</span>
+                <span>Batch TTS</span>
+              </button>
+
+              {/* Add Item Button */}
+              <button
+                type="button"
+                onClick={() => handleOpenAddItemModal()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                title="Thêm câu hỏi mới vào session"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Thêm Câu</span>
               </button>
             </div>
           </div>
@@ -2138,11 +2131,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         title="Chọn tất cả / Bỏ chọn tất cả"
                       />
                     </th>
-                    <th className="p-3.5 w-16 text-center">STT</th>
-                    <th className="p-3.5 w-28">Session</th>
-                    <th className="p-3.5 min-w-[320px]">Các Gợi Ý & Từ Loại (Clues Stream)</th>
-                    <th className="p-3.5 w-40 text-center">Trạng Thái Audio</th>
-                    <th className="p-3.5 w-64 text-right">Thao Tác Quản Lý</th>
+                    <th className="p-3.5 w-14 text-center">STT</th>
+                    <th className="p-3.5 w-24 text-center">Session</th>
+                    <th className="p-3.5 min-w-[280px]">Các Gợi Ý & Từ Loại (Clues Stream)</th>
+                    <th className="p-3.5 w-[300px] text-center">Studio Âm Thanh (Audio Studio)</th>
+                    <th className="p-3.5 w-24 text-center">Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
@@ -2195,8 +2188,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                           </td>
 
                           {/* Session Badge */}
-                          <td className="p-3.5">
-                            <div className="flex flex-col gap-0.5">
+                          <td className="p-3.5 text-center">
+                            <div className="flex flex-col items-center gap-0.5">
                               <span className="text-xs font-bold text-zinc-900">
                                 Session {item.sessionNumber}
                               </span>
@@ -2290,112 +2283,127 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                             </div>
                           </td>
 
-                          {/* Audio Status Column */}
-                          <td className="p-3.5 text-center">
-                            <div className="flex flex-col items-center gap-1">
-                              <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                                isAudioEnReady
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-zinc-100 text-zinc-400 border-zinc-200'
-                              }`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${isAudioEnReady ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
-                                <span>EN {isAudioEnReady ? (item.audioUrl && item.audioUrl.startsWith('http') ? 'GCS' : '✓') : '—'}</span>
-                              </span>
+                          {/* Studio Âm Thanh Column */}
+                          <td className="p-3.5">
+                            <div className="flex flex-col gap-1.5">
+                              {/* Row 1: English Audio Controls */}
+                              <div className="flex items-center justify-between gap-1.5 p-1 px-2 rounded-lg bg-zinc-50 border border-zinc-200/80">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`w-2 h-2 rounded-full ${isAudioEnReady ? 'bg-emerald-500 shadow-xs' : 'bg-zinc-300'}`} />
+                                  <span className="text-[11px] font-bold font-mono text-zinc-700">EN</span>
+                                  <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-bold ${
+                                    item.audioUrl && item.audioUrl.startsWith('http')
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : isAudioEnReady
+                                      ? 'bg-zinc-200 text-zinc-700'
+                                      : 'text-zinc-400'
+                                  }`}>
+                                    {item.audioUrl && item.audioUrl.startsWith('http') ? 'GCS' : isAudioEnReady ? 'Cache' : 'Chưa có'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePlayItemWithPause(item, 'en')}
+                                    className={`px-2 py-1 rounded-md text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                      isPlayingThis && playingLang === 'en'
+                                        ? 'bg-zinc-900 text-white border-zinc-900'
+                                        : 'bg-white hover:bg-zinc-100 text-zinc-800 border-zinc-200 shadow-2xs'
+                                    }`}
+                                    title="Nghe tiếng Anh kèm khoảng nghỉ 1s"
+                                  >
+                                    <Play className="w-3 h-3 text-[#DC2626] fill-current" />
+                                    <span>Nghe</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSynthesizeSingleItem(item, 'en')}
+                                    disabled={isSynthesizing}
+                                    className="px-2 py-1 rounded-md bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-[11px] font-bold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1 shadow-2xs"
+                                    title="Tạo / tạo lại audio EN (GCS Cloud)"
+                                  >
+                                    {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                                    <span>Tạo</span>
+                                  </button>
+                                </div>
+                              </div>
 
-                              <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                                isAudioViReady
-                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                  : 'bg-zinc-100 text-zinc-400 border-zinc-200'
-                              }`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${isAudioViReady ? 'bg-blue-500' : 'bg-zinc-400'}`} />
-                                <span>VI {isAudioViReady ? (item.audioUrlVi && item.audioUrlVi.startsWith('http') ? 'GCS' : '✓') : '—'}</span>
-                              </span>
+                              {/* Row 2: Vietnamese Audio Controls + Both Button */}
+                              <div className="flex items-center justify-between gap-1.5 p-1 px-2 rounded-lg bg-zinc-50 border border-zinc-200/80">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`w-2 h-2 rounded-full ${isAudioViReady ? 'bg-blue-500 shadow-xs' : 'bg-zinc-300'}`} />
+                                  <span className="text-[11px] font-bold font-mono text-zinc-700">VI</span>
+                                  <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-bold ${
+                                    item.audioUrlVi && item.audioUrlVi.startsWith('http')
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : isAudioViReady
+                                      ? 'bg-zinc-200 text-zinc-700'
+                                      : 'text-zinc-400'
+                                  }`}>
+                                    {item.audioUrlVi && item.audioUrlVi.startsWith('http') ? 'GCS' : isAudioViReady ? 'Cache' : 'Chưa có'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePlayItemWithPause(item, 'vi')}
+                                    className={`px-2 py-1 rounded-md text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                      isPlayingThis && playingLang === 'vi'
+                                        ? 'bg-zinc-900 text-white border-zinc-900'
+                                        : 'bg-white hover:bg-zinc-100 text-zinc-800 border-zinc-200 shadow-2xs'
+                                    }`}
+                                    title="Nghe tiếng Việt chuẩn Google TTS kèm khoảng nghỉ 1s"
+                                  >
+                                    <Play className="w-3 h-3 text-blue-600 fill-current" />
+                                    <span>Nghe</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSynthesizeSingleItem(item, 'vi')}
+                                    disabled={isSynthesizing}
+                                    className="px-2 py-1 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-bold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1 shadow-2xs"
+                                    title="Tạo / tạo lại audio VI (GCS Cloud)"
+                                  >
+                                    {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                                    <span>Tạo</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSynthesizeSingleItem(item, 'both')}
+                                    disabled={isSynthesizing}
+                                    className="px-2 py-1 rounded-md bg-zinc-900 hover:bg-black text-white text-[11px] font-bold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1 shadow-2xs"
+                                    title="Tạo cả 2 ngôn ngữ EN & VI"
+                                  >
+                                    <RefreshCw className="w-2.5 h-2.5" />
+                                    <span>Cả 2</span>
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </td>
 
-                          {/* Actions Column */}
-                          <td className="p-3.5 text-right">
-                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                              {/* Nghe EN */}
-                              <button
-                                onClick={() => handlePlayItemWithPause(item, 'en')}
-                                className={`p-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1 ${
-                                  isPlayingThis && playingLang === 'en'
-                                    ? 'bg-zinc-900 text-white border-zinc-900'
-                                    : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
-                                }`}
-                                title="Nghe tiếng Anh kèm khoảng nghỉ 1s"
-                              >
-                                <Play className="w-3 h-3 text-[#DC2626] fill-current" />
-                                <span>EN</span>
-                              </button>
-
-                              {/* Nghe VI */}
-                              <button
-                                onClick={() => handlePlayItemWithPause(item, 'vi')}
-                                className={`p-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1 ${
-                                  isPlayingThis && playingLang === 'vi'
-                                    ? 'bg-zinc-900 text-white border-zinc-900'
-                                    : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200'
-                                }`}
-                                title="Nghe tiếng Việt chuẩn Google TTS kèm khoảng nghỉ 1s"
-                              >
-                                <Play className="w-3 h-3 text-blue-600 fill-current" />
-                                <span>VI</span>
-                              </button>
-
-                              {/* Tạo EN */}
-                              <button
-                                onClick={() => handleSynthesizeSingleItem(item, 'en')}
-                                disabled={isSynthesizing}
-                                className="p-1.5 px-2 rounded-lg bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1"
-                                title="Tạo âm thanh EN cho câu này (GCS Cloud)"
-                              >
-                                {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                                <span>Tạo EN</span>
-                              </button>
-
-                              {/* Tạo VI */}
-                              <button
-                                onClick={() => handleSynthesizeSingleItem(item, 'vi')}
-                                disabled={isSynthesizing}
-                                className="p-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1"
-                                title="Tạo âm thanh VI cho câu này (GCS Cloud)"
-                              >
-                                {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                                <span>Tạo VI</span>
-                              </button>
-
-                              {/* Tạo Cả 2 */}
-                              <button
-                                onClick={() => handleSynthesizeSingleItem(item, 'both')}
-                                disabled={isSynthesizing}
-                                className="p-1.5 px-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold cursor-pointer transition-all disabled:opacity-50 flex items-center gap-1"
-                                title="Tạo cả âm thanh EN và VI cho item này (GCS Cloud)"
-                              >
-                                {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                                <span>Cả 2</span>
-                              </button>
-
+                          {/* Thao Tác Column */}
+                          <td className="p-3.5 text-center">
+                            <div className="flex items-center justify-center gap-1">
                               {/* Voice Model Selector Toggle */}
                               <button
                                 type="button"
                                 onClick={() => setExpandedItemVoiceConfig(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
-                                className={`p-1.5 px-2 rounded-lg border text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
+                                className={`p-2 rounded-lg border transition-all cursor-pointer ${
                                   expandedItemVoiceConfig[item.id]
                                     ? 'bg-red-50 border-red-300 text-[#DC2626]'
-                                    : 'bg-zinc-100 hover:bg-zinc-200 border-zinc-200 text-zinc-700'
+                                    : 'bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-600'
                                 }`}
                                 title="Chọn Voice Model riêng cho câu này"
                               >
-                                <Sliders className="w-3 h-3" />
-                                <ChevronDown className={`w-3 h-3 transition-transform ${expandedItemVoiceConfig[item.id] ? 'rotate-180' : ''}`} />
+                                <Sliders className="w-3.5 h-3.5" />
                               </button>
 
                               {/* Sửa Text */}
                               <button
+                                type="button"
                                 onClick={() => setEditingItem(JSON.parse(JSON.stringify(item)))}
-                                className="p-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-100 text-zinc-600 hover:text-zinc-900 cursor-pointer transition-all"
+                                className="p-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 text-zinc-600 hover:text-zinc-900 cursor-pointer transition-all shadow-2xs"
                                 title="Chỉnh sửa câu"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
@@ -2403,12 +2411,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                               {/* Xóa Câu */}
                               <button
+                                type="button"
                                 onClick={() => setItemToDelete({
                                   sessionNumber: item.sessionNumber,
                                   itemId: item.id,
                                   itemNumber: item.itemNumber
                                 })}
-                                className="p-1.5 rounded-lg border border-zinc-200 hover:bg-red-50 text-zinc-400 hover:text-[#DC2626] hover:border-red-200 cursor-pointer transition-all"
+                                className="p-2 rounded-lg border border-zinc-200 bg-white hover:bg-red-50 text-zinc-400 hover:text-[#DC2626] hover:border-red-200 cursor-pointer transition-all shadow-2xs"
                                 title="Xóa câu này khỏi session"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -2674,104 +2683,116 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     </div>
 
                     {/* Right: Actions */}
-                    <div className="flex items-center gap-2 shrink-0 self-end xl:self-center flex-wrap">
-                      {/* Play EN */}
-                      <button
-                        onClick={() => handlePlayItemWithPause(item, 'en')}
-                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-                          isPlayingThis && playingLang === 'en'
-                            ? 'bg-zinc-900 text-white'
-                            : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800'
-                        }`}
-                        title="Nghe tiếng Anh kèm khoảng nghỉ 1s"
-                      >
-                        <Play className="w-3.5 h-3.5 text-[#DC2626] fill-current" />
-                        <span>Nghe EN</span>
-                      </button>
+                    <div className="flex flex-col sm:flex-row xl:flex-col items-end gap-1.5 shrink-0 self-end xl:self-center">
+                      {/* Audio Controls Group */}
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end p-1 rounded-xl bg-zinc-50 border border-zinc-200/80">
+                        {/* EN Controls */}
+                        <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-zinc-200/80 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => handlePlayItemWithPause(item, 'en')}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                              isPlayingThis && playingLang === 'en'
+                                ? 'bg-zinc-900 text-white'
+                                : 'hover:bg-zinc-100 text-zinc-800'
+                            }`}
+                            title="Nghe tiếng Anh kèm khoảng nghỉ 1s"
+                          >
+                            <Play className="w-3 h-3 text-[#DC2626] fill-current" />
+                            <span>EN</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSynthesizeSingleItem(item, 'en')}
+                            disabled={isSynthesizing}
+                            className="p-1 px-1.5 rounded-md bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
+                            title="Tạo audio EN (GCS Cloud)"
+                          >
+                            {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                          </button>
+                        </div>
 
-                      {/* Play VI */}
-                      <button
-                        onClick={() => handlePlayItemWithPause(item, 'vi')}
-                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-                          isPlayingThis && playingLang === 'vi'
-                            ? 'bg-zinc-900 text-white'
-                            : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-800'
-                        }`}
-                        title="Nghe tiếng Việt kèm khoảng nghỉ 1s"
-                      >
-                        <Play className="w-3.5 h-3.5 text-blue-600 fill-current" />
-                        <span>Nghe VI</span>
-                      </button>
+                        {/* VI Controls */}
+                        <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-zinc-200/80 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => handlePlayItemWithPause(item, 'vi')}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                              isPlayingThis && playingLang === 'vi'
+                                ? 'bg-zinc-900 text-white'
+                                : 'hover:bg-zinc-100 text-zinc-800'
+                            }`}
+                            title="Nghe tiếng Việt kèm khoảng nghỉ 1s"
+                          >
+                            <Play className="w-3 h-3 text-blue-600 fill-current" />
+                            <span>VI</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSynthesizeSingleItem(item, 'vi')}
+                            disabled={isSynthesizing}
+                            className="p-1 px-1.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
+                            title="Tạo audio VI (GCS Cloud)"
+                          >
+                            {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                          </button>
+                        </div>
 
-                      {/* Synthesize EN */}
-                      <button
-                        onClick={() => handleSynthesizeSingleItem(item, 'en')}
-                        disabled={isSynthesizing}
-                        className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
-                        title="Tạo audio EN cho item này (GCS Cloud)"
-                      >
-                        {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-                        <span>Tạo EN</span>
-                      </button>
+                        {/* Synthesize Both */}
+                        <button
+                          type="button"
+                          onClick={() => handleSynthesizeSingleItem(item, 'both')}
+                          disabled={isSynthesizing}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-zinc-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
+                          title="Tạo cả âm thanh EN & VI mới (GCS Cloud)"
+                        >
+                          {isSynthesizing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-2.5 h-2.5" />}
+                          <span>Cả 2</span>
+                        </button>
+                      </div>
 
-                      {/* Synthesize VI */}
-                      <button
-                        onClick={() => handleSynthesizeSingleItem(item, 'vi')}
-                        disabled={isSynthesizing}
-                        className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
-                        title="Tạo audio VI cho item này (GCS Cloud)"
-                      >
-                        {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-                        <span>Tạo VI</span>
-                      </button>
+                      {/* Item Actions Group */}
+                      <div className="flex items-center gap-1.5 justify-end">
+                        {/* Voice Model Selector Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedItemVoiceConfig(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                          className={`p-1.5 px-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 shadow-2xs ${
+                            expandedItemVoiceConfig[item.id]
+                              ? 'bg-red-50 border-red-300 text-[#DC2626]'
+                              : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700'
+                          }`}
+                          title="Chọn Voice Model riêng cho câu này"
+                        >
+                          <Sliders className="w-3.5 h-3.5" />
+                          <ChevronDown className={`w-3 h-3 transition-transform ${expandedItemVoiceConfig[item.id] ? 'rotate-180' : ''}`} />
+                        </button>
 
-                      {/* Synthesize Both */}
-                      <button
-                        onClick={() => handleSynthesizeSingleItem(item, 'both')}
-                        disabled={isSynthesizing}
-                        className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
-                        title="Tạo cả âm thanh EN & VI mới cho item này (GCS Cloud)"
-                      >
-                        {isSynthesizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                        <span>Cả 2</span>
-                      </button>
+                        {/* Edit Item */}
+                        <button
+                          type="button"
+                          onClick={() => setEditingItem(JSON.parse(JSON.stringify(item)))}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
+                          title="Chỉnh sửa câu"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-zinc-500" />
+                          <span>Sửa</span>
+                        </button>
 
-                      {/* Voice Model Selector Toggle */}
-                      <button
-                        type="button"
-                        onClick={() => setExpandedItemVoiceConfig(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
-                        className={`p-2 rounded-xl border text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
-                          expandedItemVoiceConfig[item.id]
-                            ? 'bg-red-50 border-red-300 text-[#DC2626]'
-                            : 'border-zinc-200 hover:border-zinc-300 hover:bg-zinc-100 text-zinc-700'
-                        }`}
-                        title="Chọn Voice Model riêng cho câu này"
-                      >
-                        <Sliders className="w-4 h-4" />
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedItemVoiceConfig[item.id] ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      {/* Edit Item */}
-                      <button
-                        onClick={() => setEditingItem(JSON.parse(JSON.stringify(item)))}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 cursor-pointer active:scale-95 transition-all"
-                      >
-                        <Edit3 className="w-3.5 h-3.5 text-zinc-500" />
-                        <span>Sửa Text</span>
-                      </button>
-
-                      {/* Delete Item */}
-                      <button
-                        onClick={() => setItemToDelete({
-                          sessionNumber: item.sessionNumber,
-                          itemId: item.id,
-                          itemNumber: item.itemNumber
-                        })}
-                        className="p-2 rounded-xl border border-zinc-200 hover:bg-red-50 text-zinc-400 hover:text-[#DC2626] hover:border-red-200 cursor-pointer transition-all"
-                        title="Xóa câu này"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        {/* Delete Item */}
+                        <button
+                          type="button"
+                          onClick={() => setItemToDelete({
+                            sessionNumber: item.sessionNumber,
+                            itemId: item.id,
+                            itemNumber: item.itemNumber
+                          })}
+                          className="p-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-red-50 text-zinc-400 hover:text-[#DC2626] hover:border-red-200 cursor-pointer transition-all shadow-2xs"
+                          title="Xóa câu này"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
