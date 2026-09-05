@@ -168,39 +168,63 @@ function blobToBase64(blob: Blob): Promise<string> {
 // 2. Improv TTS Engine Implementation
 // --------------------------------------------------------------------------
 
+// Strict regex detecting all standard Vietnamese accented vowels and consonants
+export const VI_DIACRITICS_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\u00C0-\u1EF9\u0102\u0103\u0110\u0111\u0128\u0129\u0168\u0169\u01A0\u01A1\u01AF\u01B0]/i;
+
+// Regex detecting English characters, morphology, consonant/vowel clusters, and common vocabulary
+export const EN_PATTERN_REGEX = new RegExp(
+  [
+    // 1. Letters that do not exist in the Vietnamese alphabet
+    '[fFIjJwWzZ]',
+    // 2. Double consonants/vowels not found in native Vietnamese (e.g. dinner, luggage, staff, see, loose)
+    '(?:bb|cc|dd|ff|gg|ll|mm|nn|pp|rr|ss|tt|zz)',
+    // 3. English consonant digraphs and trigraphs
+    '(?:ck|sh|wh|tch|ght)',
+    // 4. Vowel digraphs characteristic of English (not native in Vietnamese)
+    '(?:ee|ea|oo|ou)',
+    // 5. Common English suffixes
+    '\\b\\w*(?:tion|sion|ment|ness|ity|ship|able|ible|less|ful|ous|ing|ed)\\b',
+    // 6. Common English stop words & domain vocabulary
+    '\\b(?:the|a|an|in|on|at|to|for|of|with|by|from|about|into|through|after|over|between|out|against|during|without|before|under|around|among|and|or|but|if|while|as|that|this|these|those|is|are|was|were|be|been|being|have|has|had|do|does|did|will|would|shall|should|may|might|must|can|could|not|no|so|too|very|just|more|also|then|now|here|there|when|where|why|how|all|any|both|each|few|most|other|some|such|than|you|your|we|our|they|their|he|his|she|her|it|its|my|me|i|suitcase|luggage|bag|cart|car|carsick|clink|clinking|sound|dinner|cook|cooking|bring|along|lose|lost|loose|change|pocket|front|customs|officer|hotel|flight|delayed|heavy|warm|check|arrive|depart|ticket|passport|gate|seat|bus|train|taxi|driver|passenger|room|desk|staff|manager|bill|cash|card|pay|price|buy|sell|cost|shop|store|order|delivery|product|item|service|company|work|job|boss|colleague|meeting|office|computer|phone|call|email|message|talk|say|tell|ask|listen|hear|see|look|watch|find|search|go|come|leave|stay|wait|take|give|help|start|stop|open|close|make|get|set|use|try|need|want|like|love|good|bad|new|old|big|small|long|short|fast|slow|easy|hard|late|early|right|wrong|true|false)\\b'
+  ].join('|'),
+  'i'
+);
+
 /**
  * Helper to determine English vs Vietnamese text for a given hint.
  * Rigorously inspects both hint.text and hint.translation for Vietnamese diacritics
- * and falls back safely to prevent language mismatches.
+ * and English morphological/lexical patterns to guarantee zero language inversion.
  */
 export function getHintTextByLanguage(hint: ImprovHint, lang: 'en' | 'vi'): string {
   if (!hint) return '';
   const text = (hint.text || '').trim();
   const translation = (hint.translation || '').trim();
 
-  // Strict regex detecting all standard Vietnamese accented vowels and consonants
-  const VI_DIACRITICS_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\u00C0-\u1EF9\u0102\u0103\u0110\u0111\u0128\u0129\u0168\u0169\u01A0\u01A1\u01AF\u01B0]/i;
   const isTextVi = VI_DIACRITICS_REGEX.test(text);
   const isTransVi = VI_DIACRITICS_REGEX.test(translation);
+  const isTextEn = EN_PATTERN_REGEX.test(text);
+  const isTransEn = EN_PATTERN_REGEX.test(translation);
 
   if (lang === 'vi') {
     // 1. Prioritize whichever field has Vietnamese diacritics
     if (isTextVi) return text;
     if (isTransVi) return translation;
-    // 2. In standard datasets, hint.translation is the Vietnamese meaning (even without accents, e.g. 'xe', 'an')
-    if (translation) return translation;
-    // 3. Fallback to text
-    return text;
+    // 2. If translation is English and text is not, text is definitely Vietnamese
+    if (isTransEn && !isTextEn) return text;
+    // 3. If text is English and translation is not, translation is Vietnamese
+    if (isTextEn && !isTransEn) return translation;
+    // 4. Standard fallback for Improv dataset: text is the Vietnamese hint
+    return text || translation;
   } else {
     // English
-    // 1. If text has Vietnamese diacritics and translation exists without diacritics, translation is English
-    if (isTextVi && translation && !isTransVi) return translation;
-    // 2. If text is English (no diacritics), return text
-    if (!isTextVi && text) return text;
-    // 3. If translation has no diacritics, return translation
-    if (!isTransVi && translation) return translation;
-    // 4. Fallback
-    return text || translation;
+    // 1. If translation matches English patterns -> translation
+    if (isTransEn) return translation;
+    // 2. If text has Vietnamese diacritics and translation exists -> translation is English
+    if (isTextVi && translation) return translation;
+    // 3. If text matches English and translation does not -> text
+    if (isTextEn && !isTransEn) return text;
+    // 4. Standard fallback for English: translation || text
+    return translation || text;
   }
 }
 
@@ -223,7 +247,7 @@ class ImprovTtsEngine {
     const cacheKey = `improv_hint_${hint.id}_${effectiveVoice}_${lang}`;
 
     if (!forceRegenerate) {
-      const cached = await audioPlayer.getCachedAudioAsync(cacheKey);
+      const cached = await audioPlayer.getCachedAudioAsync(cacheKey, effectiveVoice);
       if (cached) return cached;
     }
 
@@ -349,7 +373,7 @@ class ImprovTtsEngine {
 
     // 1. Check persistent & memory cache
     if (!forceRegenerate) {
-      const cached = await audioPlayer.getCachedAudioAsync(cacheKey);
+      const cached = await audioPlayer.getCachedAudioAsync(cacheKey, normalizedMode === 'VI_ONLY' ? effectiveVoiceVi : effectiveVoiceEn);
       if (cached) return cached;
     }
 
@@ -465,21 +489,21 @@ class ImprovTtsEngine {
         const { item, sessionNum } = allItems[idx];
         const itemCacheKey = `improv_item_${item.id}_${voiceEn}_${voiceVi}_${langMode}`;
 
-        const isItemCached = !forceRegenerate && Boolean(await audioPlayer.getCachedAudioAsync(itemCacheKey));
+        const isItemCached = !forceRegenerate && Boolean(await audioPlayer.getCachedAudioAsync(itemCacheKey, langMode === 'VI_ONLY' ? voiceVi : voiceEn));
 
         // Check if individual hints are also already cached
         let allHintsCached = true;
         for (const h of (item.hints || [])) {
           if (langMode === 'EN_ONLY' || langMode === 'EN_THEN_VI' || langMode === 'VI_THEN_EN') {
             const hKeyEn = `improv_hint_${h.id}_${voiceEn}_en`;
-            if (!(await audioPlayer.getCachedAudioAsync(hKeyEn))) {
+            if (!(await audioPlayer.getCachedAudioAsync(hKeyEn, voiceEn))) {
               allHintsCached = false;
               break;
             }
           }
           if (langMode === 'VI_ONLY' || langMode === 'EN_THEN_VI' || langMode === 'VI_THEN_EN') {
             const hKeyVi = `improv_hint_${h.id}_${voiceVi}_vi`;
-            if (!(await audioPlayer.getCachedAudioAsync(hKeyVi))) {
+            if (!(await audioPlayer.getCachedAudioAsync(hKeyVi, voiceVi))) {
               allHintsCached = false;
               break;
             }
@@ -626,7 +650,7 @@ class ImprovTtsEngine {
         continue;
       }
       const itemCacheKey = `improv_item_${item.id}_${voiceEn}_${voiceVi}_${normalizedMode}`;
-      const cached = await audioPlayer.getCachedAudioAsync(itemCacheKey);
+      const cached = await audioPlayer.getCachedAudioAsync(itemCacheKey, normalizedMode === 'VI_ONLY' ? voiceVi : voiceEn);
       if (!cached) return false;
     }
     return true;

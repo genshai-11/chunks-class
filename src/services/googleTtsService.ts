@@ -995,27 +995,80 @@ class AudioPlayService {
 
   /**
    * Synchronous cache retrieval (Memory Map).
-   * Checks raw keys, clean speech text, and composite model::text keys.
+   * Strictly enforces namespace isolation between English and Vietnamese cache entries
+   * to guarantee that English audio never leaks into Vietnamese playback and vice versa.
    */
   public getCachedAudio(text: string, voiceName?: string): string | null {
     if (!text) return null;
-    // 1. Direct text check
-    if (this.audioCache.has(text)) return this.audioCache.get(text)!;
     const clean = sanitizeSpeechText(text);
-    if (clean && this.audioCache.has(clean)) return this.audioCache.get(clean)!;
-    
-    // 2. Specific voice check
-    if (voiceName) {
-      const cleanVoice = voiceName === 'aura-theia-en' ? 'aura-asteria-en' : voiceName;
+    const isVi = (voiceName && voiceName.toLowerCase().startsWith('vi')) ||
+                 isVietnameseText(clean, voiceName) ||
+                 text.endsWith('_vi');
+
+    if (isVi) {
+      // 1. VIETNAMESE CACHE NAMESPACE
+      // If text is a specific key ending with _vi, direct match is allowed
+      if (text.endsWith('_vi') && this.audioCache.has(text)) {
+        return this.audioCache.get(text)!;
+      }
+
+      // Check specific Vietnamese voice
+      const cleanVoice = (voiceName && voiceName.startsWith('vi-')) ? voiceName : 'vi-VN-Neural2-A';
       const k1 = this.getCacheKey(cleanVoice, clean);
       if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
       const k2 = this.getCacheKey(cleanVoice, text);
       if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
+
+      // Check standard Vietnamese voices
+      const viVoices = ['vi-VN-Neural2-A', 'vi-VN-Standard-A', 'vi-VN-WaveNet-A'];
+      for (const vVoice of viVoices) {
+        const kv = this.getCacheKey(vVoice, clean);
+        if (this.audioCache.has(kv)) return this.audioCache.get(kv)!;
+      }
+
+      // Fallback for Vietnamese: ONLY accept keys that start with 'vi-' or end with '_vi'
+      // Tuyệt đối KHÔNG trả về bất kỳ key nào bắt đầu bằng 'aura-' hay 'en-US-'
+      const targetSuffix = `::${clean.toLowerCase()}`;
+      for (const [k, v] of this.audioCache) {
+        if (k.startsWith('vi-') || k.endsWith('_vi')) {
+          if (k.endsWith(targetSuffix) || k === text) {
+            return v;
+          }
+        }
+      }
+      return null;
     }
 
-    // 3. Fallback: check ANY cached entry matching ::clean or ::text
+    // 2. ENGLISH / NON-VIETNAMESE CACHE NAMESPACE
+    // If text is a specific key ending with _en, direct match is allowed
+    if (text.endsWith('_en') && this.audioCache.has(text)) {
+      return this.audioCache.get(text)!;
+    }
+
+    // Specific voice check
+    const cleanVoice = (voiceName === 'aura-theia-en' || !voiceName) ? 'aura-asteria-en' : voiceName;
+    const k1 = this.getCacheKey(cleanVoice, clean);
+    if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
+    const k2 = this.getCacheKey(cleanVoice, text);
+    if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
+
+    // Check standard English voices
+    const enVoices = ['aura-asteria-en', 'aura-athena-en', 'en-US-Journey-F', 'en-US-Neural2-A'];
+    for (const eVoice of enVoices) {
+      const ke = this.getCacheKey(eVoice, clean);
+      if (this.audioCache.has(ke)) return this.audioCache.get(ke)!;
+    }
+
+    // Direct text check (ONLY for non-Vietnamese keys and text that doesn't end with _vi)
+    if (!text.endsWith('_vi')) {
+      if (this.audioCache.has(text)) return this.audioCache.get(text)!;
+      if (clean && this.audioCache.has(clean)) return this.audioCache.get(clean)!;
+    }
+
+    // Fallback for English: Tuyệt đối KHÔNG trả về các key bắt đầu bằng 'vi-' hoặc kết thúc bằng '_vi'
     const targetSuffix = `::${clean.toLowerCase()}`;
     for (const [k, v] of this.audioCache) {
+      if (k.startsWith('vi-') || k.endsWith('_vi')) continue;
       if (k.endsWith(targetSuffix) || k === clean || k === text) {
         return v;
       }
@@ -1026,7 +1079,7 @@ class AudioPlayService {
   /**
    * Asynchronous cache retrieval (IndexedDB + Memory).
    * Checks in-memory cache first; if missing, fetches from IndexedDB
-   * and populates memory for instant 0ms subsequent access.
+   * with strict namespace isolation and populates memory for instant subsequent access.
    */
   public async getCachedAudioAsync(text: string, voiceName?: string): Promise<string | null> {
     if (!text) return null;
@@ -1034,32 +1087,65 @@ class AudioPlayService {
     if (memCached) return memCached;
 
     const clean = sanitizeSpeechText(text);
+    const isVi = (voiceName && voiceName.toLowerCase().startsWith('vi')) ||
+                 isVietnameseText(clean, voiceName) ||
+                 text.endsWith('_vi');
+
+    if (isVi) {
+      const cleanVoice = (voiceName && voiceName.startsWith('vi-')) ? voiceName : 'vi-VN-Neural2-A';
+      const keysToCheck: string[] = [];
+
+      if (text.endsWith('_vi')) {
+        keysToCheck.push(text);
+      }
+
+      keysToCheck.push(
+        this.getCacheKey(cleanVoice, clean),
+        this.getCacheKey(cleanVoice, text),
+        this.getCacheKey('vi-VN-Neural2-A', clean),
+        this.getCacheKey('vi-VN-Standard-A', clean),
+        this.getCacheKey('vi-VN-WaveNet-A', clean)
+      );
+
+      for (const key of keysToCheck) {
+        const fromDb = await getAudioBlobFromDB(key);
+        if (fromDb) {
+          this.audioCache.set(key, fromDb);
+          this.audioCache.set(this.getCacheKey(cleanVoice, clean), fromDb);
+          return fromDb;
+        }
+      }
+
+      return null;
+    }
+
+    // English / Non-Vietnamese
     const cleanVoice = (voiceName === 'aura-theia-en' || !voiceName) ? 'aura-asteria-en' : voiceName;
+    const keysToCheck: string[] = [];
 
-    const keysToCheck: string[] = [
-      text,
-      clean,
+    if (text.endsWith('_en')) {
+      keysToCheck.push(text);
+    }
+
+    keysToCheck.push(
       this.getCacheKey(cleanVoice, clean),
-      this.getCacheKey(cleanVoice, text)
-    ];
+      this.getCacheKey(cleanVoice, text),
+      this.getCacheKey('aura-asteria-en', clean),
+      this.getCacheKey('aura-athena-en', clean),
+      this.getCacheKey('en-US-Journey-F', clean),
+      this.getCacheKey('en-US-Neural2-A', clean)
+    );
 
-    // Also check common standard voices so changing voices doesn't drop 100% prepared audio!
-    if (cleanVoice.startsWith('aura-') || cleanVoice.startsWith('en-US-')) {
-      keysToCheck.push(this.getCacheKey('aura-asteria-en', clean));
-      keysToCheck.push(this.getCacheKey('aura-athena-en', clean));
-      keysToCheck.push(this.getCacheKey('en-US-Journey-F', clean));
-      keysToCheck.push(this.getCacheKey('en-US-Neural2-A', clean));
-    } else if (cleanVoice.startsWith('vi-')) {
-      keysToCheck.push(this.getCacheKey('vi-VN-Neural2-A', clean));
-      keysToCheck.push(this.getCacheKey('vi-VN-Standard-A', clean));
-      keysToCheck.push(this.getCacheKey('vi-VN-WaveNet-A', clean));
+    if (!text.endsWith('_vi')) {
+      keysToCheck.push(clean);
+      keysToCheck.push(text);
     }
 
     for (const key of keysToCheck) {
       const fromDb = await getAudioBlobFromDB(key);
       if (fromDb) {
         this.audioCache.set(key, fromDb);
-        this.audioCache.set(clean, fromDb); // Also cache by clean text for instant access
+        this.audioCache.set(this.getCacheKey(cleanVoice, clean), fromDb);
         return fromDb;
       }
     }

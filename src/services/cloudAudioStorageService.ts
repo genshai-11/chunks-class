@@ -4,7 +4,7 @@ import { ChunkItem, LessonDoc, ImprovPackage, ImprovHint, ImprovItem } from '../
 import { updateLessonChunks } from './firestoreService';
 import { audioPlayer } from './googleTtsService';
 import { saveImprovPackage, getAllImprovPackages } from './improvService';
-import { improvTts } from './improvTtsService';
+import { improvTts, getHintTextByLanguage } from './improvTtsService';
 
 export const CLOUD_STORAGE_BUCKET_NAME = 'chunks-voicecloning-genshai.firebasestorage.app';
 
@@ -238,11 +238,12 @@ export async function syncImprovPackageCachedAudioToCloud(
             ];
             let hCached: string | null = null;
             for (const k of hKeysEn) {
-              hCached = await audioPlayer.getCachedAudioAsync(k);
+              hCached = await audioPlayer.getCachedAudioAsync(k, voiceEn);
               if (hCached) break;
             }
-            if (!hCached && hint.text) {
-              hCached = (await audioPlayer.getCachedAudioAsync(hint.text, voiceEn)) || (await audioPlayer.getCachedAudioAsync(hint.text));
+            const enText = getHintTextByLanguage(hint, 'en');
+            if (!hCached && enText) {
+              hCached = await audioPlayer.getCachedAudioAsync(enText, voiceEn);
             }
 
             if (hCached) {
@@ -273,12 +274,12 @@ export async function syncImprovPackageCachedAudioToCloud(
             ];
             let hCachedVi: string | null = null;
             for (const k of hKeysVi) {
-              hCachedVi = await audioPlayer.getCachedAudioAsync(k);
+              hCachedVi = await audioPlayer.getCachedAudioAsync(k, voiceVi);
               if (hCachedVi) break;
             }
-            const viText = hint.translation || hint.text;
+            const viText = getHintTextByLanguage(hint, 'vi');
             if (!hCachedVi && viText) {
-              hCachedVi = (await audioPlayer.getCachedAudioAsync(viText, voiceVi)) || (await audioPlayer.getCachedAudioAsync(viText));
+              hCachedVi = await audioPlayer.getCachedAudioAsync(viText, voiceVi);
             }
 
             if (hCachedVi) {
@@ -311,7 +312,7 @@ export async function syncImprovPackageCachedAudioToCloud(
         ];
         let itemBase64: string | null = null;
         for (const k of itemEnKeys) {
-          itemBase64 = await audioPlayer.getCachedAudioAsync(k);
+          itemBase64 = await audioPlayer.getCachedAudioAsync(k, voiceEn);
           if (itemBase64) break;
         }
 
@@ -352,7 +353,7 @@ export async function syncImprovPackageCachedAudioToCloud(
         ];
         let itemBase64Vi: string | null = null;
         for (const k of itemViKeys) {
-          itemBase64Vi = await audioPlayer.getCachedAudioAsync(k);
+          itemBase64Vi = await audioPlayer.getCachedAudioAsync(k, voiceVi);
           if (itemBase64Vi) break;
         }
 
