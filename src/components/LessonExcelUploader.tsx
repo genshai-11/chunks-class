@@ -101,7 +101,7 @@ export const LessonExcelUploader: React.FC<LessonExcelUploaderProps> = ({
     try {
       await audioPlayer.prepareChunksAudio(
         parsedChunks,
-        'aura-asteria-en',
+        'flux-cliff-en',
         'DEEPGRAM_AURA',
         (current, total, message) => {
           setPrepProgress({ current, total, message });
@@ -119,7 +119,7 @@ export const LessonExcelUploader: React.FC<LessonExcelUploaderProps> = ({
     if (!chunk.english.trim()) return;
     setPlayingChunkId(chunk.chunk_id);
     try {
-      await audioPlayer.playChunk(chunk.english, chunk.audio_url, 'aura-asteria-en', 1.0);
+      await audioPlayer.playChunk(chunk.english, chunk.audio_url, 'flux-cliff-en', 1.0);
     } catch {
       // ignore
     } finally {

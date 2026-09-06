@@ -243,7 +243,7 @@ class ImprovTtsEngine {
     forceRegenerate: boolean = false
   ): Promise<string> {
     const isVi = lang === 'vi';
-    const effectiveVoice = voice || (isVi ? 'vi-VN-Neural2-A' : 'aura-asteria-en');
+    const effectiveVoice = voice || (isVi ? 'vi-VN-Neural2-A' : 'flux-cliff-en');
     const cacheKey = `improv_hint_${hint.id}_${effectiveVoice}_${lang}`;
 
     if (!forceRegenerate) {
@@ -317,7 +317,7 @@ class ImprovTtsEngine {
         return;
       }
 
-      const effectiveVoice = voice || (lang === 'vi' ? 'vi-VN-Neural2-A' : 'aura-asteria-en');
+      const effectiveVoice = voice || (lang === 'vi' ? 'vi-VN-Neural2-A' : 'flux-cliff-en');
       const base64Audio = await this.synthesizeSingleHintAudio(hint, lang, effectiveVoice, false);
 
       if (this.activeSequenceId !== seqId) return;
@@ -356,7 +356,7 @@ class ImprovTtsEngine {
    */
   async synthesizeItemCombinedAudio(
     item: ImprovItem,
-    voiceEn: string = 'aura-asteria-en',
+    voiceEn: string = 'flux-cliff-en',
     voiceVi: string = 'vi-VN-Neural2-A',
     langMode: LanguageMode = 'EN_ONLY',
     forceRegenerate: boolean = false
@@ -366,7 +366,7 @@ class ImprovTtsEngine {
       throw new Error(`Improv item #${item.itemNumber} (Session ${item.sessionNumber}) contains no hints.`);
     }
 
-    const effectiveVoiceEn = voiceEn || 'aura-asteria-en';
+    const effectiveVoiceEn = voiceEn || 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
     const normalizedMode = normalizeLanguageMode(langMode);
     const cacheKey = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_${normalizedMode}`;
@@ -461,7 +461,7 @@ class ImprovTtsEngine {
     options?: PrepareAudioOptions,
     onProgress?: (current: number, total: number, statusText: string) => void
   ): Promise<{ prepared: number; failed: number; total: number; skipped: number }> {
-    const voiceEn = options?.voiceEn || 'aura-asteria-en';
+    const voiceEn = options?.voiceEn || 'flux-cliff-en';
     const voiceVi = options?.voiceVi || 'vi-VN-Neural2-A';
     const forceRegenerate = options?.forceRegenerate || false;
     const concurrency = Math.max(1, Math.min(6, options?.concurrency || 3));
@@ -553,7 +553,7 @@ class ImprovTtsEngine {
     item: ImprovItem,
     speed: number = 1.0,
     onEnded?: () => void,
-    voiceEn: string = 'aura-asteria-en',
+    voiceEn: string = 'flux-cliff-en',
     voiceVi: string = 'vi-VN-Neural2-A',
     langMode: LanguageMode = 'EN_ONLY'
   ): Promise<void> {
@@ -636,7 +636,7 @@ class ImprovTtsEngine {
    */
   async isSessionAudioReady(
     session: ImprovSession, 
-    voiceEn: string = 'aura-asteria-en', 
+    voiceEn: string = 'flux-cliff-en', 
     voiceVi: string = 'vi-VN-Neural2-A', 
     langMode: LanguageMode = 'EN_ONLY'
   ): Promise<boolean> {
@@ -661,7 +661,7 @@ class ImprovTtsEngine {
    */
   async isPackageAudioReady(
     pkg: ImprovPackage, 
-    voiceEn: string = 'aura-asteria-en', 
+    voiceEn: string = 'flux-cliff-en', 
     voiceVi: string = 'vi-VN-Neural2-A', 
     langMode: LanguageMode = 'EN_ONLY'
   ): Promise<boolean> {

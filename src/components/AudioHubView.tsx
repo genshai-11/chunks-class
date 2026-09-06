@@ -49,7 +49,7 @@ interface AudioHubViewProps {
 }
 
 const DEFAULT_AUDIO_SETTINGS: CohortAudioSettings = {
-  voice_profile_en: 'aura-asteria-en',
+  voice_profile_en: 'flux-cliff-en',
   voice_profile_vi: 'vi-VN-Neural2-A',
   language_mode: 'EN_THEN_VI',
   auto_advance_delay_sec: 0,
@@ -150,7 +150,8 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
   }, []);
 
   const voiceProfilesDeepgram = [
-    { id: 'aura-asteria-en', name: 'Deepgram Asteria (Nữ Mỹ)', desc: 'Tự nhiên, sắc nét, truyền cảm — Chuẩn phát âm phản xạ lớp học', tag: 'KHUYÊN DÙNG' },
+    { id: 'flux-cliff-en', name: 'Deepgram Flux Cliff (Nam Mỹ - Chuẩn)', desc: 'Next-generation conversational English male voice với ngữ điệu tự nhiên và ngắt nghỉ vượt trội', tag: 'MẶC ĐỊNH / KHUYÊN DÙNG' },
+    { id: 'aura-asteria-en', name: 'Deepgram Asteria (Nữ Mỹ)', desc: 'Tự nhiên, sắc nét, truyền cảm — Chuẩn phát âm phản xạ lớp học', tag: 'AURA NỮ' },
     { id: 'aura-luna-en', name: 'Deepgram Luna (Nữ Mỹ)', desc: 'Ấm áp, gần gũi, ngữ điệu giao tiếp đời thường', tag: 'GIAO TIẾP' },
     { id: 'aura-stella-en', name: 'Deepgram Stella (Nữ Mỹ)', desc: 'Rõ ràng, chuyên nghiệp cho các bài phát âm chính xác', tag: 'CHUẨN MỰC' },
     { id: 'aura-orion-en', name: 'Deepgram Orion (Nam Mỹ)', desc: 'Trầm ấm, nội lực, phù hợp luyện ngữ điệu nam giới', tag: 'NAM MỸ' },
@@ -471,13 +472,13 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                   onClick={() => {
                     setAudioProvider('DEEPGRAM_AURA');
                     audioPlayer.setAudioProvider('DEEPGRAM_AURA');
-                    onUpdateSettings({ ...currentSettings, voice_profile_en: 'aura-asteria-en' });
+                    onUpdateSettings({ ...currentSettings, voice_profile_en: 'flux-cliff-en' });
                   }}
                   className={`px-3 py-1 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
                     audioProvider === 'DEEPGRAM_AURA' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                   }`}
                 >
-                  Deepgram Aura (0ms)
+                  Deepgram Flux & Aura (0ms)
                 </button>
                 <button
                   onClick={() => {

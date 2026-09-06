@@ -165,7 +165,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   audioSettings
 }) => {
   const rawVoiceEn = audioSettings?.voice_profile_en;
-  const currentVoiceEn = (rawVoiceEn && rawVoiceEn !== 'aura-theia-en') ? rawVoiceEn : 'aura-asteria-en';
+  const currentVoiceEn = (rawVoiceEn && rawVoiceEn !== 'aura-theia-en') ? rawVoiceEn : 'flux-cliff-en';
   const currentVoiceVi = audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A';
   // --------------------------------------------------------------------------
   // A. Packages & Active Selection State
@@ -204,7 +204,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [batchWorkersCount, setBatchWorkersCount] = useState<number>(4);
   const [batchTargetLang, setBatchTargetLang] = useState<'en' | 'vi' | 'both'>('both');
   const [batchVoiceEn, setBatchVoiceEn] = useState<string>(() => {
-    return (currentVoiceEn && currentVoiceEn !== 'aura-theia-en') ? currentVoiceEn : 'aura-asteria-en';
+    return (currentVoiceEn && currentVoiceEn !== 'aura-theia-en') ? currentVoiceEn : 'flux-cliff-en';
   });
   const [batchVoiceVi, setBatchVoiceVi] = useState<string>(currentVoiceVi || 'vi-VN-Neural2-A');
   const [isBatchRunning, setIsBatchRunning] = useState<boolean>(false);
@@ -224,7 +224,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   // Keep batch voice in sync if prop changes
   useEffect(() => {
     if (currentVoiceEn) {
-      setBatchVoiceEn(currentVoiceEn === 'aura-theia-en' ? 'aura-asteria-en' : currentVoiceEn);
+      setBatchVoiceEn(currentVoiceEn === 'aura-theia-en' ? 'flux-cliff-en' : currentVoiceEn);
     }
   }, [currentVoiceEn]);
 
@@ -234,7 +234,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
   // Voice options for batch generation modal
   const enVoiceOptions = useMemo(() => {
-    return ALL_VOICES.filter(v => (v.languageCode === 'en-US' || v.id.startsWith('aura-') || v.id.startsWith('en-US-')) && v.id !== 'aura-theia-en');
+    return ALL_VOICES.filter(v => (v.languageCode === 'en-US' || v.id.startsWith('aura-') || v.id.startsWith('flux-') || v.id.startsWith('en-US-')) && v.id !== 'aura-theia-en');
   }, []);
 
   const viVoiceOptions = useMemo(() => {
@@ -632,14 +632,12 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           (it.audioUrlVi && it.audioUrlVi.startsWith('http')) ||
           audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
           audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
-          audioPlayer.getCachedAudio(`improv_item_${it.id}_aura-asteria-en_${currentVoiceVi}_EN_ONLY`, 'aura-asteria-en') ||
           (it.hints && it.hints.length > 0 && it.hints.every(h => {
             const t = h.text?.trim();
             const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
             return !t || Boolean(
               (h.audioUrl && h.audioUrl.startsWith('http')) || 
               audioPlayer.getCachedAudio(hKey, currentVoiceEn) ||
-              audioPlayer.getCachedAudio(`improv_hint_${h.id}_aura-asteria-en_en`, 'aura-asteria-en') ||
               audioPlayer.getCachedAudio(t, currentVoiceEn) || 
               audioPlayer.isChunkCached(t, currentVoiceEn)
             );
@@ -723,7 +721,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     voiceViOverride?: string
   ) => {
     const rawVoiceEn = voiceEnOverride || itemVoiceEn[item.id] || currentVoiceEn;
-    const effectiveVoiceEn = (rawVoiceEn && rawVoiceEn !== 'aura-theia-en') ? rawVoiceEn : 'aura-asteria-en';
+    const effectiveVoiceEn = (rawVoiceEn && rawVoiceEn !== 'aura-theia-en') ? rawVoiceEn : 'flux-cliff-en';
     const effectiveVoiceVi = voiceViOverride || itemVoiceVi[item.id] || currentVoiceVi;
     setSynthesizingItemIds(prev => ({ ...prev, [item.id]: true }));
     try {
@@ -877,7 +875,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     setSynthesizingHintIds(prev => ({ ...prev, [hintKey]: true }));
     try {
       const rawVoice = voiceOverride || (lang === 'vi' ? (itemVoiceVi[item.id] || currentVoiceVi) : (itemVoiceEn[item.id] || currentVoiceEn));
-      const effectiveVoice = (rawVoice && rawVoice !== 'aura-theia-en') ? rawVoice : (lang === 'vi' ? 'vi-VN-Neural2-A' : 'aura-asteria-en');
+      const effectiveVoice = (rawVoice && rawVoice !== 'aura-theia-en') ? rawVoice : (lang === 'vi' ? 'vi-VN-Neural2-A' : 'flux-cliff-en');
       const base64 = await synthesizeSingleHintAudio(hint, lang, effectiveVoice, true);
 
       let gcsUrl = '';

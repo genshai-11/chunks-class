@@ -107,7 +107,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState<boolean>(false);
 
   const [voiceProfileEn, setVoiceProfileEn] = useState<string>(
-    cohortAudioSettings?.voice_profile_en || 'aura-asteria-en'
+    cohortAudioSettings?.voice_profile_en || 'flux-cliff-en'
   );
   const [voiceProfileVi, setVoiceProfileVi] = useState<string>(
     cohortAudioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
@@ -270,7 +270,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     setActiveProvider(provider);
     audioPlayer.setAudioProvider(provider);
     if (provider === 'DEEPGRAM_AURA') {
-      setVoiceProfileEn('aura-asteria-en');
+      setVoiceProfileEn('flux-cliff-en');
       onUpdateAudioSettings?.({
         ...(cohortAudioSettings || {
           language_mode: 'EN_THEN_VI',
@@ -278,7 +278,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           default_speed: 1.0,
           repeat_count: 1
         }),
-        voice_profile_en: 'aura-asteria-en',
+        voice_profile_en: 'flux-cliff-en',
         voice_profile_vi: voiceProfileVi,
         provider_primary: 'DEEPGRAM_AURA'
       });
@@ -368,7 +368,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
       const effectiveVoiceEn = voiceEnOverride || voiceProfileEn;
       const effectiveVoiceVi = voiceViOverride || voiceProfileVi;
-      const effectiveProvider: AudioProvider = effectiveVoiceEn.startsWith('aura-') ? 'DEEPGRAM_AURA' : 'GOOGLE_TTS';
+      const effectiveProvider: AudioProvider = (effectiveVoiceEn.startsWith('aura-') || effectiveVoiceEn.startsWith('flux-')) ? 'DEEPGRAM_AURA' : 'GOOGLE_TTS';
 
       const effectiveLesson = inspectingLesson || lessons.find(l => l.chunks?.some(c => c.chunk_id === chunk.chunk_id)) || lessons[0];
       const effectiveLessonId = effectiveLesson?.id || '';
