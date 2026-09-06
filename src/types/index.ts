@@ -101,7 +101,7 @@ export type LanguageMode =
   | (string & {});
 
 export interface CohortAudioSettings {
-  voice_profile_primary?: string;  // e.g. 'aura-asteria-en'
+  voice_profile_primary?: string;  // e.g. 'flux-cliff-en'
   voice_profile_secondary?: string;// e.g. 'vi-VN-Neural2-A'
   voice_profile_en?: string;       // Backward compatibility alias
   voice_profile_vi?: string;       // Backward compatibility alias

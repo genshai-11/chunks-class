@@ -228,7 +228,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const [isSessionCompleteGate, setIsSessionCompleteGate] = useState<boolean>(false);
   const [selectedVoice, setSelectedVoice] = useState<string>(() => {
     const v = audioSettings?.voice_profile_en;
-    return (v && v !== 'aura-theia-en') ? v : 'aura-asteria-en';
+    return (v && v !== 'aura-theia-en') ? v : 'flux-cliff-en';
   });
   const [selectedVoiceVi, setSelectedVoiceVi] = useState<string>(
     audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
@@ -410,7 +410,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   useEffect(() => {
     if (audioSettings?.voice_profile_en) {
       const v = audioSettings.voice_profile_en;
-      setSelectedVoice((v && v !== 'aura-theia-en') ? v : 'aura-asteria-en');
+      setSelectedVoice((v && v !== 'aura-theia-en') ? v : 'flux-cliff-en');
     }
     if (audioSettings?.voice_profile_vi) {
       setSelectedVoiceVi(audioSettings.voice_profile_vi);
@@ -443,19 +443,15 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     );
     if (allHaveAudioUrl) return true;
 
-    // Check through improvTts with active voice and fallback voice
+    // Check through improvTts with active voice
     try {
-      let ready = await isSessionAudioReady(s, vEn, vVi, lMode);
+      const ready = await isSessionAudioReady(s, vEn, vVi, lMode);
       if (ready) return true;
-      if (vEn !== 'aura-asteria-en' || vVi !== 'vi-VN-Neural2-A') {
-        ready = await isSessionAudioReady(s, 'aura-asteria-en', 'vi-VN-Neural2-A', lMode);
-        if (ready) return true;
-      }
     } catch {
       // Continue to direct cache check
     }
 
-    // Direct cache key check
+    // Direct cache key check for active voice
     try {
       const normalizedMode = lMode === 'VI_ONLY' ? 'VI_ONLY' : 'EN_ONLY';
       for (const item of s.items) {
@@ -463,8 +459,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           continue;
         }
         const k1 = `improv_item_${item.id}_${vEn}_${vVi}_${normalizedMode}`;
-        const k2 = `improv_item_${item.id}_aura-asteria-en_vi-VN-Neural2-A_${normalizedMode}`;
-        const cached = (await audioPlayer.getCachedAudioAsync(k1)) || (await audioPlayer.getCachedAudioAsync(k2));
+        const cached = await audioPlayer.getCachedAudioAsync(k1);
         if (!cached) return false;
       }
       return true;
@@ -482,9 +477,6 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         if (!isMounted) return;
         try {
           let ready = await isPackageAudioReady(p, selectedVoice, selectedVoiceVi, languageMode);
-          if (!ready && (selectedVoice !== 'aura-asteria-en' || selectedVoiceVi !== 'vi-VN-Neural2-A')) {
-            ready = await isPackageAudioReady(p, 'aura-asteria-en', 'vi-VN-Neural2-A', languageMode);
-          }
           if (!ready && p.sessions && p.sessions.length > 0) {
             let allSessionsReady = true;
             for (const sess of p.sessions) {
@@ -597,7 +589,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     const seqId = ++activeSequenceRef.current;
     setIsPlayingAudio(true);
 
-    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'aura-asteria-en';
+    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
@@ -633,7 +625,6 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             } else {
               const hintKeyEn = `improv_hint_${hint.id}_${effectiveVoiceEn}_en`;
               const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn, effectiveVoiceEn)) ||
-                               (await audioPlayer.getCachedAudioAsync(`improv_hint_${hint.id}_aura-asteria-en_en`, 'aura-asteria-en')) ||
                                (await audioPlayer.getCachedAudioAsync(enText, effectiveVoiceEn));
               if (cachedEn) {
                 await audioPlayer.playBase64(cachedEn, speed);
@@ -677,7 +668,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     setIsPlayingAudio(true);
     setActivePlayingHintIndex(index);
 
-    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'aura-asteria-en';
+    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
@@ -708,7 +699,6 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           } else {
             const hintKeyEn = `improv_hint_${hint.id}_${effectiveVoiceEn}_en`;
             const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn, effectiveVoiceEn)) ||
-                             (await audioPlayer.getCachedAudioAsync(`improv_hint_${hint.id}_aura-asteria-en_en`, 'aura-asteria-en')) ||
                              (await audioPlayer.getCachedAudioAsync(enText, effectiveVoiceEn));
             if (cachedEn) {
               await audioPlayer.playBase64(cachedEn, speed);
@@ -735,7 +725,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     voiceEn: string = selectedVoice,
     voiceVi: string = selectedVoiceVi
   ) => {
-    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'aura-asteria-en';
+    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
@@ -1339,7 +1329,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               <span className="hidden sm:inline-block font-mono text-[11px]">
                 {isSessionReady
                   ? 'Audio Ready'
-                  : selectedVoice.replace('en-US-', '').replace('aura-', '')}
+                  : selectedVoice.replace('en-US-', '').replace('aura-', '').replace('flux-', '')}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
             </button>
@@ -1401,7 +1391,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                               : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                           }`}
                         >
-                          Deepgram Aura
+                          Deepgram Flux & Aura
                         </button>
                         <button
                           type="button"
@@ -1434,7 +1424,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                             : 'bg-white border-zinc-200 text-zinc-900'
                         }`}
                       >
-                        <optgroup label="Deepgram Aura (Ultra-Fast 0ms)">
+                        <optgroup label="Deepgram Flux & Aura (Ultra-Fast 0ms)">
                           {DEEPGRAM_AURA_VOICES.filter(v => v.id !== 'aura-theia-en').map((v) => (
                             <option key={v.id} value={v.id}>
                               {v.name} ({v.gender})

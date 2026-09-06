@@ -191,7 +191,7 @@ export async function syncImprovPackageCachedAudioToCloud(
     return { uploadedItemsEn: 0, uploadedItemsVi: 0, uploadedHints: 0, total: 0 };
   }
 
-  const voiceEn = (options?.voiceEn === 'aura-theia-en' || !options?.voiceEn) ? 'aura-asteria-en' : options.voiceEn;
+  const voiceEn = (options?.voiceEn === 'aura-theia-en' || !options?.voiceEn) ? 'flux-cliff-en' : options.voiceEn;
   const voiceVi = options?.voiceVi || 'vi-VN-Neural2-A';
 
   let uploadedItemsEn = 0;

@@ -228,9 +228,9 @@ export function createDefaultCohort(
     total_sessions: 15,
     sessions,
     audio_settings: {
-      voice_profile_primary: "aura-asteria-en",
+      voice_profile_primary: "flux-cliff-en",
       voice_profile_secondary: "vi-VN-Neural2-A",
-      voice_profile_en: "aura-asteria-en",
+      voice_profile_en: "flux-cliff-en",
       voice_profile_vi: "vi-VN-Neural2-A",
       language_mode: "EN_THEN_VI",
       auto_advance_delay_sec: 0,

@@ -99,7 +99,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   // Audio parameters & Real Google Cloud TTS Models
   const [selectedVoice, setSelectedVoice] = useState<string>(() => {
     const v = audioSettings?.voice_profile_en;
-    return (v && v !== 'aura-theia-en') ? v : 'aura-asteria-en';
+    return (v && v !== 'aura-theia-en') ? v : 'flux-cliff-en';
   });
   const [selectedVoiceVi, setSelectedVoiceVi] = useState<string>(
     audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
@@ -174,7 +174,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   useEffect(() => {
     if (audioSettings) {
       if (audioSettings.voice_profile_en && audioSettings.voice_profile_en !== selectedVoice) {
-        const cleanEn = audioSettings.voice_profile_en === 'aura-theia-en' ? 'aura-asteria-en' : audioSettings.voice_profile_en;
+        const cleanEn = audioSettings.voice_profile_en === 'aura-theia-en' ? 'flux-cliff-en' : audioSettings.voice_profile_en;
         setSelectedVoice(cleanEn);
       }
       if (audioSettings.voice_profile_vi && audioSettings.voice_profile_vi !== selectedVoiceVi) {
@@ -559,8 +559,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         targetChunk.english,
         targetChunk.vietnamese,
         m,
-        targetChunk.audio_url,
-        selectedVoice === 'aura-theia-en' ? 'aura-asteria-en' : selectedVoice,
+        selectedVoice === 'aura-asteria-en' ? targetChunk.audio_url : null,
+        selectedVoice === 'aura-theia-en' ? 'flux-cliff-en' : (selectedVoice || 'flux-cliff-en'),
         selectedVoiceVi,
         s,
         r,
@@ -1075,7 +1075,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                             onClick={() => {
                               setAudioProvider('DEEPGRAM_AURA');
                               audioPlayer.setAudioProvider('DEEPGRAM_AURA');
-                              setSelectedVoice('aura-asteria-en');
+                              setSelectedVoice('flux-cliff-en');
                             }}
                             className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                               audioProvider === 'DEEPGRAM_AURA'
@@ -1084,7 +1084,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                             }`}
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <span className="font-extrabold text-xs">Deepgram Aura</span>
+                              <span className="font-extrabold text-xs">Deepgram Flux & Aura</span>
                               <Zap className="w-3.5 h-3.5 text-purple-600 fill-purple-500" />
                             </div>
                             <p className="text-[10px] text-zinc-500 leading-tight">Neural Natural Voice AI (Khuyên dùng)</p>

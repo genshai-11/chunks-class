@@ -1040,40 +1040,20 @@ class AudioPlayService {
     }
 
     // 2. ENGLISH / NON-VIETNAMESE CACHE NAMESPACE
-    // If text is a specific key ending with _en, direct match is allowed
-    if (text.endsWith('_en') && this.audioCache.has(text)) {
+    const cleanVoice = (voiceName === 'aura-theia-en' || !voiceName) ? 'flux-cliff-en' : voiceName;
+
+    // If text is a specific key ending with _en and matches cleanVoice, direct match is allowed
+    if (text.endsWith('_en') && text.includes(cleanVoice) && this.audioCache.has(text)) {
       return this.audioCache.get(text)!;
     }
 
-    // Specific voice check
-    const cleanVoice = (voiceName === 'aura-theia-en' || !voiceName) ? 'aura-asteria-en' : voiceName;
+    // Specific voice check (strictly isolated to cleanVoice)
     const k1 = this.getCacheKey(cleanVoice, clean);
     if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
     const k2 = this.getCacheKey(cleanVoice, text);
     if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
 
-    // Check standard English voices
-    const enVoices = ['aura-asteria-en', 'aura-athena-en', 'en-US-Journey-F', 'en-US-Neural2-A'];
-    for (const eVoice of enVoices) {
-      const ke = this.getCacheKey(eVoice, clean);
-      if (this.audioCache.has(ke)) return this.audioCache.get(ke)!;
-    }
-
-    // Direct text check (ONLY for non-Vietnamese keys and text that doesn't end with _vi)
-    if (!text.endsWith('_vi')) {
-      if (this.audioCache.has(text)) return this.audioCache.get(text)!;
-      if (clean && this.audioCache.has(clean)) return this.audioCache.get(clean)!;
-    }
-
-    // Fallback for English: Tuyệt đối KHÔNG trả về các key bắt đầu bằng 'vi-' hoặc kết thúc bằng '_vi'
-    const targetSuffix = `::${clean.toLowerCase()}`;
-    for (const [k, v] of this.audioCache) {
-      if (k.startsWith('vi-') || k.endsWith('_vi')) continue;
-      if (k.endsWith(targetSuffix) || k === clean || k === text) {
-        return v;
-      }
-    }
-    return null;
+    return null; // Tuyệt đối KHÔNG loop sang các voice khác như Asteria, Athena, Journey...
   }
 
   /**
@@ -1119,27 +1099,18 @@ class AudioPlayService {
       return null;
     }
 
-    // English / Non-Vietnamese
-    const cleanVoice = (voiceName === 'aura-theia-en' || !voiceName) ? 'aura-asteria-en' : voiceName;
+    // English / Non-Vietnamese - Strictly isolated to cleanVoice
+    const cleanVoice = (voiceName === 'aura-theia-en' || !voiceName) ? 'flux-cliff-en' : voiceName;
     const keysToCheck: string[] = [];
 
-    if (text.endsWith('_en')) {
+    if (text.endsWith('_en') && text.includes(cleanVoice)) {
       keysToCheck.push(text);
     }
 
     keysToCheck.push(
       this.getCacheKey(cleanVoice, clean),
-      this.getCacheKey(cleanVoice, text),
-      this.getCacheKey('aura-asteria-en', clean),
-      this.getCacheKey('aura-athena-en', clean),
-      this.getCacheKey('en-US-Journey-F', clean),
-      this.getCacheKey('en-US-Neural2-A', clean)
+      this.getCacheKey(cleanVoice, text)
     );
-
-    if (!text.endsWith('_vi')) {
-      keysToCheck.push(clean);
-      keysToCheck.push(text);
-    }
 
     for (const key of keysToCheck) {
       const fromDb = await getAudioBlobFromDB(key);
@@ -1379,8 +1350,8 @@ class AudioPlayService {
    */
   async testDeepgramConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      const base64 = await deepgramTts.synthesizeText("Deepgram Aura online test", "aura-asteria-en");
-      return { success: !!base64, message: "Deepgram Aura Connected (Asteria Online)" };
+      const base64 = await deepgramTts.synthesizeText("Deepgram online test", "flux-cliff-en");
+      return { success: !!base64, message: "Deepgram Connected (Flux Cliff Online)" };
     } catch (e: any) {
       return { success: false, message: e?.message || "Deepgram Connection Failed" };
     }
@@ -1391,14 +1362,14 @@ class AudioPlayService {
    */
   getLessonAudioStatus(
     chunks: { chunk_id?: string; english: string; vietnamese?: string; audio_url?: string | null }[],
-    voiceEn: string = 'aura-asteria-en',
+    voiceEn: string = 'flux-cliff-en',
     voiceVi: string = 'vi-VN-Neural2-A'
   ): LessonAudioStatus {
     let enCached = 0;
     let viCached = 0;
     const details: ChunkAudioStatus[] = [];
 
-    const effectiveVoiceEn = voiceEn && !voiceEn.startsWith('vi-') ? voiceEn : 'aura-asteria-en';
+    const effectiveVoiceEn = voiceEn && !voiceEn.startsWith('vi-') ? voiceEn : 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi && voiceVi.startsWith('vi-') ? voiceVi : 'vi-VN-Neural2-A';
 
     for (let i = 0; i < chunks.length; i++) {
@@ -1423,7 +1394,7 @@ class AudioPlayService {
       const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
       const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
 
-      const isEnReady = hasEnAudio || hasGcsAudio;
+      const isEnReady = hasEnAudio || (effectiveVoiceEn === 'aura-asteria-en' && hasGcsAudio);
       const isViReady = hasViAudio || hasGcsAudioVi;
 
       if (isEnReady) enCached++;
@@ -1436,7 +1407,7 @@ class AudioPlayService {
         hasEnAudio,
         hasViAudio,
         hasGcsAudio,
-        enSource: hasEnAudio ? (effectiveVoiceEn.startsWith('aura-') ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
+        enSource: hasEnAudio ? ((effectiveVoiceEn.startsWith('aura-') || effectiveVoiceEn.startsWith('flux-')) ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
         viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : (hasGcsAudioVi ? 'GCS_MASTER' : undefined)
       });
     }
@@ -1455,14 +1426,14 @@ class AudioPlayService {
    */
   async checkLessonAudioStatus(
     chunks: { chunk_id?: string; english: string; vietnamese?: string; audio_url?: string | null }[],
-    voiceEn: string = 'aura-asteria-en',
+    voiceEn: string = 'flux-cliff-en',
     voiceVi: string = 'vi-VN-Neural2-A'
   ): Promise<LessonAudioStatus> {
     let enCached = 0;
     let viCached = 0;
     const details: ChunkAudioStatus[] = [];
 
-    const effectiveVoiceEn = voiceEn && !voiceEn.startsWith('vi-') ? voiceEn : 'aura-asteria-en';
+    const effectiveVoiceEn = voiceEn && !voiceEn.startsWith('vi-') ? voiceEn : 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi && voiceVi.startsWith('vi-') ? voiceVi : 'vi-VN-Neural2-A';
 
     for (let i = 0; i < chunks.length; i++) {
@@ -1479,7 +1450,7 @@ class AudioPlayService {
       const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
       const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
 
-      const isEnReady = hasEnAudio || hasGcsAudio;
+      const isEnReady = hasEnAudio || (effectiveVoiceEn === 'aura-asteria-en' && hasGcsAudio);
       const isViReady = hasViAudio || hasGcsAudioVi;
 
       if (isEnReady) enCached++;
@@ -1492,7 +1463,7 @@ class AudioPlayService {
         hasEnAudio,
         hasViAudio,
         hasGcsAudio,
-        enSource: hasEnAudio ? (effectiveVoiceEn.startsWith('aura-') ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
+        enSource: hasEnAudio ? ((effectiveVoiceEn.startsWith('aura-') || effectiveVoiceEn.startsWith('flux-')) ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
         viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : (hasGcsAudioVi ? 'GCS_MASTER' : undefined)
       });
     }
@@ -1539,16 +1510,16 @@ class AudioPlayService {
   async playChunk(
     text: string,
     permanentAudioUrl?: string | null,
-    voiceName: string = 'aura-asteria-en',
+    voiceName: string = 'flux-cliff-en',
     speed: number = 1.0,
     forceCloudTts: boolean = false
   ): Promise<void> {
     this.stop();
     if (!text || !text.trim()) return;
 
-    let effectiveVoice = voiceName || 'aura-asteria-en';
+    let effectiveVoice = voiceName || 'flux-cliff-en';
     if (effectiveVoice === 'aura-theia-en') {
-      effectiveVoice = 'aura-asteria-en';
+      effectiveVoice = 'flux-cliff-en';
     }
 
     const cleanText = sanitizeSpeechText(text);
@@ -1616,24 +1587,25 @@ class AudioPlayService {
 
       // ======================================================================
       // 2. ENGLISH PLAYBACK PIPELINE
-      // Routes to Deepgram Aura (if aura-* voice or provider is DEEPGRAM_AURA and not en-US-*)
+      // Routes to Deepgram (Flux / Aura) if flux-* or aura-* voice or provider is DEEPGRAM_AURA and not en-US-*
       // Or Google Cloud TTS (if en-US-* voice or provider is GOOGLE_TTS)
       // ======================================================================
-      const isAuraVoice = Boolean(effectiveVoice && effectiveVoice.startsWith('aura-'));
+      const isFluxOrAura = Boolean(effectiveVoice && (effectiveVoice.startsWith('aura-') || effectiveVoice.startsWith('flux-')));
       const isGoogleEnVoice = Boolean(effectiveVoice && effectiveVoice.startsWith('en-US-'));
-      const isDeepgram = !forceCloudTts && (isAuraVoice || (!isGoogleEnVoice && this.activeProvider === 'DEEPGRAM_AURA'));
+      const isDeepgram = effectiveVoice.startsWith('aura-') || effectiveVoice.startsWith('flux-') || (this.activeProvider === 'DEEPGRAM_AURA' && !effectiveVoice.startsWith('en-US-'));
       const effectiveEnVoice = isDeepgram
-        ? (isAuraVoice ? effectiveVoice : 'aura-asteria-en')
+        ? (isFluxOrAura ? effectiveVoice : 'flux-cliff-en')
         : (isGoogleEnVoice ? effectiveVoice : (effectiveVoice && !effectiveVoice.startsWith('vi-') ? effectiveVoice : 'en-US-Journey-F'));
 
-      // Step 1: GCS Master Permanent Audio (Priority #1 if available and not forced to cloud TTS)
-      if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http') && !permanentAudioUrl.includes('placeholder')) {
+      // Step 1: GCS Master Permanent Audio (ONLY when using aura-asteria-en and not forced to cloud TTS)
+      const canUseGcsAudio = !forceCloudTts && effectiveVoice === 'aura-asteria-en';
+      if (canUseGcsAudio && permanentAudioUrl && permanentAudioUrl.startsWith('http') && !permanentAudioUrl.includes('placeholder')) {
         try {
           this.setLastSource('GCS_MASTER');
           await this.playUrl(permanentAudioUrl, speed);
           return;
         } catch (err) {
-          console.warn(`[Audio] GCS master audio unreachable (${permanentAudioUrl}), falling back to Deepgram Aura or Google Cloud TTS...`, err);
+          console.warn(`[Audio] GCS master audio unreachable (${permanentAudioUrl}), falling back to Deepgram or Google Cloud TTS...`, err);
         }
       }
 
@@ -1646,10 +1618,10 @@ class AudioPlayService {
         return;
       }
 
-      // Step 2: Deepgram Aura Engine (if provider or voice is aura-*)
+      // Step 2: Deepgram Engine (Flux / Aura)
       if (isDeepgram) {
         try {
-          const dgModel = (effectiveEnVoice === 'aura-theia-en' || !effectiveEnVoice) ? 'aura-asteria-en' : effectiveEnVoice;
+          const dgModel = (effectiveEnVoice === 'aura-theia-en' || !effectiveEnVoice) ? 'flux-cliff-en' : effectiveEnVoice;
           const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
           if (base64) {
             this.setCache(cacheKey, base64);
@@ -1658,13 +1630,13 @@ class AudioPlayService {
             return;
           }
         } catch (dgErr: any) {
-          console.warn(`[Audio] Deepgram Aura synthesis failed (${dgErr?.message}), trying Google Cloud TTS...`, dgErr);
+          console.warn(`[Audio] Deepgram synthesis failed (${dgErr?.message}), trying Google Cloud TTS...`, dgErr);
         }
       }
 
       // Step 3: Google Cloud Text-to-Speech (en-US)
       try {
-        const googleVoice = effectiveEnVoice.startsWith('aura-') ? 'en-US-Journey-F' : effectiveEnVoice;
+        const googleVoice = (effectiveEnVoice.startsWith('aura-') || effectiveEnVoice.startsWith('flux-')) ? 'en-US-Journey-F' : effectiveEnVoice;
         const base64Audio = await this.synthesizeWithGoogleTTS(cleanText, googleVoice, 1.0);
         if (base64Audio) {
           this.setCache(cacheKey, base64Audio);
@@ -1694,7 +1666,7 @@ class AudioPlayService {
     vietnameseText: string,
     mode: LanguageMode = 'EN_THEN_VI',
     englishAudioUrl?: string | null,
-    voiceEn: string = 'aura-asteria-en',
+    voiceEn: string = 'flux-cliff-en',
     voiceVi: string = 'vi-VN-Neural2-A',
     speed: number = 1.0,
     repeatCount: number = 1,
@@ -1706,9 +1678,9 @@ class AudioPlayService {
     const normalizedMode = normalizeLanguageMode(mode);
 
     // Determine effective voices
-    const isDeepgram = this.activeProvider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-');
-    const rawVoiceEn = (voiceEn === 'aura-theia-en') ? 'aura-asteria-en' : voiceEn;
-    const effectiveVoiceEn = isDeepgram && !rawVoiceEn.startsWith('aura-') ? 'aura-asteria-en' : (rawVoiceEn || 'aura-asteria-en');
+    const isDeepgram = this.activeProvider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-') || voiceEn.startsWith('flux-');
+    const rawVoiceEn = (voiceEn === 'aura-theia-en') ? 'flux-cliff-en' : voiceEn;
+    const effectiveVoiceEn = isDeepgram && !rawVoiceEn.startsWith('aura-') && !rawVoiceEn.startsWith('flux-') ? 'flux-cliff-en' : (rawVoiceEn || 'flux-cliff-en');
     const effectiveVoiceVi = (voiceVi && voiceVi.startsWith('vi-')) ? voiceVi : 'vi-VN-Neural2-A';
 
     for (let r = 0; r < repeatCount; r++) {
@@ -1800,11 +1772,11 @@ class AudioPlayService {
     } else {
       // English
       const activeProvider = params.provider || this.activeProvider;
-      const isAura = Boolean(params.voiceName && params.voiceName.startsWith('aura-'));
+      const isFluxOrAura = Boolean(params.voiceName && (params.voiceName.startsWith('aura-') || params.voiceName.startsWith('flux-')));
       const isGoogleEn = Boolean(params.voiceName && params.voiceName.startsWith('en-US-'));
-      const isDeepgram = isAura || (!isGoogleEn && activeProvider === 'DEEPGRAM_AURA');
+      const isDeepgram = isFluxOrAura || (!isGoogleEn && activeProvider === 'DEEPGRAM_AURA');
       const voiceEn = isDeepgram
-        ? (isAura ? params.voiceName! : 'aura-asteria-en')
+        ? (isFluxOrAura ? params.voiceName! : 'flux-cliff-en')
         : (isGoogleEn ? params.voiceName! : (params.voiceName || 'en-US-Journey-F'));
       const cacheKey = this.getCacheKey(voiceEn, cleanText);
 
@@ -1816,7 +1788,7 @@ class AudioPlayService {
       }
 
       if (isDeepgram) {
-        const dgModel = voiceEn.startsWith('aura-') ? voiceEn : 'aura-asteria-en';
+        const dgModel = (voiceEn.startsWith('aura-') || voiceEn.startsWith('flux-')) ? voiceEn : 'flux-cliff-en';
         if (forceRegenerate) {
           deepgramTts.clearCache();
         }
@@ -1863,7 +1835,7 @@ class AudioPlayService {
     }
 
     const provider = opts.provider || this.activeProvider;
-    const voiceEn = opts.voiceEn || (provider === 'DEEPGRAM_AURA' ? 'aura-asteria-en' : 'en-US-Journey-F');
+    const voiceEn = opts.voiceEn || (provider === 'DEEPGRAM_AURA' ? 'flux-cliff-en' : 'en-US-Journey-F');
     const voiceVi = opts.voiceVi || 'vi-VN-Neural2-A';
     const target = opts.target || 'BOTH';
     const forceRegenerate = opts.forceRegenerate || false;
@@ -1873,8 +1845,8 @@ class AudioPlayService {
     const total = chunks.length;
     if (total === 0) return { prepared: 0, failed: 0, total: 0, skipped: 0 };
 
-    const isDeepgram = provider === 'DEEPGRAM_AURA';
-    const modelEn = isDeepgram && !voiceEn.startsWith('aura-') ? 'aura-asteria-en' : voiceEn;
+    const isDeepgram = provider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-') || voiceEn.startsWith('flux-');
+    const modelEn = isDeepgram && !voiceEn.startsWith('aura-') && !voiceEn.startsWith('flux-') ? 'flux-cliff-en' : voiceEn;
     const modelVi = (voiceVi && voiceVi.startsWith('vi-')) ? voiceVi : 'vi-VN-Neural2-A';
 
     let prepared = 0;

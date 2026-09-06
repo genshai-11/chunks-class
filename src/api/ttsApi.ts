@@ -36,8 +36,8 @@ export async function handleTtsSynthesis(req: SynthesizeRequest): Promise<Synthe
       };
     }
 
-    if (provider === 'DEEPGRAM_AURA' || voiceName?.startsWith('aura-')) {
-      const dgVoice = voiceName?.startsWith('aura-') ? voiceName : 'aura-asteria-en';
+    if (provider === 'DEEPGRAM_AURA' || voiceName?.startsWith('aura-') || voiceName?.startsWith('flux-')) {
+      const dgVoice = (voiceName?.startsWith('aura-') || voiceName?.startsWith('flux-')) ? voiceName : 'flux-cliff-en';
       const base64 = await deepgramTts.synthesizeText(text, dgVoice);
       return {
         success: true,

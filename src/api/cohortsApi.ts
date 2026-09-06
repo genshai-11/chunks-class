@@ -60,9 +60,9 @@ export const cohortsApi = {
     });
 
     const defaultAudio: CohortAudioSettings = {
-      voice_profile_primary: 'aura-asteria-en',
+      voice_profile_primary: 'flux-cliff-en',
       voice_profile_secondary: 'vi-VN-Neural2-A',
-      voice_profile_en: 'aura-asteria-en',
+      voice_profile_en: 'flux-cliff-en',
       voice_profile_vi: 'vi-VN-Neural2-A',
       default_speed: 1.0,
       repeat_count: 1,

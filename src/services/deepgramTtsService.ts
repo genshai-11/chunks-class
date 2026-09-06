@@ -8,6 +8,13 @@ export interface DeepgramVoiceOption {
 
 export const DEEPGRAM_AURA_VOICES: DeepgramVoiceOption[] = [
   {
+    id: 'flux-cliff-en',
+    name: 'Flux Cliff (Default - Male Natural & Conversational)',
+    gender: 'MALE',
+    accent: 'US',
+    description: 'Deepgram Flux Cliff: Next-generation conversational English male voice with superior prosody and natural pauses.'
+  },
+  {
     id: 'aura-asteria-en',
     name: 'Aura Asteria (Female - Conversational & Natural)',
     gender: 'FEMALE',
@@ -139,10 +146,14 @@ export function sanitizeSpeechText(text: string): string {
 
 class DeepgramTtsService {
   private cache = new Map<string, string>(); // text+model -> base64 mp3
-  private defaultApiKey: string = import.meta.env.VITE_DEEPGRAM_API_KEY || '51d7d8b230bf742178e681e7836a3dc1571b1c11';
+  private defaultApiKey: string = import.meta.env.VITE_DEEPGRAM_API_KEY || '92def6215618aeda77c43f4446ba84ef7152091c';
 
   getApiKey(): string {
-    return localStorage.getItem('chunks_deepgram_api_key') || this.defaultApiKey;
+    const key = localStorage.getItem('chunks_deepgram_api_key');
+    if (!key || key.trim() === '' || key === '51d7d8b230bf742178e681e7836a3dc1571b1c11') {
+      return this.defaultApiKey;
+    }
+    return key;
   }
 
   setApiKey(key: string): void {
@@ -155,22 +166,21 @@ class DeepgramTtsService {
 
   /**
    * Synthesize English text into MP3 audio via Deepgram Speak REST API
-   * Endpoint: https://api.deepgram.com/v1/speak?model={model}&encoding=mp3
+   * Endpoints:
+   * - Flux: https://api.deepgram.com/v2/speak?model={model}&speed=1&expressivity=0
+   * - Aura: https://api.deepgram.com/v1/speak?model={model}&encoding=mp3
    */
   async synthesizeText(
     text: string,
-    modelName: string = 'aura-asteria-en'
+    modelName: string = 'flux-cliff-en'
   ): Promise<string> {
     const cleanText = sanitizeSpeechText(text);
     if (!cleanText) throw new Error('Text to synthesize is empty');
 
-    let effectiveModel = modelName;
-    if (!effectiveModel || effectiveModel === 'aura-theia-en') {
-      effectiveModel = 'aura-asteria-en';
-    }
+    let effectiveModel = (!modelName || modelName === 'aura-theia-en') ? 'flux-cliff-en' : modelName;
     const validModelIds = DEEPGRAM_VOICES.map(v => v.id);
     if (!validModelIds.includes(effectiveModel)) {
-      effectiveModel = 'aura-asteria-en';
+      effectiveModel = 'flux-cliff-en';
     }
 
     const cacheKey = `dg_${effectiveModel}_${cleanText}`;
@@ -183,7 +193,10 @@ class DeepgramTtsService {
       throw new Error('Deepgram API Key is missing. Please configure VITE_DEEPGRAM_API_KEY.');
     }
 
-    const url = `https://api.deepgram.com/v1/speak?model=${effectiveModel}&encoding=mp3`;
+    const isFlux = effectiveModel.startsWith('flux-');
+    const url = isFlux
+      ? `https://api.deepgram.com/v2/speak?model=${effectiveModel}&speed=1&expressivity=0`
+      : `https://api.deepgram.com/v1/speak?model=${effectiveModel}&encoding=mp3`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -196,7 +209,7 @@ class DeepgramTtsService {
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Deepgram Aura API Error (${response.status}): ${errText}`);
+      throw new Error(`Deepgram ${isFlux ? 'Flux' : 'Aura'} API Error (${response.status}): ${errText}`);
     }
 
     const blob = await response.blob();

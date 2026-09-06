@@ -323,11 +323,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Giọng Tiếng Anh Mặc Định
               </label>
               <select
-                value={formData.audio_settings?.voice_profile_en || 'aura-asteria-en'}
+                value={formData.audio_settings?.voice_profile_en || 'flux-cliff-en'}
                 onChange={(e) => handleAudioSettingChange('voice_profile_en', e.target.value)}
                 className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold cursor-pointer"
               >
-                <option value="aura-asteria-en">Deepgram Asteria (Nữ Mỹ - Chuẩn)</option>
+                <option value="flux-cliff-en">Deepgram Flux Cliff (Nam Mỹ - Chuẩn / Mặc định)</option>
+                <option value="aura-asteria-en">Deepgram Asteria (Nữ Mỹ)</option>
                 <option value="aura-luna-en">Deepgram Luna (Nữ Mỹ - Ấm áp)</option>
                 <option value="aura-orion-en">Deepgram Orion (Nam Mỹ - Trầm)</option>
                 <option value="en-US-Journey-F">Google Journey Female (Cao cấp)</option>
