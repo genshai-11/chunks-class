@@ -5,6 +5,7 @@ import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageServi
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
+import { modelRegistryService } from '../services/modelRegistryService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
 import { PartsDrawer, groupChunksIntoParts } from './PartsDrawer';
 import { ChunkListPreviewDrawer } from './ChunkListPreviewDrawer';
@@ -122,6 +123,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   
   // Audio Provider & Batch Pre-generation Engine
   const [audioProvider, setAudioProvider] = useState<AudioProvider>(audioPlayer.getAudioProvider());
+  const [, setRegistryRevision] = useState<number>(0);
+
+  useEffect(() => {
+    return modelRegistryService.subscribe(() => {
+      setRegistryRevision(r => r + 1);
+    });
+  }, []);
   const [prepTarget, setPrepTarget] = useState<AudioBatchTarget>('BOTH');
   const [isPreparingAudio, setIsPreparingAudio] = useState<boolean>(false);
   const [prepProgress, setPrepProgress] = useState<{ current: number; total: number; text: string } | null>(null);
@@ -1152,19 +1160,19 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                               : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-[#DC2626]'
                           }`}
                         >
-                          {audioProvider === 'DEEPGRAM_AURA' ? (
-                            DEEPGRAM_AURA_VOICES.filter(v => v.id !== 'aura-theia-en').map(v => (
-                              <option key={v.id} value={v.id}>
-                                {v.name} ({v.accent} - {v.gender})
-                              </option>
-                            ))
-                          ) : (
-                            GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
+                          {(() => {
+                            const focusEn = modelRegistryService.getFocusModels('en');
+                            const displayed = focusEn.some(m => m.id === selectedVoice)
+                              ? focusEn
+                              : (modelRegistryService.getModelById(selectedVoice)
+                                  ? [modelRegistryService.getModelById(selectedVoice)!, ...focusEn]
+                                  : focusEn);
+                            return displayed.map(v => (
                               <option key={v.id} value={v.id}>
                                 {v.name}
                               </option>
-                            ))
-                          )}
+                            ));
+                          })()}
                         </select>
                       </div>
 
@@ -1208,11 +1216,19 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                               : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-emerald-600'
                           }`}
                         >
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN').map(v => (
-                            <option key={v.id} value={v.id}>
-                              {v.name}
-                            </option>
-                          ))}
+                          {(() => {
+                            const focusVi = modelRegistryService.getFocusModels('vi');
+                            const displayed = focusVi.some(m => m.id === selectedVoiceVi)
+                              ? focusVi
+                              : (modelRegistryService.getModelById(selectedVoiceVi)
+                                  ? [modelRegistryService.getModelById(selectedVoiceVi)!, ...focusVi]
+                                  : focusVi);
+                            return displayed.map(v => (
+                              <option key={v.id} value={v.id}>
+                                {v.name}
+                              </option>
+                            ));
+                          })()}
                         </select>
                       </div>
                     </>

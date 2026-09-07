@@ -1,4 +1,5 @@
 import { deepgramTts, DEEPGRAM_AURA_VOICES, sanitizeSpeechText } from './deepgramTtsService';
+import { modelRegistryService } from './modelRegistryService';
 import { LanguageMode, ChunkItem } from '../types';
 
 export { sanitizeSpeechText };
@@ -820,7 +821,12 @@ class AudioPlayService {
       existingMap.set(item.key, item);
     }
 
+    const registryGoogleKeys = modelRegistryService.getKeysByProvider('GOOGLE_TTS').map(k => k.key);
+    const registryGeminiKeys = modelRegistryService.getKeysByProvider('GEMINI_AI_STUDIO').map(k => k.key);
+
     const allRawKeys = [
+      ...registryGoogleKeys,
+      ...registryGeminiKeys,
       ...this.customApiKeys,
       ...BUILTIN_GOOGLE_KEYS
     ];
@@ -1618,6 +1624,30 @@ class AudioPlayService {
         return;
       }
 
+      // Step 1.5: OpenAI TTS or Custom TTS
+      const isCustomOrOpenAi = effectiveEnVoice.startsWith('openai-') || 
+                               effectiveEnVoice.startsWith('custom-') ||
+                               modelRegistryService.getModelById(effectiveEnVoice)?.provider === 'OPENAI_TTS' ||
+                               modelRegistryService.getModelById(effectiveEnVoice)?.provider === 'CUSTOM_TTS';
+      if (isCustomOrOpenAi) {
+        try {
+          const res = await this.synthesizeSingleChunk({
+            text: cleanText,
+            language: 'en',
+            voiceName: effectiveEnVoice,
+            speed: speed
+          });
+          if (res.base64) {
+            this.setCache(cacheKey, res.base64);
+            this.setLastSource('GOOGLE_CLOUD_AI');
+            await this.playBase64(res.base64, speed);
+            return;
+          }
+        } catch (customErr) {
+          console.warn('[Audio] OpenAI/Custom TTS play failed, trying fallback...', customErr);
+        }
+      }
+
       // Step 2: Deepgram Engine (Flux / Aura)
       if (isDeepgram) {
         try {
@@ -1787,7 +1817,23 @@ class AudioPlayService {
         }
       }
 
-      if (isDeepgram) {
+      // Check if OpenAI or Custom voice
+      const isOpenAi = Boolean(voiceEn && (voiceEn.startsWith('openai-') || modelRegistryService.getModelById(voiceEn)?.provider === 'OPENAI_TTS'));
+      const isCustom = Boolean(voiceEn && (voiceEn.startsWith('custom-') || modelRegistryService.getModelById(voiceEn)?.provider === 'CUSTOM_TTS'));
+
+      if (isOpenAi) {
+        const base64 = await this.synthesizeWithOpenAITTS(cleanText, voiceEn, speed);
+        if (base64) {
+          this.setCache(cacheKey, base64);
+          return { base64, source: 'GOOGLE_CLOUD_AI', voice: voiceEn, language: 'en' };
+        }
+      } else if (isCustom) {
+        const base64 = await this.synthesizeWithCustomTTS(cleanText, voiceEn, speed);
+        if (base64) {
+          this.setCache(cacheKey, base64);
+          return { base64, source: 'GOOGLE_CLOUD_AI', voice: voiceEn, language: 'en' };
+        }
+      } else if (isDeepgram) {
         const dgModel = (voiceEn.startsWith('aura-') || voiceEn.startsWith('flux-')) ? voiceEn : 'flux-cliff-en';
         if (forceRegenerate) {
           deepgramTts.clearCache();
@@ -1983,6 +2029,104 @@ class AudioPlayService {
   }
 
   /**
+   * Synthesize with OpenAI Audio API (/v1/audio/speech) with 429 rotation failover
+   */
+  public async synthesizeWithOpenAITTS(
+    text: string,
+    voiceName: string = 'alloy',
+    speed: number = 1.0
+  ): Promise<string> {
+    const cleanText = sanitizeSpeechText(text);
+    if (!cleanText) return '';
+    const cleanVoice = voiceName.replace('openai-', '');
+    const key = modelRegistryService.getNextActiveKey('OPENAI_TTS');
+    if (!key) {
+      throw new Error('Chưa cấu hình API Key cho OpenAI TTS trong Modules Settings.');
+    }
+
+    const url = 'https://api.openai.com/v1/audio/speech';
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'tts-1',
+        voice: cleanVoice,
+        input: cleanText,
+        speed: Math.max(0.25, Math.min(4.0, speed))
+      })
+    });
+
+    if (resp.status === 429) {
+      console.warn(`[OpenAI TTS] Key hit 429 Rate Limit. Rotating key in pool...`);
+      const nextKey = modelRegistryService.rotateKeyOn429('OPENAI_TTS', key);
+      if (nextKey && nextKey !== key) {
+        return this.synthesizeWithOpenAITTS(text, voiceName, speed);
+      }
+    }
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`OpenAI TTS Error (${resp.status}): ${errText}`);
+    }
+
+    const blob = await resp.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  /**
+   * Synthesize with Custom OpenAI-compatible TTS endpoint
+   */
+  public async synthesizeWithCustomTTS(
+    text: string,
+    voiceName: string = 'default',
+    speed: number = 1.0
+  ): Promise<string> {
+    const cleanText = sanitizeSpeechText(text);
+    if (!cleanText) return '';
+    const endpoint = modelRegistryService.getCustomEndpoint() || 'http://localhost:8000/v1/audio/speech';
+    const key = modelRegistryService.getNextActiveKey('CUSTOM_TTS') || 'custom-key';
+
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'tts-1',
+        voice: voiceName,
+        input: cleanText,
+        speed: speed
+      })
+    });
+
+    if (resp.status === 429) {
+      modelRegistryService.rotateKeyOn429('CUSTOM_TTS', key);
+    }
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`Custom TTS Error (${resp.status}): ${errText}`);
+    }
+
+    const blob = await resp.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  /**
    * Synthesize with Google Cloud TTS or Gemini Flash TTS with automatic Multi-Key Failover:
    * Handles 429 (Rate Limit / Quota Exceeded), 403, and 503 errors gracefully by rotating to next key in pool.
    */
@@ -2060,6 +2204,7 @@ class AudioPlayService {
             candidate.lastError = '429 Rate Limit Exceeded';
             lastErrorMsg = `Key ${maskApiKey(candidate.key)} hit 429 Rate Limit`;
             console.warn(`[GoogleTTS] Key ${maskApiKey(candidate.key)} hit 429. Rotating to next key in pool...`);
+            modelRegistryService.rotateKeyOn429('GOOGLE_TTS', candidate.key);
             continue;
           }
 
@@ -2115,6 +2260,7 @@ class AudioPlayService {
             candidate.rateLimitedUntil = Date.now() + 60000;
             candidate.status = 'RATE_LIMITED';
             candidate.lastError = '429 Quota Exceeded';
+            modelRegistryService.rotateKeyOn429('GEMINI_AI_STUDIO', candidate.key);
           } else {
             candidate.rateLimitedUntil = Date.now() + 60000;
             candidate.status = 'ERROR';

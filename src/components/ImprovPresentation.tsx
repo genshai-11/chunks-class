@@ -20,6 +20,7 @@ import {
   AudioProvider 
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
+import { modelRegistryService } from '../services/modelRegistryService';
 import { 
   improvTts,
   getHintTextByLanguage, 
@@ -243,6 +244,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     } catch {}
     return audioSettings?.default_speed || 1.0;
   });
+  const [, setRegistryRev] = useState<number>(0);
+  useEffect(() => {
+    return modelRegistryService.subscribe(() => {
+      setRegistryRev(r => r + 1);
+    });
+  }, []);
   const [hintPauseSec, setHintPauseSec] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('chunks_improv_hint_pause_sec');
@@ -1424,27 +1431,26 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                             : 'bg-white border-zinc-200 text-zinc-900'
                         }`}
                       >
-                        <optgroup label="Deepgram Flux & Aura (Ultra-Fast 0ms)">
-                          {DEEPGRAM_AURA_VOICES.filter(v => v.id !== 'aura-theia-en').map((v) => (
+                        {(() => {
+                          const improvEn = modelRegistryService.getImprovModels('en');
+                          const displayed = improvEn.some(m => m.id === selectedVoice)
+                            ? improvEn
+                            : (modelRegistryService.getModelById(selectedVoice)
+                                ? [modelRegistryService.getModelById(selectedVoice)!, ...improvEn]
+                                : improvEn);
+                          return displayed.map((v) => (
                             <option key={v.id} value={v.id}>
                               {v.name} ({v.gender})
                             </option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Google Cloud TTS (Journey / Studio)">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode.startsWith('en')).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.name} ({v.gender})
-                            </option>
-                          ))}
-                        </optgroup>
+                          ));
+                        })()}
                       </select>
                     </div>
 
                     {/* Vietnamese Voice Selector */}
                     <div className="mb-4">
                       <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
-                        Vietnamese Voice Model (Google Cloud)
+                        Vietnamese Voice Model (Google Cloud & AI)
                       </label>
                       <select
                         value={selectedVoiceVi}
@@ -1455,34 +1461,19 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                             : 'bg-white border-zinc-200 text-zinc-900'
                         }`}
                       >
-                        <optgroup label="Google Chirp3-HD (Studio Studio Quality)">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Chirp3-HD')).map((v) => (
+                        {(() => {
+                          const improvVi = modelRegistryService.getImprovModels('vi');
+                          const displayed = improvVi.some(m => m.id === selectedVoiceVi)
+                            ? improvVi
+                            : (modelRegistryService.getModelById(selectedVoiceVi)
+                                ? [modelRegistryService.getModelById(selectedVoiceVi)!, ...improvVi]
+                                : improvVi);
+                          return displayed.map((v) => (
                             <option key={v.id} value={v.id}>
-                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
+                              {v.name} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
                             </option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Google Neural2 (Chuẩn Tự Nhiên)">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Neural2')).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ Chuẩn' : 'Nam Chuẩn'})
-                            </option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Google WaveNet">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Wavenet')).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
-                            </option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Google Standard">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Standard')).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
-                            </option>
-                          ))}
-                        </optgroup>
+                          ));
+                        })()}
                       </select>
                     </div>
 
