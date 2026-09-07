@@ -19,6 +19,8 @@ import {
   ImprovLLMConfig, 
   ImprovSessionConfig,
   ImprovGenerateRequest,
+  ImprovBatchGenerationStatus,
+  ImprovGenerateProgressDetail,
   ChunkItem
 } from '../types';
 import { DEFAULT_IMPROV_PACKAGES } from '../data/defaultImprovPackages';
@@ -89,19 +91,19 @@ CHUNKS Improv is an interactive, hint-based English reflex training system. Lear
 Each Improv Package contains multiple Sessions. In each Session, each Item is an independent reflex challenge with N compact hints (1–2 words per clue):
 
 1. **For 2-Hint Sessions (hcTotal = 2)**:
-   - Hint 1: **Keyword / Core Vocab** (Danh từ / Động từ / Tính từ / Trạng từ / Cụm chêm). Drawn from the provided seed vocabularies.
-   - Hint 2: **Ending** (Động từ / Tính từ / Trạng từ / Danh từ). A natural, high-frequency collocated word.
-   - *Example Item 1*: Hint 1: "cơm tối" (Trans: "dinner", Type: "Danh từ · Keyword") | Hint 2: "nấu" (Trans: "cook", Type: "Động từ · Ending")
-   - *Example Item 2*: Hint 1: "Contract" (Trans: "Hợp đồng", Type: "Danh từ · Keyword") | Hint 2: "long-term" (Trans: "dài hạn", Type: "Tính từ · Ending")
+   - Hint 1: **Keyword / Core Vocab / Idiom** (1–2 words: Danh từ / Động từ / Tính từ / Cụm thành ngữ).
+   - Hint 2: **Ending** (1–2 words: Động từ / Tính từ / Trạng từ / Danh từ). A colorful, non-obvious collocated word or unexpected outcome.
+   - *Example Item 1*: Hint 1: "Bite the bullet" (Trans: "Cắn răng chịu đựng", Type: "Idiom · Keyword") | Hint 2: "turnaround" (Trans: "bước ngoặt", Type: "Danh từ · Ending")
+   - *Example Item 2*: Hint 1: "Devil's advocate" (Trans: "Người phản biện", Type: "Collocation · Keyword") | Hint 2: "fierce debate" (Trans: "tranh luận nảy lửa", Type: "Danh từ · Ending")
    - *Rule*: EVERY single item in the session MUST have completely different, creative, distinct word pairs!
 
 2. **For 3-Hint Sessions (hcTotal = 3)**:
-   - Hint 1: **Keyword / Core Vocab** (1–2 words: Danh từ / Động từ / Tính từ / Trạng từ / Cụm phản hồi).
+   - Hint 1: **Keyword / Core Vocab** (1–2 words: Phrasal verb / Cụm đàm thoại / Idiom / Phản hồi cảm xúc).
    - Hint 2: **Logic word / Từ nối** (1–2 words: transition & connective words).
      *CRITICAL RULE*: Every item MUST use a DIFFERENT logic connector! Pick from: "nói cách khác" (in other words), "sau cùng" (eventually), "trước đó" (before that), "hơn nữa" (in addition), "tiếp theo" (next), "dù vậy" (nevertheless), "nếu" (if), "đồng thời" (meanwhile), "tuy nhiên" (however), "do đó" (therefore), "ví dụ" (for example), "miễn là" (as long as), "nếu không" (otherwise), "sau đó" (then), "ngoài ra" (besides).
    - Hint 3: **Ending** (Tính từ / Trạng từ / Động từ - 1–2 words).
-   - *Example Item 1*: Hint 1: "Cải thiện" (Trans: "Work on / improve", Type: "Động từ · Keyword") | Hint 2: "trước đó" (Trans: "before that", Type: "Từ nối · Logic word") | Hint 3: "tốt hơn" (Trans: "better", Type: "Tính từ · Ending")
-   - *Example Item 2*: Hint 1: "Sometimes" (Trans: "Nhiều khi", Type: "Trạng từ · Keyword") | Hint 2: "meanwhile" (Trans: "đồng thời", Type: "Từ nối · Logic word") | Hint 3: "unpredictable" (Trans: "khó đoán", Type: "Tính từ · Ending")
+   - *Example Item 1*: Hint 1: "Spill the beans" (Trans: "Bật mí bí mật", Type: "Idiom · Keyword") | Hint 2: "ngay sau đó" (Trans: "shortly after", Type: "Từ nối · Logic word") | Hint 3: "catastrophic" (Trans: "thảm họa", Type: "Tính từ · Ending")
+   - *Example Item 2*: Hint 1: "Elephant in the room" (Trans: "Vấn đề hiển nhiên bị né tránh", Type: "Idiom · Keyword") | Hint 2: "dù vậy" (Trans: "nevertheless", Type: "Từ nối · Logic word") | Hint 3: "unaddressed" (Trans: "chưa giải quyết", Type: "Tính từ · Ending")
 
 3. **For 4-Hint Sessions (hcTotal = 4)**:
    - Hint 1: **Keyword / WH-question** (1–2 words: Danh từ, Cụm khuyên nhủ, WH word like "Why", "When", "How long", "Which").
@@ -109,7 +111,8 @@ Each Improv Package contains multiple Sessions. In each Session, each Item is an
    - Hint 3: **Fancy word / Ẩn dụ / Cụm gợi hình / Tục ngữ / Từ tượng thanh** (1–2 words colorful image: "smart choice", "lifeline", "empty shelves", "shock wave", "watchful eye", "dead stop", "red flag", "Better safe than sorry", "burning", "resistant").
    - Hint 4: **Ending** (1–2 words: Danh từ, Tính từ, Trạng từ: "careful", "globally", "urgently", "worldwide", "discreetly", "immediately", "promptly", "Heartburn", "Acid reflux", "Blood sugar").
 
-### STRICT ANTI-REPETITION CONSTRAINTS:
+### STRICT PEDAGOGICAL NEGATIVE CONSTRAINTS:
+- NEVER output obvious, pedestrian, textbook collocations (e.g. NEVER pair 'doctor' with 'hospital', 'dinner' with 'cook', 'contract' with 'sign', 'car' with 'drive', 'book' with 'read', 'teacher' with 'school').
 - DO NOT repeat fixed sentence patterns (e.g., NEVER make all items "Why don't you..." or any repeated template).
 - Every single Item in the output must be completely UNIQUE, colorful, diverse, and natural.
 - Compact Clues: Fancy words and hints must be limited to 1–2 words (except proverbs).
@@ -125,7 +128,7 @@ You MUST output ONLY a valid JSON object matching the following structure withou
       "sessionNumber": 1,
       "title": "Session 1: Two-Word Reflex Pairs",
       "hcTotal": 2,
-      "hintTypes": ["Danh từ · Keyword", "Động từ · Ending"],
+      "hintTypes": ["Keyword · Cụm phản xạ", "Ending · Kết quả"],
       "items": [
         {
           "itemNumber": 1,
@@ -134,15 +137,15 @@ You MUST output ONLY a valid JSON object matching the following structure withou
           "hints": [
             {
               "itemIndex": 1,
-              "text": "cơm tối",
-              "translation": "dinner",
-              "typeFunction": "Danh từ · Keyword"
+              "text": "Bite the bullet",
+              "translation": "Cắn răng chịu đựng",
+              "typeFunction": "Keyword · Cụm phản xạ"
             },
             {
               "itemIndex": 2,
-              "text": "nấu",
-              "translation": "cook",
-              "typeFunction": "Động từ · Ending"
+              "text": "turnaround",
+              "translation": "bước ngoặt",
+              "typeFunction": "Ending · Kết quả"
             }
           ]
         }
@@ -299,6 +302,30 @@ export async function deleteImprovPackage(id: string): Promise<void> {
       );
     }
   } catch {}
+}
+
+/**
+ * Updates an existing ImprovPackage metadata (title, description, sourceCourseLevel).
+ */
+export async function updateImprovPackageMetadata(
+  packageId: string,
+  updates: { title?: string; description?: string; sourceCourseLevel?: string }
+): Promise<ImprovPackage> {
+  const pkg = await getImprovPackageById(packageId);
+  if (!pkg) {
+    throw new Error(`Không tìm thấy Improv Package có ID: ${packageId}`);
+  }
+
+  const updatedPkg: ImprovPackage = {
+    ...pkg,
+    title: updates.title !== undefined ? updates.title.trim() : pkg.title,
+    description: updates.description !== undefined ? updates.description.trim() : pkg.description,
+    sourceCourseLevel: updates.sourceCourseLevel !== undefined ? updates.sourceCourseLevel : pkg.sourceCourseLevel,
+    updatedAt: new Date().toISOString()
+  };
+
+  await saveImprovPackage(updatedPkg);
+  return updatedPkg;
 }
 
 /**
@@ -970,22 +997,131 @@ export async function testLlmConnection(
 
 export const testLlmConnectivity = testLlmConnection;
 
+// --------------------------------------------------------------------------
+// Dynamic Directives & Temperature Tuning for Improv Generation
+// --------------------------------------------------------------------------
+
+export function getDynamicTemperature(relevance: string = ''): number {
+  const rel = relevance.toLowerCase();
+  if (rel === 'low' || rel.includes('thấp') || rel.includes('ngẫu nhiên')) {
+    return 0.88;
+  }
+  if (rel === 'high' || rel.includes('cao') || rel.includes('gắn kết')) {
+    return 0.50;
+  }
+  return 0.70;
+}
+
+export function getRelevanceDirective(relevance: string = ''): string {
+  const rel = relevance.toLowerCase();
+  if (rel === 'low' || rel.includes('thấp') || rel.includes('ngẫu nhiên')) {
+    return `★★★ LATERAL ASSOCIATION & HIGH CREATIVE CONTRAST (Thấp - Brainstorming ngẫu nhiên) ★★★
+STRICT NEGATIVE CONSTRAINT: DO NOT pair obvious literal synonyms, textbook collocations, or immediate thematic associates (e.g. NEVER pair 'doctor' with 'hospital', 'dinner' with 'cook', 'contract' with 'sign', 'car' with 'drive', 'book' with 'read', 'teacher' with 'school').
+INSTEAD: Forge UNEXPECTED, CROSS-DOMAIN, LATERAL bridges! Juxtapose a business concept with a domestic emotional reaction, a concrete physical object with a philosophical dilemma, or a casual reaction with an intense emergency context.
+The hints should act as surprising cognitive springboards that force the learner's brain to construct a creative, spontaneous communicative sentence bridging these seemingly disparate ideas!
+SEMANTIC DISTANCE: Maximize semantic diversity across items. Every single item in this session must portray a completely different, unexpected situation and emotional setting!`;
+  }
+  if (rel === 'high' || rel.includes('cao') || rel.includes('gắn kết')) {
+    return `★★★ TIGHT LOGICAL COHESION (Cao - Gắn kết câu chuyện logic) ★★★
+Enforce tight narrative continuity, clear cause-and-effect transitions, chronological story progression, and cohesive thematic alignment across hints. Clues should form a logical chain leading directly to the communicative payoff.`;
+  }
+  return `★★★ BALANCED CONTEXTUAL RELEVANCE (Vừa - Tương quan ngữ cảnh) ★★★
+Create authentic conversational collocations, natural dialogue pivots, and realistic everyday communication scenarios. Words should feel naturally connected in spoken English without being overly trivial.`;
+}
+
+export function getDifficultyDirective(difficulty: string = ''): string {
+  const diff = difficulty.toLowerCase();
+  if (diff === 'hard' || diff.includes('hard') || diff.includes('b2-c1')) {
+    return `★★★ PEDAGOGY DIFFICULTY: HARD (B2-C1) - IDIOMS, PHRASAL VERBS & ADVANCED STRUCTURES ★★★
+MANDATORY: Use advanced colloquial idioms, multi-word verbs, metaphorical expressions, and C1 collocations (e.g., 'call it a day', 'on the fence', 'spill the beans', 'elephant in the room', 'play devil's advocate', 'bite the bullet', 'double-edged sword', 'silver lining', 'dead set on', 'par for the course', 'hit the ground running', 'burn the midnight oil', 'touch and go', 'cut corners').
+STRICT BAN: Absolutely NO basic A1-A2 filler words (e.g., 'good', 'bad', 'happy', 'sad', 'big', 'small', 'go', 'come', 'eat', 'sleep', 'nice', 'like') unless paired in an advanced idiomatic or ironic sense!
+Hints must challenge upper-intermediate and advanced learners to synthesize sophisticated oral expressions with nuanced emotional tones.`;
+  }
+  if (diff === 'easy' || diff.includes('easy') || diff.includes('a1-a2')) {
+    return `★★★ PEDAGOGY DIFFICULTY: EASY (A1-A2) - FOUNDATIONAL SPOKEN VOCABULARY ★★★
+Use clear, high-frequency foundational daily vocabulary, direct phrasing, and accessible sentence connectors. Ensure learner confidence while building core spoken reflexes.`;
+  }
+  return `★★★ PEDAGOGY DIFFICULTY: MEDIUM (B1) - CONVERSATIONAL COLLOCATIONS & PHRASAL VERBS ★★★
+Focus on natural spoken English, practical phrasal verbs, workplace and social collocations, and common spoken discourse markers. Clues should encourage fluent speaking without academic stiffness.`;
+}
+
+export function getCourseLevelDirective(sourceLevel: string = ''): string {
+  const lvl = String(sourceLevel).toUpperCase();
+  if (lvl.includes('LEVEL_B_ERES') || lvl.includes('ERES')) {
+    return `★★★ PEDAGOGICAL COURSE FOCUS: LEVEL B - ERES (English Reflexes Enhancement for Speaking) ★★★
+Focus strictly on SPOKEN fluency, natural conversational pivots, oral hesitation elimination, dynamic dialogic reactions, dialogue banter, emotional tone shifts, and authentic spoken speech markers (e.g., 'Well, honestly...', 'Look, the thing is...', 'To be fair...', 'You know what?'). Avoid stiff written or formal academic phrasing!`;
+  }
+  if (lvl.includes('LEVEL_B_EREL') || lvl.includes('EREL')) {
+    return `★★★ PEDAGOGICAL COURSE FOCUS: LEVEL B - EREL (English Reflexes Enhancement for Listening) ★★★
+Focus on listening comprehension, acoustic blends, connected speech cues, reduction markers, and auditory reflex challenges. Clues should prepare learners for rapid native speech assimilation.`;
+  }
+  if (lvl.includes('LEVEL_A')) {
+    return `★★★ PEDAGOGICAL COURSE FOCUS: LEVEL A - FOUNDATION REFLEXES ★★★
+Focus on core syntactic chunking, subject-verb-object automaticity, and essential daily situational vocabulary.`;
+  }
+  return `★★★ PEDAGOGICAL COURSE FOCUS: COMPREHENSIVE SPOKEN REFLEXES ★★★
+Focus on natural conversational agility, authentic native spoken chunking, and spontaneous sentence assembly.`;
+}
+
+function synthesizeFallbackBatchItems(
+  batch: { startItem: number; count: number; sessionNumber: number },
+  sConfig: ImprovSessionConfig,
+  batchSeeds: { english: string; vietnamese: string }[],
+  now: string
+): ImprovItem[] {
+  const items: ImprovItem[] = [];
+  for (let itIdx = 0; itIdx < batch.count; itIdx++) {
+    const itemNumber = batch.startItem + itIdx;
+    const itemId = `item_s${batch.sessionNumber}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const seed = batchSeeds[itIdx % Math.max(1, batchSeeds.length)] || { english: 'Practice phrase', vietnamese: 'Cụm từ thực hành' };
+    const hints: ImprovHint[] = [];
+    for (let h = 1; h <= sConfig.hcTotal; h++) {
+      hints.push({
+        id: `h_${batch.sessionNumber}_${itemNumber}_${h}`,
+        text: h === 1 ? seed.english : `Reflex chunk ${h}`,
+        translation: h === 1 ? seed.vietnamese : `Gợi ý phản xạ ${h}`,
+        typeFunction: sConfig.hintTypes[h - 1] || (h === 1 ? 'Keyword' : h === sConfig.hcTotal ? 'Ending' : 'Logic word'),
+        itemIndex: h
+      });
+    }
+    items.push({
+      id: itemId,
+      itemNumber,
+      sessionNumber: batch.sessionNumber,
+      hcTotal: hints.length,
+      hints,
+      createdAt: now
+    });
+  }
+  return items;
+}
+
 /**
  * Generates an ImprovPackage using resilient Micro-Batching (splitting large sessions into 5–8 item batches)
  * to guarantee that Gemini, DeepSeek, and custom LLMs never hit MAX_TOKENS or output truncation limits.
  */
 export async function generateImprovPackage(
   request: ImprovGenerateRequest,
-  onProgress?: (current: number, total: number, message: string) => void,
+  onProgress?: (
+    current: number, 
+    total: number, 
+    message: string, 
+    detail?: ImprovGenerateProgressDetail
+  ) => void,
   signal?: AbortSignal
 ): Promise<ImprovPackage> {
-  onProgress?.(1, 100, 'Đang trích xuất từ vựng giáo trình hạt giống...');
+  // Extract dynamic directives and temperature
+  const dynamicTemperature = getDynamicTemperature(request.relevance);
+  const relevanceDirective = getRelevanceDirective(request.relevance);
+  const difficultyDirective = getDifficultyDirective(request.difficulty);
+  const courseLevelDirective = getCourseLevelDirective(request.sourceLevel);
 
   // Read AI config from ModelRegistryService if apiKey or provider is not specified
   const aiConfig = modelRegistryService.getAiConfig();
   const effectiveLlmConfig: ImprovLLMConfig = {
     ...GOOGLE_GENAI_DEFAULT_CONFIG,
     ...request.llmConfig,
+    temperature: dynamicTemperature,
     provider: request.llmConfig?.provider || aiConfig.provider || 'GOOGLE_GENAI',
     apiKey: request.llmConfig?.apiKey?.trim() || aiConfig.apiKey?.trim() || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey,
     model: request.llmConfig?.model || aiConfig.model || GOOGLE_GENAI_DEFAULT_CONFIG.model,
@@ -1058,7 +1194,7 @@ export async function generateImprovPackage(
   const sessionConfigs: ImprovSessionConfig[] = request.sessionsConfig && request.sessionsConfig.length > 0
     ? request.sessionsConfig
     : [
-        { sessionNumber: 1, hcTotal: 2, hintTypes: ['Danh từ · Keyword', 'Động từ · Ending'], itemsCount: Math.ceil(request.totalItems / 4) },
+        { sessionNumber: 1, hcTotal: 2, hintTypes: ['Keyword · Cụm phản xạ', 'Ending · Kết quả'], itemsCount: Math.ceil(request.totalItems / 4) },
         { sessionNumber: 2, hcTotal: 3, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Ending'], itemsCount: Math.ceil(request.totalItems / 4) },
         { sessionNumber: 3, hcTotal: 4, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Fancy word', 'Ending'], itemsCount: Math.ceil(request.totalItems / 4) },
         { sessionNumber: 4, hcTotal: 4, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Fancy word', 'Ending'], itemsCount: request.totalItems - 3 * Math.ceil(request.totalItems / 4) }
@@ -1070,7 +1206,6 @@ export async function generateImprovPackage(
   const packageId = generateId('pkg_improv');
 
   // Plan micro-batches across all sessions
-  // If itemsCount > 8, break into micro-batches of 5–8 items (e.g. 10 items = 2 batches of 5)
   interface PlannedBatch {
     sessionNumber: number;
     sessionConfig: ImprovSessionConfig;
@@ -1137,6 +1272,27 @@ export async function generateImprovPackage(
     });
   });
 
+  // Pre-populate batch tracking status
+  const allPlannedBatchesStatus: ImprovBatchGenerationStatus[] = allPlannedBatches.map((b, idx) => ({
+    batchIndex: idx,
+    totalBatches: totalBatchesCount,
+    sessionNumber: b.sessionNumber,
+    itemsRange: `Câu ${b.startItem}-${b.startItem + b.count - 1}`,
+    count: b.count,
+    status: 'pending' as const
+  }));
+
+  let successBatchesCount = 0;
+  let failedBatchesCount = 0;
+
+  onProgress?.(1, 100, 'Đang trích xuất từ vựng giáo trình hạt giống...', {
+    batchIndex: 0,
+    totalBatches: totalBatchesCount,
+    batches: [...allPlannedBatchesStatus],
+    successBatches: 0,
+    failedBatches: 0
+  });
+
   // Step 2: Execute Micro-Batches sequentially
   for (let batchStep = 0; batchStep < allPlannedBatches.length; batchStep++) {
     const batch = allPlannedBatches[batchStep];
@@ -1144,12 +1300,20 @@ export async function generateImprovPackage(
     const sessionNum = batch.sessionNumber;
     const endItem = batch.startItem + batch.count - 1;
 
+    allPlannedBatchesStatus[batchStep].status = 'generating';
+
     const progressPercent = Math.round(5 + ((batchStep) / totalBatchesCount) * 88);
     const batchInfoMsg = batch.totalBatchesInSession > 1
       ? `Đang sinh Session ${sessionNum}/${totalSessions}: câu ${batch.startItem}-${endItem} / ${sConfig.itemsCount} (${sConfig.hcTotal} hints)...`
       : `Đang sinh Session ${sessionNum}/${totalSessions}: ${sConfig.itemsCount} câu (${sConfig.hcTotal} hints)...`;
 
-    onProgress?.(progressPercent, 100, batchInfoMsg);
+    onProgress?.(progressPercent, 100, batchInfoMsg, {
+      batchIndex: batchStep,
+      totalBatches: totalBatchesCount,
+      batches: [...allPlannedBatchesStatus],
+      successBatches: successBatchesCount,
+      failedBatches: failedBatchesCount
+    });
 
     // Distribute fresh seed vocabularies for this batch
     const seedsPerBatch = Math.max(6, Math.ceil(batch.count * 1.5));
@@ -1171,6 +1335,12 @@ export async function generateImprovPackage(
 - Difficulty Level: ${request.difficulty || 'Medium (B1)'}
 - Relevance / Context: ${request.relevance || 'High'}
 - Seed Vocabularies: ${JSON.stringify(batchSeeds)}
+
+${courseLevelDirective}
+
+${difficultyDirective}
+
+${relevanceDirective}
 
 CRITICAL RULES:
 1. Respond ONLY with a valid JSON object matching this exact schema:
@@ -1197,107 +1367,139 @@ CRITICAL RULES:
 }
 2. Generate exactly ${batch.count} items, numbered sequentially from ${batch.startItem} to ${endItem}.
 3. Every single item MUST have exactly ${sConfig.hcTotal} hints (itemIndex from 1 to ${sConfig.hcTotal}).
-4. Ensure all Vietnamese translations are 100% natural, colloquial, and accurate.
-5. DO NOT repeat fixed sentence patterns. Make every item unique and distinct!
+4. Ensure all Vietnamese translations are 100% natural, colloquial, and accurate (Latin Extended, Be Vietnam Pro typography safe).
+5. STRICT ANTI-CLICHÉ RULE: Obey all negative constraints. Never pair trivial associations like dinner-cook or doctor-hospital.
 6. Output ONLY pure JSON. Do NOT wrap in markdown explanation or reasoning tags.`;
 
-    // Execute LLM call for this micro-batch
-    const rawContent = await executeLlmGeneration(
-      effectiveLlmConfig,
-      masterSystemPrompt,
-      sessionUserPrompt,
-      signal
-    );
+    let validatedBatchItems: ImprovItem[] = [];
+    try {
+      // Execute LLM call for this micro-batch
+      const rawContent = await executeLlmGeneration(
+        effectiveLlmConfig,
+        masterSystemPrompt,
+        sessionUserPrompt,
+        signal
+      );
 
-    // Robust JSON extraction
-    const parsed = extractAndParseJson<any>(rawContent);
+      // Robust JSON extraction
+      const parsed = extractAndParseJson<any>(rawContent);
 
-    // Extract items array from response (handling various response structures)
-    let rawItems: any[] = [];
-    if (Array.isArray(parsed)) {
-      rawItems = parsed;
-    } else if (Array.isArray(parsed.items)) {
-      rawItems = parsed.items;
-      if (parsed.title) sessionAccumulators.get(sessionNum)!.title = parsed.title;
-    } else if (Array.isArray(parsed.sessions) && parsed.sessions[0]?.items) {
-      rawItems = parsed.sessions[0].items;
-      if (parsed.sessions[0].title) sessionAccumulators.get(sessionNum)!.title = parsed.sessions[0].title;
-    } else if (parsed.session && Array.isArray(parsed.session.items)) {
-      rawItems = parsed.session.items;
-      if (parsed.session.title) sessionAccumulators.get(sessionNum)!.title = parsed.session.title;
-    }
-
-    // Normalize and validate items for this batch
-    const validatedBatchItems: ImprovItem[] = rawItems.map((it: any, itIdx: number) => {
-      const assignedItemNumber = batch.startItem + itIdx;
-      const itemNumber = Number(it.itemNumber) || assignedItemNumber;
-      const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-      
-      const hints: ImprovHint[] = (it.hints || []).map((h: any, hIdx: number) => ({
-        id: `h_${sessionNum}_${itemNumber}_${h.itemIndex || (hIdx + 1)}`,
-        text: String(h.text || '').trim(),
-        translation: String(h.translation || '').trim(),
-        typeFunction: String(h.typeFunction || (sConfig.hintTypes[hIdx] || `Hint ${hIdx + 1}`)).trim(),
-        itemIndex: Number(h.itemIndex) || (hIdx + 1)
-      }));
-
-      // Ensure item has required hints count
-      while (hints.length < sConfig.hcTotal) {
-        const nextIdx = hints.length + 1;
-        hints.push({
-          id: `h_${sessionNum}_${itemNumber}_${nextIdx}`,
-          text: `Practice chunk ${nextIdx}`,
-          translation: `Gợi ý thực hành ${nextIdx}`,
-          typeFunction: sConfig.hintTypes[nextIdx - 1] || 'Hint',
-          itemIndex: nextIdx
-        });
+      // Extract items array from response (handling various response structures)
+      let rawItems: any[] = [];
+      if (Array.isArray(parsed)) {
+        rawItems = parsed;
+      } else if (Array.isArray(parsed.items)) {
+        rawItems = parsed.items;
+        if (parsed.title) sessionAccumulators.get(sessionNum)!.title = parsed.title;
+      } else if (Array.isArray(parsed.sessions) && parsed.sessions[0]?.items) {
+        rawItems = parsed.sessions[0].items;
+        if (parsed.sessions[0].title) sessionAccumulators.get(sessionNum)!.title = parsed.sessions[0].title;
+      } else if (parsed.session && Array.isArray(parsed.session.items)) {
+        rawItems = parsed.session.items;
+        if (parsed.session.title) sessionAccumulators.get(sessionNum)!.title = parsed.session.title;
       }
 
-      // If more hints than hcTotal, trim to hcTotal
-      if (hints.length > sConfig.hcTotal) {
-        hints.length = sConfig.hcTotal;
-      }
+      // Normalize and validate items for this batch
+      validatedBatchItems = rawItems.map((it: any, itIdx: number) => {
+        const assignedItemNumber = batch.startItem + itIdx;
+        const itemNumber = Number(it.itemNumber) || assignedItemNumber;
+        const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        
+        const hints: ImprovHint[] = (it.hints || []).map((h: any, hIdx: number) => ({
+          id: `h_${sessionNum}_${itemNumber}_${h.itemIndex || (hIdx + 1)}`,
+          text: String(h.text || '').trim(),
+          translation: String(h.translation || '').trim(),
+          typeFunction: String(h.typeFunction || (sConfig.hintTypes[hIdx] || `Hint ${hIdx + 1}`)).trim(),
+          itemIndex: Number(h.itemIndex) || (hIdx + 1)
+        }));
 
-      return {
-        id: itemId,
-        itemNumber,
-        sessionNumber: sessionNum,
-        hcTotal: hints.length,
-        hints,
-        createdAt: now
-      };
-    });
+        // Ensure item has required hints count
+        while (hints.length < sConfig.hcTotal) {
+          const nextIdx = hints.length + 1;
+          hints.push({
+            id: `h_${sessionNum}_${itemNumber}_${nextIdx}`,
+            text: `Practice chunk ${nextIdx}`,
+            translation: `Gợi ý thực hành ${nextIdx}`,
+            typeFunction: sConfig.hintTypes[nextIdx - 1] || 'Hint',
+            itemIndex: nextIdx
+          });
+        }
 
-    // If LLM returned fewer items than requested, synthesize remaining items to guarantee count
-    while (validatedBatchItems.length < batch.count) {
-      const missingIdx = validatedBatchItems.length;
-      const itemNumber = batch.startItem + missingIdx;
-      const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-      const seed = batchSeeds[missingIdx % batchSeeds.length] || { english: 'Practice phrase', vietnamese: 'Cụm từ thực hành' };
-      
-      const hints: ImprovHint[] = [];
-      for (let h = 1; h <= sConfig.hcTotal; h++) {
-        hints.push({
-          id: `h_${sessionNum}_${itemNumber}_${h}`,
-          text: h === 1 ? seed.english : `Collocation ${h}`,
-          translation: h === 1 ? seed.vietnamese : `Kết hợp từ ${h}`,
-          typeFunction: sConfig.hintTypes[h - 1] || `Hint ${h}`,
-          itemIndex: h
-        });
-      }
+        // If more hints than hcTotal, trim to hcTotal
+        if (hints.length > sConfig.hcTotal) {
+          hints.length = sConfig.hcTotal;
+        }
 
-      validatedBatchItems.push({
-        id: itemId,
-        itemNumber,
-        sessionNumber: sessionNum,
-        hcTotal: hints.length,
-        hints,
-        createdAt: now
+        return {
+          id: itemId,
+          itemNumber,
+          sessionNumber: sessionNum,
+          hcTotal: hints.length,
+          hints,
+          createdAt: now
+        };
       });
+
+      // If LLM returned fewer items than requested, synthesize remaining items to guarantee count
+      while (validatedBatchItems.length < batch.count) {
+        const missingIdx = validatedBatchItems.length;
+        const itemNumber = batch.startItem + missingIdx;
+        const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        const seed = batchSeeds[missingIdx % batchSeeds.length] || { english: 'Practice phrase', vietnamese: 'Cụm từ thực hành' };
+        
+        const hints: ImprovHint[] = [];
+        for (let h = 1; h <= sConfig.hcTotal; h++) {
+          hints.push({
+            id: `h_${sessionNum}_${itemNumber}_${h}`,
+            text: h === 1 ? seed.english : `Collocation ${h}`,
+            translation: h === 1 ? seed.vietnamese : `Kết hợp từ ${h}`,
+            typeFunction: sConfig.hintTypes[h - 1] || `Hint ${h}`,
+            itemIndex: h
+          });
+        }
+
+        validatedBatchItems.push({
+          id: itemId,
+          itemNumber,
+          sessionNumber: sessionNum,
+          hcTotal: hints.length,
+          hints,
+          createdAt: now
+        });
+      }
+
+      allPlannedBatchesStatus[batchStep].status = 'success';
+      allPlannedBatchesStatus[batchStep].itemsCount = validatedBatchItems.length;
+      successBatchesCount++;
+    } catch (batchErr: any) {
+      if (signal?.aborted) {
+        throw batchErr;
+      }
+      console.error(`[generateImprovPackage] Error in batch ${batchStep + 1}/${totalBatchesCount}:`, batchErr);
+      allPlannedBatchesStatus[batchStep].status = 'failed';
+      allPlannedBatchesStatus[batchStep].error = batchErr?.message || 'Lỗi sinh batch';
+      failedBatchesCount++;
+
+      // Use fallback synthesis for this batch so generation proceeds reliably
+      validatedBatchItems = synthesizeFallbackBatchItems(batch, sConfig, batchSeeds, now);
+      allPlannedBatchesStatus[batchStep].itemsCount = validatedBatchItems.length;
     }
 
     // Append batch items to session accumulator
     sessionAccumulators.get(sessionNum)!.items.push(...validatedBatchItems);
+
+    onProgress?.(
+      Math.round(5 + ((batchStep + 1) / totalBatchesCount) * 88),
+      100,
+      `Hoàn thành Session ${sessionNum}: câu ${batch.startItem}-${endItem} (${allPlannedBatchesStatus[batchStep].status === 'success' ? 'Thành công' : 'Đã dùng fallback do lỗi LLM'})`,
+      {
+        batchIndex: batchStep,
+        totalBatches: totalBatchesCount,
+        batches: [...allPlannedBatchesStatus],
+        successBatches: successBatchesCount,
+        failedBatches: failedBatchesCount
+      }
+    );
   }
 
   // Step 3: Construct generatedSessions
@@ -1335,7 +1537,18 @@ CRITICAL RULES:
   // Step 4: Save to Firestore & Local Storage
   await saveImprovPackage(pkg);
 
-  onProgress?.(100, 100, `Hoàn tất tạo thành công ${pkg.title} với ${totalItemsCount} items!`);
+  onProgress?.(
+    100, 
+    100, 
+    `Hoàn tất tạo thành công ${pkg.title} với ${totalItemsCount} items!`,
+    {
+      batchIndex: totalBatchesCount - 1,
+      totalBatches: totalBatchesCount,
+      batches: [...allPlannedBatchesStatus],
+      successBatches: successBatchesCount,
+      failedBatches: failedBatchesCount
+    }
+  );
 
   return pkg;
 }

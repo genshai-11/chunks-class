@@ -11,13 +11,16 @@ import {
   LessonDoc,
   ChunkItem,
   CohortAudioSettings,
-  Course
+  Course,
+  ImprovBatchGenerationStatus,
+  ImprovGenerateProgressDetail
 } from '../types';
 import { 
   getAllImprovPackages, 
   getLocalCachedImprovPackages,
   saveImprovPackage, 
   deleteImprovPackage, 
+  updateImprovPackageMetadata,
   addOrUpdateImprovItem, 
   deleteImprovItem, 
   parseImprovExcelFile, 
@@ -208,6 +211,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [isGeneratorOpen, setIsGeneratorOpen] = useState<boolean>(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState<boolean>(false);
+  const [renameTitle, setRenameTitle] = useState<string>('');
+  const [renameDescription, setRenameDescription] = useState<string>('');
+  const [isSavingRename, setIsSavingRename] = useState<boolean>(false);
+  const [renameSuccessToast, setRenameSuccessToast] = useState<string | null>(null);
   const [isBatchAudioModalOpen, setIsBatchAudioModalOpen] = useState<boolean>(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<ImprovItem | null>(null);
@@ -574,6 +582,17 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     estimatedTokens: 0
   });
   const [genError, setGenError] = useState<string | null>(null);
+  const [genBatchesStatus, setGenBatchesStatus] = useState<ImprovBatchGenerationStatus[]>([]);
+  const [genCompletionSummary, setGenCompletionSummary] = useState<{
+    title: string;
+    totalItems: number;
+    sessionsCount: number;
+    level: string;
+    difficulty: string;
+    relevance: string;
+    successBatches: number;
+    failedBatches: number;
+  } | null>(null);
   const abortGenRef = useRef<AbortController | null>(null);
   const timerGenRef = useRef<any>(null);
 
@@ -1737,6 +1756,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     setGenError(null);
     setIsGenerating(true);
     setGenLogs([]);
+    setGenBatchesStatus([]);
+    setGenCompletionSummary(null);
     setTokenStats({ elapsedSec: 0, speed: '~45 t/s', estimatedTokens: 0 });
     setGenProgress({ percent: 5, current: 0, total: genTotalItems, message: 'Đang trích xuất từ vựng cốt lõi từ giáo trình...' });
 
@@ -1778,13 +1799,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             maxTokens: 16384
           }
         },
-        (percent, total, message) => {
+        (percent, total, message, detail) => {
           setGenProgress({
             percent,
             current: Math.round((percent / 100) * genTotalItems),
             total: genTotalItems,
             message
           });
+          if (detail?.batches) {
+            setGenBatchesStatus(detail.batches);
+          }
           addGenLog('info', message);
         },
         abortController.signal
@@ -1797,8 +1821,20 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setGenProgress({ percent: 100, current: createdPkg.totalItems, total: createdPkg.totalItems, message: 'Hoàn tất sinh Package thành công!' });
       addGenLog('success', `Đã lưu Package "${createdPkg.title}" với ${createdPkg.totalItems} items!`);
       setGenError(null);
+
+      // Record completion summary
+      setGenCompletionSummary(prev => ({
+        title: createdPkg.title,
+        totalItems: createdPkg.totalItems,
+        sessionsCount: createdPkg.sessionsCount,
+        level: String(genSourceLevel),
+        difficulty: genDifficulty,
+        relevance: genRelevance,
+        successBatches: prev?.successBatches || createdPkg.sessionsCount,
+        failedBatches: prev?.failedBatches || 0
+      }));
+
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-      setTimeout(() => setIsGeneratorOpen(false), 1200);
     } catch (err: any) {
       if (abortController.signal.aborted) {
         addGenLog('warning', 'Quá trình sinh dữ liệu đã bị người dùng hủy.');
@@ -2024,6 +2060,57 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   // --------------------------------------------------------------------------
+  // 6b. Rename Package
+  // --------------------------------------------------------------------------
+  const handleOpenRenameModal = () => {
+    if (!activePackage) return;
+    setRenameTitle(activePackage.title || '');
+    setRenameDescription(activePackage.description || '');
+    setIsRenameModalOpen(true);
+  };
+
+  const handleSaveRename = async () => {
+    if (!activePackage) return;
+    const trimmedTitle = renameTitle.trim();
+    if (!trimmedTitle) {
+      alert('Vui lòng nhập tên gói bài tập (Package Title)');
+      return;
+    }
+
+    setIsSavingRename(true);
+    try {
+      await updateImprovPackageMetadata(activePackage.id, {
+        title: trimmedTitle,
+        description: renameDescription.trim()
+      });
+
+      // Update in-memory state
+      setPackages(prev => prev.map(p => {
+        if (p.id === activePackage.id) {
+          return {
+            ...p,
+            title: trimmedTitle,
+            description: renameDescription.trim(),
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return p;
+      }));
+
+      setIsRenameModalOpen(false);
+      setRenameSuccessToast(`Đã đổi tên package thành "${trimmedTitle}"`);
+      setTimeout(() => {
+        setRenameSuccessToast(null);
+      }, 4000);
+    } catch (err: any) {
+      console.error('[handleSaveRename] Error updating package metadata:', err);
+      alert(`Lỗi khi lưu đổi tên gói bài tập: ${err?.message || 'Không xác định'}`);
+    } finally {
+      setIsSavingRename(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
   // 7. Delete Package
   // --------------------------------------------------------------------------
 
@@ -2124,7 +2211,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </div>
 
               {/* Dropdown switcher */}
-              <div className="relative mt-1">
+              <div className="relative mt-1 flex items-center gap-1.5">
                 <select
                   value={activePackageId}
                   onChange={(e) => {
@@ -2139,6 +2226,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  onClick={handleOpenRenameModal}
+                  className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer shrink-0"
+                  title="Đổi tên & mô tả gói bài tập này"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           </div>
@@ -2163,6 +2258,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             >
               <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
               <span>Tạo Package AI</span>
+            </button>
+
+            {/* Rename Package */}
+            <button
+              onClick={handleOpenRenameModal}
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
+              title="Đổi tên & mô tả Package hiện tại"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-zinc-500" />
+              <span className="hidden sm:inline">Đổi Tên</span>
             </button>
 
             {/* Import / Export Excel */}
@@ -4175,8 +4280,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
               )}
 
-              {/* Progress & Live Logs (when generating or error) */}
-              {(isGenerating || genError || genLogs.some(l => l.type === 'error')) && (
+              {/* Progress, Micro-Batches & Live Logs (when generating, error, or completed) */}
+              {(isGenerating || genError || genLogs.length > 0 || genBatchesStatus.length > 0 || genCompletionSummary) && (
                 <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-3 font-mono">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
@@ -4206,6 +4311,102 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     <span>Tốc độ: {tokenStats.speed}</span>
                     <span>Ước tính tokens: ~{tokenStats.estimatedTokens}</span>
                   </div>
+
+                  {/* Live Micro-Batch Progress & Diagnostics Grid */}
+                  {genBatchesStatus.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-zinc-800">
+                      <div className="flex items-center justify-between text-[11px] text-zinc-300 font-bold">
+                        <span className="flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5 text-zinc-400" />
+                          Tiến Độ Từng Đợt Sinh (Micro-Batches ({genBatchesStatus.length}))
+                        </span>
+                        <span className="text-[10px] text-zinc-400 font-mono">
+                          {genBatchesStatus.filter(b => b.status === 'success').length}/{genBatchesStatus.length} Hoàn tất
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                        {genBatchesStatus.map((batch) => {
+                          const isSuccess = batch.status === 'success';
+                          const isFailed = batch.status === 'failed';
+                          const isBatchGen = batch.status === 'generating';
+                          const isPending = batch.status === 'pending';
+
+                          return (
+                            <div
+                              key={batch.batchId}
+                              className={`p-2.5 rounded-xl border text-xs transition-all ${
+                                isSuccess
+                                  ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
+                                  : isFailed
+                                  ? 'bg-red-950/40 border-red-800/60 text-red-200'
+                                  : isBatchGen
+                                  ? 'bg-amber-950/40 border-amber-600/70 text-amber-200 ring-1 ring-amber-500/50'
+                                  : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 font-bold truncate">
+                                  {isBatchGen && <Loader2 className="w-3 h-3 animate-spin text-amber-400 shrink-0" />}
+                                  {isSuccess && <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />}
+                                  {isFailed && <AlertCircle className="w-3 h-3 text-red-400 shrink-0" />}
+                                  {isPending && <span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0 inline-block" />}
+                                  <span className="truncate">
+                                    S{batch.sessionNumber}: Items {batch.itemRange[0]}-{batch.itemRange[1]}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] font-mono shrink-0">
+                                  {batch.durationMs ? `${(batch.durationMs / 1000).toFixed(1)}s` : ''}
+                                </div>
+                              </div>
+
+                              <div className="mt-1 flex items-center justify-between text-[10px] opacity-80">
+                                <span>
+                                  {isPending && '⚪ Chờ xử lý...'}
+                                  {isBatchGen && '🟡 Đang sinh AI...'}
+                                  {isSuccess && `🟢 Đã tạo ${batch.itemCount} items`}
+                                  {isFailed && '🔴 Lỗi (Dùng Fallback)'}
+                                </span>
+                                {batch.modelName && (
+                                  <span className="font-mono text-[9px] truncate max-w-[120px] text-zinc-400">
+                                    {batch.modelName}
+                                  </span>
+                                )}
+                              </div>
+
+                              {batch.error && (
+                                <div className="mt-1 text-[9px] text-red-300 font-mono line-clamp-2 bg-red-900/30 p-1 rounded border border-red-800/40">
+                                  {batch.error}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Completion Summary Box */}
+                  {genCompletionSummary && (
+                    <div className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-600/60 text-emerald-100 space-y-2 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 font-bold text-xs text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <span>Sinh Dữ Liệu Package Thành Công!</span>
+                        </div>
+                        <span className="text-[10px] bg-emerald-800/60 px-2 py-0.5 rounded-full font-mono text-emerald-200">
+                          {genCompletionSummary.totalItems} Items • {genCompletionSummary.sessionsCount} Sessions
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-zinc-300 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-mono">
+                        <div>Tiêu đề: <span className="text-white font-bold">{genCompletionSummary.title}</span></div>
+                        <div>Level: <span className="text-emerald-300 font-semibold">{genCompletionSummary.level}</span></div>
+                        <div>Độ khó: <span className="text-zinc-200">{genCompletionSummary.difficulty}</span></div>
+                        <div>Liên kết: <span className="text-zinc-200">{genCompletionSummary.relevance}</span></div>
+                        <div className="sm:col-span-2">Kết quả micro-batches: <span className="text-emerald-400 font-bold">{genCompletionSummary.successBatches} Thành công</span> {genCompletionSummary.failedBatches > 0 && <span className="text-amber-300 font-bold">({genCompletionSummary.failedBatches} dùng fallback)</span>}</div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Real-time Log Feed */}
                   <div className="bg-black/60 rounded-xl p-3 max-h-32 overflow-y-auto space-y-1 text-[10px]">
@@ -4248,13 +4449,26 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     >
                       Đóng
                     </button>
-                    <button
-                      onClick={handleStartAiGeneration}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4 text-amber-300" />
-                      <span>Bắt Đầu Sinh Dữ Liệu AI</span>
-                    </button>
+                    {genCompletionSummary ? (
+                      <button
+                        onClick={() => {
+                          setIsGeneratorOpen(false);
+                          setGenCompletionSummary(null);
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Mở Xem Package Ngay</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleStartAiGeneration}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                        <span>Bắt Đầu Sinh Dữ Liệu AI</span>
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -5409,6 +5623,103 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white rounded-xl shadow-2xl font-bold text-xs animate-in fade-in slide-in-from-bottom-3 duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-100 shrink-0" />
           <span>{deleteSuccessToast}</span>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 11. MODAL: RENAME PACKAGE */}
+      {/* ==================================================================== */}
+      {isRenameModalOpen && activePackage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl border border-[#E8E8EC] shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-red-50 text-[#DC2626] border border-red-100">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-base text-zinc-900">
+                    Đổi Tên & Mô Tả Gói Bài Tập
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-mono">
+                    ID: {activePackage.id} ({activePackage.sessionsCount} Sessions, {activePackage.totalItems} Items)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRenameModalOpen(false)}
+                className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">
+                  Tên Gói Bài Tập (Package Title) <span className="text-[#DC2626]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={renameTitle}
+                  onChange={(e) => setRenameTitle(e.target.value)}
+                  placeholder="Ví dụ: CHUNKS Improv - Level B ERES Speaking (Day 1)..."
+                  className="w-full p-3 rounded-xl border border-zinc-200 text-sm font-semibold text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626]"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">
+                  Mô Tả Chi Tiết (Description)
+                </label>
+                <textarea
+                  value={renameDescription}
+                  onChange={(e) => setRenameDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Nhập mô tả ngữ cảnh, mục tiêu bài tập phản xạ..."
+                  className="w-full p-3 rounded-xl border border-zinc-200 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626] leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-100">
+              <button
+                onClick={() => setIsRenameModalOpen(false)}
+                disabled={isSavingRename}
+                className="py-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer disabled:opacity-50"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                onClick={handleSaveRename}
+                disabled={isSavingRename || !renameTitle.trim()}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isSavingRename ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang Lưu...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Lưu Thay Đổi</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 12. TOAST: RENAME SUCCESS NOTIFICATION */}
+      {/* ==================================================================== */}
+      {renameSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white rounded-xl shadow-2xl font-bold text-xs animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-100 shrink-0" />
+          <span>{renameSuccessToast}</span>
         </div>
       )}
     </div>
