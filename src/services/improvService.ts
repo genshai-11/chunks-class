@@ -806,7 +806,7 @@ export async function executeLlmGeneration(
       const genConfig: Record<string, any> = {
         responseMimeType: 'application/json',
         temperature: config.temperature ?? 0.7,
-        maxOutputTokens: config.maxTokens ?? 8192
+        maxOutputTokens: config.maxTokens ?? 16384
       };
       if (includeThinkingConfig) {
         genConfig.thinkingConfig = {
@@ -864,14 +864,24 @@ export async function executeLlmGeneration(
     const data = await response.json();
     const candidate = data.candidates?.[0];
     const content = candidate?.content?.parts?.[0]?.text;
+
+    if (candidate?.finishReason === 'MAX_TOKENS') {
+      if (content) {
+        try {
+          extractAndParseJson(content);
+        } catch {
+          throw new Error('Google Gemini API chạm giới hạn token (finishReason: MAX_TOKENS). Dữ liệu JSON bị cắt ngắn giữa chừng.');
+        }
+      } else {
+        throw new Error('Google Gemini API chạm giới hạn token (finishReason: MAX_TOKENS). Dữ liệu JSON bị cắt ngắn giữa chừng.');
+      }
+    }
+
+    if (candidate?.finishReason === 'SAFETY') {
+      throw new Error('Google Gemini API bị chặn bởi bộ lọc an toàn (Safety Filter).');
+    }
     
     if (!content) {
-      if (candidate?.finishReason === 'MAX_TOKENS') {
-        throw new Error('Google Gemini API chạm giới hạn MAX_TOKENS và bị cắt ngắn (Reasoning thoughts đã chiếm token). Hãy kiểm tra lại cấu hình thinkingBudget.');
-      }
-      if (candidate?.finishReason === 'SAFETY') {
-        throw new Error('Google Gemini API bị chặn bởi bộ lọc an toàn (Safety Filter).');
-      }
       throw new Error(`Google Gemini API không trả về nội dung. FinishReason: ${candidate?.finishReason || 'UNKNOWN'}`);
     }
     return content;
@@ -1307,7 +1317,7 @@ CRITICAL RULES:
   const pkg: ImprovPackage = {
     id: packageId,
     title: request.packageTitle || 'Generated Improv Package',
-    description: `Generated Improv package with ${generatedSessions.length} sessions and ${totalItemsCount} items.`,
+    description: request.packageDescription || `Generated Improv package with ${generatedSessions.length} sessions and ${totalItemsCount} items.`,
     totalItems: totalItemsCount,
     sessionsCount: generatedSessions.length,
     sessions: generatedSessions,

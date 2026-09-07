@@ -25,6 +25,7 @@ import {
   DEFAULT_IMPROV_MASTER_PROMPT, 
   DEFAULT_IMPROV_LLM_CONFIG, 
   GOOGLE_GENAI_DEFAULT_CONFIG, 
+  generateImprovPackage,
   executeLlmGeneration, 
   testLlmConnection 
 } from '../services/improvService';
@@ -535,6 +536,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     speed: '~45 t/s',
     estimatedTokens: 0
   });
+  const [genError, setGenError] = useState<string | null>(null);
   const abortGenRef = useRef<AbortController | null>(null);
   const timerGenRef = useRef<any>(null);
 
@@ -1519,6 +1521,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       return;
     }
 
+    setGenError(null);
     setIsGenerating(true);
     setGenLogs([]);
     setTokenStats({ elapsedSec: 0, speed: '~45 t/s', estimatedTokens: 0 });
@@ -1541,171 +1544,56 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     addGenLog('info', `Bắt đầu sinh dữ liệu AI cho "${genTitle}" (${genTotalItems} items, ${genSessionsCount} sessions)...`);
 
     try {
-      // Step 1: Collect seed vocabulary from selected lessons
-      let seedVocabs: { english: string; vietnamese: string }[] = [];
-      genSelectedLessonIds.forEach(lId => {
-        const lesson = genAvailableLessons.find(l => l.id === lId) || curriculumRegistry.getLessonById(lId);
-        if (lesson && lesson.chunks) {
-          lesson.chunks.forEach(c => {
-            if ((c.category === 'vocab' || c.category === 'phrase') && c.english) {
-              seedVocabs.push({ english: c.english, vietnamese: c.vietnamese || '' });
-            }
-          });
-        }
-      });
-
-      if (seedVocabs.length === 0) {
-        addGenLog('warning', 'Không tìm thấy từ vựng trong các bài đã chọn. Đang sử dụng danh mục từ vựng mặc định...');
-        seedVocabs = [
-          { english: 'give it a shot', vietnamese: 'thử một phen' },
-          { english: 'hit the ground running', vietnamese: 'bắt tay vào làm ngay' },
-          { english: 'room for improvement', vietnamese: 'vẫn còn chỗ để cải thiện' },
-          { english: 'keep an eye on', vietnamese: 'để mắt tới' }
-        ];
-      }
-
-      addGenLog('info', `Đã gom được ${seedVocabs.length} từ vựng hạt giống. Đang biên soạn Prompt gửi LLM...`);
-      setGenProgress({ percent: 25, current: 10, total: genTotalItems, message: `Đang gửi yêu cầu tới ${genProvider === 'GOOGLE_GENAI' ? 'Google Gemini (GenAI)' : 'LLM Engine'}...` });
-
-      // Compile master prompt variables
-      const compiledPrompt = genMasterPrompt
-        .replace(/\{\{difficulty\}\}/g, genDifficulty)
-        .replace(/\{\{relevance\}\}/g, genRelevance)
-        .replace(/\{\{vocabList\}\}/g, seedVocabs.slice(0, 30).map(v => `${v.english} (${v.vietnamese})`).join(', '))
-        .replace(/\{\{itemCount\}\}/g, String(genTotalItems));
-
-      const providerLabel = genProvider === 'GOOGLE_GENAI' 
-        ? 'Google Gemini API' 
-        : 'Custom Endpoint';
-
-      addGenLog('info', `Gửi yêu cầu tới ${providerLabel} (Model: ${genModel})...`);
-
-      let rawJsonContent = '';
-
-      try {
-        rawJsonContent = await executeLlmGeneration(
-          {
+      const createdPkg = await generateImprovPackage(
+        {
+          packageTitle: genTitle,
+          packageDescription: genDescription,
+          difficulty: genDifficulty,
+          relevance: genRelevance,
+          totalItems: genTotalItems,
+          sessionsCount: genSessionsCount,
+          sessionsConfig: genSessionConfigs,
+          sourceLevel: genSourceLevel,
+          sourceLessonIds: genSelectedLessonIds,
+          llmConfig: {
             provider: genProvider,
             endpoint: genEndpoint,
             apiKey: genApiKey,
             model: genModel,
-            masterPrompt: compiledPrompt,
+            masterPrompt: genMasterPrompt,
             temperature: 0.7,
-            maxTokens: 4000
-          },
-          compiledPrompt,
-          `Generate an Improv Package with Title "${genTitle}", Total Items: ${genTotalItems}, Sessions: ${JSON.stringify(genSessionConfigs)}, Seed Vocabularies: ${JSON.stringify(seedVocabs.slice(0, 25))}. Output ONLY JSON.`,
-          abortController.signal
-        );
-        addGenLog('success', 'Nhận phản hồi thành công từ LLM! Đang bóc tách cú pháp JSON...');
-      } catch (fetchErr: any) {
-        if (abortController.signal.aborted) {
-          addGenLog('warning', 'Quá trình sinh dữ liệu đã bị người dùng hủy.');
-          return;
-        }
-        addGenLog('warning', `Không kết nối được LLM (${fetchErr?.message}). Đang kích hoạt bộ sinh dữ liệu ngoại tuyến chuẩn xác...`);
-        
-        // Fallback offline procedural generator for instant resilience
-        rawJsonContent = generateOfflineFallbackPackageJson(
-          genTitle, 
-          genDescription, 
-          genTotalItems, 
-          genSessionConfigs, 
-          seedVocabs
-        );
-      }
+            maxTokens: 16384
+          }
+        },
+        (percent, total, message) => {
+          setGenProgress({
+            percent,
+            current: Math.round((percent / 100) * genTotalItems),
+            total: genTotalItems,
+            message
+          });
+          addGenLog('info', message);
+        },
+        abortController.signal
+      );
 
-      setGenProgress({ percent: 75, current: 35, total: genTotalItems, message: 'Đang chuẩn hóa và lưu trữ Package...' });
-
-      // Clean & parse JSON
-      let cleaned = rawJsonContent.trim();
-      if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
-
-      let parsed: any;
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch (pErr) {
-        const start = cleaned.indexOf('{');
-        const end = cleaned.lastIndexOf('}');
-        if (start !== -1 && end !== -1) {
-          parsed = JSON.parse(cleaned.substring(start, end + 1));
-        } else {
-          throw new Error('Không thể phân tích cú pháp JSON trả về từ AI.');
-        }
-      }
-
-      // Build ImprovPackage
-      const newPackageId = `pkg_improv_${Date.now()}`;
-      const now = new Date().toISOString();
-
-      const newSessions: ImprovSession[] = (parsed.sessions || []).map((s: any, sIdx: number) => {
-        const sessionNumber = s.sessionNumber || (sIdx + 1);
-        const config = genSessionConfigs.find(c => c.sessionNumber === sessionNumber) || genSessionConfigs[sIdx] || { hcTotal: 4, hintTypes: ['Keyword', 'Ending'] };
-        
-        const items: ImprovItem[] = (s.items || []).map((it: any, itIdx: number) => {
-          const itemNumber = it.itemNumber || (itIdx + 1);
-          const hints: ImprovHint[] = (it.hints || []).map((h: any, hIdx: number) => ({
-            id: `h_${sessionNumber}_${itemNumber}_${h.itemIndex || (hIdx + 1)}`,
-            text: String(h.text || '').trim(),
-            translation: String(h.translation || '').trim(),
-            typeFunction: String(h.typeFunction || (config.hintTypes[hIdx] || 'Hint')).trim(),
-            itemIndex: h.itemIndex || (hIdx + 1)
-          }));
-
-          return {
-            id: `item_s${sessionNumber}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-            itemNumber,
-            sessionNumber,
-            hcTotal: hints.length || config.hcTotal,
-            hints
-          };
-        });
-
-        return {
-          sessionNumber,
-          title: s.title || `Session ${sessionNumber}`,
-          hcTotal: config.hcTotal,
-          hintTypes: config.hintTypes,
-          items
-        };
-      });
-
-      const totalItemsCount = newSessions.reduce((sum, s) => sum + s.items.length, 0);
-
-      const createdPkg: ImprovPackage = {
-        id: newPackageId,
-        title: parsed.title || genTitle,
-        description: parsed.description || genDescription,
-        totalItems: totalItemsCount,
-        sessionsCount: newSessions.length,
-        sessions: newSessions,
-        sourceCourseLevel: genSourceLevel,
-        sourceLessonIds: genSelectedLessonIds,
-        createdAt: now,
-        updatedAt: now
-      };
-
-      // Save package
-      await saveImprovPackage(createdPkg);
-
-      setPackages(prev => [createdPkg, ...prev]);
+      setPackages(prev => [createdPkg, ...prev.filter(p => p.id !== createdPkg.id)]);
       setActivePackageId(createdPkg.id);
       setActiveSessionTab('all');
       setViewMode('table');
-
-      setGenProgress({ percent: 100, current: totalItemsCount, total: totalItemsCount, message: 'Hoàn tất sinh Package thành công!' });
-      addGenLog('success', `Đã lưu Package "${createdPkg.title}" với ${totalItemsCount} items!`);
-
+      setGenProgress({ percent: 100, current: createdPkg.totalItems, total: createdPkg.totalItems, message: 'Hoàn tất sinh Package thành công!' });
+      addGenLog('success', `Đã lưu Package "${createdPkg.title}" với ${createdPkg.totalItems} items!`);
+      setGenError(null);
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-
-      setTimeout(() => {
-        setIsGeneratorOpen(false);
-      }, 600);
-
-
+      setTimeout(() => setIsGeneratorOpen(false), 1200);
     } catch (err: any) {
-      addGenLog('error', `Thất bại: ${err?.message || 'Lỗi không xác định trong quá trình sinh AI'}`);
+      if (abortController.signal.aborted) {
+        addGenLog('warning', 'Quá trình sinh dữ liệu đã bị người dùng hủy.');
+        return;
+      }
+      const errMsg = err?.message || 'Lỗi không xác định trong quá trình sinh AI';
+      setGenError(errMsg);
+      addGenLog('error', `Thất bại: ${errMsg}`);
     } finally {
       if (timerGenRef.current) clearInterval(timerGenRef.current);
       setIsGenerating(false);
@@ -3807,13 +3695,30 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 )}
               </div>
 
-              {/* Progress & Live Logs (when generating) */}
-              {isGenerating && (
+              {/* Error Banner */}
+              {genError && (
+                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-200 text-xs flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <div className="font-bold text-red-100">Không thể hoàn tất sinh dữ liệu AI:</div>
+                    <div className="font-mono text-[11px] text-red-300 break-words leading-relaxed">{genError}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Progress & Live Logs (when generating or error) */}
+              {(isGenerating || genError || genLogs.some(l => l.type === 'error')) && (
                 <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-3 font-mono">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
-                      <span className="font-bold">{genProgress.message || 'Đang sinh dữ liệu AI...'}</span>
+                      {isGenerating ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
+                      ) : genError ? (
+                        <AlertCircle className="w-4 h-4 text-red-400" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      )}
+                      <span className="font-bold">{genError ? 'Đã dừng do lỗi' : (genProgress.message || 'Đang sinh dữ liệu AI...')}</span>
                     </div>
                     <span className="text-zinc-400 font-bold">{genProgress.percent}%</span>
                   </div>

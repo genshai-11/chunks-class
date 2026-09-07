@@ -79,7 +79,9 @@ export type ImprovRelevance = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export interface ImprovGenerateRequest {
   packageTitle: string;
+  packageDescription?: string;
   totalItems: number;
+  sessionsCount?: number;
   sessionsConfig: ImprovSessionConfig[];
   sourceLevel: CourseLevel | 'ALL';
   sourceLessonIds: string[];
