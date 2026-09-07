@@ -45,6 +45,7 @@ import {
   getHintTextByLanguage,
   prepareSessionAudio,
   preparePackageAudio,
+  prepareCustomItemsAudio,
   ImprovBatchError,
   ImprovBatchProgress
 } from '../services/improvTtsService';
@@ -230,8 +231,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [isSyncingToCloud, setIsSyncingToCloud] = useState<boolean>(false);
   const [cloudSyncProgress, setCloudSyncProgress] = useState<string | null>(null);
 
+  // Retry Failed State
+  const [lastFailedErrors, setLastFailedErrors] = useState<ImprovBatchError[]>([]);
+
   // Batch Audio Scope & Detailed Diagnostics
-  const [batchScope, setBatchScope] = useState<'package' | 'session'>('package');
+  const [batchScope, setBatchScope] = useState<'package' | 'session' | 'missing' | 'failed'>('package');
   const [batchSessionNum, setBatchSessionNum] = useState<number>(1);
   const [batchErrors, setBatchErrors] = useState<ImprovBatchError[]>([]);
   const [isErrorPanelExpanded, setIsErrorPanelExpanded] = useState<boolean>(true);
@@ -820,6 +824,84 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     return packages.find(p => p.id === activePackageId) || packages[0] || null;
   }, [packages, activePackageId]);
 
+  // Helper: check readiness of an ImprovItem (EN, VI, and overall ready)
+  const checkItemReadiness = useCallback((item: ImprovItem): { en: boolean; vi: boolean; ready: boolean } => {
+    const isEn = Boolean(
+      (item.audioUrl && item.audioUrl !== 'cached' && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) ||
+      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
+      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
+      (item.hints && item.hints.length > 0 && item.hints.every(h => {
+        const t = h.text?.trim();
+        const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
+        return !t || Boolean((h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceEn) || (t && (audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn))));
+      }))
+    );
+    const isVi = Boolean(
+      (item.audioUrlVi && item.audioUrlVi !== 'cached' && (item.audioUrlVi.startsWith('http') || item.audioUrlVi.startsWith('data:'))) ||
+      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
+      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
+      (item.hints && item.hints.length > 0 && item.hints.every(h => {
+        const t = (h.translation || '').trim();
+        const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
+        return !t || Boolean((h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceVi) || (t && (audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi))));
+      }))
+    );
+    // Item is ready if both EN and VI are ready (or if in EN_ONLY, isEn, but generally both for dual syllabus)
+    return { en: isEn, vi: isVi, ready: isEn && isVi };
+  }, [currentVoiceEn, currentVoiceVi]);
+
+  // All items within active session / package scope (before search and audioFilter)
+  const sessionScopeItems = useMemo(() => {
+    if (!activePackage) return [];
+    if (activeSessionTab === 'all') {
+      const items: ImprovItem[] = [];
+      activePackage.sessions.forEach(s => items.push(...s.items));
+      return items;
+    }
+    const session = activePackage.sessions.find(s => s.sessionNumber === activeSessionTab);
+    return session ? session.items : [];
+  }, [activePackage, activeSessionTab]);
+
+  // Readiness counts within current session / package scope
+  const audioCounts = useMemo(() => {
+    const allCount = sessionScopeItems.length;
+    let readyCount = 0;
+    let missingCount = 0;
+    for (const item of sessionScopeItems) {
+      if (checkItemReadiness(item).ready) {
+        readyCount++;
+      } else {
+        missingCount++;
+      }
+    }
+    return { allCount, readyCount, missingCount };
+  }, [sessionScopeItems, checkItemReadiness, synthesizingItemIds, batchCompleted]);
+
+  // Missing items formatted for prepareCustomItemsAudio
+  const missingItemsToProcess = useMemo(() => {
+    if (!activePackage) return [];
+    const missing: { item: ImprovItem; sessionNum: number }[] = [];
+    if (activeSessionTab === 'all') {
+      activePackage.sessions.forEach(s => {
+        s.items.forEach(it => {
+          if (!checkItemReadiness(it).ready) {
+            missing.push({ item: it, sessionNum: s.sessionNumber });
+          }
+        });
+      });
+    } else {
+      const session = activePackage.sessions.find(s => s.sessionNumber === activeSessionTab);
+      if (session) {
+        session.items.forEach(it => {
+          if (!checkItemReadiness(it).ready) {
+            missing.push({ item: it, sessionNum: session.sessionNumber });
+          }
+        });
+      }
+    }
+    return missing;
+  }, [activePackage, activeSessionTab, checkItemReadiness, synthesizingItemIds, batchCompleted]);
+
   // Flattened and Filtered Items for Active Package
   const filteredItems = useMemo(() => {
     if (!activePackage) return [];
@@ -843,8 +925,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       );
     }
 
+    if (audioFilter === 'ready') {
+      items = items.filter(it => checkItemReadiness(it).ready);
+    } else if (audioFilter === 'missing') {
+      items = items.filter(it => !checkItemReadiness(it).ready);
+    }
+
     return items;
-  }, [activePackage, activeSessionTab, searchQuery]);
+  }, [activePackage, activeSessionTab, searchQuery, audioFilter, checkItemReadiness, synthesizingItemIds, batchCompleted]);
 
   // Stats Summary
   const stats = useMemo(() => {
@@ -859,28 +947,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       s.items.forEach(it => {
         totalItems++;
         totalHints += it.hints.length;
-        const hasItemGcsEn = Boolean(it.audioUrl && it.audioUrl !== 'cached' && (it.audioUrl.startsWith('http') || it.audioUrl.startsWith('data:')));
-        const hasItemGcsVi = Boolean(it.audioUrlVi && it.audioUrlVi !== 'cached' && (it.audioUrlVi.startsWith('http') || it.audioUrlVi.startsWith('data:')));
-        const hasCombinedCachedEn = Boolean(audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn));
-        const hasCombinedCachedVi = Boolean(audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi));
-        const hasCombinedCachedBilingual = Boolean(audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn));
-        const allHintsCachedEn = Boolean(it.hints && it.hints.length > 0 && it.hints.every(h => {
-          if (h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) return true;
-          const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
-          const t = h.text?.trim();
-          return Boolean(audioPlayer.getCachedAudio(hKey, currentVoiceEn) || (t && (audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn))));
-        }));
-        const allHintsCachedVi = Boolean(it.hints && it.hints.length > 0 && it.hints.every(h => {
-          if (h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) return true;
-          const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
-          const t = (h.translation || '').trim();
-          return Boolean(audioPlayer.getCachedAudio(hKey, currentVoiceVi) || (t && (audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi))));
-        }));
-
-        const isEnReady = hasItemGcsEn || hasCombinedCachedEn || hasCombinedCachedBilingual || allHintsCachedEn;
-        const isViReady = hasItemGcsVi || hasCombinedCachedVi || hasCombinedCachedBilingual || allHintsCachedVi;
-
-        if (isEnReady || isViReady) {
+        const readiness = checkItemReadiness(it);
+        if (readiness.en || readiness.vi) {
           audioPreparedCount++;
         }
       });
@@ -895,12 +963,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       audioPreparedCount,
       audioPreparedPercent: percent
     };
-  }, [activePackage, synthesizingItemIds, currentVoiceEn, currentVoiceVi]);
+  }, [activePackage, synthesizingItemIds, checkItemReadiness, batchCompleted]);
 
   // --------------------------------------------------------------------------
   // 2. Audio Playback with 1-Second Pause Sequence (EN / VI)
-  // --------------------------------------------------------------------------
-
   const handlePlayItemWithPause = async (item: ImprovItem, lang: 'en' | 'vi' = 'en') => {
     // If already playing this item and same language, stop immediately
     if (playingItemId === item.id && playingLang === lang) {
@@ -1296,6 +1362,19 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     }
   };
 
+  // Select all items that are missing audio in current filtered view (or scope)
+  const handleSelectAllMissing = () => {
+    const missingInFiltered = filteredItems.filter(it => !checkItemReadiness(it).ready);
+    const missingIds = missingInFiltered.map(it => it.id);
+    if (missingIds.length === 0) return;
+    const allMissingSelected = missingIds.every(id => selectedItemIds.includes(id));
+    if (allMissingSelected) {
+      setSelectedItemIds(prev => prev.filter(id => !missingIds.includes(id)));
+    } else {
+      setSelectedItemIds(Array.from(new Set([...selectedItemIds, ...missingIds])));
+    }
+  };
+
   // Bulk synthesize audio
   const handleBulkSynthesize = async (target: 'en' | 'vi' | 'both') => {
     if (selectedItemIds.length === 0 || !activePackage) return;
@@ -1411,8 +1490,9 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   // 4. Batch Audio Generator (Package or Session Scope, EN, VI, or BOTH)
   // --------------------------------------------------------------------------
 
-  const handleStartBatchAudioGeneration = async () => {
+  const handleStartBatchAudioGeneration = async (overrideScope?: 'package' | 'session' | 'missing' | 'failed') => {
     if (!activePackage) return;
+    const currentScope = overrideScope || batchScope;
     setIsBatchRunning(true);
     setBatchCompleted(false);
     setCloudSyncSummary(null);
@@ -1425,15 +1505,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setBatchLogs(prev => [`[${time}] ${msg}`, ...prev.slice(0, 100)]);
     };
 
-    const targetSession = batchScope === 'session'
+    const targetSession = currentScope === 'session'
       ? activePackage.sessions.find(s => s.sessionNumber === batchSessionNum)
       : null;
 
-    const scopeLabel = batchScope === 'session' && targetSession
-      ? `Session ${batchSessionNum} (${targetSession.items.length} câu)`
-      : `Toàn bộ Package (${stats.totalItems} câu)`;
+    let scopeLabel = `Toàn bộ Package (${stats.totalItems} câu)`;
+    if (currentScope === 'session' && targetSession) {
+      scopeLabel = `Session ${batchSessionNum} (${targetSession.items.length} câu)`;
+    } else if (currentScope === 'missing') {
+      scopeLabel = `Các câu còn thiếu Audio (${missingItemsToProcess.length} câu)`;
+    } else if (currentScope === 'failed') {
+      const errorsSource = lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors;
+      scopeLabel = `Các câu vừa bị lỗi (${errorsSource.length} câu)`;
+    }
 
-    addLog(`Khởi động bộ tổng hợp âm thanh cho ${scopeLabel} (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()}, EN: ${batchVoiceEn}, VI: ${batchVoiceVi}, Overwrite: ${forceOverwrite})...`);
+    const effectiveForceOverwrite = currentScope === 'failed' ? true : forceOverwrite;
+
+    addLog(`Khởi động bộ tổng hợp âm thanh cho ${scopeLabel} (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()}, EN: ${batchVoiceEn}, VI: ${batchVoiceVi}, Overwrite: ${effectiveForceOverwrite})...`);
 
     try {
       const langModeToUse = batchTargetLang === 'vi' ? 'VI_ONLY' : batchTargetLang === 'both' ? 'EN_THEN_VI' : 'EN_ONLY';
@@ -1443,7 +1531,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         target: batchTargetLang === 'en' ? ('ENGLISH' as const) : batchTargetLang === 'vi' ? ('VIETNAMESE' as const) : ('BOTH' as const),
         langMode: langModeToUse,
         concurrency: batchWorkersCount,
-        forceRegenerate: forceOverwrite
+        forceRegenerate: effectiveForceOverwrite
       };
 
       const handleProgress = (progress: ImprovBatchProgress) => {
@@ -1463,14 +1551,38 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
       let finalErrors: ImprovBatchError[] = [];
 
-      if (batchScope === 'session' && targetSession) {
-        const res = await improvTts.prepareSessionAudio(targetSession, batchOptions, handleProgress);
+      if (currentScope === 'session' && targetSession) {
+        const res = await prepareSessionAudio(targetSession, batchOptions, handleProgress);
+        finalErrors = res.errors;
+        setBatchErrors(res.errors);
+      } else if (currentScope === 'missing') {
+        const res = await prepareCustomItemsAudio(missingItemsToProcess, batchOptions, handleProgress);
+        finalErrors = res.errors;
+        setBatchErrors(res.errors);
+      } else if (currentScope === 'failed') {
+        const errorsSource = lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors;
+        const failedItemIds = new Set(errorsSource.map(e => e.itemId));
+        const failedItems: { item: ImprovItem; sessionNum: number }[] = [];
+        activePackage.sessions.forEach(s => {
+          s.items.forEach(it => {
+            if (failedItemIds.has(it.id)) {
+              failedItems.push({ item: it, sessionNum: s.sessionNumber });
+            }
+          });
+        });
+        const res = await prepareCustomItemsAudio(failedItems, { ...batchOptions, forceRegenerate: true }, handleProgress);
         finalErrors = res.errors;
         setBatchErrors(res.errors);
       } else {
-        const res = await improvTts.preparePackageAudio(activePackage, batchOptions, handleProgress);
+        const res = await preparePackageAudio(activePackage, batchOptions, handleProgress);
         finalErrors = res.errors;
         setBatchErrors(res.errors);
+      }
+
+      if (finalErrors.length > 0) {
+        setLastFailedErrors(finalErrors);
+      } else if (currentScope === 'failed') {
+        setLastFailedErrors([]);
       }
 
       addLog(`Hoàn tất xử lý âm thanh cho ${scopeLabel} (${finalErrors.length === 0 ? 'Thành công 100%' : `${finalErrors.length} lỗi`})!`);
@@ -1516,81 +1628,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   const handleRetryFailedAudio = async () => {
-    if (!activePackage || batchErrors.length === 0) return;
-    setIsRetryingErrors(true);
-    setIsBatchRunning(true);
-    setBatchCompleted(false);
-
-    const addLog = (msg: string) => {
-      const time = new Date().toLocaleTimeString('vi-VN');
-      setBatchLogs(prev => [`[${time}] ${msg}`, ...prev.slice(0, 100)]);
-    };
-
-    addLog(`Đang thử lại ${batchErrors.length} mục lỗi với forceOverwrite = true...`);
-
-    try {
-      const failedItemIds = new Set(batchErrors.map(e => e.itemId));
-      const failedItemsList: { item: ImprovItem; sessionNum: number }[] = [];
-      activePackage.sessions.forEach(s => {
-        s.items.forEach(it => {
-          if (failedItemIds.has(it.id)) {
-            failedItemsList.push({ item: it, sessionNum: s.sessionNumber });
-          }
-        });
-      });
-
-      const remainingErrors: ImprovBatchError[] = [];
-      let retriedSuccess = 0;
-      let retriedFailed = 0;
-
-      for (let i = 0; i < failedItemsList.length; i++) {
-        const { item, sessionNum } = failedItemsList[i];
-        addLog(`Thử lại Item #${item.itemNumber} (Session ${sessionNum})...`);
-        try {
-          if (batchTargetLang === 'both') {
-            await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'EN_ONLY', true);
-            await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'VI_ONLY', true);
-            try {
-              await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'EN_THEN_VI', true);
-            } catch {}
-          } else if (batchTargetLang === 'vi') {
-            await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'VI_ONLY', true);
-          } else {
-            await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'EN_ONLY', true);
-          }
-          retriedSuccess++;
-        } catch (retryErr: any) {
-          retriedFailed++;
-          remainingErrors.push({
-            itemId: item.id,
-            sessionNum,
-            itemNumber: item.itemNumber,
-            lang: batchTargetLang,
-            error: retryErr?.message || String(retryErr),
-            timestamp: Date.now()
-          });
-        }
-      }
-
-      setBatchErrors(remainingErrors);
-      setBatchProgress(prev => ({
-        ...prev,
-        prepared: prev.prepared + retriedSuccess,
-        failed: remainingErrors.length,
-        statusText: `Hoàn tất thử lại: ${retriedSuccess} thành công, ${retriedFailed} thất bại.`
-      }));
-      addLog(`Thử lại hoàn tất: ${retriedSuccess} thành công, ${retriedFailed} thất bại.`);
-
-      if (remainingErrors.length === 0) {
-        confetti({ particleCount: 50, spread: 60 });
-      }
-    } catch (err: any) {
-      addLog(`Lỗi khi thử lại: ${err?.message || 'Không xác định'}`);
-    } finally {
-      setIsRetryingErrors(false);
-      setIsBatchRunning(false);
-      setBatchCompleted(true);
-    }
+    setBatchScope('failed');
+    await handleStartBatchAudioGeneration('failed');
   };
 
   const handleSyncActivePackageToCloud = async () => {
@@ -1999,6 +2038,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     );
   }
 
+  const targetSessionNumForBtn = activeSessionTab !== 'all' ? activeSessionTab : (batchSessionNum || 1);
+  const targetSessionObjForBtn = activePackage?.sessions.find(s => s.sessionNumber === targetSessionNumForBtn);
+  const sessionCountForBtn = targetSessionObjForBtn?.items.length || 0;
+  const failedCountForBtn = (lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors).length;
+
   return (
     <div className={`flex flex-col h-full bg-[#FAFAFA] text-[#0A0A0A] font-sans antialiased overflow-y-auto ${isDarkMode ? 'dark' : ''}`}>
       {/* ==================================================================== */}
@@ -2168,8 +2212,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         {/* Session Navigation Tabs & Filter Bar */}
         <div className="bg-white rounded-2xl border border-[#E8E8EC] p-4 shadow-2xs space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Session Dropdown Selector */}
-            <div className="flex items-center gap-2.5">
+            {/* Session Dropdown Selector & Segmented Audio Filter */}
+            <div className="flex items-center gap-2.5 flex-wrap">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl">
                 <Filter className="w-3.5 h-3.5 text-[#DC2626]" />
                 <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Session:</span>
@@ -2190,6 +2234,46 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Segmented Audio Readiness Filter */}
+              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setAudioFilter('all')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    audioFilter === 'all'
+                      ? 'bg-white text-zinc-900 shadow-xs'
+                      : 'text-zinc-600 hover:text-zinc-900'
+                  }`}
+                  title="Hiển thị tất cả câu"
+                >
+                  <span>🔘 Tất Cả ({audioCounts.allCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudioFilter('ready')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    audioFilter === 'ready'
+                      ? 'bg-white text-emerald-700 shadow-xs'
+                      : 'text-zinc-600 hover:text-emerald-700'
+                  }`}
+                  title="Chỉ hiển thị các câu đã có đủ audio EN & VI"
+                >
+                  <span>🟢 Đã Có Audio ({audioCounts.readyCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudioFilter('missing')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    audioFilter === 'missing'
+                      ? 'bg-white text-red-600 shadow-xs'
+                      : 'text-zinc-600 hover:text-red-600'
+                  }`}
+                  title="Chỉ hiển thị các câu chưa có hoặc thiếu audio"
+                >
+                  <span>🔴 Chưa Có Audio ({audioCounts.missingCount})</span>
+                </button>
               </div>
             </div>
 
@@ -2419,6 +2503,33 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         {/* ================================================================== */}
         {/* 3. ITEMS REVIEW & AUDITION (TABLE MODE VS CARDS MODE) */}
         {/* ================================================================== */}
+
+        {/* Missing Audio Filter Banner */}
+        {audioFilter === 'missing' && audioCounts.missingCount > 0 && (
+          <div className="bg-gradient-to-r from-amber-50 to-red-50 border-2 border-amber-300/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5 text-amber-950 font-bold text-xs sm:text-sm">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+              <span>
+                ⚠️ Đang lọc <span className="text-[#DC2626] font-black">{audioCounts.missingCount}</span> câu chưa có âm thanh.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setBatchScope('missing');
+                setBatchCompleted(false);
+                setBatchErrors([]);
+                setCloudSyncSummary(null);
+                setIsBatchAudioModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all active:scale-95 shrink-0"
+            >
+              <Zap className="w-4 h-4 text-amber-300" />
+              <span>⚡ Tạo Audio Cho {audioCounts.missingCount} Câu Này</span>
+            </button>
+          </div>
+        )}
+
         {filteredItems.length === 0 ? (
           <div className="bg-white rounded-2xl border border-[#E8E8EC] p-12 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto">
@@ -2440,7 +2551,36 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           /* ================================================================ */
           /* TABLE VIEW MODE (Condensed, High-Density, Clear Columns) */
           /* ================================================================ */
-          <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xs overflow-hidden">
+          <div className="space-y-2">
+            {/* Quick Actions Bar Above Table (Near Select-All) */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSelectAllMissing}
+                  disabled={audioCounts.missingCount === 0}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Chọn tất cả các câu chưa có audio trong danh sách hiện tại"
+                >
+                  <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                  <span>Chọn tất cả câu thiếu audio</span>
+                </button>
+                {selectedItemIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedItemIds([])}
+                    className="text-xs text-zinc-500 hover:text-zinc-800 underline cursor-pointer"
+                  >
+                    Bỏ chọn ({selectedItemIds.length})
+                  </button>
+                )}
+              </div>
+              <span className="text-xs text-zinc-400 font-mono">
+                {selectedItemIds.length > 0 ? `Đã chọn ${selectedItemIds.length} / ${filteredItems.length} items` : ''}
+              </span>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-zinc-100/80 text-zinc-600 font-mono text-[10px] uppercase border-b border-zinc-200">
@@ -2840,6 +2980,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </table>
             </div>
           </div>
+        </div>
         ) : (
           /* ================================================================ */
           /* CARDS VIEW MODE (Stream Cards Preview) */
@@ -4295,11 +4436,19 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   <h3 className="font-display font-bold text-base text-zinc-900">
                     {batchScope === 'session' 
                       ? `Tổng Hợp Âm Thanh Cho Session ${batchSessionNum}` 
+                      : batchScope === 'missing'
+                      ? `Tổng Hợp Âm Thanh Cho ${missingItemsToProcess.length} Câu Thiếu Audio`
+                      : batchScope === 'failed'
+                      ? `Thử Lại Âm Thanh Cho ${(lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors).length} Câu Bị Lỗi`
                       : 'Bộ Tổng Hợp Âm Thanh Toàn Diện Package'}
                   </h3>
                   <p className="text-xs text-zinc-500">
                     {batchScope === 'session'
                       ? `Tạo âm thanh chuẩn phòng học cho ${activePackage?.sessions.find(s => s.sessionNumber === batchSessionNum)?.items.length || 0} câu của Session ${batchSessionNum}.`
+                      : batchScope === 'missing'
+                      ? `Chỉ tập trung tạo âm thanh cho ${missingItemsToProcess.length} câu còn thiếu Audio EN & VI.`
+                      : batchScope === 'failed'
+                      ? `Chạy lại chế độ ép tạo mới cho ${(lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors).length} câu gặp lỗi vừa qua.`
                       : `Tùy chọn mô hình giọng đọc và tạo âm thanh chất lượng cao cho toàn bộ ${stats.totalItems} câu.`}
                   </p>
                 </div>
@@ -4342,7 +4491,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       </div>
                       <p className="text-xs mt-1 text-zinc-600 leading-relaxed">
                         {batchErrors.length === 0
-                          ? `Tất cả âm thanh cho ${batchScope === 'session' ? `Session ${batchSessionNum}` : 'Package'} đã sẵn sàng trong cache và Improv Stage.`
+                          ? `Tất cả âm thanh cho ${batchScope === 'session' ? `Session ${batchSessionNum}` : batchScope === 'missing' ? 'các câu thiếu audio' : batchScope === 'failed' ? 'các câu sửa lỗi' : 'Package'} đã sẵn sàng trong cache và Improv Stage.`
                           : `Đã hoàn thành phần lớn câu hỏi, nhưng có ${batchErrors.length} mục gặp lỗi. Bạn có thể xem chi tiết hoặc bấm thử lại bên dưới.`}
                       </p>
                     </div>
@@ -4394,6 +4543,28 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       )}
                     </div>
                   </div>
+
+                  {/* Prominent Retry Failed Action Banner */}
+                  {batchProgress.failed > 0 && (
+                    <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-center gap-2.5 text-red-950 font-bold text-xs sm:text-sm">
+                        <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                        <span>Có <span className="font-black text-red-700">{batchProgress.failed}</span> câu gặp lỗi trong quá trình tổng hợp.</span>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => {
+                          setBatchScope('failed');
+                          handleStartBatchAudioGeneration('failed');
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all active:scale-95 shrink-0"
+                      >
+                        <RefreshCw className="w-4 h-4 text-white" />
+                        <span>🔁 Thử Lại Ngay {batchProgress.failed} Câu Bị Lỗi (Retry Failed)</span>
+                      </button>
+                    </div>
+                  )}
 
                   {/* Error Breakdown Panel (if errors occurred) */}
                   {batchErrors.length > 0 && (
@@ -4448,17 +4619,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               ) : (
                 /* CONFIGURATION AND IN-PROGRESS SCREEN */
                 <>
-                  {/* Scope Selection: Toàn bộ Package vs Chỉ Session */}
+                  {/* Scope Selection: 4 Scope Options */}
                   <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="font-bold text-zinc-800 text-xs">Phạm Vi Tạo Audio (Audio Scope)</div>
                       <span className="text-[11px] font-mono text-zinc-500">
                         {batchScope === 'session'
                           ? `Session ${batchSessionNum} (${activePackage?.sessions.find(s => s.sessionNumber === batchSessionNum)?.items.length || 0} câu)`
+                          : batchScope === 'missing'
+                          ? `Thiếu Audio (${missingItemsToProcess.length} câu)`
+                          : batchScope === 'failed'
+                          ? `Lỗi vừa qua (${failedCountForBtn} câu)`
                           : `Toàn bộ ${stats.totalItems} câu (${stats.totalSessions} sessions)`}
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {/* 1. Toàn bộ Package */}
                       <button
                         type="button"
                         disabled={isBatchRunning}
@@ -4470,13 +4647,17 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         }`}
                       >
                         <Layers className="w-3.5 h-3.5" />
-                        <span>Toàn Bộ Package ({stats.totalItems} Items)</span>
+                        <span>🌐 Toàn bộ Package ({stats.totalItems} câu)</span>
                       </button>
 
+                      {/* 2. Chỉ Session */}
                       <button
                         type="button"
                         disabled={isBatchRunning}
-                        onClick={() => setBatchScope('session')}
+                        onClick={() => {
+                          setBatchScope('session');
+                          setBatchSessionNum(targetSessionNumForBtn);
+                        }}
                         className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                           batchScope === 'session'
                             ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
@@ -4484,8 +4665,42 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         }`}
                       >
                         <Filter className="w-3.5 h-3.5" />
-                        <span>Chỉ Riêng Session</span>
+                        <span>📑 Chỉ Session {targetSessionNumForBtn} ({sessionCountForBtn} câu)</span>
                       </button>
+
+                      {/* 3. Chỉ các câu còn thiếu Audio */}
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchScope('missing')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          failedCountForBtn === 0 ? 'sm:col-span-2' : ''
+                        } ${
+                          batchScope === 'missing'
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                            : 'bg-white text-amber-900 border-amber-200 hover:bg-amber-50'
+                        }`}
+                      >
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                        <span>⚠️ Chỉ các câu còn thiếu Audio ({audioCounts.missingCount} câu)</span>
+                      </button>
+
+                      {/* 4. Chỉ các câu vừa bị lỗi (Retry Failed) */}
+                      {failedCountForBtn > 0 && (
+                        <button
+                          type="button"
+                          disabled={isBatchRunning}
+                          onClick={() => setBatchScope('failed')}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            batchScope === 'failed'
+                              ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                              : 'bg-white text-red-700 border-red-200 hover:bg-red-50'
+                          }`}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-red-600" />
+                          <span>🔁 Chỉ các câu vừa bị lỗi (Retry Failed: {failedCountForBtn} câu)</span>
+                        </button>
+                      )}
                     </div>
 
                     {batchScope === 'session' && (
@@ -4753,14 +4968,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
               ) : (
                 <button
-                  onClick={handleStartBatchAudioGeneration}
-                  disabled={isBatchRunning}
+                  onClick={() => handleStartBatchAudioGeneration()}
+                  disabled={isBatchRunning || (batchScope === 'missing' && missingItemsToProcess.length === 0) || (batchScope === 'failed' && failedCountForBtn === 0)}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                 >
                   <Zap className="w-4 h-4 text-amber-300" />
                   <span>
                     {batchScope === 'session'
                       ? `Tạo Audio Session ${batchSessionNum} (${activePackage?.sessions.find(s => s.sessionNumber === batchSessionNum)?.items.length || 0} câu)`
+                      : batchScope === 'missing'
+                      ? `Tạo Audio Cho ${missingItemsToProcess.length} Câu Thiếu`
+                      : batchScope === 'failed'
+                      ? `Thử Lại ${failedCountForBtn} Câu Lỗi`
                       : `Tạo Toàn Bộ Package (${stats.totalItems} câu)`}
                   </span>
                 </button>

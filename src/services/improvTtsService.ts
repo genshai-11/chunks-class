@@ -651,6 +651,17 @@ class ImprovTtsEngine {
   }
 
   /**
+   * Pre-generates and stores both full item continuous audio and individual hint audio for custom-selected ImprovItems.
+   */
+  async prepareCustomItemsAudio(
+    items: { item: ImprovItem; sessionNum: number }[],
+    options?: PrepareAudioOptions,
+    onProgress?: (progress: ImprovBatchProgress) => void
+  ): Promise<{ prepared: number; failed: number; total: number; skipped: number; errors: ImprovBatchError[] }> {
+    return this.prepareItemsAudio(items, options, onProgress);
+  }
+
+  /**
    * Plays the combined continuous hint audio for an ImprovItem.
    * Dynamically honors voiceEn and voiceVi without overriding with hardcoded defaults.
    */
@@ -866,6 +877,12 @@ export const prepareSessionAudio = (
   options?: PrepareAudioOptions,
   onProgress?: (progress: ImprovBatchProgress) => void
 ) => improvTts.prepareSessionAudio(session, options, onProgress);
+
+export const prepareCustomItemsAudio = (
+  items: { item: ImprovItem; sessionNum: number }[],
+  options?: PrepareAudioOptions,
+  onProgress?: (progress: ImprovBatchProgress) => void
+) => improvTts.prepareCustomItemsAudio(items, options, onProgress);
 
 export const playItemAudio = (
   item: ImprovItem,
