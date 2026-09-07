@@ -44,6 +44,7 @@ import {
   getHintTextByLanguage
 } from '../services/improvTtsService';
 import { audioPlayer, sanitizeSpeechText, ALL_VOICES, GOOGLE_TTS_VOICES } from '../services/googleTtsService';
+import { modelRegistryService } from '../services/modelRegistryService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { 
   syncImprovPackageCachedAudioToCloud, 
@@ -232,14 +233,21 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     if (currentVoiceVi) setBatchVoiceVi(currentVoiceVi);
   }, [currentVoiceVi]);
 
-  // Voice options for batch generation modal
-  const enVoiceOptions = useMemo(() => {
-    return ALL_VOICES.filter(v => (v.languageCode === 'en-US' || v.id.startsWith('aura-') || v.id.startsWith('flux-') || v.id.startsWith('en-US-')) && v.id !== 'aura-theia-en');
+  // Voice options for Improv Studio (strictly obeys Improv display matrix)
+  const [improvRegistryRev, setImprovRegistryRev] = useState<number>(0);
+  useEffect(() => {
+    return modelRegistryService.subscribe(() => {
+      setImprovRegistryRev(r => r + 1);
+    });
   }, []);
 
+  const enVoiceOptions = useMemo(() => {
+    return modelRegistryService.getImprovModels('en');
+  }, [improvRegistryRev]);
+
   const viVoiceOptions = useMemo(() => {
-    return GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN');
-  }, []);
+    return modelRegistryService.getImprovModels('vi');
+  }, [improvRegistryRev]);
 
   // Per-item voice model overrides & expandable config
   const [itemVoiceEn, setItemVoiceEn] = useState<Record<string, string>>({});
@@ -2438,16 +2446,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                       onChange={(e) => setItemVoiceEn(prev => ({ ...prev, [item.id]: e.target.value }))}
                                       className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#DC2626] cursor-pointer"
                                     >
-                                      <optgroup label="Deepgram Aura">
-                                        {enVoiceOptions.filter(v => v.provider === 'DEEPGRAM_AURA').map(v => (
-                                          <option key={v.id} value={v.id}>{v.name}</option>
-                                        ))}
-                                      </optgroup>
-                                      <optgroup label="Google Cloud TTS (en-US)">
-                                        {enVoiceOptions.filter(v => v.provider !== 'DEEPGRAM_AURA').map(v => (
-                                          <option key={v.id} value={v.id}>{v.name}</option>
-                                        ))}
-                                      </optgroup>
+                                       <optgroup label="Deepgram Aura & Flux">
+                                         {enVoiceOptions.filter(v => v.provider === 'DEEPGRAM' || (v.provider as any) === 'DEEPGRAM_AURA').map(v => (
+                                           <option key={v.id} value={v.id}>{v.name}</option>
+                                         ))}
+                                       </optgroup>
+                                       <optgroup label="Google Cloud, OpenAI & Custom">
+                                         {enVoiceOptions.filter(v => v.provider !== 'DEEPGRAM' && (v.provider as any) !== 'DEEPGRAM_AURA').map(v => (
+                                           <option key={v.id} value={v.id}>{v.name}</option>
+                                         ))}
+                                       </optgroup>
                                     </select>
                                   </div>
 
@@ -2806,13 +2814,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                             onChange={(e) => setItemVoiceEn(prev => ({ ...prev, [item.id]: e.target.value }))}
                             className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#DC2626] cursor-pointer"
                           >
-                            <optgroup label="Deepgram Aura">
-                              {enVoiceOptions.filter(v => v.provider === 'DEEPGRAM_AURA').map(v => (
+                            <optgroup label="Deepgram Aura & Flux">
+                              {enVoiceOptions.filter(v => v.provider === 'DEEPGRAM' || (v.provider as any) === 'DEEPGRAM_AURA').map(v => (
                                 <option key={v.id} value={v.id}>{v.name}</option>
                               ))}
                             </optgroup>
-                            <optgroup label="Google Cloud TTS (en-US)">
-                              {enVoiceOptions.filter(v => v.provider !== 'DEEPGRAM_AURA').map(v => (
+                            <optgroup label="Google Cloud, OpenAI & Custom">
+                              {enVoiceOptions.filter(v => v.provider !== 'DEEPGRAM' && (v.provider as any) !== 'DEEPGRAM_AURA').map(v => (
                                 <option key={v.id} value={v.id}>{v.name}</option>
                               ))}
                             </optgroup>

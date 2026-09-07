@@ -20,6 +20,7 @@ import {
   AudioProvider 
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
+import { modelRegistryService } from '../services/modelRegistryService';
 import { 
   improvTts,
   getHintTextByLanguage, 
@@ -30,6 +31,7 @@ import { usePresenterClicker } from '../hooks/usePresenterClicker';
 import confetti from 'canvas-confetti';
 import { 
   Volume2, 
+  VolumeX, 
   ChevronLeft, 
   ChevronRight, 
   Moon, 
@@ -208,7 +210,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
 
   // Reveal & Display Mode
-  const [revealMode, setRevealMode] = useState<'step' | 'all'>('step');
+  const [revealMode, setRevealMode] = useState<'step' | 'all'>('all');
   const [currentRevealStep, setCurrentRevealStep] = useState<number>(1);
   const [showSubtitle, setShowSubtitle] = useState<boolean>(true);
   const [isBlackout, setIsBlackout] = useState<boolean>(false);
@@ -243,6 +245,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     } catch {}
     return audioSettings?.default_speed || 1.0;
   });
+  const [, setRegistryRev] = useState<number>(0);
+  useEffect(() => {
+    return modelRegistryService.subscribe(() => {
+      setRegistryRev(r => r + 1);
+    });
+  }, []);
   const [hintPauseSec, setHintPauseSec] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('chunks_improv_hint_pause_sec');
@@ -322,18 +330,18 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     if (packageId && packageId !== selectedPkgId) {
       setSelectedPkgId(packageId);
       setCurrentItemIndex(0);
-      setCurrentRevealStep(1);
+      setCurrentRevealStep(revealMode === 'all' ? 99 : 1);
     }
-  }, [packageId]);
+  }, [packageId, revealMode]);
 
   // Sync sessionNumber prop if provided
   useEffect(() => {
     if (sessionNumber && sessionNumber !== selectedSessionNum) {
       setSelectedSessionNum(sessionNumber);
       setCurrentItemIndex(0);
-      setCurrentRevealStep(1);
+      setCurrentRevealStep(revealMode === 'all' ? 99 : 1);
     }
-  }, [sessionNumber]);
+  }, [sessionNumber, revealMode]);
 
   // Close popovers on click outside
   useEffect(() => {
@@ -1022,7 +1030,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     const firstSession = pkg.sessions?.[0]?.sessionNumber || 1;
     setSelectedSessionNum(firstSession);
     setCurrentItemIndex(0);
-    setCurrentRevealStep(1);
+    setCurrentRevealStep(revealMode === 'all' ? (pkg.sessions?.[0]?.items?.[0]?.hints?.length || 1) : 1);
     setIsSessionCompleteGate(false);
     setIsPackagePopoverOpen(false);
     onSelectPackage?.(pkg.id, firstSession);
@@ -1031,7 +1039,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const selectSession = (sessionNum: number) => {
     setSelectedSessionNum(sessionNum);
     setCurrentItemIndex(0);
-    setCurrentRevealStep(1);
+    const targetSession = activePackage?.sessions?.find(s => s.sessionNumber === sessionNum);
+    setCurrentRevealStep(revealMode === 'all' ? (targetSession?.items?.[0]?.hints?.length || 1) : 1);
     setIsSessionCompleteGate(false);
     setIsSessionPopoverOpen(false);
     onSelectPackage?.(selectedPkgId, sessionNum);
@@ -1103,15 +1112,21 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               <span>
                 Session {selectedSessionNum} • {activeSession?.hcTotal || hints.length || 2} Hints
               </span>
-              {isSessionReady && (
-                <Volume2 className="w-4 h-4 text-emerald-500 shrink-0 animate-in fade-in" title="Session đã sẵn sàng audio" />
+              {isSessionReady ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.2 rounded-full shrink-0" title="Session đã sẵn sàng audio">
+                  <Volume2 className="w-3 h-3 text-emerald-500 shrink-0" /> Ready
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.2 rounded-full shrink-0" title="Session chưa có audio">
+                  <VolumeX className="w-3 h-3 text-zinc-400 shrink-0" /> No audio
+                </span>
               )}
               <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
             </button>
 
             {isSessionPopoverOpen && (
               <div
-                className={`absolute left-0 mt-2 w-64 rounded-xl shadow-2xl border p-2 z-50 animate-scale-up ${
+                className={`absolute left-0 mt-2 w-72 sm:w-80 rounded-xl shadow-2xl border p-2 z-50 animate-scale-up ${
                   highContrastDark
                     ? 'bg-[#18181B] border-zinc-700 text-white'
                     : 'bg-white border-[#E8E8EC] text-zinc-900'
@@ -1137,18 +1152,38 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                             : 'hover:bg-zinc-100 text-zinc-800'
                         }`}
                       >
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span>{s.title || `Session ${s.sessionNumber}`}</span>
-                            {isSessReady && (
-                              <Volume2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" title="Audio đã sẵn sàng" />
+                        <div className="min-w-0 mr-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{s.title || `Session ${s.sessionNumber}`}</span>
+                            {isSessReady ? (
+                              <span
+                                className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full shrink-0 ${
+                                  isSelected
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60'
+                                }`}
+                              >
+                                <Volume2 className={`w-3 h-3 shrink-0 ${isSelected ? 'text-white' : 'text-emerald-500'}`} />
+                                Ready
+                              </span>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.2 rounded-full shrink-0 ${
+                                  isSelected
+                                    ? 'bg-white/10 text-white/70'
+                                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border border-zinc-200 dark:border-zinc-700'
+                                }`}
+                              >
+                                <VolumeX className="w-3 h-3 shrink-0 text-zinc-400" />
+                                Chưa có audio
+                              </span>
                             )}
                           </div>
-                          <div className={`text-[10px] font-mono ${isSelected ? 'text-red-100' : 'text-zinc-400'}`}>
+                          <div className={`text-[10px] font-mono mt-0.5 ${isSelected ? 'text-red-100' : 'text-zinc-400'}`}>
                             {s.hcTotal || 2} hints • {s.items.length} items
                           </div>
                         </div>
-                        {isSelected && <Check className="w-4 h-4" />}
+                        {isSelected && <Check className="w-4 h-4 shrink-0" />}
                       </button>
                     );
                   })}
@@ -1161,7 +1196,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           <div className="relative" ref={packagePopoverRef}>
             <button
               onClick={() => setIsPackagePopoverOpen(!isPackagePopoverOpen)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold max-w-[160px] sm:max-w-[260px] truncate transition-all cursor-pointer shadow-2xs ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold max-w-[200px] sm:max-w-[320px] transition-all cursor-pointer shadow-2xs ${
                 highContrastDark
                   ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-300'
                   : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-800'
@@ -1169,6 +1204,17 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             >
               <Sparkles className="w-3.5 h-3.5 text-[#8B5CF6] shrink-0" />
               <span className="truncate">{activePackage?.title || 'Select Package'}</span>
+              {activePackage && (
+                readyPackageMap[activePackage.id] ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.2 rounded-full shrink-0">
+                    <Volume2 className="w-3 h-3 text-emerald-500 shrink-0" /> Ready
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.2 rounded-full shrink-0">
+                    <VolumeX className="w-3 h-3 text-zinc-400 shrink-0" /> No audio
+                  </span>
+                )
+              )}
               <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
             </button>
 
@@ -1223,10 +1269,16 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                         }`}
                       >
                         <div className="min-w-0 mr-2">
-                          <div className="truncate font-semibold flex items-center gap-1.5">
-                            <span>{pkg.title}</span>
-                            {isPkgReady && (
-                              <Volume2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" title="Audio đã sẵn sàng" />
+                          <div className="truncate font-semibold flex items-center gap-2">
+                            <span className="truncate">{pkg.title}</span>
+                            {isPkgReady ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 shrink-0">
+                                <Volume2 className="w-3 h-3 text-emerald-500 shrink-0" /> Audio Ready
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border border-zinc-200 dark:border-zinc-700 shrink-0">
+                                <VolumeX className="w-3 h-3 text-zinc-400 shrink-0" /> Chưa có audio
+                              </span>
                             )}
                           </div>
                           <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
@@ -1246,35 +1298,14 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               </div>
             )}
           </div>
-          {/* List Drawer Toggle Button */}
-          <button
-            onClick={() => setIsListDrawerOpen(true)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-              highContrastDark
-                ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-200'
-                : 'bg-zinc-50 border-zinc-200 hover:border-zinc-300 text-zinc-900'
-            }`}
-            title="Xem danh sách câu trong Package [Phím L / P]"
-          >
-            <ListOrdered className="w-3.5 h-3.5 text-[#DC2626]" />
-            <span className="hidden sm:inline">Danh Sách Câu</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold">
-              {currentItemIndex + 1}/{totalItemsCount}
-            </span>
-          </button>
         </div>
 
-        {/* Center: Item Progress Counter & Bar */}
-        <div className="hidden md:flex flex-col items-center justify-center min-w-[180px] max-w-xs">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold">
-            <span className="text-[#DC2626]">
-              Câu {currentItemIndex + 1}
-            </span>
-            <span className="text-zinc-400">/</span>
-            <span className="text-zinc-500">{totalItemsCount}</span>
-          </div>
-
-          <div className="w-36 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-1 overflow-hidden">
+        {/* Center: Streamlined Item Progress Pill */}
+        <div className="hidden md:flex items-center gap-2.5 px-3 py-1 rounded-full bg-zinc-100/80 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 shadow-2xs">
+          <span className="text-[11px] font-mono font-semibold text-zinc-600 dark:text-zinc-300">
+            Item <span className="font-bold text-[#DC2626]">{currentItemIndex + 1}</span>/{totalItemsCount}
+          </span>
+          <div className="w-20 sm:w-28 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-[#DC2626] rounded-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
@@ -1282,33 +1313,8 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           </div>
         </div>
 
-        {/* Right Side: Language Mode, Voice Settings, Theme, Fullscreen, Exit */}
+        {/* Right Side: Voice Settings, Theme, Shortcuts, Fullscreen, Exit */}
         <div className="flex items-center gap-2">
-          {/* Top Bar Language Mode Pill */}
-          <div className="hidden sm:flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-            <button
-              onClick={() => setLanguageMode('EN_ONLY')}
-              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
-                languageMode === 'EN_ONLY'
-                  ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-              }`}
-              title="Chỉ đọc tiếng Anh (Phím 1)"
-            >
-              EN
-            </button>
-            <button
-              onClick={() => setLanguageMode('VI_ONLY')}
-              className={`px-2 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
-                languageMode === 'VI_ONLY'
-                  ? 'bg-white dark:bg-zinc-800 text-[#DC2626] shadow-xs'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-              }`}
-              title="Chỉ đọc tiếng Việt (Google Cloud TTS) (Phím 2)"
-            >
-              VI
-            </button>
-          </div>
 
           {/* Audio Setup Popover Button */}
           <div className="relative" ref={audioSettingsRef}>
@@ -1424,27 +1430,26 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                             : 'bg-white border-zinc-200 text-zinc-900'
                         }`}
                       >
-                        <optgroup label="Deepgram Flux & Aura (Ultra-Fast 0ms)">
-                          {DEEPGRAM_AURA_VOICES.filter(v => v.id !== 'aura-theia-en').map((v) => (
+                        {(() => {
+                          const improvEn = modelRegistryService.getImprovModels('en');
+                          const displayed = improvEn.some(m => m.id === selectedVoice)
+                            ? improvEn
+                            : (modelRegistryService.getModelById(selectedVoice)
+                                ? [modelRegistryService.getModelById(selectedVoice)!, ...improvEn]
+                                : improvEn);
+                          return displayed.map((v) => (
                             <option key={v.id} value={v.id}>
                               {v.name} ({v.gender})
                             </option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Google Cloud TTS (Journey / Studio)">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode.startsWith('en')).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.name} ({v.gender})
-                            </option>
-                          ))}
-                        </optgroup>
+                          ));
+                        })()}
                       </select>
                     </div>
 
                     {/* Vietnamese Voice Selector */}
                     <div className="mb-4">
                       <label className="text-[10px] font-mono uppercase text-zinc-400 font-bold block mb-1">
-                        Vietnamese Voice Model (Google Cloud)
+                        Vietnamese Voice Model (Google Cloud & AI)
                       </label>
                       <select
                         value={selectedVoiceVi}
@@ -1455,34 +1460,19 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                             : 'bg-white border-zinc-200 text-zinc-900'
                         }`}
                       >
-                        <optgroup label="Google Chirp3-HD (Studio Studio Quality)">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Chirp3-HD')).map((v) => (
+                        {(() => {
+                          const improvVi = modelRegistryService.getImprovModels('vi');
+                          const displayed = improvVi.some(m => m.id === selectedVoiceVi)
+                            ? improvVi
+                            : (modelRegistryService.getModelById(selectedVoiceVi)
+                                ? [modelRegistryService.getModelById(selectedVoiceVi)!, ...improvVi]
+                                : improvVi);
+                          return displayed.map((v) => (
                             <option key={v.id} value={v.id}>
-                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
+                              {v.name} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
                             </option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Google Neural2 (Chuẩn Tự Nhiên)">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Neural2')).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ Chuẩn' : 'Nam Chuẩn'})
-                            </option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Google WaveNet">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Wavenet')).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
-                            </option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Google Standard">
-                          {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Standard')).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.id} ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
-                            </option>
-                          ))}
-                        </optgroup>
+                          ));
+                        })()}
                       </select>
                     </div>
 
@@ -2412,13 +2402,15 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               {(activePackage?.sessions || []).map((s) => {
                 const isSelected = s.sessionNumber === selectedSessionNum;
                 const hintCount = s.hcTotal || s.items?.[0]?.hints?.length || 2;
+                const sId = (s as any).id || String(s.sessionNumber);
+                const isSessReady = Boolean(readySessionMap[sId] || readySessionMap[String(s.sessionNumber)]);
                 return (
                   <button
                     key={s.sessionNumber}
                     onClick={() => {
                       setSelectedSessionNum(s.sessionNumber);
                       setCurrentItemIndex(0);
-                      setCurrentRevealStep(1);
+                      setCurrentRevealStep(revealMode === 'all' ? (s.items[0]?.hints?.length || 1) : 1);
                       setIsSessionCompleteGate(false);
                     }}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
@@ -2439,6 +2431,11 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                     >
                       {hintCount} hints
                     </span>
+                    {isSessReady ? (
+                      <Volume2 className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-emerald-500'}`} title="Audio đã sẵn sàng" />
+                    ) : (
+                      <VolumeX className={`w-3 h-3 ${isSelected ? 'text-white/60' : 'text-zinc-400'}`} title="Chưa có audio" />
+                    )}
                   </button>
                 );
               })}
@@ -2455,7 +2452,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                     key={item.id || idx}
                     onClick={() => {
                       setCurrentItemIndex(idx);
-                      setCurrentRevealStep(1);
+                      setCurrentRevealStep(revealMode === 'all' ? (item.hints?.length || 1) : 1);
                       setIsSessionCompleteGate(false);
                       setIsListDrawerOpen(false);
                     }}

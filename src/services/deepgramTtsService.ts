@@ -1,3 +1,5 @@
+import { modelRegistryService } from './modelRegistryService';
+
 export interface DeepgramVoiceOption {
   id: string;
   name: string;
@@ -149,6 +151,10 @@ class DeepgramTtsService {
   private defaultApiKey: string = import.meta.env.VITE_DEEPGRAM_API_KEY || '92def6215618aeda77c43f4446ba84ef7152091c';
 
   getApiKey(): string {
+    const registryKey = modelRegistryService.getNextActiveKey('DEEPGRAM');
+    if (registryKey && registryKey.trim()) {
+      return registryKey.trim();
+    }
     const key = localStorage.getItem('chunks_deepgram_api_key');
     if (!key || key.trim() === '' || key === '51d7d8b230bf742178e681e7836a3dc1571b1c11') {
       return this.defaultApiKey;
@@ -159,6 +165,7 @@ class DeepgramTtsService {
   setApiKey(key: string): void {
     if (key && key.trim()) {
       localStorage.setItem('chunks_deepgram_api_key', key.trim());
+      modelRegistryService.addKey('DEEPGRAM', key.trim(), 'Deepgram Aura Custom');
     } else {
       localStorage.removeItem('chunks_deepgram_api_key');
     }
@@ -206,6 +213,14 @@ class DeepgramTtsService {
       },
       body: JSON.stringify({ text: cleanText })
     });
+
+    if (response.status === 429) {
+      console.warn(`[Deepgram] Hit 429 Rate Limit on key. Rotating key in pool...`);
+      const nextKey = modelRegistryService.rotateKeyOn429('DEEPGRAM', apiKey);
+      if (nextKey && nextKey !== apiKey) {
+        return this.synthesizeText(text, modelName);
+      }
+    }
 
     if (!response.ok) {
       const errText = await response.text();
