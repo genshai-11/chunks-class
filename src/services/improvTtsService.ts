@@ -217,41 +217,66 @@ export const EN_PATTERN_REGEX = new RegExp(
 );
 
 /**
- * Helper to determine English vs Vietnamese text for a given hint.
- * Rigorously inspects both hint.text and hint.translation for Vietnamese diacritics
- * and English morphological/lexical patterns to guarantee zero language inversion.
+ * Resolves both English and Vietnamese text for an Improv hint.
+ * Deterministic and bidirectional: works regardless of whether the hint originated from
+ * Excel seed presets (where text=VI, translation=EN) or AI packages (where text=EN, translation=VI).
  */
-export function getHintTextByLanguage(hint: ImprovHint, lang: 'en' | 'vi'): string {
-  if (!hint) return '';
+export function getHintLanguagePair(hint: ImprovHint): { en: string; vi: string } {
+  if (!hint) return { en: '', vi: '' };
   const text = (hint.text || '').trim();
   const translation = (hint.translation || '').trim();
 
-  const isTextVi = VI_DIACRITICS_REGEX.test(text);
-  const isTransVi = VI_DIACRITICS_REGEX.test(translation);
-  const isTextEn = EN_PATTERN_REGEX.test(text);
-  const isTransEn = EN_PATTERN_REGEX.test(translation);
+  if (!text && !translation) return { en: '', vi: '' };
+  if (!text) return { en: translation, vi: translation };
+  if (!translation) return { en: text, vi: text };
 
-  if (lang === 'vi') {
-    // 1. Prioritize whichever field has Vietnamese diacritics
-    if (isTextVi) return text;
-    if (isTransVi) return translation;
-    // 2. If translation is English and text is not, text is definitely Vietnamese
-    if (isTransEn && !isTextEn) return text;
-    // 3. If text is English and translation is not, translation is Vietnamese
-    if (isTextEn && !isTransEn) return translation;
-    // 4. Standard fallback for Improv dataset: text is the Vietnamese hint
-    return text || translation;
-  } else {
-    // English
-    // 1. If translation matches English patterns -> translation
-    if (isTransEn) return translation;
-    // 2. If text has Vietnamese diacritics and translation exists -> translation is English
-    if (isTextVi && translation) return translation;
-    // 3. If text matches English and translation does not -> text
-    if (isTextEn && !isTransEn) return text;
-    // 4. Standard fallback for English: translation || text
-    return translation || text;
+  // 1. Gold standard: Vietnamese diacritics
+  const textHasVi = VI_DIACRITICS_REGEX.test(text);
+  const transHasVi = VI_DIACRITICS_REGEX.test(translation);
+
+  // If one field has Vietnamese diacritics and the other doesn't:
+  if (textHasVi && !transHasVi) {
+    // text is definitely Vietnamese, translation is English (e.g. Sets 01 & 02 presets)
+    return { en: translation, vi: text };
   }
+  if (transHasVi && !textHasVi) {
+    // translation is definitely Vietnamese, text is English (e.g. AI-generated packages!)
+    return { en: text, vi: translation };
+  }
+
+  // 2. Letters F, J, W, Z exist in English but NEVER in native Vietnamese alphabet
+  const NON_VI_LETTER_REGEX = /[fjwz]/i;
+  const textHasNonVi = NON_VI_LETTER_REGEX.test(text);
+  const transHasNonVi = NON_VI_LETTER_REGEX.test(translation);
+
+  if (textHasNonVi && !transHasNonVi) {
+    return { en: text, vi: translation };
+  }
+  if (transHasNonVi && !textHasNonVi) {
+    return { en: translation, vi: text };
+  }
+
+  // 3. English consonant digraphs and vowel clusters
+  const STRICT_EN_CLUSTERS = /(?:th|sh|ch|wh|ck|ee|ea|oo|ou|tion|sion|ment|ness|ing|ed)/i;
+  const textHasClusters = STRICT_EN_CLUSTERS.test(text);
+  const transHasClusters = STRICT_EN_CLUSTERS.test(translation);
+
+  if (textHasClusters && !transHasClusters) {
+    return { en: text, vi: translation };
+  }
+  if (transHasClusters && !textHasClusters) {
+    return { en: translation, vi: text };
+  }
+
+  // 4. Default: Modern CHUNKS schema convention
+  // In the standard schema (and all newly generated AI packages),
+  // `text` is the primary English clue, and `translation` is the Vietnamese translation.
+  return { en: text, vi: translation };
+}
+
+export function getHintTextByLanguage(hint: ImprovHint, lang: 'en' | 'vi'): string {
+  const pair = getHintLanguagePair(hint);
+  return lang === 'en' ? pair.en : pair.vi;
 }
 
 class ImprovTtsEngine {

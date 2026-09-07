@@ -108,6 +108,7 @@ export interface ImprovGenerateRequest {
   sessionsConfig: ImprovSessionConfig[];
   sourceLevel: CourseLevel | 'ALL';
   sourceLessonIds: string[];
+  selectedVocabIds?: string[];
   difficulty: 'EASY' | 'MEDIUM' | 'HARD' | string;
   relevance: 'LOW' | 'MEDIUM' | 'HIGH' | string;
   llmConfig: ImprovLLMConfig;

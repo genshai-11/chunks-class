@@ -47,6 +47,7 @@ import {
   playItemAudio, 
   stopImprovAudio,
   getHintTextByLanguage,
+  getHintLanguagePair,
   prepareSessionAudio,
   preparePackageAudio,
   prepareCustomItemsAudio,
@@ -1789,6 +1790,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           sessionsConfig: genSessionConfigs,
           sourceLevel: genSourceLevel,
           sourceLessonIds: genSelectedLessonIds,
+          selectedVocabIds: genSelectedVocabIds,
           llmConfig: {
             provider: genProvider,
             endpoint: genEndpoint,
@@ -2789,7 +2791,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     </th>
                     <th className="p-3.5 w-14 text-center">STT</th>
                     <th className="p-3.5 w-24 text-center">Session</th>
-                    <th className="p-3.5 min-w-[280px]">Các Gợi Ý & Từ Loại (Clues Stream)</th>
+                    <th className="p-3.5 min-w-[280px]">Các Gợi Ý (EN & VI) & Từ Loại (Clues Stream)</th>
                     <th className="p-3.5 w-[300px] text-center">Studio Âm Thanh (Audio Studio)</th>
                     <th className="p-3.5 w-24 text-center">Thao Tác</th>
                   </tr>
@@ -2866,6 +2868,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                 const isHintViLoading = synthesizingHintIds[`${hint.id}_vi`];
                                 const hasHintEnGcs = Boolean(hint.audioUrl && hint.audioUrl.startsWith('http'));
                                 const hasHintViGcs = Boolean(hint.audioUrlVi && hint.audioUrlVi.startsWith('http'));
+                                const { en: hintEn, vi: hintVi } = getHintLanguagePair(hint);
 
                                 return (
                                   <React.Fragment key={hint.id || hIdx}>
@@ -2882,12 +2885,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                           <span>{badge.label}</span>
                                         </span>
                                       </div>
-                                      <div className="font-bold text-zinc-900 text-xs leading-snug">
-                                        {hint.text}
+                                      <div className="font-bold text-zinc-900 text-xs leading-snug flex items-start gap-1">
+                                        <span className="text-[9px] font-mono font-extrabold text-zinc-400 bg-zinc-100 px-1 py-0.2 rounded shrink-0 mt-0.5">EN</span>
+                                        <span className="text-zinc-900 font-bold">{hintEn || hint.text}</span>
                                       </div>
-                                      {showVietnamese && hint.translation && (
-                                        <div className="text-[11px] text-zinc-700 font-medium mt-1 leading-tight">
-                                          {hint.translation}
+                                      {showVietnamese && (hintVi || hint.translation) && (
+                                        <div className="text-[11px] text-zinc-700 font-medium mt-1 leading-tight flex items-start gap-1">
+                                          <span className="text-[9px] font-mono font-extrabold text-blue-700 bg-blue-50 px-1 py-0.2 rounded shrink-0 mt-0.5">VI</span>
+                                          <span className="text-zinc-700">{hintVi || hint.translation}</span>
                                         </div>
                                       )}
 
@@ -3261,6 +3266,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                           const isHintViLoading = synthesizingHintIds[`${hint.id}_vi`];
                           const hasHintEnGcs = Boolean(hint.audioUrl && hint.audioUrl.startsWith('http'));
                           const hasHintViGcs = Boolean(hint.audioUrlVi && hint.audioUrlVi.startsWith('http'));
+                          const { en: hintEn, vi: hintVi } = getHintLanguagePair(hint);
 
                           return (
                             <div
@@ -3283,14 +3289,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                               </div>
 
                               {/* Clue English Text */}
-                              <div className="text-xs font-bold text-zinc-900 leading-snug line-clamp-3 mb-1">
-                                {hint.text}
+                              <div className="text-xs font-bold text-zinc-900 leading-snug line-clamp-3 mb-1 flex items-start gap-1">
+                                <span className="text-[9px] font-mono font-extrabold text-zinc-400 bg-zinc-100 px-1 py-0.2 rounded shrink-0 mt-0.5">EN</span>
+                                <span>{hintEn || hint.text}</span>
                               </div>
 
                               {/* Clue Vietnamese Meaning */}
-                              {showVietnamese && hint.translation && (
-                                <div className="text-[11px] text-zinc-700 font-medium line-clamp-2 mt-auto pt-1 border-t border-zinc-200/80">
-                                  {hint.translation}
+                              {showVietnamese && (hintVi || hint.translation) && (
+                                <div className="text-[11px] text-zinc-700 font-medium line-clamp-2 mt-auto pt-1 border-t border-zinc-200/80 flex items-start gap-1">
+                                  <span className="text-[9px] font-mono font-extrabold text-blue-700 bg-blue-50 px-1 py-0.2 rounded shrink-0 mt-0.5">VI</span>
+                                  <span>{hintVi || hint.translation}</span>
                                 </div>
                               )}
 
@@ -4536,7 +4544,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                   <div>
                     <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
-                      English Hint Text
+                      Gợi ý Tiếng Anh (English Clue)
                     </label>
                     <input
                       type="text"
@@ -4555,7 +4563,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                   <div>
                     <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
-                      Vietnamese Translation
+                      Bản dịch Tiếng Việt (Vietnamese Translation)
                     </label>
                     <input
                       type="text"
@@ -4729,7 +4737,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                   <div>
                     <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
-                      English Hint Text (1-2 từ hoặc cụm ngắn)
+                      Gợi ý Tiếng Anh (English Clue)
                     </label>
                     <input
                       type="text"
@@ -4749,7 +4757,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                   <div>
                     <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
-                      Vietnamese Translation
+                      Bản dịch Tiếng Việt (Vietnamese Translation)
                     </label>
                     <input
                       type="text"

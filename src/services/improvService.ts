@@ -87,35 +87,66 @@ export const DEFAULT_IMPROV_MASTER_PROMPT = `You are the Lead English Pedagogy &
 
 CHUNKS Improv is an interactive, hint-based English reflex training system. Learners deduce, shadow, and master spoken English chunks through rapid-fire clue words/phrases (1-2 words each) before producing the full communicative sentence.
 
-### PEDAGOGICAL STRUCTURE BASED ON SESSIONS:
+### AUTHORITATIVE ARCHITECTURAL SPECIFICATIONS OF THE 3 PEDAGOGICAL DIMENSIONS:
+
+1. **Dimension 1: Pedagogy Difficulty (Độ khó)**:
+   - **Easy (A1-A2) - Elementary & Pre-intermediate Spoken Foundations**:
+     * Target: CEFR A1-A2. 100% high-frequency, everyday words ('wake up', 'grab a coffee', 'heavy rain', 'feel tired', 'miss the bus', 'wait a minute', 'call a friend', 'delicious food', 'stay home', 'be late', 'good idea', 'pack a bag', 'buy a ticket').
+     * STRICT FORBIDDEN IN EASY: Absolutely NO B2-C1 literary or academic words (specifically ban words like: 'meticulous', 'nostalgic', 'fierce', 'catastrophic', 'sophisticated', 'unprecedented', 'scrutiny', 'paradox', 'dilemma', 'reluctance', 'contemplate', 'intricate', 'resilience', 'nuance'). Absolutely NO advanced native idioms ('bite the bullet', 'devil's advocate', 'spill the beans', 'elephant in the room', 'par for the course', 'hit the ground running', 'double-edged sword').
+     * Lateral / Random Association Rule for Easy: If Relevance is Low (Lateral/Brainstorming ngẫu nhiên), creative contrast MUST come from simple everyday objects or daily situations (e.g. 'alarm clock' vs 'heavy rain', 'coffee cup' vs 'umbrella'), NEVER by pulling in rare, complex, or literary vocabulary!
+   - **Medium (B1) - Conversational Collocations & Phrasal Verbs**:
+     * Everyday workplace and social fluency ('figure out', 'run out of', 'get along with', 'tight deadline', 'make up one's mind', 'have a point', 'keep in touch', 'look forward to', 'deal with', 'run into', 'make a living'). Balanced natural English. Avoid hyper-basic baby words, but also avoid obscure C1 idioms and rare academic words.
+   - **Hard (B2-C1) - Idioms, Colloquial Metaphors & Nuanced Reflexes**:
+     * Native-level spoken mastery ('play devil's advocate', 'bite the bullet', 'double-edged sword', 'silver lining', 'hit the ground running', 'burn the midnight oil', 'fierce competition', 'meticulous detail', 'par for the course'). Strictly ban simplistic A1 filler words.
+
+2. **Dimension 2: Relevance / Association Context (Mức độ liên tưởng)**:
+   - **Thấp / Low (Brainstorming ngẫu nhiên - Lateral Association)**:
+     * Wide semantic distance, unexpected cross-domain juxtaposition forcing spontaneous sentence assembly.
+     * Strict negative constraint: Never pair textbook clichés ('doctor'-'hospital', 'dinner'-'cook', 'contract'-'sign'). For Easy, contrast simple daily items; for Hard, bridge distant abstract concepts.
+   - **Vừa / Medium (Tương quan ngữ cảnh - Conversational Collocations)**:
+     * Authentic conversational collocations, natural dialogue pivots, realistic everyday communication scenarios.
+   - **Cao / High (Gắn kết câu chuyện logic - Narrative Cohesion)**:
+     * Tight narrative continuity, clear cause-and-effect transitions, chronological story progression.
+
+3. **Dimension 3: Course Level Focus (Khóa học)**:
+   - **LEVEL_B_ERES**: English Reflexes Enhancement for Speaking — conversational banter, oral hesitation elimination, dialogic reactions, emotional tone shifts, natural discourse markers.
+   - **LEVEL_B_EREL**: English Reflexes Enhancement for Listening — acoustic assimilation, connected speech, reductions, listening comprehension cues.
+   - **LEVEL_A**: Foundation chunking, basic sentence frames, high-frequency SVO patterns.
+
+---
+
+### PEDAGOGICAL STRUCTURE BASED ON SESSIONS (DUAL-LEVEL EXAMPLES):
 Each Improv Package contains multiple Sessions. In each Session, each Item is an independent reflex challenge with N compact hints (1–2 words per clue):
 
 1. **For 2-Hint Sessions (hcTotal = 2)**:
-   - Hint 1: **Keyword / Core Vocab / Idiom** (1–2 words: Danh từ / Động từ / Tính từ / Cụm thành ngữ).
+   - Hint 1: **Keyword / Core Vocab** (1–2 words: Danh từ / Động từ / Tính từ / Cụm từ).
    - Hint 2: **Ending** (1–2 words: Động từ / Tính từ / Trạng từ / Danh từ). A colorful, non-obvious collocated word or unexpected outcome.
-   - *Example Item 1*: Hint 1: "Bite the bullet" (Trans: "Cắn răng chịu đựng", Type: "Idiom · Keyword") | Hint 2: "turnaround" (Trans: "bước ngoặt", Type: "Danh từ · Ending")
-   - *Example Item 2*: Hint 1: "Devil's advocate" (Trans: "Người phản biện", Type: "Collocation · Keyword") | Hint 2: "fierce debate" (Trans: "tranh luận nảy lửa", Type: "Danh từ · Ending")
+   - *Example (Easy / A1-A2)*: Hint 1: "Wake up" (Trans: "Thức dậy", Type: "Cụm động từ · Keyword") | Hint 2: "heavy rain" (Trans: "mưa lớn", Type: "Danh từ · Ending")
+   - *Example (Hard / B2-C1)*: Hint 1: "Devil's advocate" (Trans: "Người phản biện", Type: "Collocation · Keyword") | Hint 2: "fierce debate" (Trans: "tranh luận nảy lửa", Type: "Danh từ · Ending")
    - *Rule*: EVERY single item in the session MUST have completely different, creative, distinct word pairs!
 
 2. **For 3-Hint Sessions (hcTotal = 3)**:
-   - Hint 1: **Keyword / Core Vocab** (1–2 words: Phrasal verb / Cụm đàm thoại / Idiom / Phản hồi cảm xúc).
+   - Hint 1: **Keyword / Core Vocab** (1–2 words: Phrasal verb / Cụm đàm thoại / Phản hồi cảm xúc).
    - Hint 2: **Logic word / Từ nối** (1–2 words: transition & connective words).
      *CRITICAL RULE*: Every item MUST use a DIFFERENT logic connector! Pick from: "nói cách khác" (in other words), "sau cùng" (eventually), "trước đó" (before that), "hơn nữa" (in addition), "tiếp theo" (next), "dù vậy" (nevertheless), "nếu" (if), "đồng thời" (meanwhile), "tuy nhiên" (however), "do đó" (therefore), "ví dụ" (for example), "miễn là" (as long as), "nếu không" (otherwise), "sau đó" (then), "ngoài ra" (besides).
    - Hint 3: **Ending** (Tính từ / Trạng từ / Động từ - 1–2 words).
-   - *Example Item 1*: Hint 1: "Spill the beans" (Trans: "Bật mí bí mật", Type: "Idiom · Keyword") | Hint 2: "ngay sau đó" (Trans: "shortly after", Type: "Từ nối · Logic word") | Hint 3: "catastrophic" (Trans: "thảm họa", Type: "Tính từ · Ending")
-   - *Example Item 2*: Hint 1: "Elephant in the room" (Trans: "Vấn đề hiển nhiên bị né tránh", Type: "Idiom · Keyword") | Hint 2: "dù vậy" (Trans: "nevertheless", Type: "Từ nối · Logic word") | Hint 3: "unaddressed" (Trans: "chưa giải quyết", Type: "Tính từ · Ending")
+   - *Example (Easy / A1-A2)*: Hint 1: "Miss the bus" (Trans: "Lỡ xe buýt", Type: "Keyword") | Hint 2: "do đó" (Trans: "therefore", Type: "Từ nối · Logic word") | Hint 3: "be late" (Trans: "đi trễ", Type: "Ending")
+   - *Example (Hard / B2-C1)*: Hint 1: "Spill the beans" (Trans: "Bật mí bí mật", Type: "Keyword") | Hint 2: "sau cùng" (Trans: "eventually", Type: "Từ nối · Logic word") | Hint 3: "catastrophic" (Trans: "thảm họa", Type: "Ending")
 
 3. **For 4-Hint Sessions (hcTotal = 4)**:
    - Hint 1: **Keyword / WH-question** (1–2 words: Danh từ, Cụm khuyên nhủ, WH word like "Why", "When", "How long", "Which").
    - Hint 2: **Logic word / Từ nối** (1–2 words: "while", "in contrast", "as long as", "but", "however", "therefore", "if", "otherwise", "then", "finally", etc. - MUST be different across all rows!).
-   - Hint 3: **Fancy word / Ẩn dụ / Cụm gợi hình / Tục ngữ / Từ tượng thanh** (1–2 words colorful image: "smart choice", "lifeline", "empty shelves", "shock wave", "watchful eye", "dead stop", "red flag", "Better safe than sorry", "burning", "resistant").
-   - Hint 4: **Ending** (1–2 words: Danh từ, Tính từ, Trạng từ: "careful", "globally", "urgently", "worldwide", "discreetly", "immediately", "promptly", "Heartburn", "Acid reflux", "Blood sugar").
+   - Hint 3: **Fancy word / Ẩn dụ / Cụm gợi hình / Tục ngữ / Từ tượng thanh** (1–2 words colorful image: for Easy use simple vivid words like "rainy day", "warm cup", "fresh air", "bright light"; for Hard use idioms/collocations like "watchful eye", "shock wave", "Better safe than sorry", "red flag").
+   - Hint 4: **Ending** (1–2 words: Danh từ, Tính từ, Trạng từ).
+   - *Example (Easy / A1-A2)*: Hint 1: "Grab a coffee" | Hint 2: "trước khi" (before) | Hint 3: "rainy day" (ngày mưa) | Hint 4: "feel warm" (cảm thấy ấm áp)
+   - *Example (Hard / B2-C1)*: Hint 1: "Elephant in the room" | Hint 2: "dù vậy" (nevertheless) | Hint 3: "watchful eye" (ánh mắt dò xét) | Hint 4: "unaddressed" (chưa giải quyết)
 
 ### STRICT PEDAGOGICAL NEGATIVE CONSTRAINTS:
-- NEVER output obvious, pedestrian, textbook collocations (e.g. NEVER pair 'doctor' with 'hospital', 'dinner' with 'cook', 'contract' with 'sign', 'car' with 'drive', 'book' with 'read', 'teacher' with 'school').
+- NEVER output obvious, pedestrian, textbook clichés (e.g. NEVER pair 'doctor' with 'hospital', 'dinner' with 'cook', 'contract' with 'sign', 'car' with 'drive', 'book' with 'read', 'teacher' with 'school').
+- When Difficulty is EASY, you MUST STRICTLY OBEY the CEFR A1-A2 vocabulary ceiling. NEVER include B2/C1 words ('meticulous', 'nostalgic', 'fierce', 'catastrophic', 'dilemma', etc.) or C1 idioms.
 - DO NOT repeat fixed sentence patterns (e.g., NEVER make all items "Why don't you..." or any repeated template).
 - Every single Item in the output must be completely UNIQUE, colorful, diverse, and natural.
-- Compact Clues: Fancy words and hints must be limited to 1–2 words (except proverbs).
+- Compact Clues: Hints must be limited to 1–2 words (except short proverbs/phrases).
 - Translations must be 100% natural, colloquial Vietnamese (Latin Extended, Be Vietnam Pro typography safe).
 
 ### OUTPUT FORMAT:
@@ -137,14 +168,14 @@ You MUST output ONLY a valid JSON object matching the following structure withou
           "hints": [
             {
               "itemIndex": 1,
-              "text": "Bite the bullet",
-              "translation": "Cắn răng chịu đựng",
+              "text": "Wake up",
+              "translation": "Thức dậy",
               "typeFunction": "Keyword · Cụm phản xạ"
             },
             {
               "itemIndex": 2,
-              "text": "turnaround",
-              "translation": "bước ngoặt",
+              "text": "heavy rain",
+              "translation": "mưa lớn",
               "typeFunction": "Ending · Kết quả"
             }
           ]
@@ -1017,8 +1048,8 @@ export function getRelevanceDirective(relevance: string = ''): string {
   if (rel === 'low' || rel.includes('thấp') || rel.includes('ngẫu nhiên')) {
     return `★★★ LATERAL ASSOCIATION & HIGH CREATIVE CONTRAST (Thấp - Brainstorming ngẫu nhiên) ★★★
 STRICT NEGATIVE CONSTRAINT: DO NOT pair obvious literal synonyms, textbook collocations, or immediate thematic associates (e.g. NEVER pair 'doctor' with 'hospital', 'dinner' with 'cook', 'contract' with 'sign', 'car' with 'drive', 'book' with 'read', 'teacher' with 'school').
-INSTEAD: Forge UNEXPECTED, CROSS-DOMAIN, LATERAL bridges! Juxtapose a business concept with a domestic emotional reaction, a concrete physical object with a philosophical dilemma, or a casual reaction with an intense emergency context.
-The hints should act as surprising cognitive springboards that force the learner's brain to construct a creative, spontaneous communicative sentence bridging these seemingly disparate ideas!
+INSTEAD: Forge UNEXPECTED, CROSS-DOMAIN, LATERAL bridges! Juxtapose unexpected situations or ideas that act as surprising cognitive springboards forcing the learner's brain to construct a creative, spontaneous communicative sentence.
+DIFFICULTY ALIGNMENT FOR LATERAL CONTRAST: If Difficulty is Easy (A1-A2), lateral contrast MUST be created using simple everyday objects and daily situations (e.g., 'alarm clock' vs 'heavy rain', 'coffee cup' vs 'umbrella'), NEVER by introducing rare, complex, or literary vocabulary! Every clue must be effortlessly understood and spoken by an A1-A2 beginner!
 SEMANTIC DISTANCE: Maximize semantic diversity across items. Every single item in this session must portray a completely different, unexpected situation and emotional setting!`;
   }
   if (rel === 'high' || rel.includes('cao') || rel.includes('gắn kết')) {
@@ -1031,18 +1062,24 @@ Create authentic conversational collocations, natural dialogue pivots, and reali
 
 export function getDifficultyDirective(difficulty: string = ''): string {
   const diff = difficulty.toLowerCase();
-  if (diff === 'hard' || diff.includes('hard') || diff.includes('b2-c1')) {
+  if (diff === 'hard' || diff.includes('hard') || diff.includes('b2-c1') || diff.includes('khó') || diff.includes('nâng cao')) {
     return `★★★ PEDAGOGY DIFFICULTY: HARD (B2-C1) - IDIOMS, PHRASAL VERBS & ADVANCED STRUCTURES ★★★
-MANDATORY: Use advanced colloquial idioms, multi-word verbs, metaphorical expressions, and C1 collocations (e.g., 'call it a day', 'on the fence', 'spill the beans', 'elephant in the room', 'play devil's advocate', 'bite the bullet', 'double-edged sword', 'silver lining', 'dead set on', 'par for the course', 'hit the ground running', 'burn the midnight oil', 'touch and go', 'cut corners').
+MANDATORY: Use advanced colloquial idioms, multi-word verbs, metaphorical expressions, and C1 collocations (e.g., 'call it a day', 'on the fence', 'spill the beans', 'elephant in the room', 'play devil's advocate', 'bite the bullet', 'double-edged sword', 'silver lining', 'dead set on', 'par for the course', 'hit the ground running', 'burn the midnight oil', 'touch and go', 'cut corners', 'fierce competition', 'meticulous detail').
 STRICT BAN: Absolutely NO basic A1-A2 filler words (e.g., 'good', 'bad', 'happy', 'sad', 'big', 'small', 'go', 'come', 'eat', 'sleep', 'nice', 'like') unless paired in an advanced idiomatic or ironic sense!
 Hints must challenge upper-intermediate and advanced learners to synthesize sophisticated oral expressions with nuanced emotional tones.`;
   }
-  if (diff === 'easy' || diff.includes('easy') || diff.includes('a1-a2')) {
-    return `★★★ PEDAGOGY DIFFICULTY: EASY (A1-A2) - FOUNDATIONAL SPOKEN VOCABULARY ★★★
-Use clear, high-frequency foundational daily vocabulary, direct phrasing, and accessible sentence connectors. Ensure learner confidence while building core spoken reflexes.`;
+  if (diff === 'easy' || diff.includes('easy') || diff.includes('a1-a2') || diff.includes('dễ') || diff.includes('đơn giản')) {
+    return `★★★ PEDAGOGY DIFFICULTY: EASY (A1-A2) - 100% ELEMENTARY & PRE-INTERMEDIATE SPOKEN VOCABULARY ★★★
+ABSOLUTE VOCABULARY CEILING: Every word MUST be high-frequency CEFR A1-A2 daily spoken English (e.g., 'wake up', 'grab a coffee', 'heavy rain', 'feel tired', 'miss the bus', 'wait a minute', 'call a friend', 'good news', 'delicious food', 'stay home', 'be late', 'pack a bag', 'save money', 'order food', 'clean the house', 'take an umbrella').
+STRICT NEGATIVE CONSTRAINTS & BANS:
+1. STRICTLY FORBIDDEN: NEVER use advanced C1/B2 literary or academic words such as: 'meticulous', 'nostalgic', 'fierce', 'catastrophic', 'sophisticated', 'unprecedented', 'scrutiny', 'paradox', 'dilemma', 'reluctance', 'contemplate', 'intricate', 'resilience', 'nuance'.
+2. STRICTLY FORBIDDEN: NEVER use native C1 idioms (e.g., 'bite the bullet', 'devil's advocate', 'spill the beans', 'elephant in the room', 'par for the course', 'hit the ground running', 'double-edged sword').
+3. SEED ADAPTATION MANDATE: If any seed vocabulary provided below contains B2/C1 advanced idioms or formal words, you MUST downscale or adapt them into simple A1-A2 everyday expressions!
+4. RELEVANCE ALIGNMENT: If Relevance is Low (Lateral/Brainstorming ngẫu nhiên), create contrast using SIMPLE daily objects and situations (e.g., 'alarm clock' vs 'heavy rain', 'umbrella' vs 'sunny day'), NEVER by introducing complex or literary vocabulary! Every clue must be effortlessly understood and spoken by an A1-A2 beginner!`;
   }
   return `★★★ PEDAGOGY DIFFICULTY: MEDIUM (B1) - CONVERSATIONAL COLLOCATIONS & PHRASAL VERBS ★★★
-Focus on natural spoken English, practical phrasal verbs, workplace and social collocations, and common spoken discourse markers. Clues should encourage fluent speaking without academic stiffness.`;
+Focus on natural spoken English, practical phrasal verbs, workplace and social collocations, and common spoken discourse markers (e.g., 'figure out', 'run out of', 'get along with', 'tight deadline', 'make up my mind', 'have a point', 'keep in touch', 'look forward to', 'run into', 'make a living', 'deal with', 'come up with').
+AVOID BOTH EXTREMES: DO NOT use hyper-basic baby words exclusively, and DO NOT use obscure C1/C2 idioms or rare academic words (specifically avoid words like 'meticulous', 'paradox', 'reluctance', 'unprecedented', 'catastrophic').`;
 }
 
 export function getCourseLevelDirective(sourceLevel: string = ''): string {
@@ -1161,33 +1198,61 @@ export async function generateImprovPackage(
   // Deduplicate chunks by chunk_id
   const seenChunkIds = new Set<string>();
   seedChunks = seedChunks.filter(c => {
-    if (seenChunkIds.has(c.chunk_id)) return false;
-    seenChunkIds.add(c.chunk_id);
+    const cid = c.chunk_id || (c as any).id;
+    if (!cid || seenChunkIds.has(cid)) return false;
+    seenChunkIds.add(cid);
     return true;
   });
+
+  // If specific vocab IDs were selected by the teacher, prioritize them
+  if (request.selectedVocabIds && request.selectedVocabIds.length > 0) {
+    const selectedIdSet = new Set(request.selectedVocabIds);
+    const prioritizedSeeds = seedChunks.filter(c => selectedIdSet.has(c.chunk_id) || selectedIdSet.has((c as any).id));
+    if (prioritizedSeeds.length > 0) {
+      seedChunks = prioritizedSeeds;
+    }
+  }
 
   // Filter seed chunks (prioritize vocab items, fallback to all chunks)
   const vocabChunks = seedChunks.filter(c => c.category === 'vocab' || c.category === 'phrase');
   const effectiveSeeds = vocabChunks.length >= 5 ? vocabChunks : seedChunks;
 
   // Format seed list for prompt
-  let seedSample = effectiveSeeds.map((c, i) => ({
-    seedNumber: i + 1,
-    english: c.english,
-    vietnamese: c.vietnamese || ''
-  }));
+  let seedSample = effectiveSeeds.map((c, i) => {
+    const eng = (c.english || (c as any).en || (c as any).text || '').trim();
+    const vie = (c.vietnamese || (c as any).vi || (c as any).translation || (c as any).meaning || '').trim();
+    return {
+      seedNumber: i + 1,
+      english: eng,
+      vietnamese: vie
+    };
+  }).filter(s => s.english.length > 0);
 
+  const isEasy = (request.difficulty || '').toLowerCase().includes('easy') || (request.difficulty || '').toLowerCase().includes('a1-a2') || (request.difficulty || '').toLowerCase().includes('dễ');
   if (seedSample.length === 0) {
-    seedSample = [
-      { seedNumber: 1, english: 'give it a shot', vietnamese: 'thử một phen' },
-      { seedNumber: 2, english: 'hit the ground running', vietnamese: 'bắt tay vào làm ngay' },
-      { seedNumber: 3, english: 'room for improvement', vietnamese: 'còn cơ hội để cải thiện' },
-      { seedNumber: 4, english: 'keep an eye on', vietnamese: 'để mắt tới' },
-      { seedNumber: 5, english: 'break the ice', vietnamese: 'phá vỡ bầu không khí ngại ngùng' },
-      { seedNumber: 6, english: 'out of the blue', vietnamese: 'bất thình lình / hoàn toàn bất ngờ' },
-      { seedNumber: 7, english: 'a blessing in disguise', vietnamese: 'trong cái rủi có cái may' },
-      { seedNumber: 8, english: 'to put it bluntly', vietnamese: 'nói thẳng ra là' }
-    ];
+    if (isEasy) {
+      seedSample = [
+        { seedNumber: 1, english: 'wake up early', vietnamese: 'thức dậy sớm' },
+        { seedNumber: 2, english: 'take a break', vietnamese: 'nghỉ ngơi một lát' },
+        { seedNumber: 3, english: 'heavy rain', vietnamese: 'mưa lớn' },
+        { seedNumber: 4, english: 'grab a coffee', vietnamese: 'mua cốc cà phê' },
+        { seedNumber: 5, english: 'call a friend', vietnamese: 'gọi điện cho bạn bè' },
+        { seedNumber: 6, english: 'miss the bus', vietnamese: 'lỡ chuyến xe buýt' },
+        { seedNumber: 7, english: 'feel tired', vietnamese: 'cảm thấy mệt mỏi' },
+        { seedNumber: 8, english: 'good idea', vietnamese: 'ý kiến hay' }
+      ];
+    } else {
+      seedSample = [
+        { seedNumber: 1, english: 'give it a shot', vietnamese: 'thử một phen' },
+        { seedNumber: 2, english: 'hit the ground running', vietnamese: 'bắt tay vào làm ngay' },
+        { seedNumber: 3, english: 'room for improvement', vietnamese: 'còn cơ hội để cải thiện' },
+        { seedNumber: 4, english: 'keep an eye on', vietnamese: 'để mắt tới' },
+        { seedNumber: 5, english: 'break the ice', vietnamese: 'phá vỡ bầu không khí ngại ngùng' },
+        { seedNumber: 6, english: 'out of the blue', vietnamese: 'bất thình lình / hoàn toàn bất ngờ' },
+        { seedNumber: 7, english: 'a blessing in disguise', vietnamese: 'trong cái rủi có cái may' },
+        { seedNumber: 8, english: 'to put it bluntly', vietnamese: 'nói thẳng ra là' }
+      ];
+    }
   }
 
   // Setup sessions configs
@@ -1374,7 +1439,8 @@ CRITICAL RULES:
 3. Every single item MUST have exactly ${sConfig.hcTotal} hints (itemIndex from 1 to ${sConfig.hcTotal}).
 4. Ensure all Vietnamese translations are 100% natural, colloquial, and accurate (Latin Extended, Be Vietnam Pro typography safe).
 5. STRICT ANTI-CLICHÉ RULE: Obey all negative constraints. Never pair trivial associations like dinner-cook or doctor-hospital.
-6. Output ONLY pure JSON. Do NOT wrap in markdown explanation or reasoning tags.`;
+6. CRITICAL DIFFICULTY COMPLIANCE: You MUST strictly conform to the Difficulty Level ('${request.difficulty || 'Medium (B1)'}'). If Difficulty is Easy, you are strictly forbidden from using words like 'meticulous', 'nostalgic', 'fierce' or C1 idioms; use only high-frequency A1-A2 daily vocabulary!
+7. Output ONLY pure JSON. Do NOT wrap in markdown explanation or reasoning tags.`;
 
     let validatedBatchItems: ImprovItem[] = [];
     try {
