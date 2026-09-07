@@ -436,7 +436,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const [readySessionMap, setReadySessionMap] = useState<Record<string, boolean>>({});
   const [isSessionReady, setIsSessionReady] = useState<boolean>(false);
 
-  // Helper to check if an ImprovSession has audio ready (either GCS/HTTP audioUrl or cached TTS)
+  // Helper to check if an ImprovSession has audio ready (streaming URL, combined cache, or all hints cached)
   const checkSessionAudioReady = async (
     s: ImprovSession | null,
     vEn: string,
@@ -444,12 +444,6 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     lMode: 'EN_ONLY' | 'VI_ONLY'
   ): Promise<boolean> => {
     if (!s || !s.items || s.items.length === 0) return false;
-
-    // Check if all items already have a valid audioUrl
-    const allHaveAudioUrl = s.items.every(
-      it => Boolean(it.audioUrl && (it.audioUrl.startsWith('http://') || it.audioUrl.startsWith('https://') || it.audioUrl.startsWith('data:')))
-    );
-    if (allHaveAudioUrl) return true;
 
     // Check through improvTts with active voice
     try {
@@ -459,16 +453,47 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       // Continue to direct cache check
     }
 
-    // Direct cache key check for active voice
+    // Direct comprehensive check for active voice
     try {
       const normalizedMode = lMode === 'VI_ONLY' ? 'VI_ONLY' : 'EN_ONLY';
+      const isVi = normalizedMode === 'VI_ONLY';
+      const effVoice = isVi ? vVi : vEn;
+      const lang = isVi ? 'vi' : 'en';
+
       for (const item of s.items) {
-        if (item.audioUrl && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) {
+        // 1. Streaming URL check
+        const streamUrl = isVi ? item.audioUrlVi : item.audioUrl;
+        if (streamUrl && streamUrl !== 'cached' && (streamUrl.startsWith('http://') || streamUrl.startsWith('https://') || streamUrl.startsWith('data:'))) {
           continue;
         }
+
+        // 2. Combined item audio cache check
         const k1 = `improv_item_${item.id}_${vEn}_${vVi}_${normalizedMode}`;
-        const cached = await audioPlayer.getCachedAudioAsync(k1);
-        if (!cached) return false;
+        const cached = await audioPlayer.getCachedAudioAsync(k1, effVoice);
+        if (cached) {
+          continue;
+        }
+
+        // 3. All hints in item.hints cached check
+        if (item.hints && item.hints.length > 0) {
+          let allHintsCached = true;
+          for (const hint of item.hints) {
+            const hintStream = isVi ? hint.audioUrlVi : hint.audioUrl;
+            if (hintStream && hintStream !== 'cached' && (hintStream.startsWith('http://') || hintStream.startsWith('https://') || hintStream.startsWith('data:'))) {
+              continue;
+            }
+            const hintKey = `improv_hint_${hint.id}_${effVoice}_${lang}`;
+            const hCached = await audioPlayer.getCachedAudioAsync(hintKey, effVoice);
+            if (hCached) continue;
+            allHintsCached = false;
+            break;
+          }
+          if (allHintsCached) {
+            continue;
+          }
+        }
+
+        return false;
       }
       return true;
     } catch {

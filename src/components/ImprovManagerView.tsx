@@ -10,7 +10,8 @@ import {
   CourseLevel,
   LessonDoc,
   ChunkItem,
-  CohortAudioSettings
+  CohortAudioSettings,
+  Course
 } from '../types';
 import { 
   getAllImprovPackages, 
@@ -23,8 +24,8 @@ import {
   loadDefaultPresets, 
   DEFAULT_IMPROV_MASTER_PROMPT, 
   DEFAULT_IMPROV_LLM_CONFIG, 
-  DEEPSEEK_DEFAULT_CONFIG, 
   GOOGLE_GENAI_DEFAULT_CONFIG, 
+  generateImprovPackage,
   executeLlmGeneration, 
   testLlmConnection 
 } from '../services/improvService';
@@ -41,11 +42,17 @@ import {
   synthesizeSingleHintAudio,
   playItemAudio, 
   stopImprovAudio,
-  getHintTextByLanguage
+  getHintTextByLanguage,
+  prepareSessionAudio,
+  preparePackageAudio,
+  prepareCustomItemsAudio,
+  ImprovBatchError,
+  ImprovBatchProgress
 } from '../services/improvTtsService';
 import { audioPlayer, sanitizeSpeechText, ALL_VOICES, GOOGLE_TTS_VOICES } from '../services/googleTtsService';
-import { modelRegistryService } from '../services/modelRegistryService';
+import { modelRegistryService, DEFAULT_AI_GENERATION_CONFIG } from '../services/modelRegistryService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
+import { getCourses, getLessonsByLevel } from '../services/firestoreService';
 import { 
   syncImprovPackageCachedAudioToCloud, 
   uploadImprovBase64AudioToGcs 
@@ -208,6 +215,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     return (currentVoiceEn && currentVoiceEn !== 'aura-theia-en') ? currentVoiceEn : 'flux-cliff-en';
   });
   const [batchVoiceVi, setBatchVoiceVi] = useState<string>(currentVoiceVi || 'vi-VN-Neural2-A');
+  const [forceOverwrite, setForceOverwrite] = useState<boolean>(true);
+  const [isResettingAudio, setIsResettingAudio] = useState<boolean>(false);
   const [isBatchRunning, setIsBatchRunning] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
@@ -221,6 +230,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const cancelBatchAudioRef = useRef<boolean>(false);
   const [isSyncingToCloud, setIsSyncingToCloud] = useState<boolean>(false);
   const [cloudSyncProgress, setCloudSyncProgress] = useState<string | null>(null);
+
+  // Retry Failed State
+  const [lastFailedErrors, setLastFailedErrors] = useState<ImprovBatchError[]>([]);
+
+  // Batch Audio Scope & Detailed Diagnostics
+  const [batchScope, setBatchScope] = useState<'package' | 'session' | 'missing' | 'failed'>('package');
+  const [batchSessionNum, setBatchSessionNum] = useState<number>(1);
+  const [batchErrors, setBatchErrors] = useState<ImprovBatchError[]>([]);
+  const [isErrorPanelExpanded, setIsErrorPanelExpanded] = useState<boolean>(true);
+  const [batchCompleted, setBatchCompleted] = useState<boolean>(false);
+  const [cloudSyncSummary, setCloudSyncSummary] = useState<{
+    uploadedItemsEn: number;
+    uploadedItemsVi: number;
+    uploadedHints: number;
+    error?: string;
+  } | null>(null);
+  const [isRetryingErrors, setIsRetryingErrors] = useState<boolean>(false);
 
   // Keep batch voice in sync if prop changes
   useEffect(() => {
@@ -309,10 +335,35 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   // --------------------------------------------------------------------------
-  // D. AI Generator Form State (3-Layer Filter) - Default to Level B ERES
+  // D. AI Generator Form State (3-Layer Filter) - Dynamic Courses & Live Gemini
   // --------------------------------------------------------------------------
-  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv Mastery - Level B ERES Reflexes');
-  const [genDescription, setGenDescription] = useState<string>('Bộ bài tập ngẫu hứng đa tầng rèn luyện phản xạ nhanh kết hợp từ vựng cốt lõi Level B ERES...');
+  const [availableCourses, setAvailableCourses] = useState<Course[]>(() => curriculumRegistry.getAllCourses());
+  const [isLoadingCourses, setIsLoadingCourses] = useState<boolean>(false);
+
+  // Fetch dynamic courses from Firestore on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveCourses() {
+      setIsLoadingCourses(true);
+      try {
+        const liveCourses = await getCourses();
+        if (isMounted && liveCourses && liveCourses.length > 0) {
+          setAvailableCourses(liveCourses);
+        }
+      } catch (err) {
+        console.warn('[ImprovManagerView] Error loading courses from Firestore:', err);
+      } finally {
+        if (isMounted) setIsLoadingCourses(false);
+      }
+    }
+    loadLiveCourses();
+    return () => { isMounted = false; };
+  }, []);
+
+  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv - Level B ERES Speaking (Day 1)');
+  const [genDescription, setGenDescription] = useState<string>(
+    'Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm 4 sessions (50 câu) dựa trên từ vựng cốt lõi Level B ERES Speaking - Day 1.'
+  );
   const [genTotalItems, setGenTotalItems] = useState<number>(50);
   const [genSessionsCount, setGenSessionsCount] = useState<number>(4);
   const [genSessionConfigs, setGenSessionConfigs] = useState<ImprovSessionConfig[]>([
@@ -336,31 +387,133 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [genDifficulty, setGenDifficulty] = useState<'Easy (A1-A2)' | 'Medium (B1)' | 'Hard (B2-C1)'>('Medium (B1)');
   const [genRelevance, setGenRelevance] = useState<'Thấp (Brainstorming ngẫu nhiên)' | 'Vừa (Tương quan ngữ cảnh)' | 'Cao (Gắn kết câu chuyện logic)'>('Cao (Gắn kết câu chuyện logic)');
 
-  // LLM Config
-  const [genProvider, setGenProvider] = useState<ImprovLlmProvider>('DEEPSEEK');
+  // Dynamic Title & Description generator helper
+  const computeDynamicTitleAndDescription = useCallback((
+    courseLevel: string,
+    selectedLessonIds: string[],
+    lessonsList: LessonDoc[],
+    coursesList: Course[],
+    sessionsCount: number,
+    totalItems: number
+  ) => {
+    let courseTitle = 'Level B ERES Speaking';
+    if (courseLevel === 'ALL') {
+      courseTitle = 'Tất Cả Giáo Trình CHUNKS';
+    } else {
+      const matched = coursesList.find(c => c.level_code === courseLevel || c.id === courseLevel);
+      if (matched) {
+        courseTitle = matched.title;
+      } else {
+        courseTitle = courseLevel.replace(/^LEVEL_/, 'Level ').replace(/_/g, ' ');
+      }
+    }
+
+    let lessonsSummary = '';
+    if (selectedLessonIds.length === 0) {
+      lessonsSummary = 'Chưa chọn bài';
+    } else if (selectedLessonIds.length === lessonsList.length && lessonsList.length > 0) {
+      lessonsSummary = `Toàn bộ ${lessonsList.length} bài`;
+    } else {
+      const selectedDocs = lessonsList.filter(l => selectedLessonIds.includes(l.id));
+      selectedDocs.sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+
+      if (selectedDocs.length === 1) {
+        const d = selectedDocs[0];
+        lessonsSummary = d.day_number === 0 ? 'Word List' : `Day ${d.day_number ?? 1}`;
+      } else if (selectedDocs.length > 1) {
+        const dayNums = selectedDocs.map(d => d.day_number ?? 0);
+        const isContiguous = dayNums.every((val, idx) => idx === 0 || val === dayNums[idx - 1] + 1);
+        if (isContiguous) {
+          const first = dayNums[0] === 0 ? 'Word List' : `Day ${dayNums[0]}`;
+          const last = `Day ${dayNums[dayNums.length - 1]}`;
+          lessonsSummary = `${first} - ${last}`;
+        } else {
+          const labels = dayNums.slice(0, 3).map(n => n === 0 ? 'Word List' : `Day ${n}`);
+          lessonsSummary = labels.join(', ') + (dayNums.length > 3 ? ` (+${dayNums.length - 3})` : '');
+        }
+      }
+    }
+
+    const title = `CHUNKS Improv - ${courseTitle} (${lessonsSummary})`;
+    const description = `Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm ${sessionsCount} sessions (${totalItems} câu) dựa trên từ vựng cốt lõi ${courseTitle} - ${lessonsSummary}.`;
+
+    return { title, description };
+  }, []);
+
+  const handleRegenerateDynamicTitle = () => {
+    const { title, description } = computeDynamicTitleAndDescription(
+      genSourceLevel,
+      genSelectedLessonIds,
+      genAvailableLessons,
+      availableCourses,
+      genSessionsCount,
+      genTotalItems
+    );
+    setGenTitle(title);
+    setGenDescription(description);
+  };
+
+  // LLM Config - Initialized from modelRegistryService
+  const initialAiConfig = modelRegistryService.getAiConfig();
+  const [genProvider, setGenProvider] = useState<ImprovLlmProvider>(
+    initialAiConfig.provider === 'CUSTOM_OPENAI' ? 'CUSTOM_OPENAI' : 'GOOGLE_GENAI'
+  );
   const [isLlmAccordionOpen, setIsLlmAccordionOpen] = useState<boolean>(true);
-  const [genEndpoint, setGenEndpoint] = useState<string>(DEEPSEEK_DEFAULT_CONFIG.endpoint);
-  const [genApiKey, setGenApiKey] = useState<string>(DEEPSEEK_DEFAULT_CONFIG.apiKey);
+  const [genEndpoint, setGenEndpoint] = useState<string>(initialAiConfig.endpoint || GOOGLE_GENAI_DEFAULT_CONFIG.endpoint);
+  const [genApiKey, setGenApiKey] = useState<string>(initialAiConfig.apiKey || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey);
   const [genShowApiKey, setGenShowApiKey] = useState<boolean>(false);
-  const [genModel, setGenModel] = useState<string>(DEEPSEEK_DEFAULT_CONFIG.model);
+  const [genModel, setGenModel] = useState<string>(initialAiConfig.model || 'gemini-2.5-flash');
   const [genMasterPrompt, setGenMasterPrompt] = useState<string>(DEFAULT_IMPROV_MASTER_PROMPT);
+
+  // Sync with modelRegistryService so settings configured in SettingsView apply immediately
+  useEffect(() => {
+    const unsub = modelRegistryService.subscribe(() => {
+      const cfg = modelRegistryService.getAiConfig();
+      setGenProvider(cfg.provider === 'CUSTOM_OPENAI' ? 'CUSTOM_OPENAI' : 'GOOGLE_GENAI');
+      if (cfg.apiKey) setGenApiKey(cfg.apiKey);
+      if (cfg.model) setGenModel(cfg.model);
+      if (cfg.endpoint) setGenEndpoint(cfg.endpoint);
+    });
+    return unsub;
+  }, []);
 
   const handleProviderChange = (newProvider: ImprovLlmProvider) => {
     setGenProvider(newProvider);
     setTestResult(null);
-    if (newProvider === 'DEEPSEEK') {
-      setGenEndpoint(DEEPSEEK_DEFAULT_CONFIG.endpoint);
-      setGenApiKey(DEEPSEEK_DEFAULT_CONFIG.apiKey);
-      setGenModel('deepseek-chat');
-    } else if (newProvider === 'GOOGLE_GENAI') {
-      setGenEndpoint(GOOGLE_GENAI_DEFAULT_CONFIG.endpoint);
-      const savedGeminiKey = localStorage.getItem('chunks_gemini_api_key') || '';
-      setGenApiKey(savedGeminiKey);
-      setGenModel('gemini-2.5-flash');
+    if (newProvider === 'GOOGLE_GENAI') {
+      const currentConfig = modelRegistryService.getAiConfig();
+      const ep = GOOGLE_GENAI_DEFAULT_CONFIG.endpoint;
+      const key = currentConfig.apiKey || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey;
+      const mdl = currentConfig.model || 'gemini-2.5-flash';
+      setGenEndpoint(ep);
+      setGenApiKey(key);
+      setGenModel(mdl);
+      modelRegistryService.setAiConfig({ provider: 'GOOGLE_GENAI', endpoint: ep, apiKey: key, model: mdl });
     } else {
-      setGenEndpoint('https://api.openai.com/v1');
-      setGenModel('gpt-4o-mini');
+      const ep = 'https://api.openai.com/v1';
+      const mdl = 'gpt-4o-mini';
+      setGenEndpoint(ep);
+      setGenModel(mdl);
+      modelRegistryService.setAiConfig({ provider: 'CUSTOM_OPENAI', endpoint: ep, model: mdl });
     }
+  };
+
+  const handleAiModelChange = (model: string) => {
+    setGenModel(model);
+    setTestResult(null);
+    modelRegistryService.setAiConfig({ model });
+  };
+
+  const handleAiApiKeyChange = (apiKey: string) => {
+    setGenApiKey(apiKey);
+    setTestResult(null);
+    modelRegistryService.setAiConfig({ apiKey });
+  };
+
+  const handleAiEndpointChange = (endpoint: string) => {
+    setGenEndpoint(endpoint);
+    setTestResult(null);
+    modelRegistryService.setAiConfig({ endpoint });
   };
 
   // Connection test state
@@ -371,21 +524,19 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     setIsTestingConnection(true);
     setTestResult(null);
     try {
-      const res = await testLlmConnection({
+      const res = await modelRegistryService.testAiConnection({
         provider: genProvider,
         endpoint: genEndpoint,
         apiKey: genApiKey,
-        model: genModel,
-        masterPrompt: genMasterPrompt,
-        temperature: 0.7,
-        maxTokens: 50
+        model: genModel
       });
       setTestResult(res);
     } catch (err: any) {
       setTestResult({
         success: false,
         latencyMs: 0,
-        message: err?.message || 'Lỗi kết nối tới mô hình AI'
+        message: err?.message || 'Lỗi kết nối tới mô hình AI',
+        model: genModel
       });
     } finally {
       setIsTestingConnection(false);
@@ -407,6 +558,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     speed: '~45 t/s',
     estimatedTokens: 0
   });
+  const [genError, setGenError] = useState<string | null>(null);
   const abortGenRef = useRef<AbortController | null>(null);
   const timerGenRef = useRef<any>(null);
 
@@ -503,27 +655,109 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
   // Load available lessons for Vocab selector when source level changes
   useEffect(() => {
-    const lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
-    setGenAvailableLessons(lessons);
-    // Default genSelectedLessonIds MUST be single lesson (e.g. Day 1) or empty to prevent initial lag
-    if (lessons.length > 0) {
-      setGenSelectedLessonIds([lessons[0].id]);
-    } else {
-      setGenSelectedLessonIds([]);
+    let isMounted = true;
+    async function fetchLessons() {
+      let lessons: LessonDoc[] = [];
+      try {
+        if (genSourceLevel === 'ALL') {
+          lessons = await getLessonsByLevel('LEVEL_B_ERES');
+        } else {
+          lessons = await getLessonsByLevel(genSourceLevel);
+        }
+      } catch (err) {
+        console.warn('[ImprovManagerView] Error loading lessons:', err);
+        lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
+      }
+
+      if (!isMounted) return;
+
+      if (!lessons || lessons.length === 0) {
+        lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
+      }
+
+      setGenAvailableLessons(lessons);
+
+      // Default genSelectedLessonIds: select Day 1 by default (or first lesson)
+      const initialSelectedIds = lessons.length > 0 ? [lessons[0].id] : [];
+      setGenSelectedLessonIds(initialSelectedIds);
+
+      // Auto update dynamic title and description
+      const { title, description } = computeDynamicTitleAndDescription(
+        genSourceLevel,
+        initialSelectedIds,
+        lessons,
+        availableCourses,
+        genSessionsCount,
+        genTotalItems
+      );
+      setGenTitle(title);
+      setGenDescription(description);
     }
-  }, [genSourceLevel]);
+
+    fetchLessons();
+    return () => { isMounted = false; };
+  }, [genSourceLevel, availableCourses, computeDynamicTitleAndDescription, genSessionsCount, genTotalItems]);
+
+  const handleToggleLessonSelection = (lessonId: string) => {
+    setGenSelectedLessonIds(prev => {
+      const next = prev.includes(lessonId)
+        ? prev.filter(id => id !== lessonId)
+        : [...prev, lessonId];
+
+      const { title, description } = computeDynamicTitleAndDescription(
+        genSourceLevel,
+        next,
+        genAvailableLessons,
+        availableCourses,
+        genSessionsCount,
+        genTotalItems
+      );
+      setGenTitle(title);
+      setGenDescription(description);
+      return next;
+    });
+  };
+
+  const handleSelectAllLessons = () => {
+    const allIds = genAvailableLessons.map(l => l.id);
+    setGenSelectedLessonIds(allIds);
+    const { title, description } = computeDynamicTitleAndDescription(
+      genSourceLevel,
+      allIds,
+      genAvailableLessons,
+      availableCourses,
+      genSessionsCount,
+      genTotalItems
+    );
+    setGenTitle(title);
+    setGenDescription(description);
+  };
+
+  const handleDeselectAllLessons = () => {
+    setGenSelectedLessonIds([]);
+    const { title, description } = computeDynamicTitleAndDescription(
+      genSourceLevel,
+      [],
+      genAvailableLessons,
+      availableCourses,
+      genSessionsCount,
+      genTotalItems
+    );
+    setGenTitle(title);
+    setGenDescription(description);
+  };
 
   // Layer 3: Extract all seed chunks from selected lessons
   const allAvailableSeedChunks: ChunkItem[] = useMemo(() => {
     const chunks: ChunkItem[] = [];
     genSelectedLessonIds.forEach(lId => {
-      const lesson = curriculumRegistry.getLessonById(lId);
+      const lesson = genAvailableLessons.find(l => l.id === lId) || curriculumRegistry.getLessonById(lId);
       if (lesson && lesson.chunks) {
         chunks.push(...lesson.chunks);
       }
     });
     return chunks;
-  }, [genSelectedLessonIds]);
+  }, [genSelectedLessonIds, genAvailableLessons]);
 
   // Available categories in the extracted chunks
   const availableCategories = useMemo(() => {
@@ -590,6 +824,84 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     return packages.find(p => p.id === activePackageId) || packages[0] || null;
   }, [packages, activePackageId]);
 
+  // Helper: check readiness of an ImprovItem (EN, VI, and overall ready)
+  const checkItemReadiness = useCallback((item: ImprovItem): { en: boolean; vi: boolean; ready: boolean } => {
+    const isEn = Boolean(
+      (item.audioUrl && item.audioUrl !== 'cached' && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) ||
+      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
+      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
+      (item.hints && item.hints.length > 0 && item.hints.every(h => {
+        const t = h.text?.trim();
+        const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
+        return !t || Boolean((h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceEn) || (t && (audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn))));
+      }))
+    );
+    const isVi = Boolean(
+      (item.audioUrlVi && item.audioUrlVi !== 'cached' && (item.audioUrlVi.startsWith('http') || item.audioUrlVi.startsWith('data:'))) ||
+      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
+      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
+      (item.hints && item.hints.length > 0 && item.hints.every(h => {
+        const t = (h.translation || '').trim();
+        const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
+        return !t || Boolean((h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceVi) || (t && (audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi))));
+      }))
+    );
+    // Item is ready if both EN and VI are ready (or if in EN_ONLY, isEn, but generally both for dual syllabus)
+    return { en: isEn, vi: isVi, ready: isEn && isVi };
+  }, [currentVoiceEn, currentVoiceVi]);
+
+  // All items within active session / package scope (before search and audioFilter)
+  const sessionScopeItems = useMemo(() => {
+    if (!activePackage) return [];
+    if (activeSessionTab === 'all') {
+      const items: ImprovItem[] = [];
+      activePackage.sessions.forEach(s => items.push(...s.items));
+      return items;
+    }
+    const session = activePackage.sessions.find(s => s.sessionNumber === activeSessionTab);
+    return session ? session.items : [];
+  }, [activePackage, activeSessionTab]);
+
+  // Readiness counts within current session / package scope
+  const audioCounts = useMemo(() => {
+    const allCount = sessionScopeItems.length;
+    let readyCount = 0;
+    let missingCount = 0;
+    for (const item of sessionScopeItems) {
+      if (checkItemReadiness(item).ready) {
+        readyCount++;
+      } else {
+        missingCount++;
+      }
+    }
+    return { allCount, readyCount, missingCount };
+  }, [sessionScopeItems, checkItemReadiness, synthesizingItemIds, batchCompleted]);
+
+  // Missing items formatted for prepareCustomItemsAudio
+  const missingItemsToProcess = useMemo(() => {
+    if (!activePackage) return [];
+    const missing: { item: ImprovItem; sessionNum: number }[] = [];
+    if (activeSessionTab === 'all') {
+      activePackage.sessions.forEach(s => {
+        s.items.forEach(it => {
+          if (!checkItemReadiness(it).ready) {
+            missing.push({ item: it, sessionNum: s.sessionNumber });
+          }
+        });
+      });
+    } else {
+      const session = activePackage.sessions.find(s => s.sessionNumber === activeSessionTab);
+      if (session) {
+        session.items.forEach(it => {
+          if (!checkItemReadiness(it).ready) {
+            missing.push({ item: it, sessionNum: session.sessionNumber });
+          }
+        });
+      }
+    }
+    return missing;
+  }, [activePackage, activeSessionTab, checkItemReadiness, synthesizingItemIds, batchCompleted]);
+
   // Flattened and Filtered Items for Active Package
   const filteredItems = useMemo(() => {
     if (!activePackage) return [];
@@ -613,8 +925,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       );
     }
 
+    if (audioFilter === 'ready') {
+      items = items.filter(it => checkItemReadiness(it).ready);
+    } else if (audioFilter === 'missing') {
+      items = items.filter(it => !checkItemReadiness(it).ready);
+    }
+
     return items;
-  }, [activePackage, activeSessionTab, searchQuery]);
+  }, [activePackage, activeSessionTab, searchQuery, audioFilter, checkItemReadiness, synthesizingItemIds, batchCompleted]);
 
   // Stats Summary
   const stats = useMemo(() => {
@@ -629,30 +947,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       s.items.forEach(it => {
         totalItems++;
         totalHints += it.hints.length;
-        const hasItemGcs = Boolean(it.audioUrl && it.audioUrl.startsWith('http'));
-        const hasAllHintsGcs = Boolean(
-          it.hints && 
-          it.hints.length > 0 && 
-          it.hints.every(h => Boolean(h.audioUrl && h.audioUrl.startsWith('http')))
-        );
-        const isCached = Boolean(
-          (it.audioUrl && (it.audioUrl.startsWith('http') || it.audioUrl === 'cached')) ||
-          (it.audioUrlVi && it.audioUrlVi.startsWith('http')) ||
-          audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
-          audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
-          (it.hints && it.hints.length > 0 && it.hints.every(h => {
-            const t = h.text?.trim();
-            const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
-            return !t || Boolean(
-              (h.audioUrl && h.audioUrl.startsWith('http')) || 
-              audioPlayer.getCachedAudio(hKey, currentVoiceEn) ||
-              audioPlayer.getCachedAudio(t, currentVoiceEn) || 
-              audioPlayer.isChunkCached(t, currentVoiceEn)
-            );
-          }))
-        );
-
-        if (hasItemGcs || hasAllHintsGcs || isCached) {
+        const readiness = checkItemReadiness(it);
+        if (readiness.en || readiness.vi) {
           audioPreparedCount++;
         }
       });
@@ -667,12 +963,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       audioPreparedCount,
       audioPreparedPercent: percent
     };
-  }, [activePackage, synthesizingItemIds, currentVoiceEn, currentVoiceVi]);
+  }, [activePackage, synthesizingItemIds, checkItemReadiness, batchCompleted]);
 
   // --------------------------------------------------------------------------
   // 2. Audio Playback with 1-Second Pause Sequence (EN / VI)
-  // --------------------------------------------------------------------------
-
   const handlePlayItemWithPause = async (item: ImprovItem, lang: 'en' | 'vi' = 'en') => {
     // If already playing this item and same language, stop immediately
     if (playingItemId === item.id && playingLang === lang) {
@@ -1068,6 +1362,19 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     }
   };
 
+  // Select all items that are missing audio in current filtered view (or scope)
+  const handleSelectAllMissing = () => {
+    const missingInFiltered = filteredItems.filter(it => !checkItemReadiness(it).ready);
+    const missingIds = missingInFiltered.map(it => it.id);
+    if (missingIds.length === 0) return;
+    const allMissingSelected = missingIds.every(id => selectedItemIds.includes(id));
+    if (allMissingSelected) {
+      setSelectedItemIds(prev => prev.filter(id => !missingIds.includes(id)));
+    } else {
+      setSelectedItemIds(Array.from(new Set([...selectedItemIds, ...missingIds])));
+    }
+  };
+
   // Bulk synthesize audio
   const handleBulkSynthesize = async (target: 'en' | 'vi' | 'both') => {
     if (selectedItemIds.length === 0 || !activePackage) return;
@@ -1132,86 +1439,197 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     }
   };
 
+  // Reset / Clear Audio URLs from package / session
+  const handleResetPackageAudioUrls = async (targetSessionNum?: number) => {
+    if (!activePackage) return;
+    const isSessionSpecific = typeof targetSessionNum === 'number';
+    const scopeLabel = isSessionSpecific ? `Session ${targetSessionNum}` : `toàn bộ Package "${activePackage.title}"`;
+    const confirmMsg = `Bạn có chắc chắn muốn xóa toàn bộ liên kết audio Cloud Storage của ${scopeLabel} không?\n\nToàn bộ liên kết audioUrl và audioUrlVi của các câu (items) và gợi ý (hints) sẽ được đặt lại về null để bạn tạo lại từ đầu.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsResettingAudio(true);
+    try {
+      const updatedSessions = activePackage.sessions.map(s => {
+        if (isSessionSpecific && s.sessionNumber !== targetSessionNum) {
+          return s;
+        }
+        return {
+          ...s,
+          items: s.items.map(it => ({
+            ...it,
+            audioUrl: null as any,
+            audioUrlVi: null as any,
+            hints: (it.hints || []).map(h => ({
+              ...h,
+              audioUrl: null as any,
+              audioUrlVi: null as any
+            }))
+          }))
+        };
+      });
+
+      const updatedPkg: ImprovPackage = {
+        ...activePackage,
+        sessions: updatedSessions,
+        updatedAt: new Date().toISOString()
+      };
+
+      await saveImprovPackage(updatedPkg);
+      setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
+      setActivePackageId(updatedPkg.id);
+      alert(`Đã xóa sạch link audio cho ${scopeLabel}!`);
+    } catch (err: any) {
+      console.error('Reset improv audio error:', err);
+      alert(`Lỗi khi xóa link audio: ${err?.message || err}`);
+    } finally {
+      setIsResettingAudio(false);
+    }
+  };
+
   // --------------------------------------------------------------------------
-  // 4. Package-Wide Batch Audio Generator (EN, VI, or BOTH)
+  // 4. Batch Audio Generator (Package or Session Scope, EN, VI, or BOTH)
   // --------------------------------------------------------------------------
 
-  const handleStartBatchAudioGeneration = async () => {
+  const handleStartBatchAudioGeneration = async (overrideScope?: 'package' | 'session' | 'missing' | 'failed') => {
     if (!activePackage) return;
+    const currentScope = overrideScope || batchScope;
     setIsBatchRunning(true);
+    setBatchCompleted(false);
+    setCloudSyncSummary(null);
     cancelBatchAudioRef.current = false;
     setBatchLogs([]);
+    setBatchErrors([]);
 
     const addLog = (msg: string) => {
       const time = new Date().toLocaleTimeString('vi-VN');
       setBatchLogs(prev => [`[${time}] ${msg}`, ...prev.slice(0, 100)]);
     };
 
-    addLog(`Khởi động bộ tổng hợp âm thanh (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()}, EN: ${batchVoiceEn}, VI: ${batchVoiceVi})...`);
+    const targetSession = currentScope === 'session'
+      ? activePackage.sessions.find(s => s.sessionNumber === batchSessionNum)
+      : null;
+
+    let scopeLabel = `Toàn bộ Package (${stats.totalItems} câu)`;
+    if (currentScope === 'session' && targetSession) {
+      scopeLabel = `Session ${batchSessionNum} (${targetSession.items.length} câu)`;
+    } else if (currentScope === 'missing') {
+      scopeLabel = `Các câu còn thiếu Audio (${missingItemsToProcess.length} câu)`;
+    } else if (currentScope === 'failed') {
+      const errorsSource = lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors;
+      scopeLabel = `Các câu vừa bị lỗi (${errorsSource.length} câu)`;
+    }
+
+    const effectiveForceOverwrite = currentScope === 'failed' ? true : forceOverwrite;
+
+    addLog(`Khởi động bộ tổng hợp âm thanh cho ${scopeLabel} (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()}, EN: ${batchVoiceEn}, VI: ${batchVoiceVi}, Overwrite: ${effectiveForceOverwrite})...`);
 
     try {
       const langModeToUse = batchTargetLang === 'vi' ? 'VI_ONLY' : batchTargetLang === 'both' ? 'EN_THEN_VI' : 'EN_ONLY';
-      await improvTts.preparePackageAudio(
-        activePackage,
-        {
-          voiceEn: batchVoiceEn,
-          voiceVi: batchVoiceVi,
-          langMode: langModeToUse,
-          concurrency: batchWorkersCount,
-          forceRegenerate: false
-        },
-        (current, total, statusText) => {
-          setBatchProgress({
-            current,
-            total,
-            prepared: current,
-            skipped: 0,
-            failed: 0,
-            statusText
-          });
-          addLog(statusText);
-        }
-      );
-
-      // Mark audio as prepared in the package items or package metadata:
-      const updatedSessions = activePackage.sessions.map(s => ({
-        ...s,
-        items: s.items.map(it => ({
-          ...it,
-          audioUrl: it.audioUrl || 'cached'
-        }))
-      }));
-      const updatedPkg: ImprovPackage = { 
-        ...activePackage, 
-        sessions: updatedSessions, 
-        updatedAt: new Date().toISOString() 
+      const batchOptions = {
+        voiceEn: batchVoiceEn,
+        voiceVi: batchVoiceVi,
+        target: batchTargetLang === 'en' ? ('ENGLISH' as const) : batchTargetLang === 'vi' ? ('VIETNAMESE' as const) : ('BOTH' as const),
+        langMode: langModeToUse,
+        concurrency: batchWorkersCount,
+        forceRegenerate: effectiveForceOverwrite
       };
-      await saveImprovPackage(updatedPkg);
-      setActivePackageId(updatedPkg.id);
-      setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
 
-      addLog('Đã hoàn tất tạo toàn bộ âm thanh cho package!');
-      confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+      const handleProgress = (progress: ImprovBatchProgress) => {
+        setBatchProgress({
+          current: progress.current,
+          total: progress.total,
+          prepared: progress.prepared,
+          skipped: progress.skipped,
+          failed: progress.failed,
+          statusText: progress.statusText
+        });
+        if (progress.errors) {
+          setBatchErrors(progress.errors);
+        }
+        addLog(progress.statusText);
+      };
+
+      let finalErrors: ImprovBatchError[] = [];
+
+      if (currentScope === 'session' && targetSession) {
+        const res = await prepareSessionAudio(targetSession, batchOptions, handleProgress);
+        finalErrors = res.errors;
+        setBatchErrors(res.errors);
+      } else if (currentScope === 'missing') {
+        const res = await prepareCustomItemsAudio(missingItemsToProcess, batchOptions, handleProgress);
+        finalErrors = res.errors;
+        setBatchErrors(res.errors);
+      } else if (currentScope === 'failed') {
+        const errorsSource = lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors;
+        const failedItemIds = new Set(errorsSource.map(e => e.itemId));
+        const failedItems: { item: ImprovItem; sessionNum: number }[] = [];
+        activePackage.sessions.forEach(s => {
+          s.items.forEach(it => {
+            if (failedItemIds.has(it.id)) {
+              failedItems.push({ item: it, sessionNum: s.sessionNumber });
+            }
+          });
+        });
+        const res = await prepareCustomItemsAudio(failedItems, { ...batchOptions, forceRegenerate: true }, handleProgress);
+        finalErrors = res.errors;
+        setBatchErrors(res.errors);
+      } else {
+        const res = await preparePackageAudio(activePackage, batchOptions, handleProgress);
+        finalErrors = res.errors;
+        setBatchErrors(res.errors);
+      }
+
+      if (finalErrors.length > 0) {
+        setLastFailedErrors(finalErrors);
+      } else if (currentScope === 'failed') {
+        setLastFailedErrors([]);
+      }
+
+      addLog(`Hoàn tất xử lý âm thanh cho ${scopeLabel} (${finalErrors.length === 0 ? 'Thành công 100%' : `${finalErrors.length} lỗi`})!`);
+
+      if (finalErrors.length === 0) {
+        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+      }
 
       addLog('Đang đồng bộ audio lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app...');
       try {
-        const syncRes = await syncImprovPackageCachedAudioToCloud(updatedPkg, {
+        const syncRes = await syncImprovPackageCachedAudioToCloud(activePackage, {
           voiceEn: batchVoiceEn,
           voiceVi: batchVoiceVi,
+          targetLang: batchTargetLang,
+          forceOverwrite: forceOverwrite,
           onProgress: (_c, _t, status) => addLog(`[Cloud Sync] ${status}`)
+        });
+        setCloudSyncSummary({
+          uploadedItemsEn: syncRes.uploadedItemsEn,
+          uploadedItemsVi: syncRes.uploadedItemsVi,
+          uploadedHints: syncRes.uploadedHints
         });
         addLog(`Đồng bộ Cloud Storage thành công: ${syncRes.uploadedItemsEn} items EN, ${syncRes.uploadedItemsVi} items VI, ${syncRes.uploadedHints} hints.`);
         // Refresh packages state
         const latestPackages = await getAllImprovPackages();
         setPackages(latestPackages);
       } catch (syncErr: any) {
-        addLog(`Lưu ý: Không thể tự động đồng bộ lên Cloud Storage: ${syncErr?.message || syncErr}`);
+        const errMsg = syncErr?.message || String(syncErr);
+        setCloudSyncSummary({
+          uploadedItemsEn: 0,
+          uploadedItemsVi: 0,
+          uploadedHints: 0,
+          error: errMsg
+        });
+        addLog(`Lưu ý: Không thể tự động đồng bộ lên Cloud Storage: ${errMsg}`);
       }
     } catch (err: any) {
       addLog(`Lỗi batch audio: ${err?.message || 'Không xác định'}`);
     } finally {
       setIsBatchRunning(false);
+      setBatchCompleted(true);
     }
+  };
+
+  const handleRetryFailedAudio = async () => {
+    setBatchScope('failed');
+    await handleStartBatchAudioGeneration('failed');
   };
 
   const handleSyncActivePackageToCloud = async () => {
@@ -1260,6 +1678,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       return;
     }
 
+    setGenError(null);
     setIsGenerating(true);
     setGenLogs([]);
     setTokenStats({ elapsedSec: 0, speed: '~45 t/s', estimatedTokens: 0 });
@@ -1282,173 +1701,56 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     addGenLog('info', `Bắt đầu sinh dữ liệu AI cho "${genTitle}" (${genTotalItems} items, ${genSessionsCount} sessions)...`);
 
     try {
-      // Step 1: Collect seed vocabulary from selected lessons
-      let seedVocabs: { english: string; vietnamese: string }[] = [];
-      genSelectedLessonIds.forEach(lId => {
-        const lesson = curriculumRegistry.getLessonById(lId);
-        if (lesson && lesson.chunks) {
-          lesson.chunks.forEach(c => {
-            if ((c.category === 'vocab' || c.category === 'phrase') && c.english) {
-              seedVocabs.push({ english: c.english, vietnamese: c.vietnamese || '' });
-            }
-          });
-        }
-      });
-
-      if (seedVocabs.length === 0) {
-        addGenLog('warning', 'Không tìm thấy từ vựng trong các bài đã chọn. Đang sử dụng danh mục từ vựng mặc định...');
-        seedVocabs = [
-          { english: 'give it a shot', vietnamese: 'thử một phen' },
-          { english: 'hit the ground running', vietnamese: 'bắt tay vào làm ngay' },
-          { english: 'room for improvement', vietnamese: 'vẫn còn chỗ để cải thiện' },
-          { english: 'keep an eye on', vietnamese: 'để mắt tới' }
-        ];
-      }
-
-      addGenLog('info', `Đã gom được ${seedVocabs.length} từ vựng hạt giống. Đang biên soạn Prompt gửi LLM...`);
-      setGenProgress({ percent: 25, current: 10, total: genTotalItems, message: `Đang gửi yêu cầu tới ${genProvider === 'DEEPSEEK' ? 'DeepSeek Official API' : genProvider === 'GOOGLE_GENAI' ? 'Google Gemini (GenAI)' : 'LLM Engine'}...` });
-
-      // Compile master prompt variables
-      const compiledPrompt = genMasterPrompt
-        .replace(/\{\{difficulty\}\}/g, genDifficulty)
-        .replace(/\{\{relevance\}\}/g, genRelevance)
-        .replace(/\{\{vocabList\}\}/g, seedVocabs.slice(0, 30).map(v => `${v.english} (${v.vietnamese})`).join(', '))
-        .replace(/\{\{itemCount\}\}/g, String(genTotalItems));
-
-      const providerLabel = genProvider === 'DEEPSEEK' 
-        ? 'DeepSeek Official API' 
-        : genProvider === 'GOOGLE_GENAI' 
-          ? 'Google Gemini API' 
-          : 'Custom Endpoint';
-
-      addGenLog('info', `Gửi yêu cầu tới ${providerLabel} (Model: ${genModel})...`);
-
-      let rawJsonContent = '';
-
-      try {
-        rawJsonContent = await executeLlmGeneration(
-          {
+      const createdPkg = await generateImprovPackage(
+        {
+          packageTitle: genTitle,
+          packageDescription: genDescription,
+          difficulty: genDifficulty,
+          relevance: genRelevance,
+          totalItems: genTotalItems,
+          sessionsCount: genSessionsCount,
+          sessionsConfig: genSessionConfigs,
+          sourceLevel: genSourceLevel,
+          sourceLessonIds: genSelectedLessonIds,
+          llmConfig: {
             provider: genProvider,
             endpoint: genEndpoint,
             apiKey: genApiKey,
             model: genModel,
-            masterPrompt: compiledPrompt,
+            masterPrompt: genMasterPrompt,
             temperature: 0.7,
-            maxTokens: 4000
-          },
-          compiledPrompt,
-          `Generate an Improv Package with Title "${genTitle}", Total Items: ${genTotalItems}, Sessions: ${JSON.stringify(genSessionConfigs)}, Seed Vocabularies: ${JSON.stringify(seedVocabs.slice(0, 25))}. Output ONLY JSON.`,
-          abortController.signal
-        );
-        addGenLog('success', 'Nhận phản hồi thành công từ LLM! Đang bóc tách cú pháp JSON...');
-      } catch (fetchErr: any) {
-        if (abortController.signal.aborted) {
-          addGenLog('warning', 'Quá trình sinh dữ liệu đã bị người dùng hủy.');
-          return;
-        }
-        addGenLog('warning', `Không kết nối được LLM (${fetchErr?.message}). Đang kích hoạt bộ sinh dữ liệu ngoại tuyến chuẩn xác...`);
-        
-        // Fallback offline procedural generator for instant resilience
-        rawJsonContent = generateOfflineFallbackPackageJson(
-          genTitle, 
-          genDescription, 
-          genTotalItems, 
-          genSessionConfigs, 
-          seedVocabs
-        );
-      }
+            maxTokens: 16384
+          }
+        },
+        (percent, total, message) => {
+          setGenProgress({
+            percent,
+            current: Math.round((percent / 100) * genTotalItems),
+            total: genTotalItems,
+            message
+          });
+          addGenLog('info', message);
+        },
+        abortController.signal
+      );
 
-      setGenProgress({ percent: 75, current: 35, total: genTotalItems, message: 'Đang chuẩn hóa và lưu trữ Package...' });
-
-      // Clean & parse JSON
-      let cleaned = rawJsonContent.trim();
-      if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
-
-      let parsed: any;
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch (pErr) {
-        const start = cleaned.indexOf('{');
-        const end = cleaned.lastIndexOf('}');
-        if (start !== -1 && end !== -1) {
-          parsed = JSON.parse(cleaned.substring(start, end + 1));
-        } else {
-          throw new Error('Không thể phân tích cú pháp JSON trả về từ AI.');
-        }
-      }
-
-      // Build ImprovPackage
-      const newPackageId = `pkg_improv_${Date.now()}`;
-      const now = new Date().toISOString();
-
-      const newSessions: ImprovSession[] = (parsed.sessions || []).map((s: any, sIdx: number) => {
-        const sessionNumber = s.sessionNumber || (sIdx + 1);
-        const config = genSessionConfigs.find(c => c.sessionNumber === sessionNumber) || genSessionConfigs[sIdx] || { hcTotal: 4, hintTypes: ['Keyword', 'Ending'] };
-        
-        const items: ImprovItem[] = (s.items || []).map((it: any, itIdx: number) => {
-          const itemNumber = it.itemNumber || (itIdx + 1);
-          const hints: ImprovHint[] = (it.hints || []).map((h: any, hIdx: number) => ({
-            id: `h_${sessionNumber}_${itemNumber}_${h.itemIndex || (hIdx + 1)}`,
-            text: String(h.text || '').trim(),
-            translation: String(h.translation || '').trim(),
-            typeFunction: String(h.typeFunction || (config.hintTypes[hIdx] || 'Hint')).trim(),
-            itemIndex: h.itemIndex || (hIdx + 1)
-          }));
-
-          return {
-            id: `item_s${sessionNumber}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-            itemNumber,
-            sessionNumber,
-            hcTotal: hints.length || config.hcTotal,
-            hints
-          };
-        });
-
-        return {
-          sessionNumber,
-          title: s.title || `Session ${sessionNumber}`,
-          hcTotal: config.hcTotal,
-          hintTypes: config.hintTypes,
-          items
-        };
-      });
-
-      const totalItemsCount = newSessions.reduce((sum, s) => sum + s.items.length, 0);
-
-      const createdPkg: ImprovPackage = {
-        id: newPackageId,
-        title: parsed.title || genTitle,
-        description: parsed.description || genDescription,
-        totalItems: totalItemsCount,
-        sessionsCount: newSessions.length,
-        sessions: newSessions,
-        sourceCourseLevel: genSourceLevel,
-        sourceLessonIds: genSelectedLessonIds,
-        createdAt: now,
-        updatedAt: now
-      };
-
-      // Save package
-      await saveImprovPackage(createdPkg);
-
-      setPackages(prev => [createdPkg, ...prev]);
+      setPackages(prev => [createdPkg, ...prev.filter(p => p.id !== createdPkg.id)]);
       setActivePackageId(createdPkg.id);
       setActiveSessionTab('all');
       setViewMode('table');
-
-      setGenProgress({ percent: 100, current: totalItemsCount, total: totalItemsCount, message: 'Hoàn tất sinh Package thành công!' });
-      addGenLog('success', `Đã lưu Package "${createdPkg.title}" với ${totalItemsCount} items!`);
-
+      setGenProgress({ percent: 100, current: createdPkg.totalItems, total: createdPkg.totalItems, message: 'Hoàn tất sinh Package thành công!' });
+      addGenLog('success', `Đã lưu Package "${createdPkg.title}" với ${createdPkg.totalItems} items!`);
+      setGenError(null);
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-
-      setTimeout(() => {
-        setIsGeneratorOpen(false);
-      }, 600);
-
-
+      setTimeout(() => setIsGeneratorOpen(false), 1200);
     } catch (err: any) {
-      addGenLog('error', `Thất bại: ${err?.message || 'Lỗi không xác định trong quá trình sinh AI'}`);
+      if (abortController.signal.aborted) {
+        addGenLog('warning', 'Quá trình sinh dữ liệu đã bị người dùng hủy.');
+        return;
+      }
+      const errMsg = err?.message || 'Lỗi không xác định trong quá trình sinh AI';
+      setGenError(errMsg);
+      addGenLog('error', `Thất bại: ${errMsg}`);
     } finally {
       if (timerGenRef.current) clearInterval(timerGenRef.current);
       setIsGenerating(false);
@@ -1736,6 +2038,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     );
   }
 
+  const targetSessionNumForBtn = activeSessionTab !== 'all' ? activeSessionTab : (batchSessionNum || 1);
+  const targetSessionObjForBtn = activePackage?.sessions.find(s => s.sessionNumber === targetSessionNumForBtn);
+  const sessionCountForBtn = targetSessionObjForBtn?.items.length || 0;
+  const failedCountForBtn = (lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors).length;
+
   return (
     <div className={`flex flex-col h-full bg-[#FAFAFA] text-[#0A0A0A] font-sans antialiased overflow-y-auto ${isDarkMode ? 'dark' : ''}`}>
       {/* ==================================================================== */}
@@ -1878,7 +2185,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </div>
             </div>
             <button
-              onClick={() => setIsBatchAudioModalOpen(true)}
+              onClick={() => {
+                if (activeSessionTab !== 'all') {
+                  setBatchScope('session');
+                  setBatchSessionNum(activeSessionTab);
+                } else {
+                  setBatchScope('package');
+                }
+                setBatchCompleted(false);
+                setBatchErrors([]);
+                setCloudSyncSummary(null);
+                setIsBatchAudioModalOpen(true);
+              }}
               className="px-2 py-1 text-[11px] font-bold text-[#DC2626] bg-red-50 hover:bg-red-100 rounded-md border border-red-200 cursor-pointer transition-all"
             >
               Batch TTS
@@ -1894,8 +2212,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         {/* Session Navigation Tabs & Filter Bar */}
         <div className="bg-white rounded-2xl border border-[#E8E8EC] p-4 shadow-2xs space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Session Dropdown Selector */}
-            <div className="flex items-center gap-2.5">
+            {/* Session Dropdown Selector & Segmented Audio Filter */}
+            <div className="flex items-center gap-2.5 flex-wrap">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl">
                 <Filter className="w-3.5 h-3.5 text-[#DC2626]" />
                 <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Session:</span>
@@ -1916,6 +2234,46 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Segmented Audio Readiness Filter */}
+              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setAudioFilter('all')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    audioFilter === 'all'
+                      ? 'bg-white text-zinc-900 shadow-xs'
+                      : 'text-zinc-600 hover:text-zinc-900'
+                  }`}
+                  title="Hiển thị tất cả câu"
+                >
+                  <span>🔘 Tất Cả ({audioCounts.allCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudioFilter('ready')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    audioFilter === 'ready'
+                      ? 'bg-white text-emerald-700 shadow-xs'
+                      : 'text-zinc-600 hover:text-emerald-700'
+                  }`}
+                  title="Chỉ hiển thị các câu đã có đủ audio EN & VI"
+                >
+                  <span>🟢 Đã Có Audio ({audioCounts.readyCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudioFilter('missing')}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    audioFilter === 'missing'
+                      ? 'bg-white text-red-600 shadow-xs'
+                      : 'text-zinc-600 hover:text-red-600'
+                  }`}
+                  title="Chỉ hiển thị các câu chưa có hoặc thiếu audio"
+                >
+                  <span>🔴 Chưa Có Audio ({audioCounts.missingCount})</span>
+                </button>
               </div>
             </div>
 
@@ -1972,15 +2330,58 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 <span>{isSyncingToCloud ? (cloudSyncProgress || 'Đang sync...') : 'Sync Cloud'}</span>
               </button>
 
+              {/* Quick Session Audio Generator */}
+              {activeSessionTab !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBatchScope('session');
+                    setBatchSessionNum(activeSessionTab);
+                    setBatchCompleted(false);
+                    setBatchErrors([]);
+                    setCloudSyncSummary(null);
+                    setIsBatchAudioModalOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-2xs cursor-pointer transition-all"
+                  title={`Tạo âm thanh hàng loạt cho riêng Session ${activeSessionTab}`}
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Tạo Audio Session {activeSessionTab}</span>
+                </button>
+              )}
+
               {/* Batch TTS */}
               <button
                 type="button"
-                onClick={() => setIsBatchAudioModalOpen(true)}
+                onClick={() => {
+                  if (activeSessionTab !== 'all') {
+                    setBatchScope('session');
+                    setBatchSessionNum(activeSessionTab);
+                  } else {
+                    setBatchScope('package');
+                  }
+                  setBatchCompleted(false);
+                  setBatchErrors([]);
+                  setCloudSyncSummary(null);
+                  setIsBatchAudioModalOpen(true);
+                }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
                 title="Tạo âm thanh hàng loạt cho Session / Package"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-300" />
                 <span>Batch TTS</span>
+              </button>
+
+              {/* Reset Audio URLs */}
+              <button
+                type="button"
+                disabled={isBatchRunning || isResettingAudio || !activePackage}
+                onClick={() => handleResetPackageAudioUrls(activeSessionTab === 'all' ? undefined : activeSessionTab)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold shadow-2xs cursor-pointer transition-all disabled:opacity-50"
+                title="Xóa link audio đã có để tạo lại từ đầu"
+              >
+                {isResettingAudio ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-red-600" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
+                <span>Xóa link audio</span>
               </button>
 
               {/* Add Item Button */}
@@ -2102,6 +2503,33 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         {/* ================================================================== */}
         {/* 3. ITEMS REVIEW & AUDITION (TABLE MODE VS CARDS MODE) */}
         {/* ================================================================== */}
+
+        {/* Missing Audio Filter Banner */}
+        {audioFilter === 'missing' && audioCounts.missingCount > 0 && (
+          <div className="bg-gradient-to-r from-amber-50 to-red-50 border-2 border-amber-300/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5 text-amber-950 font-bold text-xs sm:text-sm">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+              <span>
+                ⚠️ Đang lọc <span className="text-[#DC2626] font-black">{audioCounts.missingCount}</span> câu chưa có âm thanh.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setBatchScope('missing');
+                setBatchCompleted(false);
+                setBatchErrors([]);
+                setCloudSyncSummary(null);
+                setIsBatchAudioModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all active:scale-95 shrink-0"
+            >
+              <Zap className="w-4 h-4 text-amber-300" />
+              <span>⚡ Tạo Audio Cho {audioCounts.missingCount} Câu Này</span>
+            </button>
+          </div>
+        )}
+
         {filteredItems.length === 0 ? (
           <div className="bg-white rounded-2xl border border-[#E8E8EC] p-12 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto">
@@ -2123,7 +2551,36 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           /* ================================================================ */
           /* TABLE VIEW MODE (Condensed, High-Density, Clear Columns) */
           /* ================================================================ */
-          <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xs overflow-hidden">
+          <div className="space-y-2">
+            {/* Quick Actions Bar Above Table (Near Select-All) */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSelectAllMissing}
+                  disabled={audioCounts.missingCount === 0}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-700 transition-all cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Chọn tất cả các câu chưa có audio trong danh sách hiện tại"
+                >
+                  <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                  <span>Chọn tất cả câu thiếu audio</span>
+                </button>
+                {selectedItemIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedItemIds([])}
+                    className="text-xs text-zinc-500 hover:text-zinc-800 underline cursor-pointer"
+                  >
+                    Bỏ chọn ({selectedItemIds.length})
+                  </button>
+                )}
+              </div>
+              <span className="text-xs text-zinc-400 font-mono">
+                {selectedItemIds.length > 0 ? `Đã chọn ${selectedItemIds.length} / ${filteredItems.length} items` : ''}
+              </span>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-zinc-100/80 text-zinc-600 font-mono text-[10px] uppercase border-b border-zinc-200">
@@ -2150,22 +2607,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     const isSynthesizing = synthesizingItemIds[item.id] || false;
                     const isSelected = selectedItemIds.includes(item.id);
                     const isAudioEnReady = Boolean(
-                      (item.audioUrl && (item.audioUrl.startsWith('http') || item.audioUrl === 'cached')) ||
+                      (item.audioUrl && item.audioUrl !== 'cached' && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
                       (item.hints && item.hints.length > 0 && item.hints.every(h => {
                         const t = h.text?.trim();
-                        return !t || Boolean((h.audioUrl && h.audioUrl.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+                        const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
+                        return !t || Boolean((h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceEn) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
                       }))
                     );
                     const isAudioViReady = Boolean(
-                      (item.audioUrlVi && item.audioUrlVi.startsWith('http')) ||
-                      item.audioUrl === 'cached' ||
+                      (item.audioUrlVi && item.audioUrlVi !== 'cached' && (item.audioUrlVi.startsWith('http') || item.audioUrlVi.startsWith('data:'))) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
                       (item.hints && item.hints.length > 0 && item.hints.every(h => {
                         const t = (h.translation || '').trim();
-                        return !t || Boolean((h.audioUrlVi && h.audioUrlVi.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
+                        const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
+                        return !t || Boolean((h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceVi) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
                       }))
                     );
 
@@ -2522,6 +2980,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </table>
             </div>
           </div>
+        </div>
         ) : (
           /* ================================================================ */
           /* CARDS VIEW MODE (Stream Cards Preview) */
@@ -2532,22 +2991,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               const isSynthesizing = synthesizingItemIds[item.id] || false;
               const isSelected = selectedItemIds.includes(item.id);
               const isAudioEnReady = Boolean(
-                (item.audioUrl && (item.audioUrl.startsWith('http') || item.audioUrl === 'cached')) ||
+                (item.audioUrl && item.audioUrl !== 'cached' && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
                 (item.hints && item.hints.length > 0 && item.hints.every(h => {
                   const t = h.text?.trim();
-                  return !t || Boolean((h.audioUrl && h.audioUrl.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+                  const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
+                  return !t || Boolean((h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceEn) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
                 }))
               );
               const isAudioViReady = Boolean(
-                (item.audioUrlVi && item.audioUrlVi.startsWith('http')) ||
-                item.audioUrl === 'cached' ||
+                (item.audioUrlVi && item.audioUrlVi !== 'cached' && (item.audioUrlVi.startsWith('http') || item.audioUrlVi.startsWith('data:'))) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
                 (item.hints && item.hints.length > 0 && item.hints.every(h => {
                   const t = (h.translation || '').trim();
-                  return !t || Boolean((h.audioUrlVi && h.audioUrlVi.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
+                  const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
+                  return !t || Boolean((h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceVi) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
                 }))
               );
 
@@ -2924,14 +3384,25 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               {/* 1. Basic Metadata */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-zinc-700 block mb-1.5 uppercase font-mono tracking-wider text-[10px]">
-                    Tiêu Đề Package
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-bold text-zinc-700 uppercase font-mono tracking-wider text-[10px]">
+                      Tiêu Đề Package
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRegenerateDynamicTitle}
+                      className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-lg transition-all cursor-pointer shadow-2xs"
+                      title="Tự động tạo lại tiêu đề và mô tả dựa trên Khóa học và Bài học đã chọn"
+                    >
+                      <Sparkles className="w-3 h-3 text-purple-600" />
+                      <span>Tạo lại tiêu đề tự động</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={genTitle}
                     onChange={(e) => setGenTitle(e.target.value)}
-                    placeholder="VD: Level B - ERES Spoken Reflexes K24"
+                    placeholder="VD: CHUNKS Improv - Level B ERES Speaking (Day 1)"
                     className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-[#DC2626]/20"
                   />
                 </div>
@@ -2944,7 +3415,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     type="text"
                     value={genDescription}
                     onChange={(e) => setGenDescription(e.target.value)}
-                    placeholder="VD: 4 Sessions rèn luyện phản xạ nhanh kết hợp từ vựng..."
+                    placeholder="VD: Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm 4 sessions (50 câu) dựa trên từ vựng cốt lõi..."
                     className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-[#DC2626]/20"
                   />
                 </div>
@@ -3095,17 +3566,32 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Layer 1: Khóa học */}
                   <div>
-                    <label className="font-bold text-zinc-700 block mb-1 uppercase font-mono tracking-wider text-[10px]">
-                      Layer 1: Khóa Học (Course Level)
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-bold text-zinc-700 uppercase font-mono tracking-wider text-[10px]">
+                        Layer 1: Khóa Học (Course Level)
+                      </label>
+                      {isLoadingCourses && (
+                        <span className="text-[10px] text-zinc-400 font-mono animate-pulse">Đang tải...</span>
+                      )}
+                    </div>
                     <select
                       value={genSourceLevel}
                       onChange={(e) => setGenSourceLevel(e.target.value as any)}
                       className="w-full p-2 bg-white border border-zinc-200 rounded-xl font-medium focus:ring-2 focus:ring-[#DC2626]/20 text-xs"
                     >
-                      <option value="LEVEL_A">Level A - Foundation (Days 1..15)</option>
-                      <option value="LEVEL_B_EREL">Level B - EREL Listening (Days 1..15)</option>
-                      <option value="LEVEL_B_ERES">Level B - ERES Speaking (Days 1..15)</option>
+                      {availableCourses.length > 0 ? (
+                        availableCourses.map(c => (
+                          <option key={c.id || c.level_code} value={c.level_code || c.id}>
+                            {c.title} ({c.level_code})
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="LEVEL_A">Level A - Foundation (Days 1..15)</option>
+                          <option value="LEVEL_B_EREL">Level B - EREL Listening (Days 1..15)</option>
+                          <option value="LEVEL_B_ERES">Level B - ERES Speaking (Days 1..15)</option>
+                        </>
+                      )}
                       <option value="ALL">Tất Cả Giáo Trình (All Levels)</option>
                     </select>
                   </div>
@@ -3150,7 +3636,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setGenSelectedLessonIds(genAvailableLessons.map(l => l.id))}
+                        onClick={handleSelectAllLessons}
                         className="text-[#DC2626] hover:underline cursor-pointer font-bold"
                       >
                         Chọn Tất Cả Bài ({genAvailableLessons.length})
@@ -3158,7 +3644,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       <span>•</span>
                       <button
                         type="button"
-                        onClick={() => setGenSelectedLessonIds([])}
+                        onClick={handleDeselectAllLessons}
                         className="text-zinc-500 hover:underline cursor-pointer"
                       >
                         Bỏ Chọn Hết
@@ -3179,11 +3665,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <button
                           key={lesson.id}
                           type="button"
-                          onClick={() => {
-                            setGenSelectedLessonIds(prev => 
-                              isSelected ? prev.filter(id => id !== lesson.id) : [...prev, lesson.id]
-                            );
-                          }}
+                          onClick={() => handleToggleLessonSelection(lesson.id)}
                           className={`px-2 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border ${
                             isSelected
                               ? 'bg-zinc-900 text-white border-zinc-900 shadow-2xs'
@@ -3327,10 +3809,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   <div className="flex items-center gap-2">
                     <Cpu className="w-4 h-4 text-purple-600" />
                     <span className="font-bold text-zinc-800 text-xs">Cấu Hình AI Provider & Prompt Nâng Cao</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                      {genProvider === 'DEEPSEEK' ? 'DeepSeek Official' : genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Custom'}
-                    </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                      {genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Custom'}
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                       {genModel}
                     </span>
                   </div>
@@ -3344,26 +3826,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       <label className="font-bold text-zinc-700 block mb-1.5 text-xs font-mono">
                         Chọn AI Engine / Provider
                       </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleProviderChange('DEEPSEEK')}
-                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex flex-col gap-1 cursor-pointer ${
-                            genProvider === 'DEEPSEEK'
-                              ? 'bg-blue-50/90 border-blue-500 text-blue-900 shadow-2xs ring-2 ring-blue-500/20'
-                              : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-extrabold flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-blue-500" />
-                              DeepSeek Official
-                            </span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono">Trực Tiếp</span>
-                          </div>
-                          <span className="text-[10px] text-zinc-400 font-normal truncate">api.deepseek.com (Khuyên dùng)</span>
-                        </button>
-
+                      <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
                           onClick={() => handleProviderChange('GOOGLE_GENAI')}
@@ -3378,7 +3841,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                               <span className="w-2 h-2 rounded-full bg-purple-500" />
                               Google Gemini
                             </span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono">Google GenAI</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono">Google GenAI (Khuyên dùng)</span>
                           </div>
                           <span className="text-[10px] text-zinc-400 font-normal truncate">Gemini 2.5 Flash / 2.0 Flash</span>
                         </button>
@@ -3405,31 +3868,17 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
                         <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">
-                          Mô hình ({genProvider === 'DEEPSEEK' ? 'DeepSeek' : genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Model'})
+                          Mô hình ({genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Model'})
                         </label>
-                        {genProvider === 'DEEPSEEK' ? (
+                        {genProvider === 'GOOGLE_GENAI' ? (
                           <select
                             value={genModel}
-                            onChange={(e) => {
-                              setGenModel(e.target.value);
-                              setTestResult(null);
-                            }}
-                            className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800 focus:outline-none focus:border-blue-500"
-                          >
-                            <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 • Khuyên Dùng)</option>
-                            <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 • Suy Luận Sâu)</option>
-                          </select>
-                        ) : genProvider === 'GOOGLE_GENAI' ? (
-                          <select
-                            value={genModel}
-                            onChange={(e) => {
-                              setGenModel(e.target.value);
-                              setTestResult(null);
-                            }}
+                            onChange={(e) => handleAiModelChange(e.target.value)}
                             className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800 focus:outline-none focus:border-purple-500"
                           >
-                            <option value="gemini-2.5-flash">gemini-2.5-flash (Gemini 2.5 Flash • Cực Nhanh & Mới Nhất)</option>
-                            <option value="gemini-2.0-flash">gemini-2.0-flash (Gemini 2.0 Flash • Low Latency)</option>
+                            <option value="gemini-2.5-flash">gemini-2.5-flash (Khuyên dùng - Nhanh, chuẩn xác, tiết kiệm quota)</option>
+                            <option value="gemini-2.5-pro">gemini-2.5-pro (Chất lượng cao - Suy luận kịch bản sâu)</option>
+                            <option value="gemini-2.0-flash">gemini-2.0-flash (Độ trễ thấp - Phản hồi siêu tốc)</option>
                             <option value="gemini-1.5-flash">gemini-1.5-flash (Gemini 1.5 Flash • Hạn Mức Lớn)</option>
                             <option value="gemini-1.5-pro">gemini-1.5-pro (Gemini 1.5 Pro • Chuyên Sâu)</option>
                           </select>
@@ -3437,10 +3886,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                           <input
                             type="text"
                             value={genModel}
-                            onChange={(e) => {
-                              setGenModel(e.target.value);
-                              setTestResult(null);
-                            }}
+                            onChange={(e) => handleAiModelChange(e.target.value)}
                             placeholder="e.g. gpt-4o-mini"
                             className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800"
                           />
@@ -3449,23 +3895,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                       <div>
                         <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">
-                          {genProvider === 'DEEPSEEK' 
-                            ? 'DeepSeek API Key (Đã Cấu Hình)' 
-                            : genProvider === 'GOOGLE_GENAI' 
-                              ? 'Google Gemini API Key (AIzaSy...)' 
-                              : 'API Key'}
+                          {genProvider === 'GOOGLE_GENAI' 
+                            ? 'Google Gemini API Key (AIzaSy... / AQ...)' 
+                            : 'API Key'}
                         </label>
                         <div className="relative">
                           <input
                             type={genShowApiKey ? 'text' : 'password'}
                             value={genApiKey}
-                            onChange={(e) => {
-                              setGenApiKey(e.target.value);
-                              setTestResult(null);
-                              if (genProvider === 'GOOGLE_GENAI') {
-                                localStorage.setItem('chunks_gemini_api_key', e.target.value);
-                              }
-                            }}
+                            onChange={(e) => handleAiApiKeyChange(e.target.value)}
                             placeholder={genProvider === 'GOOGLE_GENAI' ? 'Dán Google AI Studio API Key...' : 'Nhập API Key...'}
                             className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs pr-8"
                           />
@@ -3484,10 +3922,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <input
                           type="text"
                           value={genEndpoint}
-                          onChange={(e) => {
-                            setGenEndpoint(e.target.value);
-                            setTestResult(null);
-                          }}
+                          onChange={(e) => handleAiEndpointChange(e.target.value)}
                           disabled={genProvider !== 'CUSTOM_OPENAI'}
                           className={`w-full p-2 rounded-lg font-mono text-xs border ${
                             genProvider !== 'CUSTOM_OPENAI' ? 'bg-zinc-100 text-zinc-500 border-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
@@ -3563,13 +3998,30 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 )}
               </div>
 
-              {/* Progress & Live Logs (when generating) */}
-              {isGenerating && (
+              {/* Error Banner */}
+              {genError && (
+                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-200 text-xs flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <div className="font-bold text-red-100">Không thể hoàn tất sinh dữ liệu AI:</div>
+                    <div className="font-mono text-[11px] text-red-300 break-words leading-relaxed">{genError}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Progress & Live Logs (when generating or error) */}
+              {(isGenerating || genError || genLogs.some(l => l.type === 'error')) && (
                 <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-3 font-mono">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
-                      <span className="font-bold">{genProgress.message || 'Đang sinh dữ liệu AI...'}</span>
+                      {isGenerating ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#DC2626]" />
+                      ) : genError ? (
+                        <AlertCircle className="w-4 h-4 text-red-400" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      )}
+                      <span className="font-bold">{genError ? 'Đã dừng do lỗi' : (genProgress.message || 'Đang sinh dữ liệu AI...')}</span>
                     </div>
                     <span className="text-zinc-400 font-bold">{genProgress.percent}%</span>
                   </div>
@@ -3970,7 +4422,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       )}
 
       {/* ==================================================================== */}
-      {/* 6. MODAL: PACKAGE BATCH AUDIO GENERATOR */}
+      {/* 6. MODAL: BATCH AUDIO GENERATOR (PACKAGE OR SESSION SCOPE) */}
       {/* ==================================================================== */}
       {isBatchAudioModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
@@ -3982,10 +4434,22 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-base text-zinc-900">
-                    Bộ Tổng Hợp Âm Thanh Toàn Diện Package (Batch Audio TTS)
+                    {batchScope === 'session' 
+                      ? `Tổng Hợp Âm Thanh Cho Session ${batchSessionNum}` 
+                      : batchScope === 'missing'
+                      ? `Tổng Hợp Âm Thanh Cho ${missingItemsToProcess.length} Câu Thiếu Audio`
+                      : batchScope === 'failed'
+                      ? `Thử Lại Âm Thanh Cho ${(lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors).length} Câu Bị Lỗi`
+                      : 'Bộ Tổng Hợp Âm Thanh Toàn Diện Package'}
                   </h3>
                   <p className="text-xs text-zinc-500">
-                    Tùy chọn mô hình giọng đọc và tạo âm thanh chất lượng cao cho toàn bộ {stats.totalItems} items.
+                    {batchScope === 'session'
+                      ? `Tạo âm thanh chuẩn phòng học cho ${activePackage?.sessions.find(s => s.sessionNumber === batchSessionNum)?.items.length || 0} câu của Session ${batchSessionNum}.`
+                      : batchScope === 'missing'
+                      ? `Chỉ tập trung tạo âm thanh cho ${missingItemsToProcess.length} câu còn thiếu Audio EN & VI.`
+                      : batchScope === 'failed'
+                      ? `Chạy lại chế độ ép tạo mới cho ${(lastFailedErrors.length > 0 ? lastFailedErrors : batchErrors).length} câu gặp lỗi vừa qua.`
+                      : `Tùy chọn mô hình giọng đọc và tạo âm thanh chất lượng cao cho toàn bộ ${stats.totalItems} câu.`}
                   </p>
                 </div>
               </div>
@@ -3993,172 +4457,533 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               <button
                 onClick={() => !isBatchRunning && setIsBatchAudioModalOpen(false)}
                 disabled={isBatchRunning}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/50 cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/50 cursor-pointer disabled:opacity-50"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              {/* Target Language Selection: EN, VI, or BOTH */}
-              <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60 space-y-2">
-                <div className="font-bold text-zinc-800 text-xs">Mục Tiêu Ngôn Ngữ Audio (Audio Target)</div>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    disabled={isBatchRunning}
-                    onClick={() => setBatchTargetLang('en')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      batchTargetLang === 'en'
-                        ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
-                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span>Tiếng Anh (EN)</span>
-                  </button>
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              {/* COMPLETION SUMMARY SCREEN */}
+              {batchCompleted && !isBatchRunning ? (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  {/* Status Banner */}
+                  <div className={`p-4 rounded-2xl border flex items-start gap-3.5 ${
+                    batchErrors.length === 0
+                      ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                      : 'bg-amber-50/80 border-amber-200 text-amber-950'
+                  }`}>
+                    <div className={`p-2.5 rounded-xl shrink-0 ${
+                      batchErrors.length === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {batchErrors.length === 0 ? <CheckCircle2 className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm">
+                          {batchErrors.length === 0 ? 'Tổng Hợp Âm Thanh Hoàn Tất 100%' : 'Hoàn Tất Với Một Số Cảnh Báo'}
+                        </span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase ${
+                          batchErrors.length === 0 ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'
+                        }`}>
+                          {batchErrors.length === 0 ? 'Sẵn Sàng' : `${batchErrors.length} Lỗi`}
+                        </span>
+                      </div>
+                      <p className="text-xs mt-1 text-zinc-600 leading-relaxed">
+                        {batchErrors.length === 0
+                          ? `Tất cả âm thanh cho ${batchScope === 'session' ? `Session ${batchSessionNum}` : batchScope === 'missing' ? 'các câu thiếu audio' : batchScope === 'failed' ? 'các câu sửa lỗi' : 'Package'} đã sẵn sàng trong cache và Improv Stage.`
+                          : `Đã hoàn thành phần lớn câu hỏi, nhưng có ${batchErrors.length} mục gặp lỗi. Bạn có thể xem chi tiết hoặc bấm thử lại bên dưới.`}
+                      </p>
+                    </div>
+                  </div>
 
-                  <button
-                    type="button"
-                    disabled={isBatchRunning}
-                    onClick={() => setBatchTargetLang('vi')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      batchTargetLang === 'vi'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span>Tiếng Việt (VI)</span>
-                  </button>
+                  {/* Metrics Breakdown Grid */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 text-center">
+                      <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Đã Tạo Mới</div>
+                      <div className="text-lg font-black text-emerald-600 mt-0.5">{batchProgress.prepared}</div>
+                    </div>
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 text-center">
+                      <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Có Sẵn / Bỏ Qua</div>
+                      <div className="text-lg font-black text-blue-600 mt-0.5">{batchProgress.skipped}</div>
+                    </div>
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 text-center">
+                      <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Thất Bại</div>
+                      <div className={`text-lg font-black mt-0.5 ${batchProgress.failed > 0 ? 'text-red-600' : 'text-zinc-400'}`}>
+                        {batchProgress.failed}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 text-center">
+                      <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Tổng Số Câu</div>
+                      <div className="text-lg font-black text-zinc-800 mt-0.5">{batchProgress.total}</div>
+                    </div>
+                  </div>
 
-                  <button
-                    type="button"
-                    disabled={isBatchRunning}
-                    onClick={() => setBatchTargetLang('both')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      batchTargetLang === 'both'
-                        ? 'bg-[#DC2626] text-white border-[#DC2626] shadow-xs'
-                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span>Cả 2 (EN & VI)</span>
-                  </button>
-                </div>
-              </div>
+                  {/* Cloud Sync Status */}
+                  <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/70 flex items-start gap-3">
+                    <div className="p-2 bg-white rounded-lg border border-zinc-200 text-emerald-600 shrink-0">
+                      <CloudUpload className="w-4 h-4" />
+                    </div>
+                    <div className="text-xs space-y-0.5">
+                      <div className="font-bold text-zinc-800">Đồng Bộ Cloud Storage:</div>
+                      {cloudSyncSummary ? (
+                        cloudSyncSummary.error ? (
+                          <div className="text-red-600 text-[11px]">
+                            Lưu ý: {cloudSyncSummary.error} (Audio vẫn được bảo lưu an toàn trong IndexedDB của trình duyệt).
+                          </div>
+                        ) : (
+                          <div className="text-emerald-700 text-[11px]">
+                            Đã tải lên Cloud: {cloudSyncSummary.uploadedItemsEn} items EN, {cloudSyncSummary.uploadedItemsVi} items VI, {cloudSyncSummary.uploadedHints} hints.
+                          </div>
+                        )
+                      ) : (
+                        <div className="text-zinc-500 text-[11px]">
+                          Audio đã được lưu an toàn trong IndexedDB của trình duyệt.
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-              {/* Custom Voice Model Selection: EN & VI */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
-                {/* English Voice Selector */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-zinc-800">
-                    Giọng Đọc Tiếng Anh (English Voice)
-                  </label>
-                  <select
-                    value={batchVoiceEn}
-                    disabled={isBatchRunning}
-                    onChange={(e) => setBatchVoiceEn(e.target.value)}
-                    className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
-                  >
-                    {enVoiceOptions.map(v => (
-                      <option key={v.id} value={v.id} className="bg-white text-zinc-900">
-                        {v.name} ({v.gender}) {v.provider ? `[${v.provider}]` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  {/* Prominent Retry Failed Action Banner */}
+                  {batchProgress.failed > 0 && (
+                    <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-center gap-2.5 text-red-950 font-bold text-xs sm:text-sm">
+                        <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                        <span>Có <span className="font-black text-red-700">{batchProgress.failed}</span> câu gặp lỗi trong quá trình tổng hợp.</span>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => {
+                          setBatchScope('failed');
+                          handleStartBatchAudioGeneration('failed');
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all active:scale-95 shrink-0"
+                      >
+                        <RefreshCw className="w-4 h-4 text-white" />
+                        <span>🔁 Thử Lại Ngay {batchProgress.failed} Câu Bị Lỗi (Retry Failed)</span>
+                      </button>
+                    </div>
+                  )}
 
-                {/* Vietnamese Voice Selector */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-zinc-800">
-                    Giọng Đọc Tiếng Việt (Vietnamese Voice)
-                  </label>
-                  <select
-                    value={batchVoiceVi}
-                    disabled={isBatchRunning}
-                    onChange={(e) => setBatchVoiceVi(e.target.value)}
-                    className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
-                  >
-                    {viVoiceOptions.map(v => (
-                      <option key={v.id} value={v.id} className="bg-white text-zinc-900">
-                        {v.name} ({v.gender})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                  {/* Error Breakdown Panel (if errors occurred) */}
+                  {batchErrors.length > 0 && (
+                    <div className="p-3.5 bg-red-50/70 rounded-2xl border border-red-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-red-900 flex items-center gap-1.5">
+                          <AlertCircle className="w-4 h-4 text-red-600" />
+                          <span>Chi tiết {batchErrors.length} mục lỗi ({batchErrors[0]?.lang?.toUpperCase() || ''}):</span>
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isRetryingErrors || isBatchRunning}
+                          onClick={handleRetryFailedAudio}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition-all disabled:opacity-50"
+                        >
+                          {isRetryingErrors ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                          <span>Thử lại các mục lỗi</span>
+                        </button>
+                      </div>
 
-              {/* Workers count selector */}
-              <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
-                <div>
-                  <div className="font-bold text-zinc-800 text-xs">Số Luồng Xử Lý Song Song (Workers Pool)</div>
-                  <div className="text-[11px] text-zinc-400">Tối ưu tốc độ tạo âm thanh mà không nghẽn mạng</div>
-                </div>
+                      <div className="max-h-36 overflow-y-auto space-y-1 text-[11px] font-mono text-red-800 bg-white/80 p-2.5 rounded-xl border border-red-100">
+                        {batchErrors.map((err, errIdx) => (
+                          <div key={errIdx} className="flex items-start gap-1.5 leading-snug">
+                            <span className="text-red-500 font-bold shrink-0">•</span>
+                            <span>
+                              <strong>Session {err.sessionNum} - Item #{err.itemNumber}</strong> [{err.lang}]: {err.error}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                <div className="flex items-center gap-1.5 font-mono">
-                  {[2, 4, 6, 8].map(w => (
+                  {/* Launch Improv Stage CTA */}
+                  <div className="pt-2">
                     <button
-                      key={w}
                       type="button"
-                      disabled={isBatchRunning}
-                      onClick={() => setBatchWorkersCount(w)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                        batchWorkersCount === w
-                          ? 'bg-zinc-900 text-white border-zinc-900'
-                          : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-100'
-                      }`}
+                      onClick={() => {
+                        setIsBatchAudioModalOpen(false);
+                        onLaunchPresentation?.(
+                          activePackage.id,
+                          batchScope === 'session' ? batchSessionNum : (activeSessionTab !== 'all' ? activeSessionTab : undefined)
+                        );
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-lg active:scale-98 transition-all cursor-pointer"
                     >
-                      {w} Threads
+                      <Play className="w-4 h-4 fill-white" />
+                      <span>Mở Improv Stage Kiểm Tra Ngay (Launch Stage)</span>
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Progress Bar & Live Status */}
-              {isBatchRunning && (
-                <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-2 font-mono">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-                      <span>{batchProgress.statusText || 'Đang xử lý batch audio...'}</span>
-                    </span>
-                    <span className="text-amber-400 font-bold">
-                      {batchProgress.current} / {batchProgress.total}
-                    </span>
-                  </div>
-
-                  <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-amber-400 h-full transition-all duration-300 rounded-full"
-                      style={{ width: `${(batchProgress.current / (batchProgress.total || 1)) * 100}%` }}
-                    />
-                  </div>
-
-                  {/* Logs Drawer */}
-                  <div className="bg-black/60 rounded-xl p-3 max-h-32 overflow-y-auto space-y-1 text-[10px] text-zinc-300">
-                    {batchLogs.map((log, lIdx) => (
-                      <div key={lIdx}>{log}</div>
-                    ))}
                   </div>
                 </div>
+              ) : (
+                /* CONFIGURATION AND IN-PROGRESS SCREEN */
+                <>
+                  {/* Scope Selection: 4 Scope Options */}
+                  <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-zinc-800 text-xs">Phạm Vi Tạo Audio (Audio Scope)</div>
+                      <span className="text-[11px] font-mono text-zinc-500">
+                        {batchScope === 'session'
+                          ? `Session ${batchSessionNum} (${activePackage?.sessions.find(s => s.sessionNumber === batchSessionNum)?.items.length || 0} câu)`
+                          : batchScope === 'missing'
+                          ? `Thiếu Audio (${missingItemsToProcess.length} câu)`
+                          : batchScope === 'failed'
+                          ? `Lỗi vừa qua (${failedCountForBtn} câu)`
+                          : `Toàn bộ ${stats.totalItems} câu (${stats.totalSessions} sessions)`}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {/* 1. Toàn bộ Package */}
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchScope('package')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchScope === 'package'
+                            ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>🌐 Toàn bộ Package ({stats.totalItems} câu)</span>
+                      </button>
+
+                      {/* 2. Chỉ Session */}
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => {
+                          setBatchScope('session');
+                          setBatchSessionNum(targetSessionNumForBtn);
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchScope === 'session'
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <Filter className="w-3.5 h-3.5" />
+                        <span>📑 Chỉ Session {targetSessionNumForBtn} ({sessionCountForBtn} câu)</span>
+                      </button>
+
+                      {/* 3. Chỉ các câu còn thiếu Audio */}
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchScope('missing')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          failedCountForBtn === 0 ? 'sm:col-span-2' : ''
+                        } ${
+                          batchScope === 'missing'
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                            : 'bg-white text-amber-900 border-amber-200 hover:bg-amber-50'
+                        }`}
+                      >
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                        <span>⚠️ Chỉ các câu còn thiếu Audio ({audioCounts.missingCount} câu)</span>
+                      </button>
+
+                      {/* 4. Chỉ các câu vừa bị lỗi (Retry Failed) */}
+                      {failedCountForBtn > 0 && (
+                        <button
+                          type="button"
+                          disabled={isBatchRunning}
+                          onClick={() => setBatchScope('failed')}
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            batchScope === 'failed'
+                              ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                              : 'bg-white text-red-700 border-red-200 hover:bg-red-50'
+                          }`}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-red-600" />
+                          <span>🔁 Chỉ các câu vừa bị lỗi (Retry Failed: {failedCountForBtn} câu)</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {batchScope === 'session' && (
+                      <div className="pt-2 flex items-center gap-2">
+                        <span className="text-xs text-zinc-600 font-semibold shrink-0">Chọn Session:</span>
+                        <select
+                          value={batchSessionNum}
+                          disabled={isBatchRunning}
+                          onChange={(e) => setBatchSessionNum(Number(e.target.value))}
+                          className="w-full text-xs font-bold p-2 rounded-xl border border-zinc-200 bg-white text-zinc-900 cursor-pointer"
+                        >
+                          {(activePackage?.sessions || []).map(s => (
+                            <option key={s.sessionNumber} value={s.sessionNumber}>
+                              Session {s.sessionNumber} ({s.items.length} câu - {s.hcTotal} hints)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Target Language Selection: EN, VI, or BOTH */}
+                  <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60 space-y-2">
+                    <div className="font-bold text-zinc-800 text-xs">Mục Tiêu Ngôn Ngữ Audio (Audio Target)</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchTargetLang('en')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchTargetLang === 'en'
+                            ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span>Tiếng Anh (EN)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchTargetLang('vi')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchTargetLang === 'vi'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span>Tiếng Việt (VI)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchTargetLang('both')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchTargetLang === 'both'
+                            ? 'bg-[#DC2626] text-white border-[#DC2626] shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span>Cả 2 (EN & VI)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Custom Voice Model Selection: EN & VI */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
+                    {/* English Voice Selector */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-zinc-800">
+                        Giọng Đọc Tiếng Anh (English Voice)
+                      </label>
+                      <select
+                        value={batchVoiceEn}
+                        disabled={isBatchRunning}
+                        onChange={(e) => setBatchVoiceEn(e.target.value)}
+                        className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
+                      >
+                        {enVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id} className="bg-white text-zinc-900">
+                            {v.name} ({v.gender}) {v.provider ? `[${v.provider}]` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Vietnamese Voice Selector */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-zinc-800">
+                        Giọng Đọc Tiếng Việt (Vietnamese Voice)
+                      </label>
+                      <select
+                        value={batchVoiceVi}
+                        disabled={isBatchRunning}
+                        onChange={(e) => setBatchVoiceVi(e.target.value)}
+                        className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
+                      >
+                        {viVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id} className="bg-white text-zinc-900">
+                            {v.name} ({v.gender})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Workers count selector */}
+                  <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
+                    <div>
+                      <div className="font-bold text-zinc-800 text-xs">Số Luồng Xử Lý Song Song (Workers Pool)</div>
+                      <div className="text-[11px] text-zinc-400">Tối ưu tốc độ tạo âm thanh mà không nghẽn mạng</div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 font-mono">
+                      {[2, 4, 6, 8].map(w => (
+                        <button
+                          key={w}
+                          type="button"
+                          disabled={isBatchRunning}
+                          onClick={() => setBatchWorkersCount(w)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                            batchWorkersCount === w
+                              ? 'bg-zinc-900 text-white border-zinc-900'
+                              : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-100'
+                          }`}
+                        >
+                          {w} Threads
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Force Overwrite Toggle */}
+                  <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
+                    <div>
+                      <div className="font-bold text-zinc-800 text-xs">Ghi đè audio đã có (Force Overwrite)</div>
+                      <div className="text-[11px] text-zinc-400">Tạo mới và ghi đè toàn bộ file âm thanh hiện có</div>
+                    </div>
+
+                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={forceOverwrite}
+                        disabled={isBatchRunning}
+                        onChange={(e) => setForceOverwrite(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#DC2626]"></div>
+                    </label>
+                  </div>
+
+                  {/* Progress Bar & Live Status */}
+                  {isBatchRunning && (
+                    <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-3 font-mono">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                          <span>{batchProgress.statusText || 'Đang xử lý batch audio...'}</span>
+                        </span>
+                        <span className="text-amber-400 font-bold">
+                          {batchProgress.current} / {batchProgress.total}
+                        </span>
+                      </div>
+
+                      <div className="w-full bg-zinc-800 h-2.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-amber-400 h-full transition-all duration-300 rounded-full"
+                          style={{ width: `${(batchProgress.current / (batchProgress.total || 1)) * 100}%` }}
+                        />
+                      </div>
+
+                      {/* Metrics Strip */}
+                      <div className="grid grid-cols-3 gap-2 text-center text-[11px] py-1 border-y border-zinc-800">
+                        <div>
+                          <span className="text-zinc-400">Đã tạo: </span>
+                          <span className="text-emerald-400 font-bold">{batchProgress.prepared}</span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-400">Có sẵn: </span>
+                          <span className="text-blue-400 font-bold">{batchProgress.skipped}</span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-400">Lỗi: </span>
+                          <span className={`font-bold ${batchProgress.failed > 0 ? 'text-red-400' : 'text-zinc-400'}`}>
+                            {batchProgress.failed}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Live Error List (if any errors during run) */}
+                      {batchErrors.length > 0 && (
+                        <div className="p-2.5 bg-red-950/60 rounded-xl border border-red-800 text-[10px] space-y-1">
+                          <div className="text-red-300 font-bold flex items-center gap-1">
+                            <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+                            <span>Phát hiện {batchErrors.length} mục lỗi:</span>
+                          </div>
+                          <div className="max-h-20 overflow-y-auto space-y-0.5 text-red-200">
+                            {batchErrors.slice(-4).map((e, idx) => (
+                              <div key={idx}>• [Session {e.sessionNum} - Item #{e.itemNumber}]: {e.error}</div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Logs Drawer */}
+                      <div className="bg-black/60 rounded-xl p-3 max-h-28 overflow-y-auto space-y-1 text-[10px] text-zinc-300">
+                        {batchLogs.map((log, lIdx) => (
+                          <div key={lIdx}>{log}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-[#E8E8EC] bg-zinc-50/80 flex items-center justify-between">
-              <button
-                onClick={() => setIsBatchAudioModalOpen(false)}
-                disabled={isBatchRunning}
-                className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer"
-              >
-                Đóng
-              </button>
+            <div className="px-6 py-4 border-t border-[#E8E8EC] bg-zinc-50/80 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsBatchAudioModalOpen(false)}
+                  disabled={isBatchRunning}
+                  className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Đóng
+                </button>
 
-              <button
-                onClick={handleStartBatchAudioGeneration}
-                disabled={isBatchRunning}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-              >
-                <Zap className="w-4 h-4 text-amber-300" />
-                <span>Bắt Đầu Tạo Audio ({batchWorkersCount} Workers)</span>
-              </button>
+                {!batchCompleted && (
+                  <button
+                    type="button"
+                    disabled={isBatchRunning || isResettingAudio}
+                    onClick={() => handleResetPackageAudioUrls(batchScope === 'session' ? batchSessionNum : undefined)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-700 transition-all cursor-pointer disabled:opacity-50"
+                    title="Xóa toàn bộ liên kết audio cũ để tạo lại từ đầu"
+                  >
+                    {isResettingAudio ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
+                    <span>Xóa link audio đã có</span>
+                  </button>
+                )}
+              </div>
+
+              {batchCompleted && !isBatchRunning ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBatchCompleted(false)}
+                    className="px-4 py-2.5 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-800 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                  >
+                    Cấu Hình & Chạy Lại
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsBatchAudioModalOpen(false);
+                      onLaunchPresentation?.(
+                        activePackage.id,
+                        batchScope === 'session' ? batchSessionNum : (activeSessionTab !== 'all' ? activeSessionTab : undefined)
+                      );
+                    }}
+                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Play className="w-4 h-4 fill-white" />
+                    <span>Mở Stage Ngay</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleStartBatchAudioGeneration()}
+                  disabled={isBatchRunning || (batchScope === 'missing' && missingItemsToProcess.length === 0) || (batchScope === 'failed' && failedCountForBtn === 0)}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Zap className="w-4 h-4 text-amber-300" />
+                  <span>
+                    {batchScope === 'session'
+                      ? `Tạo Audio Session ${batchSessionNum} (${activePackage?.sessions.find(s => s.sessionNumber === batchSessionNum)?.items.length || 0} câu)`
+                      : batchScope === 'missing'
+                      ? `Tạo Audio Cho ${missingItemsToProcess.length} Câu Thiếu`
+                      : batchScope === 'failed'
+                      ? `Thử Lại ${failedCountForBtn} Câu Lỗi`
+                      : `Tạo Toàn Bộ Package (${stats.totalItems} câu)`}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>

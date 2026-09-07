@@ -1,9 +1,13 @@
-export type TtsProviderType = 
+import { db } from './firestoreService';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
+export type ActiveTtsProviderType = 
   | 'GOOGLE_TTS' 
   | 'GEMINI_AI_STUDIO' 
   | 'DEEPGRAM' 
-  | 'OPENAI_TTS' 
   | 'CUSTOM_TTS';
+
+export type TtsProviderType = ActiveTtsProviderType | 'OPENAI_TTS';
 
 export type KeyStatus = 'READY' | 'RATE_LIMITED' | 'ERROR';
 
@@ -46,7 +50,39 @@ export interface SingleKeyTestResult {
   isBlocked?: boolean;
 }
 
-export const PROVIDERS_META: Record<TtsProviderType, ProviderMeta> = {
+export interface AiGenerationConfig {
+  provider: 'GOOGLE_GENAI' | 'CUSTOM_OPENAI';
+  model: string; // default: 'gemini-2.5-flash'
+  apiKey: string;
+  endpoint?: string;
+  temperature?: number;
+  maxTokens?: number;
+  webClientId?: string; // default or user-provided '918426218910-3o6ed7m94u6clst7ae0d19s2rrasrekf.apps.googleusercontent.com'
+}
+
+const DEFAULT_GEMINI_API_KEY_B64 = 'QVEuQWI4Uk42SmU3d2NZQTZLLWs0YmlnOUprZDRrd3RfOUJlbE1WT3VzU2J5a3ZFWnRkYVE=';
+export const getSafeGeminiKey = (): string => {
+  if (typeof atob !== 'undefined') {
+    try {
+      return atob(DEFAULT_GEMINI_API_KEY_B64);
+    } catch {
+      return '';
+    }
+  }
+  return '';
+};
+
+export const DEFAULT_AI_GENERATION_CONFIG: AiGenerationConfig = {
+  provider: 'GOOGLE_GENAI',
+  model: 'gemini-2.5-flash',
+  apiKey: getSafeGeminiKey(),
+  endpoint: 'https://generativelanguage.googleapis.com',
+  temperature: 0.7,
+  maxTokens: 8192,
+  webClientId: '918426218910-3o6ed7m94u6clst7ae0d19s2rrasrekf.apps.googleusercontent.com'
+};
+
+export const PROVIDERS_META: Record<ActiveTtsProviderType, ProviderMeta> & Record<string, ProviderMeta | undefined> = {
   GOOGLE_TTS: {
     id: 'GOOGLE_TTS',
     name: 'Google Cloud Text-to-Speech',
@@ -70,14 +106,6 @@ export const PROVIDERS_META: Record<TtsProviderType, ProviderMeta> = {
     description: 'Giọng hội thoại tiếng Anh siêu tốc độ thấp và tự nhiên nhất thế giới (Flux Cliff, Asteria, Luna, Orion...).',
     color: '#10B981',
     docUrl: 'https://deepgram.com'
-  },
-  OPENAI_TTS: {
-    id: 'OPENAI_TTS',
-    name: 'OpenAI TTS (tts-1 / tts-1-hd)',
-    shortName: 'OpenAI Audio',
-    description: 'Hệ thống giọng đọc AI của OpenAI qua endpoint /v1/audio/speech (Alloy, Echo, Nova, Shimmer...).',
-    color: '#10A37F',
-    docUrl: 'https://platform.openai.com/docs/guides/text-to-speech'
   },
   CUSTOM_TTS: {
     id: 'CUSTOM_TTS',
@@ -238,12 +266,12 @@ export const DEFAULT_REGISTERED_MODELS: RegisteredModel[] = [
     focusEnabled: true
   },
   {
-    id: 'en-US-Journey-M',
+    id: 'en-US-Journey-D',
     name: 'Google Journey Male (Nam Mỹ Siêu Thực)',
     language: 'en',
     gender: 'MALE',
     provider: 'GOOGLE_TTS',
-    description: 'Giọng nam Mỹ biểu cảm cao cấp của Google.',
+    description: 'Giọng nam Mỹ biểu cảm cao cấp của Google (Journey-D).',
     improvEnabled: true,
     focusEnabled: true
   },
@@ -294,16 +322,6 @@ export const DEFAULT_REGISTERED_MODELS: RegisteredModel[] = [
     gender: 'MALE',
     provider: 'GOOGLE_TTS',
     description: 'Giọng nam thư giãn, hội thoại đời sống.',
-    improvEnabled: true,
-    focusEnabled: false
-  },
-  {
-    id: 'en-US-Journey-D',
-    name: 'Google Journey-D (Nam Mỹ Biểu Cảm)',
-    language: 'en',
-    gender: 'MALE',
-    provider: 'GOOGLE_TTS',
-    description: 'Giọng nam ngữ điệu linh hoạt.',
     improvEnabled: true,
     focusEnabled: false
   },
@@ -732,68 +750,59 @@ export const DEFAULT_REGISTERED_MODELS: RegisteredModel[] = [
     focusEnabled: false
   },
 
-  // ================= OPENAI VOICES =================
-  {
-    id: 'openai-alloy',
-    name: 'OpenAI Alloy (Trung Tính - Đa Năng)',
-    language: 'en',
-    gender: 'NEUTRAL',
-    provider: 'OPENAI_TTS',
-    description: 'Giọng đọc cân bằng, linh hoạt cho nhiều ngữ cảnh giao tiếp.',
-    improvEnabled: true,
-    focusEnabled: true
-  },
-  {
-    id: 'openai-echo',
-    name: 'OpenAI Echo (Nam Mỹ - Trầm Ấm)',
-    language: 'en',
-    gender: 'MALE',
-    provider: 'OPENAI_TTS',
-    description: 'Giọng nam tròn vành rõ chữ, tự nhiên.',
-    improvEnabled: true,
-    focusEnabled: true
-  },
-  {
-    id: 'openai-fable',
-    name: 'OpenAI Fable (Nam Anh - Biểu Cảm Kể Chuyện)',
-    language: 'en',
-    gender: 'MALE',
-    provider: 'OPENAI_TTS',
-    description: 'Giọng nam ngữ điệu phong phú, thích hợp cho kịch bản ngữ cảnh.',
-    improvEnabled: true,
-    focusEnabled: false
-  },
-  {
-    id: 'openai-onyx',
-    name: 'OpenAI Onyx (Nam Mỹ - Trầm Vang Uy Lực)',
-    language: 'en',
-    gender: 'MALE',
-    provider: 'OPENAI_TTS',
-    description: 'Giọng nam trầm, chắc khỏe cho thuyết trình.',
-    improvEnabled: true,
-    focusEnabled: true
-  },
-  {
-    id: 'openai-nova',
-    name: 'OpenAI Nova (Nữ Mỹ - Trẻ Trung & Sinh Động)',
-    language: 'en',
-    gender: 'FEMALE',
-    provider: 'OPENAI_TTS',
-    description: 'Giọng nữ tràn đầy năng lượng, thân thiện và tươi sáng.',
-    improvEnabled: true,
-    focusEnabled: true
-  },
-  {
-    id: 'openai-shimmer',
-    name: 'OpenAI Shimmer (Nữ Mỹ - Êm Dịu & Rõ Âm)',
-    language: 'en',
-    gender: 'FEMALE',
-    provider: 'OPENAI_TTS',
-    description: 'Giọng nữ êm dịu, rõ ràng từng âm tiết.',
-    improvEnabled: true,
-    focusEnabled: true
-  }
 ];
+
+/**
+ * Model Name Formatting Helper:
+ * Returns a clean, concise name (e.g. "Flux Cliff", "Journey Female", "Neural2-A", "Chirp3 Achernar",
+ * etc. instead of verbose parenthesized descriptions).
+ */
+export function getMinimalName(model: RegisteredModel): string {
+  if (!model) return '';
+  const id = model.id || '';
+
+  // 1. Google Journey voices
+  if (id === 'en-US-Journey-F') return 'Journey Female';
+  if (id === 'en-US-Journey-D' || id === 'en-US-Journey-M') return 'Journey Male';
+
+  // 2. Deepgram Flux voices: flux-cliff-en -> "Flux Cliff"
+  if (id.startsWith('flux-')) {
+    const core = id.replace(/^flux-/, '').replace(/-en$/, '');
+    return `Flux ${core.charAt(0).toUpperCase() + core.slice(1)}`;
+  }
+
+  // 3. Deepgram Aura voices: aura-asteria-en -> "Aura Asteria"
+  if (id.startsWith('aura-')) {
+    const core = id.replace(/^aura-/, '').replace(/-en$/, '');
+    return `Aura ${core.charAt(0).toUpperCase() + core.slice(1)}`;
+  }
+
+  // 4. Google Chirp3-HD: vi-VN-Chirp3-HD-Achernar -> "Chirp3 Achernar"
+  if (id.includes('Chirp3-HD-')) {
+    const voicePart = id.split('Chirp3-HD-')[1] || '';
+    return `Chirp3 ${voicePart}`;
+  }
+
+  // 5. Google Standard / Neural2 / WaveNet / Studio / Casual
+  const langStripped = id.replace(/^(en-US-|vi-VN-)/, '');
+  if (/^(Neural2|Studio|Casual|WaveNet|Standard)-[A-Z0-9]/i.test(langStripped)) {
+    return langStripped
+      .replace(/^wavenet/i, 'WaveNet')
+      .replace(/^standard/i, 'Standard')
+      .replace(/^neural2/i, 'Neural2')
+      .replace(/^casual/i, 'Casual')
+      .replace(/^studio/i, 'Studio');
+  }
+
+  // 6. Generic cleanup from model.name: strip parentheses & provider prefix
+  if (model.name) {
+    let clean = model.name.replace(/\s*\([^)]*\)/g, '').trim();
+    clean = clean.replace(/^(Google|Deepgram|OpenAI)\s+/i, '').trim();
+    if (clean) return clean;
+  }
+
+  return id;
+}
 
 class ModelRegistryService {
   private keys: ProviderApiKey[] = [];
@@ -802,9 +811,18 @@ class ModelRegistryService {
   private mainModelVi: string = 'vi-VN-Neural2-A';
   private listeners: Set<() => void> = new Set();
   private customEndpoint: string = '';
+  private aiConfig: AiGenerationConfig = { ...DEFAULT_AI_GENERATION_CONFIG };
+  private lastSyncedAt: number | null = null;
+  private isSyncingToFirestore: boolean = false;
+  private syncDebounceTimer: any = null;
 
   constructor() {
     this.initFromStorage();
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        this.loadFromFirestore().catch(err => console.warn('[ModelRegistry] Background Firestore load error:', err));
+      }, 0);
+    }
   }
 
   private initFromStorage(): void {
@@ -854,6 +872,20 @@ class ModelRegistryService {
       const savedEndpoint = localStorage.getItem('chunks_custom_tts_endpoint');
       if (savedEndpoint) this.customEndpoint = savedEndpoint;
 
+      // 5. AI Generation Config
+      const rawAiConfig = localStorage.getItem('chunks_ai_generation_config');
+      if (rawAiConfig) {
+        try {
+          const parsed = JSON.parse(rawAiConfig);
+          this.aiConfig = { ...DEFAULT_AI_GENERATION_CONFIG, ...parsed };
+        } catch {
+          this.aiConfig = { ...DEFAULT_AI_GENERATION_CONFIG };
+        }
+      } else {
+        this.aiConfig = { ...DEFAULT_AI_GENERATION_CONFIG };
+      }
+      this.aiConfig.apiKey = this.aiConfig.apiKey || getSafeGeminiKey();
+
       this.saveKeys();
       this.saveModels();
     } catch (e) {
@@ -890,9 +922,7 @@ class ModelRegistryService {
         });
       }
 
-      const envGemini = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || (
-        typeof atob !== 'undefined' ? atob('QVEuQWI4Uk42SmU3d2NZQTZLLWs0YmlnOUprZDRrd3RfOUJlbE1WT3VzU2J5a3ZFWnRkYVE=') : ''
-      );
+      const envGemini = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || getSafeGeminiKey();
       if (envGemini && envGemini !== geminiKey1) {
         keys.push({
           id: 'key_gemini_2',
@@ -918,18 +948,6 @@ class ModelRegistryService {
       label: 'Deepgram Aura/Flux Production Key',
       status: 'READY'
     });
-
-    // Seed OpenAI Key if present
-    const envOpenAi = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_OPENAI_API_KEY : '';
-    if (envOpenAi && envOpenAi.trim()) {
-      keys.push({
-        id: 'key_openai_default',
-        provider: 'OPENAI_TTS',
-        key: envOpenAi.trim(),
-        label: 'OpenAI TTS Key (Env)',
-        status: 'READY'
-      });
-    }
 
     // Migrate any legacy custom keys
     if (typeof localStorage !== 'undefined') {
@@ -959,7 +977,7 @@ class ModelRegistryService {
     this.keys = keys;
   }
 
-  private saveKeys(): void {
+  private saveKeysLocally(): void {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('chunks_provider_keys_v2', JSON.stringify(this.keys));
@@ -968,13 +986,187 @@ class ModelRegistryService {
     this.notify();
   }
 
-  private saveModels(): void {
+  private saveModelsLocally(): void {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('chunks_registered_models_v2', JSON.stringify(this.models));
       } catch {}
     }
     this.notify();
+  }
+
+  private saveKeys(): void {
+    this.saveKeysLocally();
+    this.scheduleFirestoreSync();
+  }
+
+  private saveModels(): void {
+    this.saveModelsLocally();
+    this.scheduleFirestoreSync();
+  }
+
+  private scheduleFirestoreSync(delayMs: number = 1000): void {
+    if (this.syncDebounceTimer) {
+      clearTimeout(this.syncDebounceTimer);
+    }
+    this.syncDebounceTimer = setTimeout(() => {
+      this.syncToFirestore().catch(e => console.warn('[ModelRegistry] Debounced sync failed:', e));
+    }, delayMs);
+  }
+
+  /**
+   * Sync model registry settings to Firestore collection `system_settings`, doc `model_registry`
+   */
+  public async syncToFirestore(): Promise<boolean> {
+    if (!db) {
+      console.warn('[ModelRegistry] Firestore db is not initialized');
+      return false;
+    }
+    try {
+      this.isSyncingToFirestore = true;
+      const docRef = doc(db, 'system_settings', 'model_registry');
+
+      const customModels = this.models.filter(m => m.isCustom);
+      const visibilityOverrides: Record<string, { improvEnabled?: boolean; focusEnabled?: boolean }> = {};
+      this.models.forEach(m => {
+        visibilityOverrides[m.id] = {
+          improvEnabled: m.improvEnabled,
+          focusEnabled: m.focusEnabled
+        };
+      });
+
+      const payload = {
+        keys: this.keys,
+        customModels,
+        mainModelEn: this.mainModelEn,
+        mainModelVi: this.mainModelVi,
+        customEndpoint: this.customEndpoint,
+        visibilityOverrides,
+        aiConfig: this.aiConfig,
+        updatedAt: Date.now()
+      };
+
+      await setDoc(docRef, payload, { merge: true });
+      this.lastSyncedAt = payload.updatedAt;
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('chunks_model_registry_last_synced', String(this.lastSyncedAt));
+        } catch {}
+      }
+      this.notify();
+      return true;
+    } catch (err) {
+      console.warn('[ModelRegistry] syncToFirestore error:', err);
+      return false;
+    } finally {
+      this.isSyncingToFirestore = false;
+    }
+  }
+
+  /**
+   * Load saved model registry configuration from Firestore collection `system_settings`, doc `model_registry`
+   * Updates in-memory store and updates localStorage fallback.
+   */
+  public async loadFromFirestore(): Promise<boolean> {
+    if (!db) return false;
+    try {
+      const docRef = doc(db, 'system_settings', 'model_registry');
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        return false;
+      }
+
+      const data = snap.data();
+      if (!data) return false;
+
+      // 1. Keys
+      if (Array.isArray(data.keys) && data.keys.length > 0) {
+        this.keys = data.keys;
+      }
+
+      // 2. Main Models
+      if (typeof data.mainModelEn === 'string' && data.mainModelEn) {
+        this.mainModelEn = data.mainModelEn;
+      }
+      if (typeof data.mainModelVi === 'string' && data.mainModelVi) {
+        this.mainModelVi = data.mainModelVi;
+      }
+
+      // 3. Custom Endpoint
+      if (typeof data.customEndpoint === 'string') {
+        this.customEndpoint = data.customEndpoint;
+      }
+
+      // 4. Custom Models & Visibility Overrides
+      const remoteCustomModels: RegisteredModel[] = Array.isArray(data.customModels) ? data.customModels : [];
+      const overrides: Record<string, { improvEnabled?: boolean; focusEnabled?: boolean }> = data.visibilityOverrides || {};
+
+      const defaultIds = new Set(DEFAULT_REGISTERED_MODELS.map(d => d.id));
+      const mergedList: RegisteredModel[] = DEFAULT_REGISTERED_MODELS.map(def => {
+        const override = overrides[def.id];
+        return {
+          ...def,
+          improvEnabled: override?.improvEnabled !== undefined ? override.improvEnabled : def.improvEnabled,
+          focusEnabled: override?.focusEnabled !== undefined ? override.focusEnabled : def.focusEnabled
+        };
+      });
+
+      remoteCustomModels.forEach(cm => {
+        if (!defaultIds.has(cm.id)) {
+          const override = overrides[cm.id];
+          mergedList.push({
+            ...cm,
+            isCustom: true,
+            improvEnabled: override?.improvEnabled !== undefined ? override.improvEnabled : (cm.improvEnabled ?? true),
+            focusEnabled: override?.focusEnabled !== undefined ? override.focusEnabled : (cm.focusEnabled ?? false)
+          });
+        }
+      });
+
+      // 5. AI Generation Config
+      if (data.aiConfig && typeof data.aiConfig === 'object') {
+        this.aiConfig = { ...DEFAULT_AI_GENERATION_CONFIG, ...data.aiConfig };
+        this.aiConfig.apiKey = this.aiConfig.apiKey || getSafeGeminiKey();
+      }
+
+      this.models = mergedList;
+      this.lastSyncedAt = data.updatedAt || Date.now();
+
+      // Persist to local storage fallback
+      this.saveKeysLocally();
+      this.saveModelsLocally();
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('chunks_main_model_en', this.mainModelEn);
+          localStorage.setItem('chunks_main_model_vi', this.mainModelVi);
+          localStorage.setItem('chunks_custom_tts_endpoint', this.customEndpoint);
+          localStorage.setItem('chunks_ai_generation_config', JSON.stringify(this.aiConfig));
+          localStorage.setItem('chunks_model_registry_last_synced', String(this.lastSyncedAt));
+        } catch {}
+      }
+
+      this.notify();
+      return true;
+    } catch (err) {
+      console.warn('[ModelRegistry] loadFromFirestore error:', err);
+      return false;
+    }
+  }
+
+  public getLastSyncedAt(): number | null {
+    if (this.lastSyncedAt) return this.lastSyncedAt;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('chunks_model_registry_last_synced');
+      if (saved) {
+        this.lastSyncedAt = Number(saved);
+        return this.lastSyncedAt;
+      }
+    }
+    return null;
+  }
+
+  public isSyncing(): boolean {
+    return this.isSyncingToFirestore;
   }
 
   public subscribe(listener: () => void): () => void {
@@ -1479,6 +1671,7 @@ class ModelRegistryService {
       } catch {}
     }
     this.notify();
+    this.scheduleFirestoreSync();
   }
 
   public setMainModelVi(modelId: string): void {
@@ -1489,6 +1682,7 @@ class ModelRegistryService {
       } catch {}
     }
     this.notify();
+    this.scheduleFirestoreSync();
   }
 
   public getCustomEndpoint(): string {
@@ -1503,6 +1697,7 @@ class ModelRegistryService {
       } catch {}
     }
     this.notify();
+    this.scheduleFirestoreSync();
   }
 
   // =========================================================================
@@ -1532,6 +1727,129 @@ class ModelRegistryService {
       options?.speed || 1.0,
       true
     );
+  }
+
+  // =========================================================================
+  // AI GENERATION CONFIG (GEMINI & LLM)
+  // =========================================================================
+
+  public getAiConfig(): AiGenerationConfig {
+    return { ...this.aiConfig };
+  }
+
+  public setAiConfig(updates: Partial<AiGenerationConfig>): void {
+    this.aiConfig = {
+      ...this.aiConfig,
+      ...updates
+    };
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('chunks_ai_generation_config', JSON.stringify(this.aiConfig));
+      } catch {}
+    }
+    this.notify();
+    this.scheduleFirestoreSync();
+  }
+
+  public async testAiConnection(
+    config?: Partial<AiGenerationConfig>
+  ): Promise<{ success: boolean; latencyMs: number; message: string; model: string }> {
+    const activeConfig: AiGenerationConfig = {
+      ...this.aiConfig,
+      ...config
+    };
+
+    const model = activeConfig.model || 'gemini-2.5-flash';
+    const apiKey = activeConfig.apiKey?.trim();
+
+    if (!apiKey) {
+      return {
+        success: false,
+        latencyMs: 0,
+        message: 'Chưa cung cấp API Key. Vui lòng nhập API Key từ Google AI Studio.',
+        model
+      };
+    }
+
+    const startTime = performance.now();
+
+    try {
+      if (activeConfig.provider === 'CUSTOM_OPENAI') {
+        const rawEndpoint = activeConfig.endpoint || 'https://api.openai.com/v1';
+        const endpoint = rawEndpoint.replace(/\/+$/, '') + (rawEndpoint.endsWith('/chat/completions') ? '' : '/chat/completions');
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: 'Say hi in 3 words' }],
+            max_tokens: 20
+          })
+        });
+        const latencyMs = Math.round(performance.now() - startTime);
+        if (resp.ok) {
+          return {
+            success: true,
+            latencyMs,
+            message: `Kết nối Custom AI (${model}) thành công (200 OK)! Phản hồi: ${latencyMs}ms`,
+            model
+          };
+        } else {
+          const errText = await resp.text();
+          return {
+            success: false,
+            latencyMs,
+            message: `Lỗi kết nối Custom AI (${resp.status}): ${errText.slice(0, 100)}`,
+            model
+          };
+        }
+      }
+
+      // Default: GOOGLE_GENAI
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: 'Say hi in 3 words' }] }],
+          generationConfig: { maxOutputTokens: 50 }
+        })
+      });
+
+      const latencyMs = Math.round(performance.now() - startTime);
+
+      if (resp.ok) {
+        return {
+          success: true,
+          latencyMs,
+          message: `Kết nối Google Gemini (${model}) thành công (200 OK)! Phản hồi: ${latencyMs}ms`,
+          model
+        };
+      } else {
+        const errText = await resp.text();
+        return {
+          success: false,
+          latencyMs,
+          message: `Lỗi kết nối Google Gemini (${resp.status}): ${errText.slice(0, 100)}`,
+          model
+        };
+      }
+    } catch (e: any) {
+      const latencyMs = Math.round(performance.now() - startTime);
+      return {
+        success: false,
+        latencyMs,
+        message: `Lỗi kết nối mạng: ${e?.message || 'Không thể kết nối tới máy chủ AI'}`,
+        model
+      };
+    }
+  }
+
+  public getMinimalName(model: RegisteredModel): string {
+    return getMinimalName(model);
   }
 
   public maskKey(key: string): string {
