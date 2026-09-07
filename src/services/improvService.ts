@@ -178,10 +178,35 @@ function generateId(prefix: string = 'improv'): string {
 // 2. Firestore & LocalStorage CRUD Operations
 // --------------------------------------------------------------------------
 
+export function getLocalCachedImprovPackages(): ImprovPackage[] {
+  const deletedIds = getDeletedPackageIds();
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_IMPROV_KEY);
+    if (saved) {
+      let parsed: ImprovPackage[] = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsed = parsed.filter(p => !deletedIds.has(p.id));
+        parsed = ensureDefaultSetsPresent(parsed);
+        return parsed.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+      }
+    }
+  } catch {}
+
+  const fallback = ensureDefaultSetsPresent(DEFAULT_IMPROV_PACKAGES.filter(p => !deletedIds.has(p.id)));
+  try {
+    localStorage.setItem(LOCAL_STORAGE_IMPROV_KEY, JSON.stringify(fallback));
+  } catch {}
+  return fallback;
+}
+
 export async function getAllImprovPackages(): Promise<ImprovPackage[]> {
   const deletedIds = getDeletedPackageIds();
   try {
-    const snapshot = await getDocs(collection(db, 'improv_packages'));
+    const fetchPromise = getDocs(collection(db, 'improv_packages'));
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore timeout (2500ms)')), 2500)
+    );
+    const snapshot = await Promise.race([fetchPromise, timeoutPromise]);
     if (!snapshot.empty) {
       let packages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ImprovPackage));
       packages = packages.filter(p => !deletedIds.has(p.id));
@@ -196,27 +221,7 @@ export async function getAllImprovPackages(): Promise<ImprovPackage[]> {
     console.warn('[ImprovService] Firestore getAllImprovPackages notice, using local cache:', err);
   }
 
-  // LocalStorage Fallback
-  try {
-    const saved = localStorage.getItem(LOCAL_STORAGE_IMPROV_KEY);
-    if (saved) {
-      let parsed: ImprovPackage[] = JSON.parse(saved);
-      if (parsed && parsed.length > 0) {
-        parsed = parsed.filter(p => !deletedIds.has(p.id));
-        parsed = ensureDefaultSetsPresent(parsed);
-        try {
-          localStorage.setItem(LOCAL_STORAGE_IMPROV_KEY, JSON.stringify(parsed));
-        } catch {}
-        return parsed.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
-      }
-    }
-  } catch {}
-
-  const fallback = ensureDefaultSetsPresent(DEFAULT_IMPROV_PACKAGES.filter(p => !deletedIds.has(p.id)));
-  try {
-    localStorage.setItem(LOCAL_STORAGE_IMPROV_KEY, JSON.stringify(fallback));
-  } catch {}
-  return fallback;
+  return getLocalCachedImprovPackages();
 }
 
 export async function getImprovPackageById(id: string): Promise<ImprovPackage | null> {

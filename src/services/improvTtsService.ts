@@ -177,8 +177,15 @@ function audioBufferToWavBlob(audioBuffer: AudioBuffer): Blob {
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
+    reader.onload = () => {
+      const result = reader.result as string;
+      if (!result) {
+        reject(new Error('[Improv TTS] FileReader returned empty result'));
+      } else {
+        resolve(result);
+      }
+    };
+    reader.onerror = () => reject(reader.error || new Error('[Improv TTS] FileReader error'));
     reader.readAsDataURL(blob);
   });
 }
@@ -402,55 +409,75 @@ class ImprovTtsEngine {
 
     for (let i = 0; i < hints.length; i++) {
       const hint = hints[i];
-      const enText = sanitizeSpeechText(getHintTextByLanguage(hint, 'en'));
-      const viText = sanitizeSpeechText(getHintTextByLanguage(hint, 'vi'));
+      if (!hint || (!hint.text?.trim() && !hint.translation?.trim())) {
+        console.warn(`[Improv TTS] Skipping empty or invalid hint #${i + 1} for item #${item.itemNumber} (Item ID: ${item.id})`);
+        continue;
+      }
 
-      if (normalizedMode === 'EN_ONLY') {
-        if (enText) {
-          const base64 = await this.synthesizeSingleHintAudio(hint, 'en', effectiveVoiceEn, forceRegenerate);
-          if (base64 && audioContext) {
-            const buf = await decodeAudioBase64(audioContext, base64);
-            hintBuffers.push(buf);
+      const rawEn = getHintTextByLanguage(hint, 'en');
+      const rawVi = getHintTextByLanguage(hint, 'vi');
+      const enText = sanitizeSpeechText(rawEn);
+      const viText = sanitizeSpeechText(rawVi);
+
+      if (!enText && !viText) {
+        console.warn(`[Improv TTS] Hint #${hint.itemIndex || i + 1} has empty text after prosody sanitization. Skipping.`);
+        continue;
+      }
+
+      try {
+        if (normalizedMode === 'EN_ONLY') {
+          if (enText) {
+            const base64 = await this.synthesizeSingleHintAudio(hint, 'en', effectiveVoiceEn, forceRegenerate);
+            if (base64 && audioContext) {
+              const buf = await decodeAudioBase64(audioContext, base64);
+              hintBuffers.push(buf);
+            }
+          } else {
+            console.warn(`[Improv TTS] Missing EN text for hint #${hint.itemIndex || i + 1} in EN_ONLY mode (Item #${item.itemNumber})`);
+          }
+        } else if (normalizedMode === 'VI_ONLY') {
+          if (viText) {
+            const base64 = await this.synthesizeSingleHintAudio(hint, 'vi', effectiveVoiceVi, forceRegenerate);
+            if (base64 && audioContext) {
+              const buf = await decodeAudioBase64(audioContext, base64);
+              hintBuffers.push(buf);
+            }
+          } else {
+            console.warn(`[Improv TTS] Missing VI text for hint #${hint.itemIndex || i + 1} in VI_ONLY mode (Item #${item.itemNumber})`);
+          }
+        } else if (normalizedMode === 'EN_THEN_VI') {
+          if (enText) {
+            const base64En = await this.synthesizeSingleHintAudio(hint, 'en', effectiveVoiceEn, forceRegenerate);
+            if (base64En && audioContext) {
+              const bufEn = await decodeAudioBase64(audioContext, base64En);
+              hintBuffers.push(bufEn);
+            }
+          }
+          if (viText) {
+            const base64Vi = await this.synthesizeSingleHintAudio(hint, 'vi', effectiveVoiceVi, forceRegenerate);
+            if (base64Vi && audioContext) {
+              const bufVi = await decodeAudioBase64(audioContext, base64Vi);
+              hintBuffers.push(bufVi);
+            }
+          }
+        } else if (normalizedMode === 'VI_THEN_EN') {
+          if (viText) {
+            const base64Vi = await this.synthesizeSingleHintAudio(hint, 'vi', effectiveVoiceVi, forceRegenerate);
+            if (base64Vi && audioContext) {
+              const bufVi = await decodeAudioBase64(audioContext, base64Vi);
+              hintBuffers.push(bufVi);
+            }
+          }
+          if (enText) {
+            const base64En = await this.synthesizeSingleHintAudio(hint, 'en', effectiveVoiceEn, forceRegenerate);
+            if (base64En && audioContext) {
+              const bufEn = await decodeAudioBase64(audioContext, base64En);
+              hintBuffers.push(bufEn);
+            }
           }
         }
-      } else if (normalizedMode === 'VI_ONLY') {
-        if (viText) {
-          const base64 = await this.synthesizeSingleHintAudio(hint, 'vi', effectiveVoiceVi, forceRegenerate);
-          if (base64 && audioContext) {
-            const buf = await decodeAudioBase64(audioContext, base64);
-            hintBuffers.push(buf);
-          }
-        }
-      } else if (normalizedMode === 'EN_THEN_VI') {
-        if (enText) {
-          const base64En = await this.synthesizeSingleHintAudio(hint, 'en', effectiveVoiceEn, forceRegenerate);
-          if (base64En && audioContext) {
-            const bufEn = await decodeAudioBase64(audioContext, base64En);
-            hintBuffers.push(bufEn);
-          }
-        }
-        if (viText) {
-          const base64Vi = await this.synthesizeSingleHintAudio(hint, 'vi', effectiveVoiceVi, forceRegenerate);
-          if (base64Vi && audioContext) {
-            const bufVi = await decodeAudioBase64(audioContext, base64Vi);
-            hintBuffers.push(bufVi);
-          }
-        }
-      } else if (normalizedMode === 'VI_THEN_EN') {
-        if (viText) {
-          const base64Vi = await this.synthesizeSingleHintAudio(hint, 'vi', effectiveVoiceVi, forceRegenerate);
-          if (base64Vi && audioContext) {
-            const bufVi = await decodeAudioBase64(audioContext, base64Vi);
-            hintBuffers.push(bufVi);
-          }
-        }
-        if (enText) {
-          const base64En = await this.synthesizeSingleHintAudio(hint, 'en', effectiveVoiceEn, forceRegenerate);
-          if (base64En && audioContext) {
-            const bufEn = await decodeAudioBase64(audioContext, base64En);
-            hintBuffers.push(bufEn);
-          }
-        }
+      } catch (hintErr) {
+        console.warn(`[Improv TTS] Error synthesizing hint #${hint.itemIndex || i + 1} (Item #${item.itemNumber}):`, hintErr);
       }
     }
 

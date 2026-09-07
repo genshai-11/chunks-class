@@ -15,6 +15,7 @@ import {
 } from '../types';
 import { 
   getAllImprovPackages, 
+  getLocalCachedImprovPackages,
   saveImprovPackage, 
   deleteImprovPackage, 
   addOrUpdateImprovItem, 
@@ -79,6 +80,7 @@ import {
   Save, 
   FileSpreadsheet, 
   ChevronDown, 
+  ChevronLeft,
   ChevronRight, 
   Filter, 
   Search, 
@@ -178,14 +180,27 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   // --------------------------------------------------------------------------
   // A. Packages & Active Selection State
   // --------------------------------------------------------------------------
-  const [packages, setPackages] = useState<ImprovPackage[]>([]);
-  const [activePackageId, setActivePackageId] = useState<string>(defaultPackageId || '');
-  const [isLoadingPackages, setIsLoadingPackages] = useState<boolean>(true);
-  const [activeSessionTab, setActiveSessionTab] = useState<number | 'all'>('all');
+  const [packages, setPackages] = useState<ImprovPackage[]>(() => getLocalCachedImprovPackages());
+  const [activePackageId, setActivePackageId] = useState<string>(() => {
+    if (defaultPackageId) return defaultPackageId;
+    const initial = getLocalCachedImprovPackages();
+    return initial.length > 0 ? initial[0].id : '';
+  });
+  const [isLoadingPackages, setIsLoadingPackages] = useState<boolean>(false);
+  const [activeSessionTab, setActiveSessionTab] = useState<number | 'all'>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [audioFilter, setAudioFilter] = useState<'all' | 'ready' | 'missing'>('all');
   const [showVietnamese, setShowVietnamese] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+
+  // Pagination & Chunked Display State (15 - 20 items per page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number | 'all'>(20);
+
+  // Reset pagination to page 1 whenever active package, session tab, search query, audio filter, or page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activePackageId, activeSessionTab, searchQuery, audioFilter, pageSize]);
 
   // --------------------------------------------------------------------------
   // B. Modal Visibility & Item CRUD States
@@ -572,11 +587,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
 
   // --------------------------------------------------------------------------
-  // 1. Initial Load of Packages & Registry
+  // 1. Initial Load of Packages & Registry (Non-blocking background sync)
   // --------------------------------------------------------------------------
   useEffect(() => {
     async function loadData() {
-      setIsLoadingPackages(true);
       try {
         let loaded = await getAllImprovPackages();
         const defaultSeeds = createDefaultSeedPackages();
@@ -613,19 +627,21 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         }
 
         if (needsPersistence) {
-          for (const s of filteredDefaultSeeds) {
-            try {
-              await saveImprovPackage(s);
-            } catch (err) {
-              console.warn('[ImprovManagerView] Auto-persistence notice for pkg:', s.id, err);
-            }
-          }
+          // Non-blocking auto-persistence: run in background with Promise.allSettled
+          Promise.allSettled(
+            filteredDefaultSeeds.map(s => saveImprovPackage(s))
+          ).catch(err => {
+            console.warn('[ImprovManagerView] Background auto-persistence notice:', err);
+          });
         }
 
         setPackages(loaded);
         if (loaded.length > 0) {
-          const found = defaultPackageId ? loaded.find(p => p.id === defaultPackageId) : null;
-          setActivePackageId(found ? found.id : loaded[0].id);
+          setActivePackageId(prev => {
+            if (defaultPackageId && loaded.some(p => p.id === defaultPackageId)) return defaultPackageId;
+            if (prev && loaded.some(p => p.id === prev)) return prev;
+            return loaded[0].id;
+          });
         }
       } catch (err) {
         console.error('Failed to load Improv packages, restoring defaults:', err);
@@ -641,10 +657,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         const seeds = createDefaultSeedPackages().filter(d => !deletedIds.has(d.id));
         if (seeds.length > 0) {
           setPackages(seeds);
-          setActivePackageId(seeds[0].id);
-          for (const s of seeds) {
-            saveImprovPackage(s).catch(() => {});
-          }
+          setActivePackageId(prev => (prev && seeds.some(p => p.id === prev) ? prev : seeds[0].id));
+          Promise.allSettled(seeds.map(s => saveImprovPackage(s))).catch(() => {});
         }
       } finally {
         setIsLoadingPackages(false);
@@ -653,26 +667,30 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     loadData();
   }, [defaultPackageId]);
 
-  // Load available lessons for Vocab selector when source level changes
+  // Lazy-load available lessons for Vocab selector: ONLY when AI Generator modal is opened!
   useEffect(() => {
+    if (!isGeneratorOpen) return;
+
     let isMounted = true;
     async function fetchLessons() {
-      let lessons: LessonDoc[] = [];
-      try {
-        if (genSourceLevel === 'ALL') {
-          lessons = await getLessonsByLevel('LEVEL_B_ERES');
-        } else {
-          lessons = await getLessonsByLevel(genSourceLevel);
+      const targetLevel = genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel;
+      // 1. Instant in-memory curriculumRegistry lookup (0ms latency, zero network)
+      let lessons: LessonDoc[] = curriculumRegistry.getLessons(targetLevel);
+
+      // 2. Network fallback only if registry is empty
+      if (!lessons || lessons.length === 0) {
+        try {
+          lessons = await getLessonsByLevel(targetLevel);
+        } catch (err) {
+          console.warn('[ImprovManagerView] Error loading lessons:', err);
+          lessons = curriculumRegistry.getLessons(targetLevel);
         }
-      } catch (err) {
-        console.warn('[ImprovManagerView] Error loading lessons:', err);
-        lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
       }
 
       if (!isMounted) return;
 
       if (!lessons || lessons.length === 0) {
-        lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
+        lessons = curriculumRegistry.getLessons(targetLevel);
       }
 
       setGenAvailableLessons(lessons);
@@ -696,7 +714,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
     fetchLessons();
     return () => { isMounted = false; };
-  }, [genSourceLevel, availableCourses, computeDynamicTitleAndDescription, genSessionsCount, genTotalItems]);
+  }, [isGeneratorOpen, genSourceLevel, availableCourses, computeDynamicTitleAndDescription, genSessionsCount, genTotalItems]);
 
   const handleToggleLessonSelection = (lessonId: string) => {
     setGenSelectedLessonIds(prev => {
@@ -933,6 +951,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
     return items;
   }, [activePackage, activeSessionTab, searchQuery, audioFilter, checkItemReadiness, synthesizingItemIds, batchCompleted]);
+
+  // --------------------------------------------------------------------------
+  // Pagination & Chunked Display Calculations (15 - 20 items per page)
+  // --------------------------------------------------------------------------
+  const totalFilteredCount = filteredItems.length;
+  const effectivePageSize = pageSize === 'all' ? (totalFilteredCount || 1) : pageSize;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / effectivePageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedItems = useMemo(() => {
+    if (pageSize === 'all') return filteredItems;
+    const start = (safeCurrentPage - 1) * effectivePageSize;
+    return filteredItems.slice(start, start + effectivePageSize);
+  }, [filteredItems, pageSize, safeCurrentPage, effectivePageSize]);
+
+  const startDisplayIdx = totalFilteredCount === 0 ? 0 : (safeCurrentPage - 1) * effectivePageSize + 1;
+  const endDisplayIdx = pageSize === 'all' ? totalFilteredCount : Math.min(safeCurrentPage * effectivePageSize, totalFilteredCount);
 
   // Stats Summary
   const stats = useMemo(() => {
@@ -1360,6 +1395,27 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       const set = new Set([...selectedItemIds, ...visibleIds]);
       setSelectedItemIds(Array.from(set));
     }
+  };
+
+  // Toggle selection for all items on current page
+  const handleToggleSelectPage = () => {
+    const pageIds = paginatedItems.map(it => it.id);
+    const allPageSelected = pageIds.length > 0 && pageIds.every(id => selectedItemIds.includes(id));
+    if (allPageSelected) {
+      setSelectedItemIds(prev => prev.filter(id => !pageIds.includes(id)));
+    } else {
+      setSelectedItemIds(prev => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  // Number of selected items on current page
+  const selectedOnPageCount = useMemo(() => {
+    return paginatedItems.filter(it => selectedItemIds.includes(it.id)).length;
+  }, [paginatedItems, selectedItemIds]);
+
+  // Select all items in the entire filtered list
+  const handleSelectAllFiltered = () => {
+    setSelectedItemIds(filteredItems.map(it => it.id));
   };
 
   // Select all items that are missing audio in current filtered view (or scope)
@@ -2418,10 +2474,30 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-              <span className="text-xs text-zinc-400 font-mono">
-                Hiển thị {filteredItems.length} / {stats.totalItems} items
+            <div className="flex items-center gap-3 flex-wrap justify-between sm:justify-end shrink-0">
+              {/* Range & Total Count */}
+              <span className="text-xs text-zinc-600 font-medium">
+                Hiển thị <span className="font-bold text-zinc-900 font-mono">{startDisplayIdx} - {endDisplayIdx}</span> trên <span className="font-bold text-zinc-900 font-mono">{totalFilteredCount}</span> items
               </span>
+
+              {/* Page size toggle buttons: 15 | 20 | 50 | Tất cả */}
+              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-semibold">
+                <span className="px-2 text-[10px] uppercase font-mono text-zinc-500 font-bold hidden md:inline">Mỗi trang:</span>
+                {([15, 20, 50, 'all'] as const).map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => setPageSize(sz)}
+                    className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      pageSize === sz 
+                        ? 'bg-[#DC2626] text-white shadow-xs' 
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    {sz === 'all' ? 'Tất cả' : `${sz}`}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -2553,8 +2629,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           /* ================================================================ */
           <div className="space-y-2">
             {/* Quick Actions Bar Above Table (Near Select-All) */}
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={handleSelectAllMissing}
@@ -2574,6 +2650,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     Bỏ chọn ({selectedItemIds.length})
                   </button>
                 )}
+                {selectedOnPageCount > 0 && selectedItemIds.length < filteredItems.length && (
+                  <span className="text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 inline-flex items-center gap-1.5">
+                    <span>Đã chọn <strong>{selectedOnPageCount}</strong> câu trên trang này.</span>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllFiltered}
+                      className="text-xs font-bold text-[#DC2626] hover:underline cursor-pointer"
+                    >
+                      [Chọn tất cả {filteredItems.length} câu trong danh sách]
+                    </button>
+                  </span>
+                )}
               </div>
               <span className="text-xs text-zinc-400 font-mono">
                 {selectedItemIds.length > 0 ? `Đã chọn ${selectedItemIds.length} / ${filteredItems.length} items` : ''}
@@ -2588,10 +2676,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     <th className="p-3.5 w-10 text-center">
                       <input
                         type="checkbox"
-                        checked={filteredItems.length > 0 && filteredItems.every(it => selectedItemIds.includes(it.id))}
-                        onChange={handleToggleSelectAllFiltered}
+                        checked={paginatedItems.length > 0 && paginatedItems.every(it => selectedItemIds.includes(it.id))}
+                        onChange={handleToggleSelectPage}
                         className="rounded text-[#DC2626] focus:ring-[#DC2626] cursor-pointer"
-                        title="Chọn tất cả / Bỏ chọn tất cả"
+                        title="Chọn / Bỏ chọn tất cả các câu trên trang này"
                       />
                     </th>
                     <th className="p-3.5 w-14 text-center">STT</th>
@@ -2602,7 +2690,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
-                  {filteredItems.map((item) => {
+                  {paginatedItems.map((item) => {
                     const isPlayingThis = playingItemId === item.id;
                     const isSynthesizing = synthesizingItemIds[item.id] || false;
                     const isSelected = selectedItemIds.includes(item.id);
@@ -2986,7 +3074,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           /* CARDS VIEW MODE (Stream Cards Preview) */
           /* ================================================================ */
           <div className="space-y-3">
-            {filteredItems.map((item) => {
+            {paginatedItems.map((item) => {
               const isPlayingThis = playingItemId === item.id;
               const isSynthesizing = synthesizingItemIds[item.id] || false;
               const isSelected = selectedItemIds.includes(item.id);
@@ -3344,6 +3432,84 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* ================================================================== */}
+        {/* PAGINATION BAR (Thanh phân trang hiệu năng cao 15-20 items) */}
+        {/* ================================================================== */}
+        {pageSize !== 'all' && totalPages > 1 && (
+          <div className="mt-4 bg-white rounded-2xl border border-[#E8E8EC] p-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Range & Page Info */}
+            <div className="text-xs text-zinc-500 font-medium">
+              Trang <span className="font-bold text-zinc-900 font-mono">{safeCurrentPage}</span> / <span className="font-bold text-zinc-900 font-mono">{totalPages}</span>
+              <span className="mx-2 text-zinc-300">•</span>
+              Hiển thị <span className="font-bold text-zinc-900 font-mono">{startDisplayIdx} - {endDisplayIdx}</span> trong tổng số <span className="font-bold text-zinc-900 font-mono">{totalFilteredCount}</span> câu
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center gap-1.5 flex-wrap justify-center">
+              {/* Previous Button */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={safeCurrentPage === 1}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 transition-all cursor-pointer shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Trước</span>
+              </button>
+
+              {/* Page Number Buttons */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  if (totalPages <= 7) return true;
+                  if (page === 1 || page === totalPages) return true;
+                  return Math.abs(page - safeCurrentPage) <= 1;
+                })
+                .reduce<(number | string)[]>((acc, page, idx, arr) => {
+                  if (idx > 0 && page - (arr[idx - 1] as number) > 1) {
+                    acc.push(`dots-${page}`);
+                  }
+                  acc.push(page);
+                  return acc;
+                }, [])
+                .map((item) => {
+                  if (typeof item === 'string') {
+                    return (
+                      <span key={item} className="px-2 text-xs text-zinc-400 font-mono">
+                        ...
+                      </span>
+                    );
+                  }
+                  const isActive = item === safeCurrentPage;
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setCurrentPage(item)}
+                      className={`w-8 h-8 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#DC2626] text-white shadow-xs'
+                          : 'bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-200 shadow-2xs'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+
+              {/* Next Button */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={safeCurrentPage === totalPages}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 transition-all cursor-pointer shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span>Tiếp</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>
