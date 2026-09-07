@@ -10,7 +10,8 @@ import {
   CourseLevel,
   LessonDoc,
   ChunkItem,
-  CohortAudioSettings
+  CohortAudioSettings,
+  Course
 } from '../types';
 import { 
   getAllImprovPackages, 
@@ -23,7 +24,6 @@ import {
   loadDefaultPresets, 
   DEFAULT_IMPROV_MASTER_PROMPT, 
   DEFAULT_IMPROV_LLM_CONFIG, 
-  DEEPSEEK_DEFAULT_CONFIG, 
   GOOGLE_GENAI_DEFAULT_CONFIG, 
   executeLlmGeneration, 
   testLlmConnection 
@@ -44,8 +44,9 @@ import {
   getHintTextByLanguage
 } from '../services/improvTtsService';
 import { audioPlayer, sanitizeSpeechText, ALL_VOICES, GOOGLE_TTS_VOICES } from '../services/googleTtsService';
-import { modelRegistryService } from '../services/modelRegistryService';
+import { modelRegistryService, DEFAULT_AI_GENERATION_CONFIG } from '../services/modelRegistryService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
+import { getCourses, getLessonsByLevel } from '../services/firestoreService';
 import { 
   syncImprovPackageCachedAudioToCloud, 
   uploadImprovBase64AudioToGcs 
@@ -208,6 +209,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     return (currentVoiceEn && currentVoiceEn !== 'aura-theia-en') ? currentVoiceEn : 'flux-cliff-en';
   });
   const [batchVoiceVi, setBatchVoiceVi] = useState<string>(currentVoiceVi || 'vi-VN-Neural2-A');
+  const [forceOverwrite, setForceOverwrite] = useState<boolean>(true);
+  const [isResettingAudio, setIsResettingAudio] = useState<boolean>(false);
   const [isBatchRunning, setIsBatchRunning] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
@@ -309,10 +312,35 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   // --------------------------------------------------------------------------
-  // D. AI Generator Form State (3-Layer Filter) - Default to Level B ERES
+  // D. AI Generator Form State (3-Layer Filter) - Dynamic Courses & Live Gemini
   // --------------------------------------------------------------------------
-  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv Mastery - Level B ERES Reflexes');
-  const [genDescription, setGenDescription] = useState<string>('Bộ bài tập ngẫu hứng đa tầng rèn luyện phản xạ nhanh kết hợp từ vựng cốt lõi Level B ERES...');
+  const [availableCourses, setAvailableCourses] = useState<Course[]>(() => curriculumRegistry.getAllCourses());
+  const [isLoadingCourses, setIsLoadingCourses] = useState<boolean>(false);
+
+  // Fetch dynamic courses from Firestore on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveCourses() {
+      setIsLoadingCourses(true);
+      try {
+        const liveCourses = await getCourses();
+        if (isMounted && liveCourses && liveCourses.length > 0) {
+          setAvailableCourses(liveCourses);
+        }
+      } catch (err) {
+        console.warn('[ImprovManagerView] Error loading courses from Firestore:', err);
+      } finally {
+        if (isMounted) setIsLoadingCourses(false);
+      }
+    }
+    loadLiveCourses();
+    return () => { isMounted = false; };
+  }, []);
+
+  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv - Level B ERES Speaking (Day 1)');
+  const [genDescription, setGenDescription] = useState<string>(
+    'Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm 4 sessions (50 câu) dựa trên từ vựng cốt lõi Level B ERES Speaking - Day 1.'
+  );
   const [genTotalItems, setGenTotalItems] = useState<number>(50);
   const [genSessionsCount, setGenSessionsCount] = useState<number>(4);
   const [genSessionConfigs, setGenSessionConfigs] = useState<ImprovSessionConfig[]>([
@@ -336,31 +364,133 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [genDifficulty, setGenDifficulty] = useState<'Easy (A1-A2)' | 'Medium (B1)' | 'Hard (B2-C1)'>('Medium (B1)');
   const [genRelevance, setGenRelevance] = useState<'Thấp (Brainstorming ngẫu nhiên)' | 'Vừa (Tương quan ngữ cảnh)' | 'Cao (Gắn kết câu chuyện logic)'>('Cao (Gắn kết câu chuyện logic)');
 
-  // LLM Config
-  const [genProvider, setGenProvider] = useState<ImprovLlmProvider>('DEEPSEEK');
+  // Dynamic Title & Description generator helper
+  const computeDynamicTitleAndDescription = useCallback((
+    courseLevel: string,
+    selectedLessonIds: string[],
+    lessonsList: LessonDoc[],
+    coursesList: Course[],
+    sessionsCount: number,
+    totalItems: number
+  ) => {
+    let courseTitle = 'Level B ERES Speaking';
+    if (courseLevel === 'ALL') {
+      courseTitle = 'Tất Cả Giáo Trình CHUNKS';
+    } else {
+      const matched = coursesList.find(c => c.level_code === courseLevel || c.id === courseLevel);
+      if (matched) {
+        courseTitle = matched.title;
+      } else {
+        courseTitle = courseLevel.replace(/^LEVEL_/, 'Level ').replace(/_/g, ' ');
+      }
+    }
+
+    let lessonsSummary = '';
+    if (selectedLessonIds.length === 0) {
+      lessonsSummary = 'Chưa chọn bài';
+    } else if (selectedLessonIds.length === lessonsList.length && lessonsList.length > 0) {
+      lessonsSummary = `Toàn bộ ${lessonsList.length} bài`;
+    } else {
+      const selectedDocs = lessonsList.filter(l => selectedLessonIds.includes(l.id));
+      selectedDocs.sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+
+      if (selectedDocs.length === 1) {
+        const d = selectedDocs[0];
+        lessonsSummary = d.day_number === 0 ? 'Word List' : `Day ${d.day_number ?? 1}`;
+      } else if (selectedDocs.length > 1) {
+        const dayNums = selectedDocs.map(d => d.day_number ?? 0);
+        const isContiguous = dayNums.every((val, idx) => idx === 0 || val === dayNums[idx - 1] + 1);
+        if (isContiguous) {
+          const first = dayNums[0] === 0 ? 'Word List' : `Day ${dayNums[0]}`;
+          const last = `Day ${dayNums[dayNums.length - 1]}`;
+          lessonsSummary = `${first} - ${last}`;
+        } else {
+          const labels = dayNums.slice(0, 3).map(n => n === 0 ? 'Word List' : `Day ${n}`);
+          lessonsSummary = labels.join(', ') + (dayNums.length > 3 ? ` (+${dayNums.length - 3})` : '');
+        }
+      }
+    }
+
+    const title = `CHUNKS Improv - ${courseTitle} (${lessonsSummary})`;
+    const description = `Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm ${sessionsCount} sessions (${totalItems} câu) dựa trên từ vựng cốt lõi ${courseTitle} - ${lessonsSummary}.`;
+
+    return { title, description };
+  }, []);
+
+  const handleRegenerateDynamicTitle = () => {
+    const { title, description } = computeDynamicTitleAndDescription(
+      genSourceLevel,
+      genSelectedLessonIds,
+      genAvailableLessons,
+      availableCourses,
+      genSessionsCount,
+      genTotalItems
+    );
+    setGenTitle(title);
+    setGenDescription(description);
+  };
+
+  // LLM Config - Initialized from modelRegistryService
+  const initialAiConfig = modelRegistryService.getAiConfig();
+  const [genProvider, setGenProvider] = useState<ImprovLlmProvider>(
+    initialAiConfig.provider === 'CUSTOM_OPENAI' ? 'CUSTOM_OPENAI' : 'GOOGLE_GENAI'
+  );
   const [isLlmAccordionOpen, setIsLlmAccordionOpen] = useState<boolean>(true);
-  const [genEndpoint, setGenEndpoint] = useState<string>(DEEPSEEK_DEFAULT_CONFIG.endpoint);
-  const [genApiKey, setGenApiKey] = useState<string>(DEEPSEEK_DEFAULT_CONFIG.apiKey);
+  const [genEndpoint, setGenEndpoint] = useState<string>(initialAiConfig.endpoint || GOOGLE_GENAI_DEFAULT_CONFIG.endpoint);
+  const [genApiKey, setGenApiKey] = useState<string>(initialAiConfig.apiKey || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey);
   const [genShowApiKey, setGenShowApiKey] = useState<boolean>(false);
-  const [genModel, setGenModel] = useState<string>(DEEPSEEK_DEFAULT_CONFIG.model);
+  const [genModel, setGenModel] = useState<string>(initialAiConfig.model || 'gemini-2.5-flash');
   const [genMasterPrompt, setGenMasterPrompt] = useState<string>(DEFAULT_IMPROV_MASTER_PROMPT);
+
+  // Sync with modelRegistryService so settings configured in SettingsView apply immediately
+  useEffect(() => {
+    const unsub = modelRegistryService.subscribe(() => {
+      const cfg = modelRegistryService.getAiConfig();
+      setGenProvider(cfg.provider === 'CUSTOM_OPENAI' ? 'CUSTOM_OPENAI' : 'GOOGLE_GENAI');
+      if (cfg.apiKey) setGenApiKey(cfg.apiKey);
+      if (cfg.model) setGenModel(cfg.model);
+      if (cfg.endpoint) setGenEndpoint(cfg.endpoint);
+    });
+    return unsub;
+  }, []);
 
   const handleProviderChange = (newProvider: ImprovLlmProvider) => {
     setGenProvider(newProvider);
     setTestResult(null);
-    if (newProvider === 'DEEPSEEK') {
-      setGenEndpoint(DEEPSEEK_DEFAULT_CONFIG.endpoint);
-      setGenApiKey(DEEPSEEK_DEFAULT_CONFIG.apiKey);
-      setGenModel('deepseek-chat');
-    } else if (newProvider === 'GOOGLE_GENAI') {
-      setGenEndpoint(GOOGLE_GENAI_DEFAULT_CONFIG.endpoint);
-      const savedGeminiKey = localStorage.getItem('chunks_gemini_api_key') || '';
-      setGenApiKey(savedGeminiKey);
-      setGenModel('gemini-2.5-flash');
+    if (newProvider === 'GOOGLE_GENAI') {
+      const currentConfig = modelRegistryService.getAiConfig();
+      const ep = GOOGLE_GENAI_DEFAULT_CONFIG.endpoint;
+      const key = currentConfig.apiKey || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey;
+      const mdl = currentConfig.model || 'gemini-2.5-flash';
+      setGenEndpoint(ep);
+      setGenApiKey(key);
+      setGenModel(mdl);
+      modelRegistryService.setAiConfig({ provider: 'GOOGLE_GENAI', endpoint: ep, apiKey: key, model: mdl });
     } else {
-      setGenEndpoint('https://api.openai.com/v1');
-      setGenModel('gpt-4o-mini');
+      const ep = 'https://api.openai.com/v1';
+      const mdl = 'gpt-4o-mini';
+      setGenEndpoint(ep);
+      setGenModel(mdl);
+      modelRegistryService.setAiConfig({ provider: 'CUSTOM_OPENAI', endpoint: ep, model: mdl });
     }
+  };
+
+  const handleAiModelChange = (model: string) => {
+    setGenModel(model);
+    setTestResult(null);
+    modelRegistryService.setAiConfig({ model });
+  };
+
+  const handleAiApiKeyChange = (apiKey: string) => {
+    setGenApiKey(apiKey);
+    setTestResult(null);
+    modelRegistryService.setAiConfig({ apiKey });
+  };
+
+  const handleAiEndpointChange = (endpoint: string) => {
+    setGenEndpoint(endpoint);
+    setTestResult(null);
+    modelRegistryService.setAiConfig({ endpoint });
   };
 
   // Connection test state
@@ -371,21 +501,19 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     setIsTestingConnection(true);
     setTestResult(null);
     try {
-      const res = await testLlmConnection({
+      const res = await modelRegistryService.testAiConnection({
         provider: genProvider,
         endpoint: genEndpoint,
         apiKey: genApiKey,
-        model: genModel,
-        masterPrompt: genMasterPrompt,
-        temperature: 0.7,
-        maxTokens: 50
+        model: genModel
       });
       setTestResult(res);
     } catch (err: any) {
       setTestResult({
         success: false,
         latencyMs: 0,
-        message: err?.message || 'Lỗi kết nối tới mô hình AI'
+        message: err?.message || 'Lỗi kết nối tới mô hình AI',
+        model: genModel
       });
     } finally {
       setIsTestingConnection(false);
@@ -503,27 +631,109 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
   // Load available lessons for Vocab selector when source level changes
   useEffect(() => {
-    const lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
-    setGenAvailableLessons(lessons);
-    // Default genSelectedLessonIds MUST be single lesson (e.g. Day 1) or empty to prevent initial lag
-    if (lessons.length > 0) {
-      setGenSelectedLessonIds([lessons[0].id]);
-    } else {
-      setGenSelectedLessonIds([]);
+    let isMounted = true;
+    async function fetchLessons() {
+      let lessons: LessonDoc[] = [];
+      try {
+        if (genSourceLevel === 'ALL') {
+          lessons = await getLessonsByLevel('LEVEL_B_ERES');
+        } else {
+          lessons = await getLessonsByLevel(genSourceLevel);
+        }
+      } catch (err) {
+        console.warn('[ImprovManagerView] Error loading lessons:', err);
+        lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
+      }
+
+      if (!isMounted) return;
+
+      if (!lessons || lessons.length === 0) {
+        lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
+      }
+
+      setGenAvailableLessons(lessons);
+
+      // Default genSelectedLessonIds: select Day 1 by default (or first lesson)
+      const initialSelectedIds = lessons.length > 0 ? [lessons[0].id] : [];
+      setGenSelectedLessonIds(initialSelectedIds);
+
+      // Auto update dynamic title and description
+      const { title, description } = computeDynamicTitleAndDescription(
+        genSourceLevel,
+        initialSelectedIds,
+        lessons,
+        availableCourses,
+        genSessionsCount,
+        genTotalItems
+      );
+      setGenTitle(title);
+      setGenDescription(description);
     }
-  }, [genSourceLevel]);
+
+    fetchLessons();
+    return () => { isMounted = false; };
+  }, [genSourceLevel, availableCourses, computeDynamicTitleAndDescription, genSessionsCount, genTotalItems]);
+
+  const handleToggleLessonSelection = (lessonId: string) => {
+    setGenSelectedLessonIds(prev => {
+      const next = prev.includes(lessonId)
+        ? prev.filter(id => id !== lessonId)
+        : [...prev, lessonId];
+
+      const { title, description } = computeDynamicTitleAndDescription(
+        genSourceLevel,
+        next,
+        genAvailableLessons,
+        availableCourses,
+        genSessionsCount,
+        genTotalItems
+      );
+      setGenTitle(title);
+      setGenDescription(description);
+      return next;
+    });
+  };
+
+  const handleSelectAllLessons = () => {
+    const allIds = genAvailableLessons.map(l => l.id);
+    setGenSelectedLessonIds(allIds);
+    const { title, description } = computeDynamicTitleAndDescription(
+      genSourceLevel,
+      allIds,
+      genAvailableLessons,
+      availableCourses,
+      genSessionsCount,
+      genTotalItems
+    );
+    setGenTitle(title);
+    setGenDescription(description);
+  };
+
+  const handleDeselectAllLessons = () => {
+    setGenSelectedLessonIds([]);
+    const { title, description } = computeDynamicTitleAndDescription(
+      genSourceLevel,
+      [],
+      genAvailableLessons,
+      availableCourses,
+      genSessionsCount,
+      genTotalItems
+    );
+    setGenTitle(title);
+    setGenDescription(description);
+  };
 
   // Layer 3: Extract all seed chunks from selected lessons
   const allAvailableSeedChunks: ChunkItem[] = useMemo(() => {
     const chunks: ChunkItem[] = [];
     genSelectedLessonIds.forEach(lId => {
-      const lesson = curriculumRegistry.getLessonById(lId);
+      const lesson = genAvailableLessons.find(l => l.id === lId) || curriculumRegistry.getLessonById(lId);
       if (lesson && lesson.chunks) {
         chunks.push(...lesson.chunks);
       }
     });
     return chunks;
-  }, [genSelectedLessonIds]);
+  }, [genSelectedLessonIds, genAvailableLessons]);
 
   // Available categories in the extracted chunks
   const availableCategories = useMemo(() => {
@@ -1132,6 +1342,53 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     }
   };
 
+  // Reset / Clear Audio URLs from package / session
+  const handleResetPackageAudioUrls = async (targetSessionNum?: number) => {
+    if (!activePackage) return;
+    const isSessionSpecific = typeof targetSessionNum === 'number';
+    const scopeLabel = isSessionSpecific ? `Session ${targetSessionNum}` : `toàn bộ Package "${activePackage.title}"`;
+    const confirmMsg = `Bạn có chắc chắn muốn xóa toàn bộ liên kết audio Cloud Storage của ${scopeLabel} không?\n\nToàn bộ liên kết audioUrl và audioUrlVi của các câu (items) và gợi ý (hints) sẽ được đặt lại về null để bạn tạo lại từ đầu.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsResettingAudio(true);
+    try {
+      const updatedSessions = activePackage.sessions.map(s => {
+        if (isSessionSpecific && s.sessionNumber !== targetSessionNum) {
+          return s;
+        }
+        return {
+          ...s,
+          items: s.items.map(it => ({
+            ...it,
+            audioUrl: null as any,
+            audioUrlVi: null as any,
+            hints: (it.hints || []).map(h => ({
+              ...h,
+              audioUrl: null as any,
+              audioUrlVi: null as any
+            }))
+          }))
+        };
+      });
+
+      const updatedPkg: ImprovPackage = {
+        ...activePackage,
+        sessions: updatedSessions,
+        updatedAt: new Date().toISOString()
+      };
+
+      await saveImprovPackage(updatedPkg);
+      setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
+      setActivePackageId(updatedPkg.id);
+      alert(`Đã xóa sạch link audio cho ${scopeLabel}!`);
+    } catch (err: any) {
+      console.error('Reset improv audio error:', err);
+      alert(`Lỗi khi xóa link audio: ${err?.message || err}`);
+    } finally {
+      setIsResettingAudio(false);
+    }
+  };
+
   // --------------------------------------------------------------------------
   // 4. Package-Wide Batch Audio Generator (EN, VI, or BOTH)
   // --------------------------------------------------------------------------
@@ -1147,7 +1404,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setBatchLogs(prev => [`[${time}] ${msg}`, ...prev.slice(0, 100)]);
     };
 
-    addLog(`Khởi động bộ tổng hợp âm thanh (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()}, EN: ${batchVoiceEn}, VI: ${batchVoiceVi})...`);
+    addLog(`Khởi động bộ tổng hợp âm thanh (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()}, EN: ${batchVoiceEn}, VI: ${batchVoiceVi}, Overwrite: ${forceOverwrite})...`);
 
     try {
       const langModeToUse = batchTargetLang === 'vi' ? 'VI_ONLY' : batchTargetLang === 'both' ? 'EN_THEN_VI' : 'EN_ONLY';
@@ -1158,7 +1415,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           voiceVi: batchVoiceVi,
           langMode: langModeToUse,
           concurrency: batchWorkersCount,
-          forceRegenerate: false
+          forceRegenerate: forceOverwrite
         },
         (current, total, statusText) => {
           setBatchProgress({
@@ -1198,6 +1455,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         const syncRes = await syncImprovPackageCachedAudioToCloud(updatedPkg, {
           voiceEn: batchVoiceEn,
           voiceVi: batchVoiceVi,
+          targetLang: batchTargetLang,
+          forceOverwrite: forceOverwrite,
           onProgress: (_c, _t, status) => addLog(`[Cloud Sync] ${status}`)
         });
         addLog(`Đồng bộ Cloud Storage thành công: ${syncRes.uploadedItemsEn} items EN, ${syncRes.uploadedItemsVi} items VI, ${syncRes.uploadedHints} hints.`);
@@ -1285,7 +1544,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       // Step 1: Collect seed vocabulary from selected lessons
       let seedVocabs: { english: string; vietnamese: string }[] = [];
       genSelectedLessonIds.forEach(lId => {
-        const lesson = curriculumRegistry.getLessonById(lId);
+        const lesson = genAvailableLessons.find(l => l.id === lId) || curriculumRegistry.getLessonById(lId);
         if (lesson && lesson.chunks) {
           lesson.chunks.forEach(c => {
             if ((c.category === 'vocab' || c.category === 'phrase') && c.english) {
@@ -1306,7 +1565,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       }
 
       addGenLog('info', `Đã gom được ${seedVocabs.length} từ vựng hạt giống. Đang biên soạn Prompt gửi LLM...`);
-      setGenProgress({ percent: 25, current: 10, total: genTotalItems, message: `Đang gửi yêu cầu tới ${genProvider === 'DEEPSEEK' ? 'DeepSeek Official API' : genProvider === 'GOOGLE_GENAI' ? 'Google Gemini (GenAI)' : 'LLM Engine'}...` });
+      setGenProgress({ percent: 25, current: 10, total: genTotalItems, message: `Đang gửi yêu cầu tới ${genProvider === 'GOOGLE_GENAI' ? 'Google Gemini (GenAI)' : 'LLM Engine'}...` });
 
       // Compile master prompt variables
       const compiledPrompt = genMasterPrompt
@@ -1315,11 +1574,9 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         .replace(/\{\{vocabList\}\}/g, seedVocabs.slice(0, 30).map(v => `${v.english} (${v.vietnamese})`).join(', '))
         .replace(/\{\{itemCount\}\}/g, String(genTotalItems));
 
-      const providerLabel = genProvider === 'DEEPSEEK' 
-        ? 'DeepSeek Official API' 
-        : genProvider === 'GOOGLE_GENAI' 
-          ? 'Google Gemini API' 
-          : 'Custom Endpoint';
+      const providerLabel = genProvider === 'GOOGLE_GENAI' 
+        ? 'Google Gemini API' 
+        : 'Custom Endpoint';
 
       addGenLog('info', `Gửi yêu cầu tới ${providerLabel} (Model: ${genModel})...`);
 
@@ -1981,6 +2238,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               >
                 <Zap className="w-3.5 h-3.5 text-amber-300" />
                 <span>Batch TTS</span>
+              </button>
+
+              {/* Reset Audio URLs */}
+              <button
+                type="button"
+                disabled={isBatchRunning || isResettingAudio || !activePackage}
+                onClick={() => handleResetPackageAudioUrls(activeSessionTab === 'all' ? undefined : activeSessionTab)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold shadow-2xs cursor-pointer transition-all disabled:opacity-50"
+                title="Xóa link audio đã có để tạo lại từ đầu"
+              >
+                {isResettingAudio ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-red-600" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
+                <span>Xóa link audio</span>
               </button>
 
               {/* Add Item Button */}
@@ -2924,14 +3193,25 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               {/* 1. Basic Metadata */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-zinc-700 block mb-1.5 uppercase font-mono tracking-wider text-[10px]">
-                    Tiêu Đề Package
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-bold text-zinc-700 uppercase font-mono tracking-wider text-[10px]">
+                      Tiêu Đề Package
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRegenerateDynamicTitle}
+                      className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-lg transition-all cursor-pointer shadow-2xs"
+                      title="Tự động tạo lại tiêu đề và mô tả dựa trên Khóa học và Bài học đã chọn"
+                    >
+                      <Sparkles className="w-3 h-3 text-purple-600" />
+                      <span>Tạo lại tiêu đề tự động</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={genTitle}
                     onChange={(e) => setGenTitle(e.target.value)}
-                    placeholder="VD: Level B - ERES Spoken Reflexes K24"
+                    placeholder="VD: CHUNKS Improv - Level B ERES Speaking (Day 1)"
                     className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-[#DC2626]/20"
                   />
                 </div>
@@ -2944,7 +3224,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     type="text"
                     value={genDescription}
                     onChange={(e) => setGenDescription(e.target.value)}
-                    placeholder="VD: 4 Sessions rèn luyện phản xạ nhanh kết hợp từ vựng..."
+                    placeholder="VD: Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm 4 sessions (50 câu) dựa trên từ vựng cốt lõi..."
                     className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-[#DC2626]/20"
                   />
                 </div>
@@ -3095,17 +3375,32 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Layer 1: Khóa học */}
                   <div>
-                    <label className="font-bold text-zinc-700 block mb-1 uppercase font-mono tracking-wider text-[10px]">
-                      Layer 1: Khóa Học (Course Level)
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-bold text-zinc-700 uppercase font-mono tracking-wider text-[10px]">
+                        Layer 1: Khóa Học (Course Level)
+                      </label>
+                      {isLoadingCourses && (
+                        <span className="text-[10px] text-zinc-400 font-mono animate-pulse">Đang tải...</span>
+                      )}
+                    </div>
                     <select
                       value={genSourceLevel}
                       onChange={(e) => setGenSourceLevel(e.target.value as any)}
                       className="w-full p-2 bg-white border border-zinc-200 rounded-xl font-medium focus:ring-2 focus:ring-[#DC2626]/20 text-xs"
                     >
-                      <option value="LEVEL_A">Level A - Foundation (Days 1..15)</option>
-                      <option value="LEVEL_B_EREL">Level B - EREL Listening (Days 1..15)</option>
-                      <option value="LEVEL_B_ERES">Level B - ERES Speaking (Days 1..15)</option>
+                      {availableCourses.length > 0 ? (
+                        availableCourses.map(c => (
+                          <option key={c.id || c.level_code} value={c.level_code || c.id}>
+                            {c.title} ({c.level_code})
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="LEVEL_A">Level A - Foundation (Days 1..15)</option>
+                          <option value="LEVEL_B_EREL">Level B - EREL Listening (Days 1..15)</option>
+                          <option value="LEVEL_B_ERES">Level B - ERES Speaking (Days 1..15)</option>
+                        </>
+                      )}
                       <option value="ALL">Tất Cả Giáo Trình (All Levels)</option>
                     </select>
                   </div>
@@ -3150,7 +3445,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setGenSelectedLessonIds(genAvailableLessons.map(l => l.id))}
+                        onClick={handleSelectAllLessons}
                         className="text-[#DC2626] hover:underline cursor-pointer font-bold"
                       >
                         Chọn Tất Cả Bài ({genAvailableLessons.length})
@@ -3158,7 +3453,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       <span>•</span>
                       <button
                         type="button"
-                        onClick={() => setGenSelectedLessonIds([])}
+                        onClick={handleDeselectAllLessons}
                         className="text-zinc-500 hover:underline cursor-pointer"
                       >
                         Bỏ Chọn Hết
@@ -3179,11 +3474,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <button
                           key={lesson.id}
                           type="button"
-                          onClick={() => {
-                            setGenSelectedLessonIds(prev => 
-                              isSelected ? prev.filter(id => id !== lesson.id) : [...prev, lesson.id]
-                            );
-                          }}
+                          onClick={() => handleToggleLessonSelection(lesson.id)}
                           className={`px-2 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border ${
                             isSelected
                               ? 'bg-zinc-900 text-white border-zinc-900 shadow-2xs'
@@ -3327,10 +3618,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   <div className="flex items-center gap-2">
                     <Cpu className="w-4 h-4 text-purple-600" />
                     <span className="font-bold text-zinc-800 text-xs">Cấu Hình AI Provider & Prompt Nâng Cao</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                      {genProvider === 'DEEPSEEK' ? 'DeepSeek Official' : genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Custom'}
-                    </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                      {genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Custom'}
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                       {genModel}
                     </span>
                   </div>
@@ -3344,26 +3635,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       <label className="font-bold text-zinc-700 block mb-1.5 text-xs font-mono">
                         Chọn AI Engine / Provider
                       </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleProviderChange('DEEPSEEK')}
-                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex flex-col gap-1 cursor-pointer ${
-                            genProvider === 'DEEPSEEK'
-                              ? 'bg-blue-50/90 border-blue-500 text-blue-900 shadow-2xs ring-2 ring-blue-500/20'
-                              : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-extrabold flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-blue-500" />
-                              DeepSeek Official
-                            </span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono">Trực Tiếp</span>
-                          </div>
-                          <span className="text-[10px] text-zinc-400 font-normal truncate">api.deepseek.com (Khuyên dùng)</span>
-                        </button>
-
+                      <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
                           onClick={() => handleProviderChange('GOOGLE_GENAI')}
@@ -3378,7 +3650,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                               <span className="w-2 h-2 rounded-full bg-purple-500" />
                               Google Gemini
                             </span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono">Google GenAI</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono">Google GenAI (Khuyên dùng)</span>
                           </div>
                           <span className="text-[10px] text-zinc-400 font-normal truncate">Gemini 2.5 Flash / 2.0 Flash</span>
                         </button>
@@ -3405,31 +3677,17 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
                         <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">
-                          Mô hình ({genProvider === 'DEEPSEEK' ? 'DeepSeek' : genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Model'})
+                          Mô hình ({genProvider === 'GOOGLE_GENAI' ? 'Google Gemini' : 'Model'})
                         </label>
-                        {genProvider === 'DEEPSEEK' ? (
+                        {genProvider === 'GOOGLE_GENAI' ? (
                           <select
                             value={genModel}
-                            onChange={(e) => {
-                              setGenModel(e.target.value);
-                              setTestResult(null);
-                            }}
-                            className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800 focus:outline-none focus:border-blue-500"
-                          >
-                            <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 • Khuyên Dùng)</option>
-                            <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 • Suy Luận Sâu)</option>
-                          </select>
-                        ) : genProvider === 'GOOGLE_GENAI' ? (
-                          <select
-                            value={genModel}
-                            onChange={(e) => {
-                              setGenModel(e.target.value);
-                              setTestResult(null);
-                            }}
+                            onChange={(e) => handleAiModelChange(e.target.value)}
                             className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800 focus:outline-none focus:border-purple-500"
                           >
-                            <option value="gemini-2.5-flash">gemini-2.5-flash (Gemini 2.5 Flash • Cực Nhanh & Mới Nhất)</option>
-                            <option value="gemini-2.0-flash">gemini-2.0-flash (Gemini 2.0 Flash • Low Latency)</option>
+                            <option value="gemini-2.5-flash">gemini-2.5-flash (Khuyên dùng - Nhanh, chuẩn xác, tiết kiệm quota)</option>
+                            <option value="gemini-2.5-pro">gemini-2.5-pro (Chất lượng cao - Suy luận kịch bản sâu)</option>
+                            <option value="gemini-2.0-flash">gemini-2.0-flash (Độ trễ thấp - Phản hồi siêu tốc)</option>
                             <option value="gemini-1.5-flash">gemini-1.5-flash (Gemini 1.5 Flash • Hạn Mức Lớn)</option>
                             <option value="gemini-1.5-pro">gemini-1.5-pro (Gemini 1.5 Pro • Chuyên Sâu)</option>
                           </select>
@@ -3437,10 +3695,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                           <input
                             type="text"
                             value={genModel}
-                            onChange={(e) => {
-                              setGenModel(e.target.value);
-                              setTestResult(null);
-                            }}
+                            onChange={(e) => handleAiModelChange(e.target.value)}
                             placeholder="e.g. gpt-4o-mini"
                             className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs font-bold text-zinc-800"
                           />
@@ -3449,23 +3704,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                       <div>
                         <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px]">
-                          {genProvider === 'DEEPSEEK' 
-                            ? 'DeepSeek API Key (Đã Cấu Hình)' 
-                            : genProvider === 'GOOGLE_GENAI' 
-                              ? 'Google Gemini API Key (AIzaSy...)' 
-                              : 'API Key'}
+                          {genProvider === 'GOOGLE_GENAI' 
+                            ? 'Google Gemini API Key (AIzaSy... / AQ...)' 
+                            : 'API Key'}
                         </label>
                         <div className="relative">
                           <input
                             type={genShowApiKey ? 'text' : 'password'}
                             value={genApiKey}
-                            onChange={(e) => {
-                              setGenApiKey(e.target.value);
-                              setTestResult(null);
-                              if (genProvider === 'GOOGLE_GENAI') {
-                                localStorage.setItem('chunks_gemini_api_key', e.target.value);
-                              }
-                            }}
+                            onChange={(e) => handleAiApiKeyChange(e.target.value)}
                             placeholder={genProvider === 'GOOGLE_GENAI' ? 'Dán Google AI Studio API Key...' : 'Nhập API Key...'}
                             className="w-full p-2 bg-white border border-zinc-200 rounded-lg font-mono text-xs pr-8"
                           />
@@ -3484,10 +3731,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <input
                           type="text"
                           value={genEndpoint}
-                          onChange={(e) => {
-                            setGenEndpoint(e.target.value);
-                            setTestResult(null);
-                          }}
+                          onChange={(e) => handleAiEndpointChange(e.target.value)}
                           disabled={genProvider !== 'CUSTOM_OPENAI'}
                           className={`w-full p-2 rounded-lg font-mono text-xs border ${
                             genProvider !== 'CUSTOM_OPENAI' ? 'bg-zinc-100 text-zinc-500 border-zinc-200' : 'bg-white border-zinc-200 text-zinc-800'
@@ -4112,6 +4356,25 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
               </div>
 
+              {/* Force Overwrite Toggle */}
+              <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
+                <div>
+                  <div className="font-bold text-zinc-800 text-xs">Ghi đè audio đã có (Force Overwrite Cloud Storage)</div>
+                  <div className="text-[11px] text-zinc-400">Tạo mới và ghi đè toàn bộ file âm thanh hiện có trên Cloud Storage</div>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={forceOverwrite}
+                    disabled={isBatchRunning}
+                    onChange={(e) => setForceOverwrite(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#DC2626]"></div>
+                </label>
+              </div>
+
               {/* Progress Bar & Live Status */}
               {isBatchRunning && (
                 <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-2 font-mono">
@@ -4142,14 +4405,27 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-[#E8E8EC] bg-zinc-50/80 flex items-center justify-between">
-              <button
-                onClick={() => setIsBatchAudioModalOpen(false)}
-                disabled={isBatchRunning}
-                className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer"
-              >
-                Đóng
-              </button>
+            <div className="px-6 py-4 border-t border-[#E8E8EC] bg-zinc-50/80 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsBatchAudioModalOpen(false)}
+                  disabled={isBatchRunning}
+                  className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer"
+                >
+                  Đóng
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isBatchRunning || isResettingAudio}
+                  onClick={() => handleResetPackageAudioUrls()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-700 transition-all cursor-pointer disabled:opacity-50"
+                  title="Xóa toàn bộ liên kết audio cũ của package để tạo lại từ đầu"
+                >
+                  {isResettingAudio ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
+                  <span>Xóa link audio đã có</span>
+                </button>
+              </div>
 
               <button
                 onClick={handleStartBatchAudioGeneration}

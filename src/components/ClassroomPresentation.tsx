@@ -567,7 +567,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         targetChunk.english,
         targetChunk.vietnamese,
         m,
-        selectedVoice === 'aura-asteria-en' ? targetChunk.audio_url : null,
+        targetChunk.audio_url || null,
         selectedVoice === 'aura-theia-en' ? 'flux-cliff-en' : (selectedVoice || 'flux-cliff-en'),
         selectedVoiceVi,
         s,

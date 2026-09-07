@@ -10,6 +10,7 @@ import {
 import { db } from './firestoreService';
 import { curriculumRegistry } from './curriculumRegistry';
 import { getLessonById, getLessonsByLevel } from './firestoreService';
+import { modelRegistryService, getSafeGeminiKey } from './modelRegistryService';
 import { 
   ImprovPackage, 
   ImprovSession, 
@@ -150,27 +151,18 @@ You MUST output ONLY a valid JSON object matching the following structure withou
   ]
 }`;
 
-export const DEEPSEEK_DEFAULT_CONFIG: ImprovLLMConfig = {
-  provider: 'DEEPSEEK',
-  endpoint: 'https://api.deepseek.com',
-  apiKey: 'sk-2fec5e48a85f48cb99efd17c24207b7e',
-  model: 'deepseek-chat',
-  masterPrompt: DEFAULT_IMPROV_MASTER_PROMPT,
-  temperature: 0.7,
-  maxTokens: 4000
-};
-
 export const GOOGLE_GENAI_DEFAULT_CONFIG: ImprovLLMConfig = {
   provider: 'GOOGLE_GENAI',
   endpoint: 'https://generativelanguage.googleapis.com',
-  apiKey: '',
+  apiKey: getSafeGeminiKey(),
   model: 'gemini-2.5-flash',
   masterPrompt: DEFAULT_IMPROV_MASTER_PROMPT,
   temperature: 0.7,
-  maxTokens: 8192
+  maxTokens: 8192,
+  webClientId: '918426218910-3o6ed7m94u6clst7ae0d19s2rrasrekf.apps.googleusercontent.com'
 };
 
-export const DEFAULT_IMPROV_LLM_CONFIG: ImprovLLMConfig = DEEPSEEK_DEFAULT_CONFIG;
+export const DEFAULT_IMPROV_LLM_CONFIG: ImprovLLMConfig = GOOGLE_GENAI_DEFAULT_CONFIG;
 
 const LOCAL_STORAGE_IMPROV_KEY = 'chunks_improv_packages_local';
 
@@ -769,8 +761,8 @@ export function extractAndParseJson<T = any>(rawText: string): T {
 }
 
 /**
- * Calls LLM Generation API supporting DeepSeek Official, Google GenAI (Gemini), or Custom OpenAI-compatible endpoints.
- * Implements strict JSON Mode compliance (DeepSeek requirement for 'json' keyword and Gemini responseMimeType + thinkingConfig).
+ * Calls LLM Generation API supporting Google GenAI (Gemini) or Custom OpenAI-compatible endpoints.
+ * Implements strict JSON Mode compliance (Gemini responseMimeType + thinkingConfig).
  */
 export async function executeLlmGeneration(
   config: ImprovLLMConfig,
@@ -778,15 +770,18 @@ export async function executeLlmGeneration(
   userPrompt: string,
   signal?: AbortSignal
 ): Promise<string> {
+  const aiConfig = modelRegistryService.getAiConfig();
   const provider = config.provider || (
-    config.endpoint?.includes('deepseek.com') 
-      ? 'DEEPSEEK' 
-      : config.endpoint?.includes('googleapis.com') 
-        ? 'GOOGLE_GENAI' 
-        : 'CUSTOM_OPENAI'
+    config.endpoint && !config.endpoint.includes('googleapis.com')
+      ? 'CUSTOM_OPENAI'
+      : 'GOOGLE_GENAI'
   );
 
-  // DeepSeek & JSON Mode Requirement: prompt MUST explicitly contain 'json' or 'JSON'
+  const effectiveApiKey = config.apiKey?.trim() 
+    || aiConfig.apiKey?.trim() 
+    || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey;
+
+  // JSON Mode Requirement: prompt MUST explicitly contain 'json' or 'JSON'
   const sysPromptWithJson = systemPrompt.toLowerCase().includes('json') 
     ? systemPrompt 
     : `You are an expert English pedagogy AI. You MUST respond strictly in valid JSON format.\n\n${systemPrompt}`;
@@ -797,10 +792,10 @@ export async function executeLlmGeneration(
 
   // 1. Google Gemini Provider
   if (provider === 'GOOGLE_GENAI') {
-    const model = config.model || 'gemini-2.5-flash';
-    const apiKey = config.apiKey?.trim();
+    const model = config.model || aiConfig.model || 'gemini-2.5-flash';
+    const apiKey = effectiveApiKey;
     if (!apiKey) {
-      throw new Error('Chưa cung cấp Google Gemini API Key. Vui lòng nhập API Key từ Google AI Studio.');
+      throw new Error('Chưa cung cấp Google Gemini API Key. Vui lòng cấu hình API Key từ Google AI Studio.');
     }
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
@@ -882,59 +877,17 @@ export async function executeLlmGeneration(
     return content;
   }
 
-  // 2. DeepSeek Official API Provider
-  if (provider === 'DEEPSEEK') {
-    const endpoint = 'https://api.deepseek.com/chat/completions';
-    const model = config.model || 'deepseek-chat';
-    const apiKey = config.apiKey?.trim() || 'sk-2fec5e48a85f48cb99efd17c24207b7e';
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: sysPromptWithJson },
-          { role: 'user', content: userPromptWithJson }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: config.temperature ?? 0.7,
-        max_tokens: config.maxTokens ?? 4000
-      }),
-      signal
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`DeepSeek API Error (${response.status}): ${errText}`);
-    }
-
-    const data = await response.json();
-    const choice = data.choices?.[0];
-    const content = choice?.message?.content;
-    if (!content) {
-      if (choice?.finish_reason === 'length') {
-        throw new Error('DeepSeek API chạm giới hạn max_tokens. Vui lòng giảm số câu trong micro-batch.');
-      }
-      throw new Error('DeepSeek API không trả về nội dung.');
-    }
-    return content;
-  }
-
-  // 3. Custom OpenAI-compatible endpoint
-  const rawEndpoint = config.endpoint || 'https://api.deepseek.com';
+  // 2. Custom OpenAI-compatible endpoint
+  const rawEndpoint = config.endpoint || 'https://api.openai.com/v1';
   const endpoint = rawEndpoint.replace(/\/+$/, '') + (rawEndpoint.endsWith('/chat/completions') ? '' : '/chat/completions');
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${config.apiKey}`,
+      'Authorization': `Bearer ${effectiveApiKey}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: config.model || 'deepseek-chat',
+      model: config.model || 'gpt-4o-mini',
       messages: [
         { role: 'system', content: sysPromptWithJson },
         { role: 'user', content: userPromptWithJson }
@@ -966,224 +919,41 @@ export interface LlmTestResult {
 }
 
 /**
- * Verifies live connectivity and response latency to the configured LLM endpoint (DeepSeek, Google Gemini, or Custom).
- * Strictly complies with JSON mode requirements and thinkingConfig for both providers.
+ * Verifies live connectivity and response latency to the configured LLM endpoint (Google Gemini or Custom).
  */
 export async function testLlmConnection(
   config: ImprovLLMConfig,
   signal?: AbortSignal
 ): Promise<LlmTestResult> {
-  const startTime = performance.now();
+  const aiConfig = modelRegistryService.getAiConfig();
   const provider = config.provider || (
-    config.endpoint?.includes('deepseek.com') 
-      ? 'DEEPSEEK' 
-      : config.endpoint?.includes('googleapis.com') 
-        ? 'GOOGLE_GENAI' 
-        : 'CUSTOM_OPENAI'
+    config.endpoint && !config.endpoint.includes('googleapis.com')
+      ? 'CUSTOM_OPENAI'
+      : 'GOOGLE_GENAI'
   );
 
-  const model = config.model || (
-    provider === 'DEEPSEEK' 
-      ? 'deepseek-chat' 
-      : provider === 'GOOGLE_GENAI' 
-        ? 'gemini-2.5-flash' 
-        : 'gpt-4o-mini'
-  );
+  const effectiveApiKey = config.apiKey?.trim() 
+    || aiConfig.apiKey?.trim() 
+    || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey;
+  const model = config.model || aiConfig.model || (provider === 'GOOGLE_GENAI' ? 'gemini-2.5-flash' : 'gpt-4o-mini');
 
-  try {
-    // 1. Google Gemini Provider
-    if (provider === 'GOOGLE_GENAI') {
-      const apiKey = config.apiKey?.trim();
-      if (!apiKey) {
-        return {
-          success: false,
-          latencyMs: 0,
-          message: 'Chưa cung cấp Google Gemini API Key. Vui lòng nhập API Key từ Google AI Studio.',
-          model
-        };
-      }
+  const testResult = await modelRegistryService.testAiConnection({
+    provider,
+    model,
+    apiKey: effectiveApiKey,
+    endpoint: config.endpoint,
+    webClientId: config.webClientId || aiConfig.webClientId
+  });
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      
-      const buildTestBody = (includeThinkingConfig: boolean) => {
-        const genConfig: Record<string, any> = {
-          responseMimeType: 'application/json',
-          temperature: 0.1,
-          maxOutputTokens: 1000
-        };
-        if (includeThinkingConfig) {
-          genConfig.thinkingConfig = {
-            thinkingBudget: 0
-          };
-        }
-        return {
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: 'Respond strictly in JSON format: {"status":"OK"}' }]
-            }
-          ],
-          generationConfig: genConfig
-        };
-      };
-
-      const shouldTryThinkingConfig = model.includes('2.5') || model.includes('2.0') || model.includes('thinking');
-      let response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildTestBody(shouldTryThinkingConfig)),
-        signal
-      });
-
-      if (!response.ok && shouldTryThinkingConfig && response.status === 400) {
-        const errPeek = await response.text();
-        if (errPeek.includes('thinkingConfig') || errPeek.includes('thinkingBudget') || errPeek.includes('Unknown field')) {
-          response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(buildTestBody(false)),
-            signal
-          });
-        }
-      }
-
-      const latencyMs = Math.round(performance.now() - startTime);
-
-      if (!response.ok) {
-        const errText = await response.text();
-        return {
-          success: false,
-          latencyMs,
-          message: `Google Gemini API Lỗi (${response.status}): ${errText.slice(0, 180)}`,
-          model
-        };
-      }
-
-      const data = await response.json();
-      const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!content) {
-        return {
-          success: false,
-          latencyMs,
-          message: 'Google Gemini không trả về dữ liệu nội dung.',
-          model
-        };
-      }
-
-      return {
-        success: true,
-        latencyMs,
-        message: `Kết nối Google Gemini (${model}) thành công! Phản hồi: ${latencyMs}ms`,
-        model
-      };
-    }
-
-    // 2. DeepSeek Official API Provider
-    if (provider === 'DEEPSEEK') {
-      const endpoint = 'https://api.deepseek.com/chat/completions';
-      const apiKey = config.apiKey?.trim() || 'sk-2fec5e48a85f48cb99efd17c24207b7e';
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: 'You are a helpful assistant. You must respond strictly in JSON format.' },
-            { role: 'user', content: 'Respond ONLY with JSON: {"status":"OK"}' }
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.1,
-          max_tokens: 100
-        }),
-        signal
-      });
-
-      const latencyMs = Math.round(performance.now() - startTime);
-
-      if (!response.ok) {
-        const errText = await response.text();
-        return {
-          success: false,
-          latencyMs,
-          message: `DeepSeek API Lỗi (${response.status}): ${errText.slice(0, 180)}`,
-          model
-        };
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
-      if (!content) {
-        return {
-          success: false,
-          latencyMs,
-          message: 'DeepSeek API không trả về dữ liệu nội dung.',
-          model
-        };
-      }
-
-      return {
-        success: true,
-        latencyMs,
-        message: `Kết nối DeepSeek Official (${model}) thành công! Phản hồi: ${latencyMs}ms`,
-        model
-      };
-    }
-
-    // 3. Custom OpenAI-compatible endpoint
-    const rawEndpoint = config.endpoint || 'https://api.deepseek.com';
-    const endpoint = rawEndpoint.replace(/\/+$/, '') + (rawEndpoint.endsWith('/chat/completions') ? '' : '/chat/completions');
-    
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.apiKey?.trim() || ''}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: 'You are a helpful assistant. You must respond strictly in JSON format.' },
-          { role: 'user', content: 'Respond ONLY with JSON: {"status":"OK"}' }
-        ],
-        temperature: 0.1,
-        max_tokens: 100
-      }),
-      signal
-    });
-
-    const latencyMs = Math.round(performance.now() - startTime);
-
-    if (!response.ok) {
-      const errText = await response.text();
-      return {
-        success: false,
-        latencyMs,
-        message: `API Lỗi (${response.status}): ${errText.slice(0, 180)}`,
-        model
-      };
-    }
-
-    return {
-      success: true,
-      latencyMs,
-      message: `Kết nối thành công tới ${model}! Phản hồi: ${latencyMs}ms`,
-      model
-    };
-
-  } catch (err: any) {
-    const latencyMs = Math.round(performance.now() - startTime);
-    return {
-      success: false,
-      latencyMs,
-      message: `Lỗi kết nối mạng: ${err?.message || 'Network request failed'}`,
-      model
-    };
-  }
+  return {
+    success: testResult.success,
+    latencyMs: testResult.latencyMs,
+    message: testResult.message,
+    model: testResult.model
+  };
 }
+
+export const testLlmConnectivity = testLlmConnection;
 
 /**
  * Generates an ImprovPackage using resilient Micro-Batching (splitting large sessions into 5–8 item batches)
@@ -1196,9 +966,22 @@ export async function generateImprovPackage(
 ): Promise<ImprovPackage> {
   onProgress?.(1, 100, 'Đang trích xuất từ vựng giáo trình hạt giống...');
 
-  // Step 1: Gather seed vocabularies
+  // Read AI config from ModelRegistryService if apiKey or provider is not specified
+  const aiConfig = modelRegistryService.getAiConfig();
+  const effectiveLlmConfig: ImprovLLMConfig = {
+    ...GOOGLE_GENAI_DEFAULT_CONFIG,
+    ...request.llmConfig,
+    provider: request.llmConfig?.provider || aiConfig.provider || 'GOOGLE_GENAI',
+    apiKey: request.llmConfig?.apiKey?.trim() || aiConfig.apiKey?.trim() || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey,
+    model: request.llmConfig?.model || aiConfig.model || GOOGLE_GENAI_DEFAULT_CONFIG.model,
+    endpoint: request.llmConfig?.endpoint || aiConfig.endpoint || GOOGLE_GENAI_DEFAULT_CONFIG.endpoint,
+    webClientId: request.llmConfig?.webClientId || aiConfig.webClientId || GOOGLE_GENAI_DEFAULT_CONFIG.webClientId
+  };
+
+  // Step 1: Gather seed vocabularies (Dynamic Firestore support first)
   let seedChunks: ChunkItem[] = [];
 
+  // If specific sourceLessonIds provided, fetch each lesson (Firestore first, fallback to curriculumRegistry)
   if (request.sourceLessonIds && request.sourceLessonIds.length > 0) {
     for (const lId of request.sourceLessonIds) {
       const lesson = await getLessonById(lId) || curriculumRegistry.getLessonById(lId);
@@ -1206,13 +989,31 @@ export async function generateImprovPackage(
         seedChunks.push(...lesson.chunks);
       }
     }
-  } else if (request.sourceLevel) {
+  }
+
+  // When sourceLessonIds or sourceLevel is provided, also load lessons dynamically using getLessonsByLevel(request.sourceLevel) from Firestore
+  if (request.sourceLevel) {
     const level = request.sourceLevel === 'ALL' ? 'LEVEL_B_ERES' : request.sourceLevel;
-    const lessons = await getLessonsByLevel(level);
-    lessons.forEach(l => {
-      if (l.chunks) seedChunks.push(...l.chunks);
+    const dynamicLessons = await getLessonsByLevel(level);
+    dynamicLessons.forEach(l => {
+      if (l.chunks) {
+        if (!request.sourceLessonIds || request.sourceLessonIds.length === 0) {
+          seedChunks.push(...l.chunks);
+        } else if (seedChunks.length < 15) {
+          // Supplement seed chunks if selected lesson pool is small
+          seedChunks.push(...l.chunks);
+        }
+      }
     });
   }
+
+  // Deduplicate chunks by chunk_id
+  const seenChunkIds = new Set<string>();
+  seedChunks = seedChunks.filter(c => {
+    if (seenChunkIds.has(c.chunk_id)) return false;
+    seenChunkIds.add(c.chunk_id);
+    return true;
+  });
 
   // Filter seed chunks (prioritize vocab items, fallback to all chunks)
   const vocabChunks = seedChunks.filter(c => c.category === 'vocab' || c.category === 'phrase');
@@ -1249,7 +1050,7 @@ export async function generateImprovPackage(
       ];
 
   const totalSessions = sessionConfigs.length;
-  const masterSystemPrompt = request.llmConfig.masterPrompt || DEFAULT_IMPROV_MASTER_PROMPT;
+  const masterSystemPrompt = effectiveLlmConfig.masterPrompt || DEFAULT_IMPROV_MASTER_PROMPT;
   const now = new Date().toISOString();
   const packageId = generateId('pkg_improv');
 
@@ -1387,7 +1188,7 @@ CRITICAL RULES:
 
     // Execute LLM call for this micro-batch
     const rawContent = await executeLlmGeneration(
-      request.llmConfig,
+      effectiveLlmConfig,
       masterSystemPrompt,
       sessionUserPrompt,
       signal
