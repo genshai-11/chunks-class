@@ -149,11 +149,11 @@ export const GOOGLE_TTS_VOICES: VoiceOption[] = [
     provider: 'GOOGLE'
   },
   {
-    id: 'en-US-Journey-M',
-    name: 'en-US-Journey-M (Google Natural Male)',
+    id: 'en-US-Journey-D',
+    name: 'en-US-Journey-D (Google Natural Male)',
     languageCode: 'en-US',
     gender: 'MALE',
-    description: 'Ultra-realistic American English conversational voice (Male).',
+    description: 'Ultra-realistic American English conversational voice (Journey-D Male).',
     provider: 'GOOGLE'
   },
   {
@@ -194,14 +194,6 @@ export const GOOGLE_TTS_VOICES: VoiceOption[] = [
     languageCode: 'en-US',
     gender: 'MALE',
     description: 'Relaxed, natural American conversational tone.',
-    provider: 'GOOGLE'
-  },
-  {
-    id: 'en-US-Journey-D',
-    name: 'en-US-Journey-D (Google Journey Expressive)',
-    languageCode: 'en-US',
-    gender: 'MALE',
-    description: 'Dynamic conversational inflection.',
     provider: 'GOOGLE'
   },
   // =========================================================================
@@ -1018,30 +1010,13 @@ class AudioPlayService {
         return this.audioCache.get(text)!;
       }
 
-      // Check specific Vietnamese voice
+      // Check specific Vietnamese voice (strictly isolated to cleanVoice)
       const cleanVoice = (voiceName && voiceName.startsWith('vi-')) ? voiceName : 'vi-VN-Neural2-A';
       const k1 = this.getCacheKey(cleanVoice, clean);
       if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
       const k2 = this.getCacheKey(cleanVoice, text);
       if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
 
-      // Check standard Vietnamese voices
-      const viVoices = ['vi-VN-Neural2-A', 'vi-VN-Standard-A', 'vi-VN-WaveNet-A'];
-      for (const vVoice of viVoices) {
-        const kv = this.getCacheKey(vVoice, clean);
-        if (this.audioCache.has(kv)) return this.audioCache.get(kv)!;
-      }
-
-      // Fallback for Vietnamese: ONLY accept keys that start with 'vi-' or end with '_vi'
-      // Tuyệt đối KHÔNG trả về bất kỳ key nào bắt đầu bằng 'aura-' hay 'en-US-'
-      const targetSuffix = `::${clean.toLowerCase()}`;
-      for (const [k, v] of this.audioCache) {
-        if (k.startsWith('vi-') || k.endsWith('_vi')) {
-          if (k.endsWith(targetSuffix) || k === text) {
-            return v;
-          }
-        }
-      }
       return null;
     }
 
@@ -1087,10 +1062,7 @@ class AudioPlayService {
 
       keysToCheck.push(
         this.getCacheKey(cleanVoice, clean),
-        this.getCacheKey(cleanVoice, text),
-        this.getCacheKey('vi-VN-Neural2-A', clean),
-        this.getCacheKey('vi-VN-Standard-A', clean),
-        this.getCacheKey('vi-VN-WaveNet-A', clean)
+        this.getCacheKey(cleanVoice, text)
       );
 
       for (const key of keysToCheck) {
@@ -1603,8 +1575,8 @@ class AudioPlayService {
         ? (isFluxOrAura ? effectiveVoice : 'flux-cliff-en')
         : (isGoogleEnVoice ? effectiveVoice : (effectiveVoice && !effectiveVoice.startsWith('vi-') ? effectiveVoice : 'en-US-Journey-F'));
 
-      // Step 1: GCS Master Permanent Audio (ONLY when using aura-asteria-en and not forced to cloud TTS)
-      const canUseGcsAudio = !forceCloudTts && effectiveVoice === 'aura-asteria-en';
+      // Step 1: GCS Master Permanent Audio (can play for any voice if available and not forced to cloud TTS)
+      const canUseGcsAudio = !forceCloudTts;
       if (canUseGcsAudio && permanentAudioUrl && permanentAudioUrl.startsWith('http') && !permanentAudioUrl.includes('placeholder')) {
         try {
           this.setLastSource('GCS_MASTER');
@@ -1883,7 +1855,7 @@ class AudioPlayService {
     const provider = opts.provider || this.activeProvider;
     const voiceEn = opts.voiceEn || (provider === 'DEEPGRAM_AURA' ? 'flux-cliff-en' : 'en-US-Journey-F');
     const voiceVi = opts.voiceVi || 'vi-VN-Neural2-A';
-    const target = opts.target || 'BOTH';
+    let target: AudioBatchTarget = opts.target || (opts.langMode === 'VIETNAMESE' ? 'VIETNAMESE' : opts.langMode === 'ENGLISH' ? 'ENGLISH' : 'BOTH');
     const forceRegenerate = opts.forceRegenerate || false;
     const onProgress = opts.onProgress;
     const concurrency = Math.max(1, Math.min(8, opts.concurrency || 4));
@@ -1907,8 +1879,8 @@ class AudioPlayService {
         const cleanEn = sanitizeSpeechText(c.english);
         const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
 
-        // 1. Synthesize English if requested
-        if (target === 'ENGLISH' || target === 'BOTH') {
+        // 1. Synthesize English ONLY if target is ENGLISH or BOTH (NEVER when VIETNAMESE)
+        if (target !== 'VIETNAMESE' && (target === 'ENGLISH' || target === 'BOTH')) {
           if (cleanEn) {
             const cacheKeyEn = this.getCacheKey(modelEn, cleanEn);
             if (forceRegenerate || !this.audioCache.has(cacheKeyEn)) {
@@ -1940,8 +1912,8 @@ class AudioPlayService {
           }
         }
 
-        // 2. Synthesize Vietnamese if requested and present
-        if ((target === 'VIETNAMESE' || target === 'BOTH') && cleanVi) {
+        // 2. Synthesize Vietnamese ONLY if target is VIETNAMESE or BOTH (NEVER when ENGLISH)
+        if (target !== 'ENGLISH' && (target === 'VIETNAMESE' || target === 'BOTH') && cleanVi) {
           const cacheKeyVi = this.getCacheKey(modelVi, cleanVi);
           if (forceRegenerate || !this.audioCache.has(cacheKeyVi)) {
             let success = false;
@@ -1965,10 +1937,11 @@ class AudioPlayService {
 
         const totalSteps = total * (target === 'BOTH' ? 2 : 1);
         const doneSteps = prepared + failed + skipped;
+        const currentLabel = (target === 'VIETNAMESE' && cleanVi) ? cleanVi : cleanEn;
         onProgress?.(
           Math.min(doneSteps, totalSteps),
           totalSteps,
-          `Đang xử lý #${index + 1}/${total}: "${cleanEn.slice(0, 20)}..."`
+          `Đang xử lý #${index + 1}/${total}: "${currentLabel.slice(0, 20)}..."`
         );
       }
     };

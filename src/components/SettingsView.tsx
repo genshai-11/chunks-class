@@ -7,8 +7,12 @@ import {
   RegisteredModel, 
   ProviderApiKey, 
   TtsProviderType, 
+  ActiveTtsProviderType,
   PROVIDERS_META,
-  DEFAULT_REGISTERED_MODELS
+  DEFAULT_REGISTERED_MODELS,
+  getMinimalName,
+  AiGenerationConfig,
+  DEFAULT_AI_GENERATION_CONFIG
 } from '../services/modelRegistryService';
 import { 
   Calendar, 
@@ -32,15 +36,21 @@ import {
   Upload, 
   Search, 
   Eye, 
+  EyeOff,
+  Copy,
+  Zap,
   ShieldCheck, 
   Clock, 
   RefreshCw,
   ExternalLink,
   Info,
-  CheckSquare
+  CheckSquare,
+  Cloud,
+  SlidersHorizontal,
+  Filter
 } from 'lucide-react';
 
-type SubTabId = 'cohort' | 'main-models' | 'providers' | 'import-audition' | 'visibility-matrix';
+type SubTabId = 'cohort' | 'main-models' | 'providers' | 'ai-generator' | 'import-audition' | 'visibility-matrix';
 
 interface SettingsViewProps {
   cohort: Cohort;
@@ -65,8 +75,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [mainVi, setMainVi] = useState<string>(() => modelRegistryService.getMainModelVi());
   const [now, setNow] = useState<number>(Date.now());
 
+  // Cloud Sync State
+  const [isSyncingCloud, setIsSyncingCloud] = useState<boolean>(() => modelRegistryService.isSyncing());
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(() => modelRegistryService.getLastSyncedAt());
+  const [syncToast, setSyncToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
   // Provider Tab State
-  const [selectedProvider, setSelectedProvider] = useState<TtsProviderType>('GOOGLE_TTS');
+  const [selectedProvider, setSelectedProvider] = useState<ActiveTtsProviderType>('GOOGLE_TTS');
   const [newKeyInput, setNewKeyInput] = useState<string>('');
   const [newKeyLabel, setNewKeyLabel] = useState<string>('');
   const [customEndpointInput, setCustomEndpointInput] = useState<string>(() => modelRegistryService.getCustomEndpoint());
@@ -77,11 +92,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [previewingModelId, setPreviewingModelId] = useState<string | null>(null);
   const [auditionSearch, setAuditionSearch] = useState<string>('');
   const [auditionLangFilter, setAuditionLangFilter] = useState<'all' | 'en' | 'vi'>('all');
-  const [auditionProviderFilter, setAuditionProviderFilter] = useState<'all' | TtsProviderType>('all');
+  const [auditionProviderFilter, setAuditionProviderFilter] = useState<'all' | ActiveTtsProviderType>('all');
 
   // Matrix Tab State
   const [matrixSearch, setMatrixSearch] = useState<string>('');
   const [matrixLangFilter, setMatrixLangFilter] = useState<'all' | 'en' | 'vi'>('all');
+  const [matrixProviderFilter, setMatrixProviderFilter] = useState<'all' | ActiveTtsProviderType>('all');
+  const [matrixGenderFilter, setMatrixGenderFilter] = useState<'all' | 'FEMALE' | 'MALE'>('all');
+  const [matrixStatusFilter, setMatrixStatusFilter] = useState<'all' | 'improv' | 'focus' | 'disabled'>('all');
+  const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(new Set());
+  const [isMinimalNameMode, setIsMinimalNameMode] = useState<boolean>(true);
 
   // Modals
   const [isAddCustomModalOpen, setIsAddCustomModalOpen] = useState<boolean>(false);
@@ -90,7 +110,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     name: string;
     language: 'en' | 'vi' | 'other';
     gender: 'FEMALE' | 'MALE' | 'NEUTRAL';
-    provider: TtsProviderType;
+    provider: ActiveTtsProviderType;
     description: string;
   }>({
     id: '',
@@ -105,6 +125,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [importJsonText, setImportJsonText] = useState<string>('');
   const [importNotice, setImportNotice] = useState<string | null>(null);
 
+  // AI Generator Config State
+  const [aiConfig, setAiConfig] = useState<AiGenerationConfig>(() => modelRegistryService.getAiConfig());
+  const [aiShowApiKey, setAiShowApiKey] = useState<boolean>(false);
+  const [isTestingAi, setIsTestingAi] = useState<boolean>(false);
+  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; latencyMs: number; message: string; model: string } | null>(null);
+  const [isCustomAiModel, setIsCustomAiModel] = useState<boolean>(() => {
+    const cfg = modelRegistryService.getAiConfig();
+    return !['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'].includes(cfg.model);
+  });
+  const [copiedClientId, setCopiedClientId] = useState<boolean>(false);
+
   // Sync Registry State
   useEffect(() => {
     const unsub = modelRegistryService.subscribe(() => {
@@ -113,9 +144,44 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       setMainEn(modelRegistryService.getMainModelEn());
       setMainVi(modelRegistryService.getMainModelVi());
       setCustomEndpointInput(modelRegistryService.getCustomEndpoint());
+      setAiConfig(modelRegistryService.getAiConfig());
+      setIsSyncingCloud(modelRegistryService.isSyncing());
+      setLastSyncedAt(modelRegistryService.getLastSyncedAt());
     });
     return unsub;
   }, []);
+
+  const handleUpdateAiConfig = (updates: Partial<AiGenerationConfig>) => {
+    const next = { ...aiConfig, ...updates };
+    setAiConfig(next);
+    modelRegistryService.setAiConfig(updates);
+    setAiTestResult(null);
+  };
+
+  const handleTestAiConnection = async () => {
+    setIsTestingAi(true);
+    setAiTestResult(null);
+    try {
+      const res = await modelRegistryService.testAiConnection(aiConfig);
+      setAiTestResult(res);
+    } catch (err: any) {
+      setAiTestResult({
+        success: false,
+        latencyMs: 0,
+        message: err?.message || 'Lỗi kiểm tra kết nối Gemini AI',
+        model: aiConfig.model || 'gemini-2.5-flash'
+      });
+    } finally {
+      setIsTestingAi(false);
+    }
+  };
+
+  const handleCopyClientId = () => {
+    const clientId = aiConfig.webClientId || DEFAULT_AI_GENERATION_CONFIG.webClientId || '918426218910-3o6ed7m94u6clst7ae0d19s2rrasrekf.apps.googleusercontent.com';
+    navigator.clipboard.writeText(clientId);
+    setCopiedClientId(true);
+    setTimeout(() => setCopiedClientId(false), 2500);
+  };
 
   // Sync Cohort Props
   useEffect(() => {
@@ -185,6 +251,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onUpdateCohort(formData);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  // Cloud Firestore Persistence Handlers
+  const handleSaveToFirestore = async () => {
+    setIsSyncingCloud(true);
+    try {
+      const ok = await modelRegistryService.syncToFirestore();
+      if (ok) {
+        setLastSyncedAt(modelRegistryService.getLastSyncedAt());
+        setSyncToast({ message: 'Đã lưu toàn bộ cấu hình lên Cloud Firestore thành công!', type: 'success' });
+      } else {
+        setSyncToast({ message: 'Không thể lưu lên Cloud Firestore. Vui lòng kiểm tra kết nối mạng.', type: 'error' });
+      }
+    } catch (e: any) {
+      setSyncToast({ message: `Lỗi lưu database: ${e?.message || 'Không xác định'}`, type: 'error' });
+    } finally {
+      setIsSyncingCloud(false);
+      setTimeout(() => setSyncToast(null), 3500);
+    }
+  };
+
+  const handleLoadFromFirestore = async () => {
+    setIsSyncingCloud(true);
+    try {
+      const ok = await modelRegistryService.loadFromFirestore();
+      if (ok) {
+        setModels(modelRegistryService.getAllModels());
+        setKeys(modelRegistryService.getAllKeys());
+        setMainEn(modelRegistryService.getMainModelEn());
+        setMainVi(modelRegistryService.getMainModelVi());
+        setLastSyncedAt(modelRegistryService.getLastSyncedAt());
+        setSyncToast({ message: 'Đã tải cấu hình mới nhất từ Cloud Firestore!', type: 'success' });
+      } else {
+        setSyncToast({ message: 'Không tìm thấy dữ liệu trên Cloud Firestore hoặc kết nối thất bại.', type: 'error' });
+      }
+    } catch (e: any) {
+      setSyncToast({ message: `Lỗi tải database: ${e?.message || 'Không xác định'}`, type: 'error' });
+    } finally {
+      setIsSyncingCloud(false);
+      setTimeout(() => setSyncToast(null), 3500);
+    }
   };
 
   // Main Model Switchers
@@ -317,8 +424,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     { id: 'cohort', label: '1. Lớp Học (Cohort Admin)', icon: <Calendar className="w-4 h-4" /> },
     { id: 'main-models', label: '2. Cấu Hình Model Chính', icon: <Sliders className="w-4 h-4" /> },
     { id: 'providers', label: '3. Nhà Cung Cấp & Multi-Key Pool', icon: <Server className="w-4 h-4" />, badge: '429 FAILOVER' },
-    { id: 'import-audition', label: '4. Import & Nghe Thử Model', icon: <Volume2 className="w-4 h-4" /> },
-    { id: 'visibility-matrix', label: '5. Ma Trận Hiển Thị (Improv & Focus)', icon: <Layers className="w-4 h-4" />, badge: 'MATRIX' }
+    { id: 'ai-generator', label: '4. Cấu Hình AI Generator (Gemini)', icon: <Sparkles className="w-4 h-4 text-purple-600" />, badge: 'GEMINI LLM' },
+    { id: 'import-audition', label: '5. Import & Nghe Thử Model', icon: <Volume2 className="w-4 h-4" /> },
+    { id: 'visibility-matrix', label: '6. Ma Trận Hiển Thị (Improv & Focus)', icon: <Layers className="w-4 h-4" />, badge: 'MATRIX' }
   ];
 
   // Filtering for Audition Tab
@@ -331,14 +439,64 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     return matchSearch && matchLang && matchProvider;
   });
 
-  // Filtering for Matrix Tab
+  // Filtering for Matrix Tab (Multi-Filters & Search)
   const filteredMatrixModels = models.filter(m => {
+    const minimalName = modelRegistryService.getMinimalName(m);
     const matchSearch = matrixSearch === '' || 
       m.name.toLowerCase().includes(matrixSearch.toLowerCase()) || 
-      m.id.toLowerCase().includes(matrixSearch.toLowerCase());
+      m.id.toLowerCase().includes(matrixSearch.toLowerCase()) ||
+      minimalName.toLowerCase().includes(matrixSearch.toLowerCase());
     const matchLang = matrixLangFilter === 'all' || m.language === matrixLangFilter;
-    return matchSearch && matchLang;
+    const matchProvider = matrixProviderFilter === 'all' || m.provider === matrixProviderFilter;
+    const matchGender = matrixGenderFilter === 'all' || m.gender === matrixGenderFilter;
+    const matchStatus = 
+      matrixStatusFilter === 'all' ? true :
+      matrixStatusFilter === 'improv' ? m.improvEnabled :
+      matrixStatusFilter === 'focus' ? m.focusEnabled :
+      (!m.improvEnabled && !m.focusEnabled);
+    return matchSearch && matchLang && matchProvider && matchGender && matchStatus;
   });
+
+  const allFilteredSelected = filteredMatrixModels.length > 0 && filteredMatrixModels.every(m => selectedModelIds.has(m.id));
+  const someFilteredSelected = filteredMatrixModels.some(m => selectedModelIds.has(m.id)) && !allFilteredSelected;
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedModelIds(prev => {
+        const next = new Set(prev);
+        filteredMatrixModels.forEach(m => next.delete(m.id));
+        return next;
+      });
+    } else {
+      setSelectedModelIds(prev => {
+        const next = new Set(prev);
+        filteredMatrixModels.forEach(m => next.add(m.id));
+        return next;
+      });
+    }
+  };
+
+  const handleToggleSelectRow = (modelId: string) => {
+    setSelectedModelIds(prev => {
+      const next = new Set(prev);
+      if (next.has(modelId)) {
+        next.delete(modelId);
+      } else {
+        next.add(modelId);
+      }
+      return next;
+    });
+  };
+
+  const handleBulkSetVisibility = (target: 'improv' | 'focus', enabled: boolean) => {
+    selectedModelIds.forEach(id => {
+      modelRegistryService.setModelVisibility(id, target, enabled);
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedModelIds(new Set());
+  };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans animate-fade-in text-zinc-900">
@@ -374,6 +532,75 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Cloud Firestore Persistence & Sync Control Bar */}
+      <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white rounded-2xl p-4 border border-zinc-700/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-white/10 text-emerald-400">
+            <Cloud className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                Cloud Firestore Sync
+              </span>
+              {/* Status Badge */}
+              {isSyncingCloud ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>Đang đồng bộ...</span>
+                </span>
+              ) : lastSyncedAt ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>Đã đồng bộ ({new Date(lastSyncedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })})</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-zinc-700 text-zinc-300">
+                  <Info className="w-3 h-3" />
+                  <span>Lưu trên máy (Local)</span>
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              Cấu hình models, multi-key rotator pool và ma trận hiển thị được lưu trữ tập trung trên Cloud Firestore.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-end sm:self-center">
+          <button
+            type="button"
+            onClick={handleLoadFromFirestore}
+            disabled={isSyncingCloud}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-600 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+            title="Tải cấu hình mới nhất từ Cloud Firestore"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-400" />
+            <span>Tải Từ Database</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveToFirestore}
+            disabled={isSyncingCloud}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            title="Ghi đè cấu hình hiện tại lên Cloud Firestore"
+          >
+            <Upload className="w-3.5 h-3.5 text-white" />
+            <span>Lưu Lên Database (Cloud Firestore)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Sync Toast Notification */}
+      {syncToast && (
+        <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 animate-fade-in ${
+          syncToast.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'
+        }`}>
+          {syncToast.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+          <span>{syncToast.message}</span>
+        </div>
+      )}
 
       {/* 2. Sub-Navigation Tabs */}
       <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-2xl overflow-x-auto border border-zinc-200">
@@ -745,7 +972,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span>Mô Hình Tùy Chỉnh (Custom Registered Models)</span>
                 </h3>
                 <p className="text-xs text-zinc-500 mt-0.5">
-                  Đăng ký ID giọng đọc tùy chỉnh từ OpenAI, Custom Server hoặc Google Cloud.
+                  Đăng ký ID giọng đọc tùy chỉnh từ Google Cloud, Deepgram hoặc Custom Server.
                 </p>
               </div>
 
@@ -835,13 +1062,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </h3>
             </div>
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Khi API của Google Cloud, Gemini Flash, Deepgram hoặc OpenAI trả về mã phản hồi <span className="font-mono text-amber-300 font-bold">HTTP 429 (Too Many Requests / Quota Exceeded)</span>, hệ thống sẽ tự động gán nhãn <span className="font-mono text-amber-300 font-bold">RATE_LIMITED</span> cho key đó trong 60 giây và ngay lập tức kích hoạt key kế tiếp trong Pool để bài giảng và phát âm của học sinh diễn ra liên tục, không bao giờ bị nghẽn gián đoạn.
+              Khi API của Google Cloud, Gemini Flash, Deepgram hoặc Custom Endpoint trả về mã phản hồi <span className="font-mono text-amber-300 font-bold">HTTP 429 (Too Many Requests / Quota Exceeded)</span>, hệ thống sẽ tự động gán nhãn <span className="font-mono text-amber-300 font-bold">RATE_LIMITED</span> cho key đó trong 60 giây và ngay lập tức kích hoạt key kế tiếp trong Pool để bài giảng và phát âm của học sinh diễn ra liên tục, không bao giờ bị nghẽn gián đoạn.
             </p>
           </div>
 
           {/* Provider Cards Selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {(Object.keys(PROVIDERS_META) as TtsProviderType[]).map((provKey) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {(['GOOGLE_TTS', 'GEMINI_AI_STUDIO', 'DEEPGRAM', 'CUSTOM_TTS'] as ActiveTtsProviderType[]).map((provKey) => {
               const meta = PROVIDERS_META[provKey];
               const provKeys = keys.filter(k => k.provider === provKey);
               const readyCount = provKeys.filter(k => k.status === 'READY' && (!k.rateLimitedUntil || k.rateLimitedUntil <= now)).length;
@@ -948,8 +1175,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     onChange={(e) => setNewKeyInput(e.target.value)}
                     placeholder={
                       selectedProvider === 'DEEPGRAM' ? 'Nhập Deepgram API Key...' :
-                      selectedProvider === 'OPENAI_TTS' ? 'sk-proj-...' :
                       selectedProvider === 'GEMINI_AI_STUDIO' ? 'AQ.Ab8...' :
+                      selectedProvider === 'CUSTOM_TTS' ? 'Nhập Bearer Token (Tùy chọn)...' :
                       'AIzaSy...'
                     }
                     className="w-full px-3.5 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-mono font-bold text-zinc-900 focus:outline-none focus:border-[#DC2626]"
@@ -1076,7 +1303,423 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       )}
 
       {/* ===================================================================== */}
-      {/* TAB 4: IMPORT & AUDIO AUDITION */}
+      {/* TAB 4: AI GENERATOR CONFIG (GOOGLE GEMINI & LLM) */}
+      {/* ===================================================================== */}
+      {activeSubTab === 'ai-generator' && (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-purple-950 via-zinc-900 to-zinc-900 text-white rounded-2xl p-6 shadow-sm space-y-2 border border-purple-800/40">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-base text-purple-200">
+                    Cấu Hình AI Sinh Bài Học (Google Gemini & LLM)
+                  </h3>
+                  <p className="text-xs text-zinc-300 mt-0.5">
+                    Tùy chỉnh Model AI và API Key sử dụng cho tính năng "Tạo Package AI" trong Improv Studio và sinh giáo trình tự động.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg bg-purple-900/60 text-purple-300 border border-purple-700/50">
+                  Google GenAI REST
+                </span>
+                <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
+                  Live Test 200 OK
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Configuration Card */}
+          <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-xs space-y-6">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Server className="w-5 h-5 text-purple-600" />
+                <h3 className="font-display font-bold text-sm text-zinc-900">
+                  AI Engine & Nhà Cung Cấp Mô Hình
+                </h3>
+              </div>
+              <a
+                href="https://aistudio.google.com"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-purple-600 hover:underline font-medium"
+              >
+                <span>Google AI Studio</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            {/* Provider Selection */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider block font-mono">
+                1. AI Engine / Giao Thức Kết Nối
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleUpdateAiConfig({ provider: 'GOOGLE_GENAI' })}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    aiConfig.provider === 'GOOGLE_GENAI'
+                      ? 'bg-purple-50/80 border-purple-500 shadow-sm ring-2 ring-purple-500/20'
+                      : 'bg-zinc-50/70 border-zinc-200 hover:bg-white hover:border-zinc-300'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-bold text-xs text-zinc-900 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-purple-600" />
+                        Google Gemini (Google GenAI API)
+                      </span>
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+                        Khuyên Dùng
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500">
+                      Giao thức chính thức qua <code>generativelanguage.googleapis.com</code>. Tốc độ cao, tối ưu kịch bản sư phạm, $0 Always Free.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleUpdateAiConfig({ provider: 'CUSTOM_OPENAI' })}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    aiConfig.provider === 'CUSTOM_OPENAI'
+                      ? 'bg-zinc-900 border-zinc-900 text-white shadow-sm ring-2 ring-zinc-900/20'
+                      : 'bg-zinc-50/70 border-zinc-200 hover:bg-white hover:border-zinc-300'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={`font-bold text-xs flex items-center gap-1.5 ${aiConfig.provider === 'CUSTOM_OPENAI' ? 'text-white' : 'text-zinc-900'}`}>
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                        Custom Endpoint (OpenAI Compatible)
+                      </span>
+                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${aiConfig.provider === 'CUSTOM_OPENAI' ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-700'}`}>
+                        Tùy Chỉnh
+                      </span>
+                    </div>
+                    <p className={`text-[11px] ${aiConfig.provider === 'CUSTOM_OPENAI' ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                      Kết nối máy chủ LLM tùy chọn qua giao thức chuẩn <code>/chat/completions</code>.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Endpoint Input (when CUSTOM_OPENAI is active) */}
+            {aiConfig.provider === 'CUSTOM_OPENAI' && (
+              <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/50 space-y-2">
+                <label className="text-xs font-bold text-amber-900 uppercase tracking-wider block font-mono">
+                  Endpoint URL Máy Chủ Custom LLM
+                </label>
+                <input
+                  type="url"
+                  value={aiConfig.endpoint || ''}
+                  onChange={(e) => handleUpdateAiConfig({ endpoint: e.target.value })}
+                  placeholder="https://api.openai.com/v1 hoặc http://localhost:11434/v1"
+                  className="w-full px-3.5 py-2.5 bg-white border border-amber-300 rounded-xl text-xs font-mono font-bold text-zinc-900 focus:outline-none focus:border-purple-600"
+                />
+              </div>
+            )}
+
+            {/* Model Selector */}
+            <div className="space-y-3 pt-2 border-t border-zinc-100">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider block font-mono">
+                  2. Chọn Mô Hình AI (Model Selector)
+                </label>
+                <span className="text-[11px] font-mono text-purple-700 font-bold">
+                  Hiện tại: {aiConfig.model}
+                </span>
+              </div>
+
+              {aiConfig.provider === 'GOOGLE_GENAI' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Preset 1: Gemini 2.5 Flash */}
+                  <div
+                    onClick={() => {
+                      setIsCustomAiModel(false);
+                      handleUpdateAiConfig({ model: 'gemini-2.5-flash' });
+                    }}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                      aiConfig.model === 'gemini-2.5-flash' && !isCustomAiModel
+                        ? 'bg-purple-50/90 border-purple-500 shadow-2xs ring-2 ring-purple-500/20'
+                        : 'bg-zinc-50/60 border-zinc-200 hover:bg-white hover:border-zinc-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs text-zinc-900 font-mono">gemini-2.5-flash</span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">
+                          Khuyên dùng
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-600">
+                        Nhanh, chuẩn xác, tiết kiệm quota và xử lý cấu trúc bài học cực kỳ mượt mà.
+                      </p>
+                    </div>
+                    <div className="mt-2 text-[10px] font-mono text-purple-600 font-bold">
+                      ~1.0s latency • Khuyên dùng
+                    </div>
+                  </div>
+
+                  {/* Preset 2: Gemini 2.5 Pro */}
+                  <div
+                    onClick={() => {
+                      setIsCustomAiModel(false);
+                      handleUpdateAiConfig({ model: 'gemini-2.5-pro' });
+                    }}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                      aiConfig.model === 'gemini-2.5-pro' && !isCustomAiModel
+                        ? 'bg-purple-50/90 border-purple-500 shadow-2xs ring-2 ring-purple-500/20'
+                        : 'bg-zinc-50/60 border-zinc-200 hover:bg-white hover:border-zinc-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs text-zinc-900 font-mono">gemini-2.5-pro</span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                          Chất lượng cao
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-600">
+                        Suy luận kịch bản sâu, ngữ cảnh phức tạp và độ gắn kết câu chuyện cao cấp.
+                      </p>
+                    </div>
+                    <div className="mt-2 text-[10px] font-mono text-blue-600 font-bold">
+                      Reasoning Depth • Pro Grade
+                    </div>
+                  </div>
+
+                  {/* Preset 3: Gemini 2.0 Flash */}
+                  <div
+                    onClick={() => {
+                      setIsCustomAiModel(false);
+                      handleUpdateAiConfig({ model: 'gemini-2.0-flash' });
+                    }}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                      aiConfig.model === 'gemini-2.0-flash' && !isCustomAiModel
+                        ? 'bg-purple-50/90 border-purple-500 shadow-2xs ring-2 ring-purple-500/20'
+                        : 'bg-zinc-50/60 border-zinc-200 hover:bg-white hover:border-zinc-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs text-zinc-900 font-mono">gemini-2.0-flash</span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                          Độ trễ thấp
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-600">
+                        Phản hồi siêu tốc độ, giảm thiểu thời gian chờ đợi khi tạo dữ liệu mẫu.
+                      </p>
+                    </div>
+                    <div className="mt-2 text-[10px] font-mono text-emerald-600 font-bold">
+                      Ultra Fast • Low Latency
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Custom Model Toggle / Input */}
+              <div className="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/70 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-500" />
+                    <span>Nhập Tên Model Khác (Custom Model ID)</span>
+                  </span>
+                  {!isCustomAiModel && (
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomAiModel(true)}
+                      className="text-xs text-purple-600 hover:underline font-bold cursor-pointer"
+                    >
+                      + Nhập model tùy biến
+                    </button>
+                  )}
+                </div>
+
+                {isCustomAiModel && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="text"
+                      value={aiConfig.model}
+                      onChange={(e) => handleUpdateAiConfig({ model: e.target.value.trim() })}
+                      placeholder="VD: gemini-2.5-flash-thinking hoặc gpt-4o-mini"
+                      className="flex-1 px-3.5 py-2 bg-white border border-zinc-300 rounded-xl text-xs font-mono font-bold text-zinc-900 focus:outline-none focus:border-purple-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomAiModel(false);
+                        handleUpdateAiConfig({ model: 'gemini-2.5-flash' });
+                      }}
+                      className="px-3 py-2 bg-zinc-200 hover:bg-zinc-300 text-zinc-700 text-xs font-bold rounded-xl cursor-pointer"
+                    >
+                      Dùng mặc định
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* API Key Input */}
+            <div className="space-y-2 pt-2 border-t border-zinc-100">
+              <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider block font-mono">
+                3. Google AI Studio API Key (Authentication)
+              </label>
+              <div className="relative">
+                <input
+                  type={aiShowApiKey ? 'text' : 'password'}
+                  value={aiConfig.apiKey}
+                  onChange={(e) => handleUpdateAiConfig({ apiKey: e.target.value.trim() })}
+                  placeholder="Dán Google AI Studio API Key (AQ... hoặc AIzaSy...)"
+                  className="w-full pl-3.5 pr-10 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:outline-none focus:border-purple-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAiShowApiKey(!aiShowApiKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                  title={aiShowApiKey ? 'Ẩn API Key' : 'Hiện API Key'}
+                >
+                  {aiShowApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] text-zinc-500">
+                <p className="flex items-center gap-1">
+                  <Info className="w-3 h-3 text-purple-600 shrink-0" />
+                  <span>Hỗ trợ cả Google AI Studio Key (bắt đầu bằng <code>AQ...</code>) và Google Cloud API Key (bắt đầu bằng <code>AIzaSy...</code>).</span>
+                </p>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-purple-600 hover:underline font-bold inline-flex items-center gap-1"
+                >
+                  <span>Lấy API Key Miễn Phí Tại AI Studio</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+
+            {/* Google Web Client ID Reference */}
+            <div className="space-y-2 pt-2 border-t border-zinc-100">
+              <label className="text-xs font-bold text-zinc-700 uppercase tracking-wider block font-mono">
+                4. Google Web Client ID (OAuth / Web Client Reference)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={aiConfig.webClientId || DEFAULT_AI_GENERATION_CONFIG.webClientId || ''}
+                  onChange={(e) => handleUpdateAiConfig({ webClientId: e.target.value.trim() })}
+                  placeholder="918426218910-3o6ed7m94u6clst7ae0d19s2rrasrekf.apps.googleusercontent.com"
+                  className="flex-1 px-3.5 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-medium text-zinc-700 focus:bg-white focus:outline-none focus:border-purple-600"
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyClientId}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold cursor-pointer transition-all shadow-2xs shrink-0"
+                  title="Sao chép Web Client ID vào bộ nhớ tạm"
+                >
+                  {copiedClientId ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedClientId ? 'Đã sao chép!' : 'Sao chép ID'}</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-zinc-400">
+                Google Web Client ID tiêu chuẩn dùng cho xác thực client-side và ủy quyền dịch vụ Google Cloud/GenAI.
+              </p>
+            </div>
+
+            {/* Live Test Connection Section */}
+            <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <h4 className="font-bold text-xs text-zinc-900 flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    <span>Kiểm Tra Trạng Thái Kết Nối Thời Gian Thực (Live 200 OK Test)</span>
+                  </h4>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    Gửi gói tin kiểm tra trực tiếp tới Google GenAI API endpoint để xác thực tính hợp lệ của API Key và Model.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTestAiConnection}
+                  disabled={isTestingAi}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+                >
+                  {isTestingAi ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                  )}
+                  <span>{isTestingAi ? 'Đang Kiểm Tra...' : 'Test Kết Nối Gemini AI (Live Test 200 OK)'}</span>
+                </button>
+              </div>
+
+              {/* Live Test Result Badge */}
+              {aiTestResult && (
+                <div
+                  className={`p-4 rounded-xl border text-xs flex items-start gap-3 animate-fade-in ${
+                    aiTestResult.success
+                      ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                      : 'bg-red-50 text-red-900 border-red-300'
+                  }`}
+                >
+                  {aiTestResult.success ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="space-y-1">
+                    <div className="font-bold flex items-center gap-2">
+                      <span>{aiTestResult.success ? 'KẾT NỐI THÀNH CÔNG (200 OK)' : 'KẾT NỐI THẤT BẠI'}</span>
+                      <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-white/60 border border-current/20">
+                        {aiTestResult.latencyMs}ms
+                      </span>
+                      <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-white/60 border border-current/20">
+                        Model: {aiTestResult.model}
+                      </span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed">
+                      {aiTestResult.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Cloud Auto-Sync Notice */}
+            <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50/50 border border-purple-200/60 text-xs text-purple-900">
+              <div className="flex items-center gap-2">
+                <Cloud className="w-4 h-4 text-purple-600 shrink-0" />
+                <span>
+                  Mọi thay đổi cấu hình Model & Key được lưu tự động trên trình duyệt và tự động lên lịch đồng bộ lên <strong>Cloud Firestore</strong> (<code>system_settings/model_registry</code>).
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveToFirestore}
+                disabled={isSyncingCloud}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold cursor-pointer transition-all shrink-0"
+              >
+                <Upload className="w-3 h-3" />
+                <span>Lưu Ngay</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB 5: IMPORT & AUDIO AUDITION */}
       {/* ===================================================================== */}
       {activeSubTab === 'import-audition' && (
         <div className="space-y-6">
@@ -1243,6 +1886,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
+                {/* Minimalist Name Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsMinimalNameMode(prev => !prev)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all shadow-2xs ${
+                    isMinimalNameMode
+                      ? 'bg-zinc-900 text-white border-zinc-900'
+                      : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50'
+                  }`}
+                  title="Chuyển đổi giữa Tên tối giản và Tên chi tiết"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>{isMinimalNameMode ? 'Tên Tối Giản: BẬT' : 'Tên Chi Tiết: BẬT'}</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => modelRegistryService.setAllVisibility('improv', true)}
@@ -1271,55 +1929,155 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
-            {/* Filter & Search */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-1.5 bg-zinc-100 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setMatrixLangFilter('all')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    matrixLangFilter === 'all' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'
-                  }`}
-                >
-                  Tất Cả ({models.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMatrixLangFilter('en')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    matrixLangFilter === 'en' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'
-                  }`}
-                >
-                  English ({models.filter(m => m.language === 'en').length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMatrixLangFilter('vi')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    matrixLangFilter === 'vi' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'
-                  }`}
-                >
-                  Tiếng Việt ({models.filter(m => m.language === 'vi').length})
-                </button>
-              </div>
+            {/* Dynamic Multi-Filters Bar */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Language Filter */}
+                <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setMatrixLangFilter('all')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      matrixLangFilter === 'all' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    Tất Cả ({models.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMatrixLangFilter('en')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      matrixLangFilter === 'en' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    English ({models.filter(m => m.language === 'en').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMatrixLangFilter('vi')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      matrixLangFilter === 'vi' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    Tiếng Việt ({models.filter(m => m.language === 'vi').length})
+                  </button>
+                </div>
 
-              <div className="relative w-full sm:w-72">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-400" />
-                <input
-                  type="text"
-                  value={matrixSearch}
-                  onChange={(e) => setMatrixSearch(e.target.value)}
-                  placeholder="Lọc ma trận theo tên model..."
-                  className="w-full pl-9 pr-3.5 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:border-[#DC2626]"
-                />
+                {/* Provider Filter */}
+                <select
+                  value={matrixProviderFilter}
+                  onChange={(e) => setMatrixProviderFilter(e.target.value as any)}
+                  className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-700 cursor-pointer focus:bg-white focus:outline-none focus:border-[#DC2626]"
+                >
+                  <option value="all">Tất Cả Nhà Cung Cấp</option>
+                  {(['GOOGLE_TTS', 'GEMINI_AI_STUDIO', 'DEEPGRAM', 'CUSTOM_TTS'] as ActiveTtsProviderType[]).map(p => (
+                    <option key={p} value={p}>{PROVIDERS_META[p]?.shortName || p}</option>
+                  ))}
+                </select>
+
+                {/* Gender Filter */}
+                <select
+                  value={matrixGenderFilter}
+                  onChange={(e) => setMatrixGenderFilter(e.target.value as any)}
+                  className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-700 cursor-pointer focus:bg-white focus:outline-none focus:border-[#DC2626]"
+                >
+                  <option value="all">Tất Cả Giới Tính</option>
+                  <option value="FEMALE">Giọng Nữ</option>
+                  <option value="MALE">Giọng Nam</option>
+                </select>
+
+                {/* Status Filter */}
+                <select
+                  value={matrixStatusFilter}
+                  onChange={(e) => setMatrixStatusFilter(e.target.value as any)}
+                  className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-700 cursor-pointer focus:bg-white focus:outline-none focus:border-[#DC2626]"
+                >
+                  <option value="all">Tất Cả Trạng Thái</option>
+                  <option value="improv">Đang Bật Improv</option>
+                  <option value="focus">Đang Bật Focus</option>
+                  <option value="disabled">Đang Tắt Hoàn Toàn</option>
+                </select>
+
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-4 h-4 absolute left-3 top-2 text-zinc-400" />
+                  <input
+                    type="text"
+                    value={matrixSearch}
+                    onChange={(e) => setMatrixSearch(e.target.value)}
+                    placeholder="Tìm model (tên, ID hoặc định dạng gọn)..."
+                    className="w-full pl-9 pr-3.5 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:border-[#DC2626]"
+                  />
+                </div>
               </div>
             </div>
+
+            {/* Bulk Selection & Actions Bar */}
+            {selectedModelIds.size > 0 && (
+              <div className="p-3 bg-zinc-900 text-white rounded-xl flex items-center justify-between flex-wrap gap-3 shadow-md animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-bold font-mono">
+                    Đã chọn <span className="text-amber-300 font-bold">{selectedModelIds.size}</span> / {filteredMatrixModels.length} models
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSetVisibility('improv', true)}
+                    className="px-3 py-1 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold rounded-lg cursor-pointer transition-all shadow-2xs"
+                  >
+                    Bật Improv ({selectedModelIds.size})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSetVisibility('improv', false)}
+                    className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 text-xs font-bold rounded-lg cursor-pointer transition-all"
+                  >
+                    Tắt Improv ({selectedModelIds.size})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSetVisibility('focus', true)}
+                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg cursor-pointer transition-all shadow-2xs"
+                  >
+                    Bật Focus ({selectedModelIds.size})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSetVisibility('focus', false)}
+                    className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 text-xs font-bold rounded-lg cursor-pointer transition-all"
+                  >
+                    Tắt Focus ({selectedModelIds.size})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearSelection}
+                    className="px-2.5 py-1 text-xs text-zinc-400 hover:text-white underline cursor-pointer"
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Matrix Table */}
             <div className="overflow-x-auto border border-zinc-200 rounded-xl">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-zinc-100 border-b border-zinc-200 text-[10px] uppercase font-mono text-zinc-600">
+                    <th className="py-3 px-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={allFilteredSelected}
+                        ref={el => {
+                          if (el) el.indeterminate = someFilteredSelected;
+                        }}
+                        onChange={handleToggleSelectAll}
+                        className="rounded border-zinc-300 text-[#DC2626] focus:ring-[#DC2626] cursor-pointer w-4 h-4"
+                        title="Chọn / Bỏ chọn tất cả model hiển thị"
+                      />
+                    </th>
                     <th className="py-3 px-3">Mô Hình Giọng Đọc (Model)</th>
                     <th className="py-3 px-3">Nhà Cung Cấp</th>
                     <th className="py-3 px-3">Ngôn Ngữ / Giới Tính</th>
@@ -1339,84 +2097,111 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
-                  {filteredMatrixModels.map((m) => {
-                    const isMain = mainEn === m.id || mainVi === m.id;
-                    const isPlaying = previewingModelId === m.id;
+                  {filteredMatrixModels.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-zinc-400 text-xs font-medium">
+                        Không tìm thấy giọng đọc nào khớp với bộ lọc.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredMatrixModels.map((m) => {
+                      const isMain = mainEn === m.id || mainVi === m.id;
+                      const isPlaying = previewingModelId === m.id;
+                      const isSelected = selectedModelIds.has(m.id);
 
-                    return (
-                      <tr key={m.id} className="hover:bg-zinc-50/70 transition-colors">
-                        <td className="py-2.5 px-3">
-                          <div className="flex items-center gap-2">
-                            <div>
-                              <span className="font-bold text-xs text-zinc-900 block">{m.name}</span>
-                              <span className="font-mono text-[10px] text-zinc-400">{m.id}</span>
+                      return (
+                        <tr key={m.id} className={`transition-colors ${isSelected ? 'bg-red-50/30' : 'hover:bg-zinc-50/70'}`}>
+                          <td className="py-2.5 px-3 w-10 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectRow(m.id)}
+                              className="rounded border-zinc-300 text-[#DC2626] focus:ring-[#DC2626] cursor-pointer w-4 h-4"
+                            />
+                          </td>
+
+                          <td className="py-2.5 px-3">
+                            <div className="flex items-center gap-2">
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-xs text-zinc-900">
+                                    {isMinimalNameMode ? modelRegistryService.getMinimalName(m) : m.name}
+                                  </span>
+                                  {isMinimalNameMode && (
+                                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-600 border border-zinc-200">
+                                      {m.gender === 'FEMALE' ? 'Nữ' : m.gender === 'MALE' ? 'Nam' : 'Trung'}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-mono text-[10px] text-zinc-400 block mt-0.5">{m.id}</span>
+                              </div>
+                              {isMain && (
+                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                                  CHÍNH
+                                </span>
+                              )}
                             </div>
-                            {isMain && (
-                              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                                CHÍNH
-                              </span>
-                            )}
-                          </div>
-                        </td>
+                          </td>
 
-                        <td className="py-2.5 px-3">
-                          <span
-                            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded text-white inline-block"
-                            style={{ backgroundColor: PROVIDERS_META[m.provider]?.color || '#666' }}
-                          >
-                            {PROVIDERS_META[m.provider]?.shortName || m.provider}
-                          </span>
-                        </td>
+                          <td className="py-2.5 px-3">
+                            <span
+                              className="text-[10px] font-mono font-bold px-2 py-0.5 rounded text-white inline-block"
+                              style={{ backgroundColor: PROVIDERS_META[m.provider]?.color || '#666' }}
+                            >
+                              {PROVIDERS_META[m.provider]?.shortName || m.provider}
+                            </span>
+                          </td>
 
-                        <td className="py-2.5 px-3 font-mono text-[11px] text-zinc-600">
-                          {m.language.toUpperCase()} • {m.gender === 'FEMALE' ? 'Nữ' : m.gender === 'MALE' ? 'Nam' : 'Trung Tính'}
-                        </td>
+                          <td className="py-2.5 px-3 font-mono text-[11px] text-zinc-600">
+                            {m.language.toUpperCase()} • {m.gender === 'FEMALE' ? 'Nữ' : m.gender === 'MALE' ? 'Nam' : 'Trung Tính'}
+                          </td>
 
-                        {/* Improv Toggle Switch */}
-                        <td className="py-2.5 px-3 text-center">
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={m.improvEnabled}
-                              onChange={(e) => modelRegistryService.setModelVisibility(m.id, 'improv', e.target.checked)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#DC2626]"></div>
-                          </label>
-                        </td>
+                          {/* Improv Toggle Switch */}
+                          <td className="py-2.5 px-3 text-center">
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={m.improvEnabled}
+                                onChange={(e) => modelRegistryService.setModelVisibility(m.id, 'improv', e.target.checked)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#DC2626]"></div>
+                            </label>
+                          </td>
 
-                        {/* Focus Toggle Switch */}
-                        <td className="py-2.5 px-3 text-center">
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={m.focusEnabled}
-                              onChange={(e) => modelRegistryService.setModelVisibility(m.id, 'focus', e.target.checked)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                          </label>
-                        </td>
+                          {/* Focus Toggle Switch */}
+                          <td className="py-2.5 px-3 text-center">
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={m.focusEnabled}
+                                onChange={(e) => modelRegistryService.setModelVisibility(m.id, 'focus', e.target.checked)}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                          </td>
 
-                        {/* Quick Audition Button */}
-                        <td className="py-2.5 px-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handlePreviewModel(m.id)}
-                            disabled={isPlaying}
-                            className="p-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 text-zinc-700 cursor-pointer shadow-2xs"
-                            title="Nghe thử giọng"
-                          >
-                            {isPlaying ? (
-                              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#DC2626]" />
-                            ) : (
-                              <Play className="w-3.5 h-3.5 fill-current text-[#DC2626]" />
-                            )}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          {/* Quick Audition Button */}
+                          <td className="py-2.5 px-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handlePreviewModel(m.id)}
+                              disabled={isPlaying}
+                              className="p-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 text-zinc-700 cursor-pointer shadow-2xs"
+                              title="Nghe thử giọng"
+                            >
+                              {isPlaying ? (
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#DC2626]" />
+                              ) : (
+                                <Play className="w-3.5 h-3.5 fill-current text-[#DC2626]" />
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1583,13 +2368,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   type="button"
                   onClick={() => {
                     modelRegistryService.resetModelsToDefault();
-                    alert('Đã khôi phục toàn bộ 50+ model chuẩn của Google Cloud, Deepgram và OpenAI!');
+                    alert('Đã khôi phục toàn bộ model chuẩn của Google Cloud, Deepgram và Gemini!');
                     setIsImportModalOpen(false);
                   }}
                   className="p-3 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-left cursor-pointer transition-all"
                 >
                   <span className="font-bold text-xs text-zinc-900 block">Tất Cả Mặc Định</span>
-                  <span className="text-[10px] text-zinc-500">Google + Deepgram + OpenAI</span>
+                  <span className="text-[10px] text-zinc-500">Google + Deepgram + Gemini</span>
                 </button>
 
                 <button
@@ -1631,7 +2416,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 rows={6}
                 value={importJsonText}
                 onChange={(e) => setImportJsonText(e.target.value)}
-                placeholder='[ { "id": "my-voice", "name": "Giọng đọc mới", "language": "en", "gender": "FEMALE", "provider": "OPENAI_TTS" } ]'
+                placeholder='[ { "id": "my-voice", "name": "Giọng đọc mới", "language": "en", "gender": "FEMALE", "provider": "CUSTOM_TTS" } ]'
                 className="w-full px-3.5 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono text-zinc-900 focus:bg-white focus:outline-none focus:border-[#DC2626]"
               />
               {importNotice && (

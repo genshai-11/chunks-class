@@ -57,6 +57,7 @@ import {
   Info,
   Edit3,
   Save,
+  Trash2,
   CloudUpload
 } from 'lucide-react';
 
@@ -144,6 +145,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [batchTargetLessonId, setBatchTargetLessonId] = useState<string>('');
   const [batchTarget, setBatchTarget] = useState<AudioBatchTarget>('BOTH');
   const [batchWorkersCount, setBatchWorkersCount] = useState<number>(4);
+  const [forceOverwrite, setForceOverwrite] = useState<boolean>(true);
+  const [isResettingAudio, setIsResettingAudio] = useState<boolean>(false);
   const [isBatchRunning, setIsBatchRunning] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
@@ -487,6 +490,45 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     }
   };
 
+  // Reset / Clear Audio URLs from chunks of a lesson (set audio_url and audio_url_vi to null)
+  const handleResetAudioUrls = async (targetLessonId?: string) => {
+    const lessonIdToReset = targetLessonId || (batchScope === 'current_lesson' ? batchTargetLessonId : inspectingLesson?.id) || inspectingLesson?.id;
+    const lesson = lessons.find(l => l.id === lessonIdToReset) || inspectingLesson;
+    if (!lesson || !lesson.chunks || lesson.chunks.length === 0) {
+      alert('Không tìm thấy bài học hoặc bài học không có chunks nào để xóa link audio.');
+      return;
+    }
+
+    const confirmMsg = `Bạn có chắc chắn muốn xóa toàn bộ link audio Cloud Storage cũ của bài học "Day ${lesson.day_number}: ${lesson.lesson_title}" không?\n\nToàn bộ liên kết audio_url và audio_url_vi sẽ được đặt lại về null và cập nhật lên Firestore để bạn tạo lại từ đầu.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsResettingAudio(true);
+    try {
+      const updatedChunks = lesson.chunks.map(c => ({
+        ...c,
+        audio_url: null,
+        audio_url_vi: null
+      }));
+
+      await updateLessonChunks(lesson.id, updatedChunks);
+      const updatedLesson: LessonDoc = { ...lesson, chunks: updatedChunks };
+
+      if (inspectingLesson?.id === lesson.id) {
+        setInspectingLesson(updatedLesson);
+      }
+      setLessons(prev => prev.map(l => l.id === lesson.id ? updatedLesson : l));
+      calculateReadinessStatus();
+      addLog(`Đã xóa toàn bộ link audio cũ của Day ${lesson.day_number}. Dữ liệu đã lưu lên Firestore.`, 'success');
+      alert(`Đã xóa toàn bộ link audio cũ của Day ${lesson.day_number}! Bạn có thể bắt đầu tạo mới.`);
+    } catch (err: any) {
+      console.error('Reset audio links error:', err);
+      addLog(`Lỗi khi xóa link audio: ${err?.message || err}`, 'error');
+      alert(`Lỗi khi xóa link audio: ${err?.message || err}`);
+    } finally {
+      setIsResettingAudio(false);
+    }
+  };
+
   // Start Batch Generation Engine
   const handleStartBatchGeneration = async (
     overrideScope?: 'current_lesson' | 'entire_course',
@@ -561,36 +603,43 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         const cleanVi = chunk.vietnamese ? sanitizeSpeechText(chunk.vietnamese) : '';
 
         // Synthesize EN (Background synthesis directly into persistent IndexedDB cache + GCS Upload)
+        // Strict: ONLY when batchTarget is ENGLISH or BOTH (NEVER when VIETNAMESE)
         if (batchTarget === 'ENGLISH' || batchTarget === 'BOTH') {
           if (cancelBatchRef.current) break;
-          try {
-            const synthRes = await audioPlayer.synthesizeSingleChunk({
-              text: cleanEn,
-              language: 'en',
-              voiceName: voiceProfileEn,
-              provider: activeProvider,
-              forceRegenerate: true
-            });
-            if (synthRes?.base64) {
-              try {
-                const gcsUrl = await uploadBase64AudioToGcs({
-                  base64Audio: synthRes.base64,
-                  levelCode: selectedCourseLevel,
-                  lessonId: chunkLesson?.id || effectiveLessonId,
-                  chunkId: chunk.chunk_id,
-                  lang: 'en'
-                });
-                chunk.audio_url = gcsUrl;
-              } catch (uploadErr) {
-                console.warn(`[Batch] Upload to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
-              }
-            }
+          const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
+          if (!forceOverwrite && hasGcsEn) {
             successCount++;
-          } catch (e: any) {
-            failCount++;
-            addLog(`[Worker ${workerId}] Lỗi EN (#${chunk.item_number}): ${e?.message || 'Failed'}`, 'warning');
+            processedCount++;
+          } else {
+            try {
+              const synthRes = await audioPlayer.synthesizeSingleChunk({
+                text: cleanEn,
+                language: 'en',
+                voiceName: voiceProfileEn,
+                provider: activeProvider,
+                forceRegenerate: forceOverwrite
+              });
+              if (synthRes?.base64) {
+                try {
+                  const gcsUrl = await uploadBase64AudioToGcs({
+                    base64Audio: synthRes.base64,
+                    levelCode: selectedCourseLevel,
+                    lessonId: chunkLesson?.id || effectiveLessonId,
+                    chunkId: chunk.chunk_id,
+                    lang: 'en'
+                  });
+                  chunk.audio_url = gcsUrl;
+                } catch (uploadErr) {
+                  console.warn(`[Batch] Upload to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
+                }
+              }
+              successCount++;
+            } catch (e: any) {
+              failCount++;
+              addLog(`[Worker ${workerId}] Lỗi EN (#${chunk.item_number}): ${e?.message || 'Failed'}`, 'warning');
+            }
+            processedCount++;
           }
-          processedCount++;
           const percent = Math.round((processedCount / totalOperations) * 100);
           setBatchProgress(prev => ({
             ...prev,
@@ -603,36 +652,43 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         }
 
         // Synthesize VI (Background synthesis directly into persistent IndexedDB cache + GCS Upload)
+        // Strict: ONLY when batchTarget is VIETNAMESE or BOTH (NEVER when ENGLISH)
         if ((batchTarget === 'VIETNAMESE' || batchTarget === 'BOTH') && cleanVi) {
           if (cancelBatchRef.current) break;
-          try {
-            const synthResVi = await audioPlayer.synthesizeSingleChunk({
-              text: cleanVi,
-              language: 'vi',
-              voiceName: voiceProfileVi,
-              provider: 'GOOGLE_TTS',
-              forceRegenerate: true
-            });
-            if (synthResVi?.base64) {
-              try {
-                const gcsUrlVi = await uploadBase64AudioToGcs({
-                  base64Audio: synthResVi.base64,
-                  levelCode: selectedCourseLevel,
-                  lessonId: chunkLesson?.id || effectiveLessonId,
-                  chunkId: chunk.chunk_id,
-                  lang: 'vi'
-                });
-                chunk.audio_url_vi = gcsUrlVi;
-              } catch (uploadErr) {
-                console.warn(`[Batch] Upload VI to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
-              }
-            }
+          const hasGcsVi = Boolean(chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http'));
+          if (!forceOverwrite && hasGcsVi) {
             successCount++;
-          } catch (e: any) {
-            failCount++;
-            addLog(`[Worker ${workerId}] Lỗi VI (#${chunk.item_number}): ${e?.message || 'Failed'}`, 'warning');
+            processedCount++;
+          } else {
+            try {
+              const synthResVi = await audioPlayer.synthesizeSingleChunk({
+                text: cleanVi,
+                language: 'vi',
+                voiceName: voiceProfileVi,
+                provider: 'GOOGLE_TTS',
+                forceRegenerate: forceOverwrite
+              });
+              if (synthResVi?.base64) {
+                try {
+                  const gcsUrlVi = await uploadBase64AudioToGcs({
+                    base64Audio: synthResVi.base64,
+                    levelCode: selectedCourseLevel,
+                    lessonId: chunkLesson?.id || effectiveLessonId,
+                    chunkId: chunk.chunk_id,
+                    lang: 'vi'
+                  });
+                  chunk.audio_url_vi = gcsUrlVi;
+                } catch (uploadErr) {
+                  console.warn(`[Batch] Upload VI to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
+                }
+              }
+              successCount++;
+            } catch (e: any) {
+              failCount++;
+              addLog(`[Worker ${workerId}] Lỗi VI (#${chunk.item_number}): ${e?.message || 'Failed'}`, 'warning');
+            }
+            processedCount++;
           }
-          processedCount++;
           const percent = Math.round((processedCount / totalOperations) * 100);
           setBatchProgress(prev => ({
             ...prev,
@@ -718,6 +774,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         const result = await syncLessonCachedAudioToCloud(lesson, {
           voiceEn: voiceProfileEn,
           voiceVi: voiceProfileVi,
+          target: batchTarget,
+          forceOverwrite: forceOverwrite,
           onProgress: (current, total, status) => {
             setSyncCloudProgress(`Day ${lesson.day_number} [${current}/${total}]: ${status}`);
           }
@@ -1197,6 +1255,42 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           </div>
         </div>
 
+        {/* Overwrite Toggle & Quick Actions Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-zinc-50 rounded-xl border border-zinc-200">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={forceOverwrite}
+              disabled={isBatchRunning}
+              onChange={(e) => setForceOverwrite(e.target.checked)}
+              className="w-4 h-4 rounded text-[#DC2626] border-zinc-300 focus:ring-[#DC2626] cursor-pointer"
+            />
+            <span className="text-xs font-bold text-zinc-800">
+              Ghi đè audio đã có (Force Overwrite Cloud Storage)
+            </span>
+            <span className="text-[10px] text-zinc-400">
+              {forceOverwrite ? '— Tạo mới và tải đè lên GCS' : '— Bỏ qua các chunk đã có file audio'}
+            </span>
+          </label>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={isBatchRunning || isResettingAudio}
+              onClick={() => handleResetAudioUrls()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 bg-white hover:bg-red-50 text-xs font-bold text-red-700 cursor-pointer shadow-2xs transition-all disabled:opacity-50"
+              title="Xóa link audio cũ của bài học để tạo lại từ đầu"
+            >
+              {isResettingAudio ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-red-600" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5 text-red-600" />
+              )}
+              <span>Xóa link audio cũ</span>
+            </button>
+          </div>
+        </div>
+
         {/* Live Progress Bar and Stats */}
         {isBatchRunning && (
           <div className="p-4 bg-zinc-900 text-white rounded-xl space-y-2 font-mono text-xs animate-fade-in">
@@ -1477,6 +1571,17 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                             <span>Tạo Lại</span>
                           </button>
 
+                          {/* Reset Audio URLs for This Lesson */}
+                          <button
+                            type="button"
+                            disabled={isBatchRunning || isResettingAudio}
+                            onClick={() => handleResetAudioUrls(item.lessonId)}
+                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center"
+                            title="Xóa link audio cũ của bài này để tạo lại từ đầu"
+                          >
+                            <Trash2 className="w-3 h-3 text-red-600" />
+                          </button>
+
                           {/* Inspect Chunks Drawer */}
                           <button
                             type="button"
@@ -1550,6 +1655,17 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 >
                   <Zap className="w-3.5 h-3.5 text-amber-600" />
                   <span>Tạo Lại Audio (Day {inspectingLesson.day_number})</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isBatchRunning || isResettingAudio}
+                  onClick={() => handleResetAudioUrls(inspectingLesson.id)}
+                  className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  title="Xóa toàn bộ link audio Cloud Storage cũ của bài học này"
+                >
+                  {isResettingAudio ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
+                  <span>Xóa link audio cũ</span>
                 </button>
 
                 {onLaunchProjectorForLesson && (
