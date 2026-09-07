@@ -4326,7 +4326,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-                        {genBatchesStatus.map((batch) => {
+                        {genBatchesStatus.map((batch, bIdx) => {
                           const isSuccess = batch.status === 'success';
                           const isFailed = batch.status === 'failed';
                           const isBatchGen = batch.status === 'generating';
@@ -4334,7 +4334,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                           return (
                             <div
-                              key={batch.batchId}
+                              key={batch.batchId || `batch_${batch.sessionNumber}_${bIdx}`}
                               className={`p-2.5 rounded-xl border text-xs transition-all ${
                                 isSuccess
                                   ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
@@ -4352,7 +4352,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                   {isFailed && <AlertCircle className="w-3 h-3 text-red-400 shrink-0" />}
                                   {isPending && <span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0 inline-block" />}
                                   <span className="truncate">
-                                    S{batch.sessionNumber}: Items {batch.itemRange[0]}-{batch.itemRange[1]}
+                                    S{batch.sessionNumber}: {batch.itemsRange || (batch.itemRange ? `Câu ${batch.itemRange[0]}-${batch.itemRange[1]}` : `Đợt ${bIdx + 1}`)}
                                   </span>
                                 </div>
                                 <div className="text-[10px] font-mono shrink-0">
@@ -4364,7 +4364,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                 <span>
                                   {isPending && '⚪ Chờ xử lý...'}
                                   {isBatchGen && '🟡 Đang sinh AI...'}
-                                  {isSuccess && `🟢 Đã tạo ${batch.itemCount} items`}
+                                  {isSuccess && `🟢 Đã tạo ${batch.itemsCount ?? batch.count ?? 0} câu`}
                                   {isFailed && '🔴 Lỗi (Dùng Fallback)'}
                                 </span>
                                 {batch.modelName && (

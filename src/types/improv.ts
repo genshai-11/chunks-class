@@ -82,10 +82,14 @@ export interface ImprovBatchGenerationStatus {
   totalBatches: number;
   sessionNumber: number;
   itemsRange: string;
+  itemRange?: [number, number];
+  batchId?: string;
   count: number;
+  itemsCount?: number;
   status: 'pending' | 'generating' | 'success' | 'failed';
   error?: string;
-  itemsCount?: number;
+  modelName?: string;
+  durationMs?: number;
 }
 
 export interface ImprovGenerateProgressDetail {

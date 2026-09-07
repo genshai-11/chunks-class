@@ -1278,8 +1278,12 @@ export async function generateImprovPackage(
     totalBatches: totalBatchesCount,
     sessionNumber: b.sessionNumber,
     itemsRange: `Câu ${b.startItem}-${b.startItem + b.count - 1}`,
+    itemRange: [b.startItem, b.startItem + b.count - 1],
+    batchId: `batch_${b.sessionNumber}_${idx}`,
     count: b.count,
-    status: 'pending' as const
+    itemsCount: b.count,
+    status: 'pending' as const,
+    modelName: effectiveLlmConfig.model || 'gemini-2.5-flash'
   }));
 
   let successBatchesCount = 0;
@@ -1301,6 +1305,7 @@ export async function generateImprovPackage(
     const endItem = batch.startItem + batch.count - 1;
 
     allPlannedBatchesStatus[batchStep].status = 'generating';
+    const batchStartTime = Date.now();
 
     const progressPercent = Math.round(5 + ((batchStep) / totalBatchesCount) * 88);
     const batchInfoMsg = batch.totalBatchesInSession > 1
@@ -1470,6 +1475,7 @@ CRITICAL RULES:
 
       allPlannedBatchesStatus[batchStep].status = 'success';
       allPlannedBatchesStatus[batchStep].itemsCount = validatedBatchItems.length;
+      allPlannedBatchesStatus[batchStep].durationMs = Date.now() - batchStartTime;
       successBatchesCount++;
     } catch (batchErr: any) {
       if (signal?.aborted) {
@@ -1477,7 +1483,8 @@ CRITICAL RULES:
       }
       console.error(`[generateImprovPackage] Error in batch ${batchStep + 1}/${totalBatchesCount}:`, batchErr);
       allPlannedBatchesStatus[batchStep].status = 'failed';
-      allPlannedBatchesStatus[batchStep].error = batchErr?.message || 'Lỗi sinh batch';
+      allPlannedBatchesStatus[batchStep].error = batchErr?.message || 'Lỗi không xác định';
+      allPlannedBatchesStatus[batchStep].durationMs = Date.now() - batchStartTime;
       failedBatchesCount++;
 
       // Use fallback synthesis for this batch so generation proceeds reliably
