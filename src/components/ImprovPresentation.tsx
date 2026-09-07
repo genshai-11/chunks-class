@@ -7,7 +7,7 @@ import {
   CohortAudioSettings,
   LanguageMode
 } from '../types';
-import { getAllImprovPackages } from '../services/improvService';
+import { getAllImprovPackages, getLocalCachedImprovPackages } from '../services/improvService';
 import { 
   getResponsiveHintTypography, 
   getSemanticHintBadge, 
@@ -204,8 +204,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   onSelectPackage
 }) => {
   // Packages & Navigation State
-  const [packages, setPackages] = useState<ImprovPackage[]>([]);
-  const [selectedPkgId, setSelectedPkgId] = useState<string>(packageId || '');
+  const [packages, setPackages] = useState<ImprovPackage[]>(() => getLocalCachedImprovPackages());
+  const [selectedPkgId, setSelectedPkgId] = useState<string>(() => {
+    if (packageId) return packageId;
+    const initial = getLocalCachedImprovPackages();
+    return initial.length > 0 ? initial[0].id : '';
+  });
   const [selectedSessionNum, setSelectedSessionNum] = useState<number>(sessionNumber);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
 

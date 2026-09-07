@@ -236,12 +236,15 @@ class DeepgramTtsService {
   private blobToBase64(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onload = () => {
         const result = reader.result as string;
-        // Strip data:audio/mp3;base64, prefix if present, return full data URI
-        resolve(result);
+        if (!result) {
+          reject(new Error('[Deepgram] FileReader returned empty result'));
+        } else {
+          resolve(result);
+        }
       };
-      reader.onerror = reject;
+      reader.onerror = () => reject(reader.error || new Error('[Deepgram] FileReader error'));
       reader.readAsDataURL(blob);
     });
   }
