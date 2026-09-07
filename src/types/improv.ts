@@ -77,6 +77,29 @@ export interface ImprovSessionConfig {
 export type ImprovDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
 export type ImprovRelevance = 'LOW' | 'MEDIUM' | 'HIGH';
 
+export interface ImprovBatchGenerationStatus {
+  batchIndex: number;
+  totalBatches: number;
+  sessionNumber: number;
+  itemsRange: string;
+  itemRange?: [number, number];
+  batchId?: string;
+  count: number;
+  itemsCount?: number;
+  status: 'pending' | 'generating' | 'success' | 'failed';
+  error?: string;
+  modelName?: string;
+  durationMs?: number;
+}
+
+export interface ImprovGenerateProgressDetail {
+  batchIndex: number;
+  totalBatches: number;
+  batches: ImprovBatchGenerationStatus[];
+  successBatches: number;
+  failedBatches: number;
+}
+
 export interface ImprovGenerateRequest {
   packageTitle: string;
   packageDescription?: string;
@@ -85,7 +108,8 @@ export interface ImprovGenerateRequest {
   sessionsConfig: ImprovSessionConfig[];
   sourceLevel: CourseLevel | 'ALL';
   sourceLessonIds: string[];
-  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
-  relevance: 'LOW' | 'MEDIUM' | 'HIGH';
+  selectedVocabIds?: string[];
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD' | string;
+  relevance: 'LOW' | 'MEDIUM' | 'HIGH' | string;
   llmConfig: ImprovLLMConfig;
 }

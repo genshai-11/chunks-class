@@ -7,7 +7,7 @@ import {
   CohortAudioSettings,
   LanguageMode
 } from '../types';
-import { getAllImprovPackages } from '../services/improvService';
+import { getAllImprovPackages, getLocalCachedImprovPackages } from '../services/improvService';
 import { 
   getResponsiveHintTypography, 
   getSemanticHintBadge, 
@@ -24,6 +24,7 @@ import { modelRegistryService } from '../services/modelRegistryService';
 import { 
   improvTts,
   getHintTextByLanguage, 
+  getHintLanguagePair,
   isSessionAudioReady, 
   isPackageAudioReady 
 } from '../services/improvTtsService';
@@ -204,8 +205,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   onSelectPackage
 }) => {
   // Packages & Navigation State
-  const [packages, setPackages] = useState<ImprovPackage[]>([]);
-  const [selectedPkgId, setSelectedPkgId] = useState<string>(packageId || '');
+  const [packages, setPackages] = useState<ImprovPackage[]>(() => getLocalCachedImprovPackages());
+  const [selectedPkgId, setSelectedPkgId] = useState<string>(() => {
+    if (packageId) return packageId;
+    const initial = getLocalCachedImprovPackages();
+    return initial.length > 0 ? initial[0].id : '';
+  });
   const [selectedSessionNum, setSelectedSessionNum] = useState<number>(sessionNumber);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
 
@@ -631,8 +636,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         setActivePlayingHintIndex(i);
         const hint = hintsToPlay[i];
         
-        const enText = getHintTextByLanguage(hint, 'en') || hint.text;
-        const viText = getHintTextByLanguage(hint, 'vi') || hint.translation || hint.text;
+        const { en: resolvedEn, vi: resolvedVi } = getHintLanguagePair(hint);
+        const enText = resolvedEn || hint.text;
+        const viText = resolvedVi || hint.translation || hint.text;
 
         if (languageMode === 'VI_ONLY') {
           const textToSpeak = viText;
@@ -705,8 +711,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
-      const enText = getHintTextByLanguage(hint, 'en') || hint.text;
-      const viText = getHintTextByLanguage(hint, 'vi') || hint.translation || hint.text;
+      const { en: resolvedEn, vi: resolvedVi } = getHintLanguagePair(hint);
+      const enText = resolvedEn || hint.text;
+      const viText = resolvedVi || hint.translation || hint.text;
 
       if (languageMode === 'VI_ONLY') {
         const textToSpeak = viText;
@@ -1890,8 +1897,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 }
 
                 // Main Primary & Secondary Content by Language Mode
-                const enText = getHintTextByLanguage(hint, 'en');
-                const viText = getHintTextByLanguage(hint, 'vi');
+                const { en: resolvedEn, vi: resolvedVi } = getHintLanguagePair(hint);
+                const enText = resolvedEn || hint.text;
+                const viText = resolvedVi || hint.translation;
 
                 const mainText = languageMode === 'VI_ONLY' ? (viText || enText) : (enText || viText);
                 const subText = languageMode === 'VI_ONLY' ? enText : viText;
@@ -2525,8 +2533,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                     {/* Hints Preview: High contrast black in Light Mode, zinc-100 in Dark Mode */}
                     <div className="flex flex-wrap items-baseline gap-y-1 text-xs font-bold leading-snug">
                       {item.hints.map((h, hIdx) => {
-                        const enText = getHintTextByLanguage(h, 'en') || h.text;
-                        const viText = getHintTextByLanguage(h, 'vi') || h.translation;
+                        const { en: resolvedEn, vi: resolvedVi } = getHintLanguagePair(h);
+                        const enText = resolvedEn || h.text;
+                        const viText = resolvedVi || h.translation;
                         return (
                           <React.Fragment key={h.id || hIdx}>
                             <span className="inline-flex items-baseline gap-1.5">

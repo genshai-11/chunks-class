@@ -11,12 +11,16 @@ import {
   LessonDoc,
   ChunkItem,
   CohortAudioSettings,
-  Course
+  Course,
+  ImprovBatchGenerationStatus,
+  ImprovGenerateProgressDetail
 } from '../types';
 import { 
   getAllImprovPackages, 
+  getLocalCachedImprovPackages,
   saveImprovPackage, 
   deleteImprovPackage, 
+  updateImprovPackageMetadata,
   addOrUpdateImprovItem, 
   deleteImprovItem, 
   parseImprovExcelFile, 
@@ -43,6 +47,7 @@ import {
   playItemAudio, 
   stopImprovAudio,
   getHintTextByLanguage,
+  getHintLanguagePair,
   prepareSessionAudio,
   preparePackageAudio,
   prepareCustomItemsAudio,
@@ -79,6 +84,7 @@ import {
   Save, 
   FileSpreadsheet, 
   ChevronDown, 
+  ChevronLeft,
   ChevronRight, 
   Filter, 
   Search, 
@@ -178,14 +184,27 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   // --------------------------------------------------------------------------
   // A. Packages & Active Selection State
   // --------------------------------------------------------------------------
-  const [packages, setPackages] = useState<ImprovPackage[]>([]);
-  const [activePackageId, setActivePackageId] = useState<string>(defaultPackageId || '');
-  const [isLoadingPackages, setIsLoadingPackages] = useState<boolean>(true);
-  const [activeSessionTab, setActiveSessionTab] = useState<number | 'all'>('all');
+  const [packages, setPackages] = useState<ImprovPackage[]>(() => getLocalCachedImprovPackages());
+  const [activePackageId, setActivePackageId] = useState<string>(() => {
+    if (defaultPackageId) return defaultPackageId;
+    const initial = getLocalCachedImprovPackages();
+    return initial.length > 0 ? initial[0].id : '';
+  });
+  const [isLoadingPackages, setIsLoadingPackages] = useState<boolean>(false);
+  const [activeSessionTab, setActiveSessionTab] = useState<number | 'all'>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [audioFilter, setAudioFilter] = useState<'all' | 'ready' | 'missing'>('all');
   const [showVietnamese, setShowVietnamese] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+
+  // Pagination & Chunked Display State (15 - 20 items per page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number | 'all'>(20);
+
+  // Reset pagination to page 1 whenever active package, session tab, search query, audio filter, or page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activePackageId, activeSessionTab, searchQuery, audioFilter, pageSize]);
 
   // --------------------------------------------------------------------------
   // B. Modal Visibility & Item CRUD States
@@ -193,6 +212,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [isGeneratorOpen, setIsGeneratorOpen] = useState<boolean>(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState<boolean>(false);
+  const [renameTitle, setRenameTitle] = useState<string>('');
+  const [renameDescription, setRenameDescription] = useState<string>('');
+  const [isSavingRename, setIsSavingRename] = useState<boolean>(false);
+  const [renameSuccessToast, setRenameSuccessToast] = useState<string | null>(null);
   const [isBatchAudioModalOpen, setIsBatchAudioModalOpen] = useState<boolean>(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<ImprovItem | null>(null);
@@ -559,6 +583,17 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     estimatedTokens: 0
   });
   const [genError, setGenError] = useState<string | null>(null);
+  const [genBatchesStatus, setGenBatchesStatus] = useState<ImprovBatchGenerationStatus[]>([]);
+  const [genCompletionSummary, setGenCompletionSummary] = useState<{
+    title: string;
+    totalItems: number;
+    sessionsCount: number;
+    level: string;
+    difficulty: string;
+    relevance: string;
+    successBatches: number;
+    failedBatches: number;
+  } | null>(null);
   const abortGenRef = useRef<AbortController | null>(null);
   const timerGenRef = useRef<any>(null);
 
@@ -572,11 +607,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
 
   // --------------------------------------------------------------------------
-  // 1. Initial Load of Packages & Registry
+  // 1. Initial Load of Packages & Registry (Non-blocking background sync)
   // --------------------------------------------------------------------------
   useEffect(() => {
     async function loadData() {
-      setIsLoadingPackages(true);
       try {
         let loaded = await getAllImprovPackages();
         const defaultSeeds = createDefaultSeedPackages();
@@ -613,19 +647,21 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         }
 
         if (needsPersistence) {
-          for (const s of filteredDefaultSeeds) {
-            try {
-              await saveImprovPackage(s);
-            } catch (err) {
-              console.warn('[ImprovManagerView] Auto-persistence notice for pkg:', s.id, err);
-            }
-          }
+          // Non-blocking auto-persistence: run in background with Promise.allSettled
+          Promise.allSettled(
+            filteredDefaultSeeds.map(s => saveImprovPackage(s))
+          ).catch(err => {
+            console.warn('[ImprovManagerView] Background auto-persistence notice:', err);
+          });
         }
 
         setPackages(loaded);
         if (loaded.length > 0) {
-          const found = defaultPackageId ? loaded.find(p => p.id === defaultPackageId) : null;
-          setActivePackageId(found ? found.id : loaded[0].id);
+          setActivePackageId(prev => {
+            if (defaultPackageId && loaded.some(p => p.id === defaultPackageId)) return defaultPackageId;
+            if (prev && loaded.some(p => p.id === prev)) return prev;
+            return loaded[0].id;
+          });
         }
       } catch (err) {
         console.error('Failed to load Improv packages, restoring defaults:', err);
@@ -641,10 +677,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         const seeds = createDefaultSeedPackages().filter(d => !deletedIds.has(d.id));
         if (seeds.length > 0) {
           setPackages(seeds);
-          setActivePackageId(seeds[0].id);
-          for (const s of seeds) {
-            saveImprovPackage(s).catch(() => {});
-          }
+          setActivePackageId(prev => (prev && seeds.some(p => p.id === prev) ? prev : seeds[0].id));
+          Promise.allSettled(seeds.map(s => saveImprovPackage(s))).catch(() => {});
         }
       } finally {
         setIsLoadingPackages(false);
@@ -653,26 +687,30 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     loadData();
   }, [defaultPackageId]);
 
-  // Load available lessons for Vocab selector when source level changes
+  // Lazy-load available lessons for Vocab selector: ONLY when AI Generator modal is opened!
   useEffect(() => {
+    if (!isGeneratorOpen) return;
+
     let isMounted = true;
     async function fetchLessons() {
-      let lessons: LessonDoc[] = [];
-      try {
-        if (genSourceLevel === 'ALL') {
-          lessons = await getLessonsByLevel('LEVEL_B_ERES');
-        } else {
-          lessons = await getLessonsByLevel(genSourceLevel);
+      const targetLevel = genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel;
+      // 1. Instant in-memory curriculumRegistry lookup (0ms latency, zero network)
+      let lessons: LessonDoc[] = curriculumRegistry.getLessons(targetLevel);
+
+      // 2. Network fallback only if registry is empty
+      if (!lessons || lessons.length === 0) {
+        try {
+          lessons = await getLessonsByLevel(targetLevel);
+        } catch (err) {
+          console.warn('[ImprovManagerView] Error loading lessons:', err);
+          lessons = curriculumRegistry.getLessons(targetLevel);
         }
-      } catch (err) {
-        console.warn('[ImprovManagerView] Error loading lessons:', err);
-        lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
       }
 
       if (!isMounted) return;
 
       if (!lessons || lessons.length === 0) {
-        lessons = curriculumRegistry.getLessons(genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel);
+        lessons = curriculumRegistry.getLessons(targetLevel);
       }
 
       setGenAvailableLessons(lessons);
@@ -696,7 +734,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
     fetchLessons();
     return () => { isMounted = false; };
-  }, [genSourceLevel, availableCourses, computeDynamicTitleAndDescription, genSessionsCount, genTotalItems]);
+  }, [isGeneratorOpen, genSourceLevel, availableCourses, computeDynamicTitleAndDescription, genSessionsCount, genTotalItems]);
 
   const handleToggleLessonSelection = (lessonId: string) => {
     setGenSelectedLessonIds(prev => {
@@ -933,6 +971,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
     return items;
   }, [activePackage, activeSessionTab, searchQuery, audioFilter, checkItemReadiness, synthesizingItemIds, batchCompleted]);
+
+  // --------------------------------------------------------------------------
+  // Pagination & Chunked Display Calculations (15 - 20 items per page)
+  // --------------------------------------------------------------------------
+  const totalFilteredCount = filteredItems.length;
+  const effectivePageSize = pageSize === 'all' ? (totalFilteredCount || 1) : pageSize;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / effectivePageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedItems = useMemo(() => {
+    if (pageSize === 'all') return filteredItems;
+    const start = (safeCurrentPage - 1) * effectivePageSize;
+    return filteredItems.slice(start, start + effectivePageSize);
+  }, [filteredItems, pageSize, safeCurrentPage, effectivePageSize]);
+
+  const startDisplayIdx = totalFilteredCount === 0 ? 0 : (safeCurrentPage - 1) * effectivePageSize + 1;
+  const endDisplayIdx = pageSize === 'all' ? totalFilteredCount : Math.min(safeCurrentPage * effectivePageSize, totalFilteredCount);
 
   // Stats Summary
   const stats = useMemo(() => {
@@ -1362,6 +1417,27 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     }
   };
 
+  // Toggle selection for all items on current page
+  const handleToggleSelectPage = () => {
+    const pageIds = paginatedItems.map(it => it.id);
+    const allPageSelected = pageIds.length > 0 && pageIds.every(id => selectedItemIds.includes(id));
+    if (allPageSelected) {
+      setSelectedItemIds(prev => prev.filter(id => !pageIds.includes(id)));
+    } else {
+      setSelectedItemIds(prev => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  // Number of selected items on current page
+  const selectedOnPageCount = useMemo(() => {
+    return paginatedItems.filter(it => selectedItemIds.includes(it.id)).length;
+  }, [paginatedItems, selectedItemIds]);
+
+  // Select all items in the entire filtered list
+  const handleSelectAllFiltered = () => {
+    setSelectedItemIds(filteredItems.map(it => it.id));
+  };
+
   // Select all items that are missing audio in current filtered view (or scope)
   const handleSelectAllMissing = () => {
     const missingInFiltered = filteredItems.filter(it => !checkItemReadiness(it).ready);
@@ -1681,6 +1757,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     setGenError(null);
     setIsGenerating(true);
     setGenLogs([]);
+    setGenBatchesStatus([]);
+    setGenCompletionSummary(null);
     setTokenStats({ elapsedSec: 0, speed: '~45 t/s', estimatedTokens: 0 });
     setGenProgress({ percent: 5, current: 0, total: genTotalItems, message: 'Đang trích xuất từ vựng cốt lõi từ giáo trình...' });
 
@@ -1712,6 +1790,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           sessionsConfig: genSessionConfigs,
           sourceLevel: genSourceLevel,
           sourceLessonIds: genSelectedLessonIds,
+          selectedVocabIds: genSelectedVocabIds,
           llmConfig: {
             provider: genProvider,
             endpoint: genEndpoint,
@@ -1722,13 +1801,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             maxTokens: 16384
           }
         },
-        (percent, total, message) => {
+        (percent, total, message, detail) => {
           setGenProgress({
             percent,
             current: Math.round((percent / 100) * genTotalItems),
             total: genTotalItems,
             message
           });
+          if (detail?.batches) {
+            setGenBatchesStatus(detail.batches);
+          }
           addGenLog('info', message);
         },
         abortController.signal
@@ -1741,8 +1823,20 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setGenProgress({ percent: 100, current: createdPkg.totalItems, total: createdPkg.totalItems, message: 'Hoàn tất sinh Package thành công!' });
       addGenLog('success', `Đã lưu Package "${createdPkg.title}" với ${createdPkg.totalItems} items!`);
       setGenError(null);
+
+      // Record completion summary
+      setGenCompletionSummary(prev => ({
+        title: createdPkg.title,
+        totalItems: createdPkg.totalItems,
+        sessionsCount: createdPkg.sessionsCount,
+        level: String(genSourceLevel),
+        difficulty: genDifficulty,
+        relevance: genRelevance,
+        successBatches: prev?.successBatches || createdPkg.sessionsCount,
+        failedBatches: prev?.failedBatches || 0
+      }));
+
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-      setTimeout(() => setIsGeneratorOpen(false), 1200);
     } catch (err: any) {
       if (abortController.signal.aborted) {
         addGenLog('warning', 'Quá trình sinh dữ liệu đã bị người dùng hủy.');
@@ -1968,6 +2062,57 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   // --------------------------------------------------------------------------
+  // 6b. Rename Package
+  // --------------------------------------------------------------------------
+  const handleOpenRenameModal = () => {
+    if (!activePackage) return;
+    setRenameTitle(activePackage.title || '');
+    setRenameDescription(activePackage.description || '');
+    setIsRenameModalOpen(true);
+  };
+
+  const handleSaveRename = async () => {
+    if (!activePackage) return;
+    const trimmedTitle = renameTitle.trim();
+    if (!trimmedTitle) {
+      alert('Vui lòng nhập tên gói bài tập (Package Title)');
+      return;
+    }
+
+    setIsSavingRename(true);
+    try {
+      await updateImprovPackageMetadata(activePackage.id, {
+        title: trimmedTitle,
+        description: renameDescription.trim()
+      });
+
+      // Update in-memory state
+      setPackages(prev => prev.map(p => {
+        if (p.id === activePackage.id) {
+          return {
+            ...p,
+            title: trimmedTitle,
+            description: renameDescription.trim(),
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return p;
+      }));
+
+      setIsRenameModalOpen(false);
+      setRenameSuccessToast(`Đã đổi tên package thành "${trimmedTitle}"`);
+      setTimeout(() => {
+        setRenameSuccessToast(null);
+      }, 4000);
+    } catch (err: any) {
+      console.error('[handleSaveRename] Error updating package metadata:', err);
+      alert(`Lỗi khi lưu đổi tên gói bài tập: ${err?.message || 'Không xác định'}`);
+    } finally {
+      setIsSavingRename(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
   // 7. Delete Package
   // --------------------------------------------------------------------------
 
@@ -2068,7 +2213,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </div>
 
               {/* Dropdown switcher */}
-              <div className="relative mt-1">
+              <div className="relative mt-1 flex items-center gap-1.5">
                 <select
                   value={activePackageId}
                   onChange={(e) => {
@@ -2083,6 +2228,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  onClick={handleOpenRenameModal}
+                  className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer shrink-0"
+                  title="Đổi tên & mô tả gói bài tập này"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           </div>
@@ -2107,6 +2260,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             >
               <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
               <span>Tạo Package AI</span>
+            </button>
+
+            {/* Rename Package */}
+            <button
+              onClick={handleOpenRenameModal}
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
+              title="Đổi tên & mô tả Package hiện tại"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-zinc-500" />
+              <span className="hidden sm:inline">Đổi Tên</span>
             </button>
 
             {/* Import / Export Excel */}
@@ -2418,10 +2581,30 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-              <span className="text-xs text-zinc-400 font-mono">
-                Hiển thị {filteredItems.length} / {stats.totalItems} items
+            <div className="flex items-center gap-3 flex-wrap justify-between sm:justify-end shrink-0">
+              {/* Range & Total Count */}
+              <span className="text-xs text-zinc-600 font-medium">
+                Hiển thị <span className="font-bold text-zinc-900 font-mono">{startDisplayIdx} - {endDisplayIdx}</span> trên <span className="font-bold text-zinc-900 font-mono">{totalFilteredCount}</span> items
               </span>
+
+              {/* Page size toggle buttons: 15 | 20 | 50 | Tất cả */}
+              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-semibold">
+                <span className="px-2 text-[10px] uppercase font-mono text-zinc-500 font-bold hidden md:inline">Mỗi trang:</span>
+                {([15, 20, 50, 'all'] as const).map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => setPageSize(sz)}
+                    className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      pageSize === sz 
+                        ? 'bg-[#DC2626] text-white shadow-xs' 
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    {sz === 'all' ? 'Tất cả' : `${sz}`}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -2553,8 +2736,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           /* ================================================================ */
           <div className="space-y-2">
             {/* Quick Actions Bar Above Table (Near Select-All) */}
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={handleSelectAllMissing}
@@ -2574,6 +2757,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     Bỏ chọn ({selectedItemIds.length})
                   </button>
                 )}
+                {selectedOnPageCount > 0 && selectedItemIds.length < filteredItems.length && (
+                  <span className="text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 inline-flex items-center gap-1.5">
+                    <span>Đã chọn <strong>{selectedOnPageCount}</strong> câu trên trang này.</span>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllFiltered}
+                      className="text-xs font-bold text-[#DC2626] hover:underline cursor-pointer"
+                    >
+                      [Chọn tất cả {filteredItems.length} câu trong danh sách]
+                    </button>
+                  </span>
+                )}
               </div>
               <span className="text-xs text-zinc-400 font-mono">
                 {selectedItemIds.length > 0 ? `Đã chọn ${selectedItemIds.length} / ${filteredItems.length} items` : ''}
@@ -2588,21 +2783,21 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     <th className="p-3.5 w-10 text-center">
                       <input
                         type="checkbox"
-                        checked={filteredItems.length > 0 && filteredItems.every(it => selectedItemIds.includes(it.id))}
-                        onChange={handleToggleSelectAllFiltered}
+                        checked={paginatedItems.length > 0 && paginatedItems.every(it => selectedItemIds.includes(it.id))}
+                        onChange={handleToggleSelectPage}
                         className="rounded text-[#DC2626] focus:ring-[#DC2626] cursor-pointer"
-                        title="Chọn tất cả / Bỏ chọn tất cả"
+                        title="Chọn / Bỏ chọn tất cả các câu trên trang này"
                       />
                     </th>
                     <th className="p-3.5 w-14 text-center">STT</th>
                     <th className="p-3.5 w-24 text-center">Session</th>
-                    <th className="p-3.5 min-w-[280px]">Các Gợi Ý & Từ Loại (Clues Stream)</th>
+                    <th className="p-3.5 min-w-[280px]">Các Gợi Ý (EN & VI) & Từ Loại (Clues Stream)</th>
                     <th className="p-3.5 w-[300px] text-center">Studio Âm Thanh (Audio Studio)</th>
                     <th className="p-3.5 w-24 text-center">Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
-                  {filteredItems.map((item) => {
+                  {paginatedItems.map((item) => {
                     const isPlayingThis = playingItemId === item.id;
                     const isSynthesizing = synthesizingItemIds[item.id] || false;
                     const isSelected = selectedItemIds.includes(item.id);
@@ -2673,6 +2868,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                 const isHintViLoading = synthesizingHintIds[`${hint.id}_vi`];
                                 const hasHintEnGcs = Boolean(hint.audioUrl && hint.audioUrl.startsWith('http'));
                                 const hasHintViGcs = Boolean(hint.audioUrlVi && hint.audioUrlVi.startsWith('http'));
+                                const { en: hintEn, vi: hintVi } = getHintLanguagePair(hint);
 
                                 return (
                                   <React.Fragment key={hint.id || hIdx}>
@@ -2689,12 +2885,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                           <span>{badge.label}</span>
                                         </span>
                                       </div>
-                                      <div className="font-bold text-zinc-900 text-xs leading-snug">
-                                        {hint.text}
+                                      <div className="font-bold text-zinc-900 text-xs leading-snug flex items-start gap-1">
+                                        <span className="text-[9px] font-mono font-extrabold text-zinc-400 bg-zinc-100 px-1 py-0.2 rounded shrink-0 mt-0.5">EN</span>
+                                        <span className="text-zinc-900 font-bold">{hintEn || hint.text}</span>
                                       </div>
-                                      {showVietnamese && hint.translation && (
-                                        <div className="text-[11px] text-zinc-700 font-medium mt-1 leading-tight">
-                                          {hint.translation}
+                                      {showVietnamese && (hintVi || hint.translation) && (
+                                        <div className="text-[11px] text-zinc-700 font-medium mt-1 leading-tight flex items-start gap-1">
+                                          <span className="text-[9px] font-mono font-extrabold text-blue-700 bg-blue-50 px-1 py-0.2 rounded shrink-0 mt-0.5">VI</span>
+                                          <span className="text-zinc-700">{hintVi || hint.translation}</span>
                                         </div>
                                       )}
 
@@ -2986,7 +3184,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           /* CARDS VIEW MODE (Stream Cards Preview) */
           /* ================================================================ */
           <div className="space-y-3">
-            {filteredItems.map((item) => {
+            {paginatedItems.map((item) => {
               const isPlayingThis = playingItemId === item.id;
               const isSynthesizing = synthesizingItemIds[item.id] || false;
               const isSelected = selectedItemIds.includes(item.id);
@@ -3068,6 +3266,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                           const isHintViLoading = synthesizingHintIds[`${hint.id}_vi`];
                           const hasHintEnGcs = Boolean(hint.audioUrl && hint.audioUrl.startsWith('http'));
                           const hasHintViGcs = Boolean(hint.audioUrlVi && hint.audioUrlVi.startsWith('http'));
+                          const { en: hintEn, vi: hintVi } = getHintLanguagePair(hint);
 
                           return (
                             <div
@@ -3090,14 +3289,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                               </div>
 
                               {/* Clue English Text */}
-                              <div className="text-xs font-bold text-zinc-900 leading-snug line-clamp-3 mb-1">
-                                {hint.text}
+                              <div className="text-xs font-bold text-zinc-900 leading-snug line-clamp-3 mb-1 flex items-start gap-1">
+                                <span className="text-[9px] font-mono font-extrabold text-zinc-400 bg-zinc-100 px-1 py-0.2 rounded shrink-0 mt-0.5">EN</span>
+                                <span>{hintEn || hint.text}</span>
                               </div>
 
                               {/* Clue Vietnamese Meaning */}
-                              {showVietnamese && hint.translation && (
-                                <div className="text-[11px] text-zinc-700 font-medium line-clamp-2 mt-auto pt-1 border-t border-zinc-200/80">
-                                  {hint.translation}
+                              {showVietnamese && (hintVi || hint.translation) && (
+                                <div className="text-[11px] text-zinc-700 font-medium line-clamp-2 mt-auto pt-1 border-t border-zinc-200/80 flex items-start gap-1">
+                                  <span className="text-[9px] font-mono font-extrabold text-blue-700 bg-blue-50 px-1 py-0.2 rounded shrink-0 mt-0.5">VI</span>
+                                  <span>{hintVi || hint.translation}</span>
                                 </div>
                               )}
 
@@ -3344,6 +3545,84 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* ================================================================== */}
+        {/* PAGINATION BAR (Thanh phân trang hiệu năng cao 15-20 items) */}
+        {/* ================================================================== */}
+        {pageSize !== 'all' && totalPages > 1 && (
+          <div className="mt-4 bg-white rounded-2xl border border-[#E8E8EC] p-3 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Range & Page Info */}
+            <div className="text-xs text-zinc-500 font-medium">
+              Trang <span className="font-bold text-zinc-900 font-mono">{safeCurrentPage}</span> / <span className="font-bold text-zinc-900 font-mono">{totalPages}</span>
+              <span className="mx-2 text-zinc-300">•</span>
+              Hiển thị <span className="font-bold text-zinc-900 font-mono">{startDisplayIdx} - {endDisplayIdx}</span> trong tổng số <span className="font-bold text-zinc-900 font-mono">{totalFilteredCount}</span> câu
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center gap-1.5 flex-wrap justify-center">
+              {/* Previous Button */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={safeCurrentPage === 1}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 transition-all cursor-pointer shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Trước</span>
+              </button>
+
+              {/* Page Number Buttons */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  if (totalPages <= 7) return true;
+                  if (page === 1 || page === totalPages) return true;
+                  return Math.abs(page - safeCurrentPage) <= 1;
+                })
+                .reduce<(number | string)[]>((acc, page, idx, arr) => {
+                  if (idx > 0 && page - (arr[idx - 1] as number) > 1) {
+                    acc.push(`dots-${page}`);
+                  }
+                  acc.push(page);
+                  return acc;
+                }, [])
+                .map((item) => {
+                  if (typeof item === 'string') {
+                    return (
+                      <span key={item} className="px-2 text-xs text-zinc-400 font-mono">
+                        ...
+                      </span>
+                    );
+                  }
+                  const isActive = item === safeCurrentPage;
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setCurrentPage(item)}
+                      className={`w-8 h-8 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#DC2626] text-white shadow-xs'
+                          : 'bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-200 shadow-2xs'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+
+              {/* Next Button */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={safeCurrentPage === totalPages}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 transition-all cursor-pointer shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span>Tiếp</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -4009,8 +4288,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
               )}
 
-              {/* Progress & Live Logs (when generating or error) */}
-              {(isGenerating || genError || genLogs.some(l => l.type === 'error')) && (
+              {/* Progress, Micro-Batches & Live Logs (when generating, error, or completed) */}
+              {(isGenerating || genError || genLogs.length > 0 || genBatchesStatus.length > 0 || genCompletionSummary) && (
                 <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-3 font-mono">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
@@ -4040,6 +4319,102 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     <span>Tốc độ: {tokenStats.speed}</span>
                     <span>Ước tính tokens: ~{tokenStats.estimatedTokens}</span>
                   </div>
+
+                  {/* Live Micro-Batch Progress & Diagnostics Grid */}
+                  {genBatchesStatus.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-zinc-800">
+                      <div className="flex items-center justify-between text-[11px] text-zinc-300 font-bold">
+                        <span className="flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5 text-zinc-400" />
+                          Tiến Độ Từng Đợt Sinh (Micro-Batches ({genBatchesStatus.length}))
+                        </span>
+                        <span className="text-[10px] text-zinc-400 font-mono">
+                          {genBatchesStatus.filter(b => b.status === 'success').length}/{genBatchesStatus.length} Hoàn tất
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                        {genBatchesStatus.map((batch, bIdx) => {
+                          const isSuccess = batch.status === 'success';
+                          const isFailed = batch.status === 'failed';
+                          const isBatchGen = batch.status === 'generating';
+                          const isPending = batch.status === 'pending';
+
+                          return (
+                            <div
+                              key={batch.batchId || `batch_${batch.sessionNumber}_${bIdx}`}
+                              className={`p-2.5 rounded-xl border text-xs transition-all ${
+                                isSuccess
+                                  ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
+                                  : isFailed
+                                  ? 'bg-red-950/40 border-red-800/60 text-red-200'
+                                  : isBatchGen
+                                  ? 'bg-amber-950/40 border-amber-600/70 text-amber-200 ring-1 ring-amber-500/50'
+                                  : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 font-bold truncate">
+                                  {isBatchGen && <Loader2 className="w-3 h-3 animate-spin text-amber-400 shrink-0" />}
+                                  {isSuccess && <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />}
+                                  {isFailed && <AlertCircle className="w-3 h-3 text-red-400 shrink-0" />}
+                                  {isPending && <span className="w-2 h-2 rounded-full bg-zinc-500 shrink-0 inline-block" />}
+                                  <span className="truncate">
+                                    S{batch.sessionNumber}: {batch.itemsRange || (batch.itemRange ? `Câu ${batch.itemRange[0]}-${batch.itemRange[1]}` : `Đợt ${bIdx + 1}`)}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] font-mono shrink-0">
+                                  {batch.durationMs ? `${(batch.durationMs / 1000).toFixed(1)}s` : ''}
+                                </div>
+                              </div>
+
+                              <div className="mt-1 flex items-center justify-between text-[10px] opacity-80">
+                                <span>
+                                  {isPending && '⚪ Chờ xử lý...'}
+                                  {isBatchGen && '🟡 Đang sinh AI...'}
+                                  {isSuccess && `🟢 Đã tạo ${batch.itemsCount ?? batch.count ?? 0} câu`}
+                                  {isFailed && '🔴 Lỗi (Dùng Fallback)'}
+                                </span>
+                                {batch.modelName && (
+                                  <span className="font-mono text-[9px] truncate max-w-[120px] text-zinc-400">
+                                    {batch.modelName}
+                                  </span>
+                                )}
+                              </div>
+
+                              {batch.error && (
+                                <div className="mt-1 text-[9px] text-red-300 font-mono line-clamp-2 bg-red-900/30 p-1 rounded border border-red-800/40">
+                                  {batch.error}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Completion Summary Box */}
+                  {genCompletionSummary && (
+                    <div className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-600/60 text-emerald-100 space-y-2 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 font-bold text-xs text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <span>Sinh Dữ Liệu Package Thành Công!</span>
+                        </div>
+                        <span className="text-[10px] bg-emerald-800/60 px-2 py-0.5 rounded-full font-mono text-emerald-200">
+                          {genCompletionSummary.totalItems} Items • {genCompletionSummary.sessionsCount} Sessions
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-zinc-300 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-mono">
+                        <div>Tiêu đề: <span className="text-white font-bold">{genCompletionSummary.title}</span></div>
+                        <div>Level: <span className="text-emerald-300 font-semibold">{genCompletionSummary.level}</span></div>
+                        <div>Độ khó: <span className="text-zinc-200">{genCompletionSummary.difficulty}</span></div>
+                        <div>Liên kết: <span className="text-zinc-200">{genCompletionSummary.relevance}</span></div>
+                        <div className="sm:col-span-2">Kết quả micro-batches: <span className="text-emerald-400 font-bold">{genCompletionSummary.successBatches} Thành công</span> {genCompletionSummary.failedBatches > 0 && <span className="text-amber-300 font-bold">({genCompletionSummary.failedBatches} dùng fallback)</span>}</div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Real-time Log Feed */}
                   <div className="bg-black/60 rounded-xl p-3 max-h-32 overflow-y-auto space-y-1 text-[10px]">
@@ -4082,13 +4457,26 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     >
                       Đóng
                     </button>
-                    <button
-                      onClick={handleStartAiGeneration}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4 text-amber-300" />
-                      <span>Bắt Đầu Sinh Dữ Liệu AI</span>
-                    </button>
+                    {genCompletionSummary ? (
+                      <button
+                        onClick={() => {
+                          setIsGeneratorOpen(false);
+                          setGenCompletionSummary(null);
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Mở Xem Package Ngay</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleStartAiGeneration}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                        <span>Bắt Đầu Sinh Dữ Liệu AI</span>
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -4156,7 +4544,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                   <div>
                     <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
-                      English Hint Text
+                      Gợi ý Tiếng Anh (English Clue)
                     </label>
                     <input
                       type="text"
@@ -4175,7 +4563,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                   <div>
                     <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
-                      Vietnamese Translation
+                      Bản dịch Tiếng Việt (Vietnamese Translation)
                     </label>
                     <input
                       type="text"
@@ -4349,7 +4737,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                   <div>
                     <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
-                      English Hint Text (1-2 từ hoặc cụm ngắn)
+                      Gợi ý Tiếng Anh (English Clue)
                     </label>
                     <input
                       type="text"
@@ -4369,7 +4757,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
                   <div>
                     <label className="font-bold text-zinc-600 block mb-1 font-mono text-[10px] uppercase">
-                      Vietnamese Translation
+                      Bản dịch Tiếng Việt (Vietnamese Translation)
                     </label>
                     <input
                       type="text"
@@ -5243,6 +5631,103 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white rounded-xl shadow-2xl font-bold text-xs animate-in fade-in slide-in-from-bottom-3 duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-100 shrink-0" />
           <span>{deleteSuccessToast}</span>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 11. MODAL: RENAME PACKAGE */}
+      {/* ==================================================================== */}
+      {isRenameModalOpen && activePackage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl border border-[#E8E8EC] shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-red-50 text-[#DC2626] border border-red-100">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-base text-zinc-900">
+                    Đổi Tên & Mô Tả Gói Bài Tập
+                  </h3>
+                  <p className="text-xs text-zinc-500 font-mono">
+                    ID: {activePackage.id} ({activePackage.sessionsCount} Sessions, {activePackage.totalItems} Items)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRenameModalOpen(false)}
+                className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">
+                  Tên Gói Bài Tập (Package Title) <span className="text-[#DC2626]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={renameTitle}
+                  onChange={(e) => setRenameTitle(e.target.value)}
+                  placeholder="Ví dụ: CHUNKS Improv - Level B ERES Speaking (Day 1)..."
+                  className="w-full p-3 rounded-xl border border-zinc-200 text-sm font-semibold text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626]"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">
+                  Mô Tả Chi Tiết (Description)
+                </label>
+                <textarea
+                  value={renameDescription}
+                  onChange={(e) => setRenameDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Nhập mô tả ngữ cảnh, mục tiêu bài tập phản xạ..."
+                  className="w-full p-3 rounded-xl border border-zinc-200 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 focus:border-[#DC2626] leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-100">
+              <button
+                onClick={() => setIsRenameModalOpen(false)}
+                disabled={isSavingRename}
+                className="py-2.5 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer disabled:opacity-50"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                onClick={handleSaveRename}
+                disabled={isSavingRename || !renameTitle.trim()}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isSavingRename ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang Lưu...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Lưu Thay Đổi</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 12. TOAST: RENAME SUCCESS NOTIFICATION */}
+      {/* ==================================================================== */}
+      {renameSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white rounded-xl shadow-2xl font-bold text-xs animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-100 shrink-0" />
+          <span>{renameSuccessToast}</span>
         </div>
       )}
     </div>
