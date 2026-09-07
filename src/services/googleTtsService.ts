@@ -998,6 +998,9 @@ class AudioPlayService {
    */
   public getCachedAudio(text: string, voiceName?: string): string | null {
     if (!text) return null;
+    if (text.startsWith('improv_')) {
+      if (this.audioCache.has(text)) return this.audioCache.get(text)!;
+    }
     const clean = sanitizeSpeechText(text);
     const isVi = (voiceName && voiceName.toLowerCase().startsWith('vi')) ||
                  isVietnameseText(clean, voiceName) ||
@@ -1044,6 +1047,16 @@ class AudioPlayService {
    */
   public async getCachedAudioAsync(text: string, voiceName?: string): Promise<string | null> {
     if (!text) return null;
+    if (text.startsWith('improv_')) {
+      const memCached = this.getCachedAudio(text, voiceName);
+      if (memCached) return memCached;
+      const fromDb = await getAudioBlobFromDB(text);
+      if (fromDb) {
+        this.audioCache.set(text, fromDb);
+        return fromDb;
+      }
+      return null;
+    }
     const memCached = this.getCachedAudio(text, voiceName);
     if (memCached) return memCached;
 

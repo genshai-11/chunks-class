@@ -42,7 +42,11 @@ import {
   synthesizeSingleHintAudio,
   playItemAudio, 
   stopImprovAudio,
-  getHintTextByLanguage
+  getHintTextByLanguage,
+  prepareSessionAudio,
+  preparePackageAudio,
+  ImprovBatchError,
+  ImprovBatchProgress
 } from '../services/improvTtsService';
 import { audioPlayer, sanitizeSpeechText, ALL_VOICES, GOOGLE_TTS_VOICES } from '../services/googleTtsService';
 import { modelRegistryService, DEFAULT_AI_GENERATION_CONFIG } from '../services/modelRegistryService';
@@ -225,6 +229,20 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const cancelBatchAudioRef = useRef<boolean>(false);
   const [isSyncingToCloud, setIsSyncingToCloud] = useState<boolean>(false);
   const [cloudSyncProgress, setCloudSyncProgress] = useState<string | null>(null);
+
+  // Batch Audio Scope & Detailed Diagnostics
+  const [batchScope, setBatchScope] = useState<'package' | 'session'>('package');
+  const [batchSessionNum, setBatchSessionNum] = useState<number>(1);
+  const [batchErrors, setBatchErrors] = useState<ImprovBatchError[]>([]);
+  const [isErrorPanelExpanded, setIsErrorPanelExpanded] = useState<boolean>(true);
+  const [batchCompleted, setBatchCompleted] = useState<boolean>(false);
+  const [cloudSyncSummary, setCloudSyncSummary] = useState<{
+    uploadedItemsEn: number;
+    uploadedItemsVi: number;
+    uploadedHints: number;
+    error?: string;
+  } | null>(null);
+  const [isRetryingErrors, setIsRetryingErrors] = useState<boolean>(false);
 
   // Keep batch voice in sync if prop changes
   useEffect(() => {
@@ -841,30 +859,28 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       s.items.forEach(it => {
         totalItems++;
         totalHints += it.hints.length;
-        const hasItemGcs = Boolean(it.audioUrl && it.audioUrl.startsWith('http'));
-        const hasAllHintsGcs = Boolean(
-          it.hints && 
-          it.hints.length > 0 && 
-          it.hints.every(h => Boolean(h.audioUrl && h.audioUrl.startsWith('http')))
-        );
-        const isCached = Boolean(
-          (it.audioUrl && (it.audioUrl.startsWith('http') || it.audioUrl === 'cached')) ||
-          (it.audioUrlVi && it.audioUrlVi.startsWith('http')) ||
-          audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
-          audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
-          (it.hints && it.hints.length > 0 && it.hints.every(h => {
-            const t = h.text?.trim();
-            const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
-            return !t || Boolean(
-              (h.audioUrl && h.audioUrl.startsWith('http')) || 
-              audioPlayer.getCachedAudio(hKey, currentVoiceEn) ||
-              audioPlayer.getCachedAudio(t, currentVoiceEn) || 
-              audioPlayer.isChunkCached(t, currentVoiceEn)
-            );
-          }))
-        );
+        const hasItemGcsEn = Boolean(it.audioUrl && it.audioUrl !== 'cached' && (it.audioUrl.startsWith('http') || it.audioUrl.startsWith('data:')));
+        const hasItemGcsVi = Boolean(it.audioUrlVi && it.audioUrlVi !== 'cached' && (it.audioUrlVi.startsWith('http') || it.audioUrlVi.startsWith('data:')));
+        const hasCombinedCachedEn = Boolean(audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn));
+        const hasCombinedCachedVi = Boolean(audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi));
+        const hasCombinedCachedBilingual = Boolean(audioPlayer.getCachedAudio(`improv_item_${it.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn));
+        const allHintsCachedEn = Boolean(it.hints && it.hints.length > 0 && it.hints.every(h => {
+          if (h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) return true;
+          const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
+          const t = h.text?.trim();
+          return Boolean(audioPlayer.getCachedAudio(hKey, currentVoiceEn) || (t && (audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn))));
+        }));
+        const allHintsCachedVi = Boolean(it.hints && it.hints.length > 0 && it.hints.every(h => {
+          if (h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) return true;
+          const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
+          const t = (h.translation || '').trim();
+          return Boolean(audioPlayer.getCachedAudio(hKey, currentVoiceVi) || (t && (audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi))));
+        }));
 
-        if (hasItemGcs || hasAllHintsGcs || isCached) {
+        const isEnReady = hasItemGcsEn || hasCombinedCachedEn || hasCombinedCachedBilingual || allHintsCachedEn;
+        const isViReady = hasItemGcsVi || hasCombinedCachedVi || hasCombinedCachedBilingual || allHintsCachedVi;
+
+        if (isEnReady || isViReady) {
           audioPreparedCount++;
         }
       });
@@ -1392,86 +1408,188 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   // --------------------------------------------------------------------------
-  // 4. Package-Wide Batch Audio Generator (EN, VI, or BOTH)
+  // 4. Batch Audio Generator (Package or Session Scope, EN, VI, or BOTH)
   // --------------------------------------------------------------------------
 
   const handleStartBatchAudioGeneration = async () => {
     if (!activePackage) return;
     setIsBatchRunning(true);
+    setBatchCompleted(false);
+    setCloudSyncSummary(null);
     cancelBatchAudioRef.current = false;
     setBatchLogs([]);
+    setBatchErrors([]);
 
     const addLog = (msg: string) => {
       const time = new Date().toLocaleTimeString('vi-VN');
       setBatchLogs(prev => [`[${time}] ${msg}`, ...prev.slice(0, 100)]);
     };
 
-    addLog(`Khởi động bộ tổng hợp âm thanh (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()}, EN: ${batchVoiceEn}, VI: ${batchVoiceVi}, Overwrite: ${forceOverwrite})...`);
+    const targetSession = batchScope === 'session'
+      ? activePackage.sessions.find(s => s.sessionNumber === batchSessionNum)
+      : null;
+
+    const scopeLabel = batchScope === 'session' && targetSession
+      ? `Session ${batchSessionNum} (${targetSession.items.length} câu)`
+      : `Toàn bộ Package (${stats.totalItems} câu)`;
+
+    addLog(`Khởi động bộ tổng hợp âm thanh cho ${scopeLabel} (${batchWorkersCount} workers, Target: ${batchTargetLang.toUpperCase()}, EN: ${batchVoiceEn}, VI: ${batchVoiceVi}, Overwrite: ${forceOverwrite})...`);
 
     try {
       const langModeToUse = batchTargetLang === 'vi' ? 'VI_ONLY' : batchTargetLang === 'both' ? 'EN_THEN_VI' : 'EN_ONLY';
-      await improvTts.preparePackageAudio(
-        activePackage,
-        {
-          voiceEn: batchVoiceEn,
-          voiceVi: batchVoiceVi,
-          langMode: langModeToUse,
-          concurrency: batchWorkersCount,
-          forceRegenerate: forceOverwrite
-        },
-        (current, total, statusText) => {
-          setBatchProgress({
-            current,
-            total,
-            prepared: current,
-            skipped: 0,
-            failed: 0,
-            statusText
-          });
-          addLog(statusText);
-        }
-      );
-
-      // Mark audio as prepared in the package items or package metadata:
-      const updatedSessions = activePackage.sessions.map(s => ({
-        ...s,
-        items: s.items.map(it => ({
-          ...it,
-          audioUrl: it.audioUrl || 'cached'
-        }))
-      }));
-      const updatedPkg: ImprovPackage = { 
-        ...activePackage, 
-        sessions: updatedSessions, 
-        updatedAt: new Date().toISOString() 
+      const batchOptions = {
+        voiceEn: batchVoiceEn,
+        voiceVi: batchVoiceVi,
+        target: batchTargetLang === 'en' ? ('ENGLISH' as const) : batchTargetLang === 'vi' ? ('VIETNAMESE' as const) : ('BOTH' as const),
+        langMode: langModeToUse,
+        concurrency: batchWorkersCount,
+        forceRegenerate: forceOverwrite
       };
-      await saveImprovPackage(updatedPkg);
-      setActivePackageId(updatedPkg.id);
-      setPackages(prev => prev.map(p => p.id === updatedPkg.id ? updatedPkg : p));
 
-      addLog('Đã hoàn tất tạo toàn bộ âm thanh cho package!');
-      confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+      const handleProgress = (progress: ImprovBatchProgress) => {
+        setBatchProgress({
+          current: progress.current,
+          total: progress.total,
+          prepared: progress.prepared,
+          skipped: progress.skipped,
+          failed: progress.failed,
+          statusText: progress.statusText
+        });
+        if (progress.errors) {
+          setBatchErrors(progress.errors);
+        }
+        addLog(progress.statusText);
+      };
+
+      let finalErrors: ImprovBatchError[] = [];
+
+      if (batchScope === 'session' && targetSession) {
+        const res = await improvTts.prepareSessionAudio(targetSession, batchOptions, handleProgress);
+        finalErrors = res.errors;
+        setBatchErrors(res.errors);
+      } else {
+        const res = await improvTts.preparePackageAudio(activePackage, batchOptions, handleProgress);
+        finalErrors = res.errors;
+        setBatchErrors(res.errors);
+      }
+
+      addLog(`Hoàn tất xử lý âm thanh cho ${scopeLabel} (${finalErrors.length === 0 ? 'Thành công 100%' : `${finalErrors.length} lỗi`})!`);
+
+      if (finalErrors.length === 0) {
+        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+      }
 
       addLog('Đang đồng bộ audio lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app...');
       try {
-        const syncRes = await syncImprovPackageCachedAudioToCloud(updatedPkg, {
+        const syncRes = await syncImprovPackageCachedAudioToCloud(activePackage, {
           voiceEn: batchVoiceEn,
           voiceVi: batchVoiceVi,
           targetLang: batchTargetLang,
           forceOverwrite: forceOverwrite,
           onProgress: (_c, _t, status) => addLog(`[Cloud Sync] ${status}`)
         });
+        setCloudSyncSummary({
+          uploadedItemsEn: syncRes.uploadedItemsEn,
+          uploadedItemsVi: syncRes.uploadedItemsVi,
+          uploadedHints: syncRes.uploadedHints
+        });
         addLog(`Đồng bộ Cloud Storage thành công: ${syncRes.uploadedItemsEn} items EN, ${syncRes.uploadedItemsVi} items VI, ${syncRes.uploadedHints} hints.`);
         // Refresh packages state
         const latestPackages = await getAllImprovPackages();
         setPackages(latestPackages);
       } catch (syncErr: any) {
-        addLog(`Lưu ý: Không thể tự động đồng bộ lên Cloud Storage: ${syncErr?.message || syncErr}`);
+        const errMsg = syncErr?.message || String(syncErr);
+        setCloudSyncSummary({
+          uploadedItemsEn: 0,
+          uploadedItemsVi: 0,
+          uploadedHints: 0,
+          error: errMsg
+        });
+        addLog(`Lưu ý: Không thể tự động đồng bộ lên Cloud Storage: ${errMsg}`);
       }
     } catch (err: any) {
       addLog(`Lỗi batch audio: ${err?.message || 'Không xác định'}`);
     } finally {
       setIsBatchRunning(false);
+      setBatchCompleted(true);
+    }
+  };
+
+  const handleRetryFailedAudio = async () => {
+    if (!activePackage || batchErrors.length === 0) return;
+    setIsRetryingErrors(true);
+    setIsBatchRunning(true);
+    setBatchCompleted(false);
+
+    const addLog = (msg: string) => {
+      const time = new Date().toLocaleTimeString('vi-VN');
+      setBatchLogs(prev => [`[${time}] ${msg}`, ...prev.slice(0, 100)]);
+    };
+
+    addLog(`Đang thử lại ${batchErrors.length} mục lỗi với forceOverwrite = true...`);
+
+    try {
+      const failedItemIds = new Set(batchErrors.map(e => e.itemId));
+      const failedItemsList: { item: ImprovItem; sessionNum: number }[] = [];
+      activePackage.sessions.forEach(s => {
+        s.items.forEach(it => {
+          if (failedItemIds.has(it.id)) {
+            failedItemsList.push({ item: it, sessionNum: s.sessionNumber });
+          }
+        });
+      });
+
+      const remainingErrors: ImprovBatchError[] = [];
+      let retriedSuccess = 0;
+      let retriedFailed = 0;
+
+      for (let i = 0; i < failedItemsList.length; i++) {
+        const { item, sessionNum } = failedItemsList[i];
+        addLog(`Thử lại Item #${item.itemNumber} (Session ${sessionNum})...`);
+        try {
+          if (batchTargetLang === 'both') {
+            await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'EN_ONLY', true);
+            await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'VI_ONLY', true);
+            try {
+              await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'EN_THEN_VI', true);
+            } catch {}
+          } else if (batchTargetLang === 'vi') {
+            await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'VI_ONLY', true);
+          } else {
+            await synthesizeItemCombinedAudio(item, batchVoiceEn, batchVoiceVi, 'EN_ONLY', true);
+          }
+          retriedSuccess++;
+        } catch (retryErr: any) {
+          retriedFailed++;
+          remainingErrors.push({
+            itemId: item.id,
+            sessionNum,
+            itemNumber: item.itemNumber,
+            lang: batchTargetLang,
+            error: retryErr?.message || String(retryErr),
+            timestamp: Date.now()
+          });
+        }
+      }
+
+      setBatchErrors(remainingErrors);
+      setBatchProgress(prev => ({
+        ...prev,
+        prepared: prev.prepared + retriedSuccess,
+        failed: remainingErrors.length,
+        statusText: `Hoàn tất thử lại: ${retriedSuccess} thành công, ${retriedFailed} thất bại.`
+      }));
+      addLog(`Thử lại hoàn tất: ${retriedSuccess} thành công, ${retriedFailed} thất bại.`);
+
+      if (remainingErrors.length === 0) {
+        confetti({ particleCount: 50, spread: 60 });
+      }
+    } catch (err: any) {
+      addLog(`Lỗi khi thử lại: ${err?.message || 'Không xác định'}`);
+    } finally {
+      setIsRetryingErrors(false);
+      setIsBatchRunning(false);
+      setBatchCompleted(true);
     }
   };
 
@@ -2023,7 +2141,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </div>
             </div>
             <button
-              onClick={() => setIsBatchAudioModalOpen(true)}
+              onClick={() => {
+                if (activeSessionTab !== 'all') {
+                  setBatchScope('session');
+                  setBatchSessionNum(activeSessionTab);
+                } else {
+                  setBatchScope('package');
+                }
+                setBatchCompleted(false);
+                setBatchErrors([]);
+                setCloudSyncSummary(null);
+                setIsBatchAudioModalOpen(true);
+              }}
               className="px-2 py-1 text-[11px] font-bold text-[#DC2626] bg-red-50 hover:bg-red-100 rounded-md border border-red-200 cursor-pointer transition-all"
             >
               Batch TTS
@@ -2117,10 +2246,41 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 <span>{isSyncingToCloud ? (cloudSyncProgress || 'Đang sync...') : 'Sync Cloud'}</span>
               </button>
 
+              {/* Quick Session Audio Generator */}
+              {activeSessionTab !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBatchScope('session');
+                    setBatchSessionNum(activeSessionTab);
+                    setBatchCompleted(false);
+                    setBatchErrors([]);
+                    setCloudSyncSummary(null);
+                    setIsBatchAudioModalOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-2xs cursor-pointer transition-all"
+                  title={`Tạo âm thanh hàng loạt cho riêng Session ${activeSessionTab}`}
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Tạo Audio Session {activeSessionTab}</span>
+                </button>
+              )}
+
               {/* Batch TTS */}
               <button
                 type="button"
-                onClick={() => setIsBatchAudioModalOpen(true)}
+                onClick={() => {
+                  if (activeSessionTab !== 'all') {
+                    setBatchScope('session');
+                    setBatchSessionNum(activeSessionTab);
+                  } else {
+                    setBatchScope('package');
+                  }
+                  setBatchCompleted(false);
+                  setBatchErrors([]);
+                  setCloudSyncSummary(null);
+                  setIsBatchAudioModalOpen(true);
+                }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
                 title="Tạo âm thanh hàng loạt cho Session / Package"
               >
@@ -2307,22 +2467,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     const isSynthesizing = synthesizingItemIds[item.id] || false;
                     const isSelected = selectedItemIds.includes(item.id);
                     const isAudioEnReady = Boolean(
-                      (item.audioUrl && (item.audioUrl.startsWith('http') || item.audioUrl === 'cached')) ||
+                      (item.audioUrl && item.audioUrl !== 'cached' && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
                       (item.hints && item.hints.length > 0 && item.hints.every(h => {
                         const t = h.text?.trim();
-                        return !t || Boolean((h.audioUrl && h.audioUrl.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+                        const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
+                        return !t || Boolean((h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceEn) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
                       }))
                     );
                     const isAudioViReady = Boolean(
-                      (item.audioUrlVi && item.audioUrlVi.startsWith('http')) ||
-                      item.audioUrl === 'cached' ||
+                      (item.audioUrlVi && item.audioUrlVi !== 'cached' && (item.audioUrlVi.startsWith('http') || item.audioUrlVi.startsWith('data:'))) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
                       audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
                       (item.hints && item.hints.length > 0 && item.hints.every(h => {
                         const t = (h.translation || '').trim();
-                        return !t || Boolean((h.audioUrlVi && h.audioUrlVi.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
+                        const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
+                        return !t || Boolean((h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceVi) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
                       }))
                     );
 
@@ -2689,22 +2850,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               const isSynthesizing = synthesizingItemIds[item.id] || false;
               const isSelected = selectedItemIds.includes(item.id);
               const isAudioEnReady = Boolean(
-                (item.audioUrl && (item.audioUrl.startsWith('http') || item.audioUrl === 'cached')) ||
+                (item.audioUrl && item.audioUrl !== 'cached' && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
                 (item.hints && item.hints.length > 0 && item.hints.every(h => {
                   const t = h.text?.trim();
-                  return !t || Boolean((h.audioUrl && h.audioUrl.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
+                  const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
+                  return !t || Boolean((h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceEn) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
                 }))
               );
               const isAudioViReady = Boolean(
-                (item.audioUrlVi && item.audioUrlVi.startsWith('http')) ||
-                item.audioUrl === 'cached' ||
+                (item.audioUrlVi && item.audioUrlVi !== 'cached' && (item.audioUrlVi.startsWith('http') || item.audioUrlVi.startsWith('data:'))) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
                 audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
                 (item.hints && item.hints.length > 0 && item.hints.every(h => {
                   const t = (h.translation || '').trim();
-                  return !t || Boolean((h.audioUrlVi && h.audioUrlVi.startsWith('http')) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
+                  const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
+                  return !t || Boolean((h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceVi) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
                 }))
               );
 
@@ -4119,7 +4281,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       )}
 
       {/* ==================================================================== */}
-      {/* 6. MODAL: PACKAGE BATCH AUDIO GENERATOR */}
+      {/* 6. MODAL: BATCH AUDIO GENERATOR (PACKAGE OR SESSION SCOPE) */}
       {/* ==================================================================== */}
       {isBatchAudioModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
@@ -4131,10 +4293,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-base text-zinc-900">
-                    Bộ Tổng Hợp Âm Thanh Toàn Diện Package (Batch Audio TTS)
+                    {batchScope === 'session' 
+                      ? `Tổng Hợp Âm Thanh Cho Session ${batchSessionNum}` 
+                      : 'Bộ Tổng Hợp Âm Thanh Toàn Diện Package'}
                   </h3>
                   <p className="text-xs text-zinc-500">
-                    Tùy chọn mô hình giọng đọc và tạo âm thanh chất lượng cao cho toàn bộ {stats.totalItems} items.
+                    {batchScope === 'session'
+                      ? `Tạo âm thanh chuẩn phòng học cho ${activePackage?.sessions.find(s => s.sessionNumber === batchSessionNum)?.items.length || 0} câu của Session ${batchSessionNum}.`
+                      : `Tùy chọn mô hình giọng đọc và tạo âm thanh chất lượng cao cho toàn bộ ${stats.totalItems} câu.`}
                   </p>
                 </div>
               </div>
@@ -4142,171 +4308,398 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               <button
                 onClick={() => !isBatchRunning && setIsBatchAudioModalOpen(false)}
                 disabled={isBatchRunning}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/50 cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/50 cursor-pointer disabled:opacity-50"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              {/* Target Language Selection: EN, VI, or BOTH */}
-              <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60 space-y-2">
-                <div className="font-bold text-zinc-800 text-xs">Mục Tiêu Ngôn Ngữ Audio (Audio Target)</div>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    disabled={isBatchRunning}
-                    onClick={() => setBatchTargetLang('en')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      batchTargetLang === 'en'
-                        ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
-                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span>Tiếng Anh (EN)</span>
-                  </button>
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              {/* COMPLETION SUMMARY SCREEN */}
+              {batchCompleted && !isBatchRunning ? (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  {/* Status Banner */}
+                  <div className={`p-4 rounded-2xl border flex items-start gap-3.5 ${
+                    batchErrors.length === 0
+                      ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                      : 'bg-amber-50/80 border-amber-200 text-amber-950'
+                  }`}>
+                    <div className={`p-2.5 rounded-xl shrink-0 ${
+                      batchErrors.length === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {batchErrors.length === 0 ? <CheckCircle2 className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm">
+                          {batchErrors.length === 0 ? 'Tổng Hợp Âm Thanh Hoàn Tất 100%' : 'Hoàn Tất Với Một Số Cảnh Báo'}
+                        </span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase ${
+                          batchErrors.length === 0 ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'
+                        }`}>
+                          {batchErrors.length === 0 ? 'Sẵn Sàng' : `${batchErrors.length} Lỗi`}
+                        </span>
+                      </div>
+                      <p className="text-xs mt-1 text-zinc-600 leading-relaxed">
+                        {batchErrors.length === 0
+                          ? `Tất cả âm thanh cho ${batchScope === 'session' ? `Session ${batchSessionNum}` : 'Package'} đã sẵn sàng trong cache và Improv Stage.`
+                          : `Đã hoàn thành phần lớn câu hỏi, nhưng có ${batchErrors.length} mục gặp lỗi. Bạn có thể xem chi tiết hoặc bấm thử lại bên dưới.`}
+                      </p>
+                    </div>
+                  </div>
 
-                  <button
-                    type="button"
-                    disabled={isBatchRunning}
-                    onClick={() => setBatchTargetLang('vi')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      batchTargetLang === 'vi'
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span>Tiếng Việt (VI)</span>
-                  </button>
+                  {/* Metrics Breakdown Grid */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 text-center">
+                      <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Đã Tạo Mới</div>
+                      <div className="text-lg font-black text-emerald-600 mt-0.5">{batchProgress.prepared}</div>
+                    </div>
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 text-center">
+                      <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Có Sẵn / Bỏ Qua</div>
+                      <div className="text-lg font-black text-blue-600 mt-0.5">{batchProgress.skipped}</div>
+                    </div>
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 text-center">
+                      <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Thất Bại</div>
+                      <div className={`text-lg font-black mt-0.5 ${batchProgress.failed > 0 ? 'text-red-600' : 'text-zinc-400'}`}>
+                        {batchProgress.failed}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 text-center">
+                      <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Tổng Số Câu</div>
+                      <div className="text-lg font-black text-zinc-800 mt-0.5">{batchProgress.total}</div>
+                    </div>
+                  </div>
 
-                  <button
-                    type="button"
-                    disabled={isBatchRunning}
-                    onClick={() => setBatchTargetLang('both')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      batchTargetLang === 'both'
-                        ? 'bg-[#DC2626] text-white border-[#DC2626] shadow-xs'
-                        : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span>Cả 2 (EN & VI)</span>
-                  </button>
-                </div>
-              </div>
+                  {/* Cloud Sync Status */}
+                  <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/70 flex items-start gap-3">
+                    <div className="p-2 bg-white rounded-lg border border-zinc-200 text-emerald-600 shrink-0">
+                      <CloudUpload className="w-4 h-4" />
+                    </div>
+                    <div className="text-xs space-y-0.5">
+                      <div className="font-bold text-zinc-800">Đồng Bộ Cloud Storage:</div>
+                      {cloudSyncSummary ? (
+                        cloudSyncSummary.error ? (
+                          <div className="text-red-600 text-[11px]">
+                            Lưu ý: {cloudSyncSummary.error} (Audio vẫn được bảo lưu an toàn trong IndexedDB của trình duyệt).
+                          </div>
+                        ) : (
+                          <div className="text-emerald-700 text-[11px]">
+                            Đã tải lên Cloud: {cloudSyncSummary.uploadedItemsEn} items EN, {cloudSyncSummary.uploadedItemsVi} items VI, {cloudSyncSummary.uploadedHints} hints.
+                          </div>
+                        )
+                      ) : (
+                        <div className="text-zinc-500 text-[11px]">
+                          Audio đã được lưu an toàn trong IndexedDB của trình duyệt.
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-              {/* Custom Voice Model Selection: EN & VI */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
-                {/* English Voice Selector */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-zinc-800">
-                    Giọng Đọc Tiếng Anh (English Voice)
-                  </label>
-                  <select
-                    value={batchVoiceEn}
-                    disabled={isBatchRunning}
-                    onChange={(e) => setBatchVoiceEn(e.target.value)}
-                    className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
-                  >
-                    {enVoiceOptions.map(v => (
-                      <option key={v.id} value={v.id} className="bg-white text-zinc-900">
-                        {v.name} ({v.gender}) {v.provider ? `[${v.provider}]` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  {/* Error Breakdown Panel (if errors occurred) */}
+                  {batchErrors.length > 0 && (
+                    <div className="p-3.5 bg-red-50/70 rounded-2xl border border-red-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-red-900 flex items-center gap-1.5">
+                          <AlertCircle className="w-4 h-4 text-red-600" />
+                          <span>Chi tiết {batchErrors.length} mục lỗi ({batchErrors[0]?.lang?.toUpperCase() || ''}):</span>
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isRetryingErrors || isBatchRunning}
+                          onClick={handleRetryFailedAudio}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition-all disabled:opacity-50"
+                        >
+                          {isRetryingErrors ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                          <span>Thử lại các mục lỗi</span>
+                        </button>
+                      </div>
 
-                {/* Vietnamese Voice Selector */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-zinc-800">
-                    Giọng Đọc Tiếng Việt (Vietnamese Voice)
-                  </label>
-                  <select
-                    value={batchVoiceVi}
-                    disabled={isBatchRunning}
-                    onChange={(e) => setBatchVoiceVi(e.target.value)}
-                    className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
-                  >
-                    {viVoiceOptions.map(v => (
-                      <option key={v.id} value={v.id} className="bg-white text-zinc-900">
-                        {v.name} ({v.gender})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                      <div className="max-h-36 overflow-y-auto space-y-1 text-[11px] font-mono text-red-800 bg-white/80 p-2.5 rounded-xl border border-red-100">
+                        {batchErrors.map((err, errIdx) => (
+                          <div key={errIdx} className="flex items-start gap-1.5 leading-snug">
+                            <span className="text-red-500 font-bold shrink-0">•</span>
+                            <span>
+                              <strong>Session {err.sessionNum} - Item #{err.itemNumber}</strong> [{err.lang}]: {err.error}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              {/* Workers count selector */}
-              <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
-                <div>
-                  <div className="font-bold text-zinc-800 text-xs">Số Luồng Xử Lý Song Song (Workers Pool)</div>
-                  <div className="text-[11px] text-zinc-400">Tối ưu tốc độ tạo âm thanh mà không nghẽn mạng</div>
-                </div>
-
-                <div className="flex items-center gap-1.5 font-mono">
-                  {[2, 4, 6, 8].map(w => (
+                  {/* Launch Improv Stage CTA */}
+                  <div className="pt-2">
                     <button
-                      key={w}
                       type="button"
-                      disabled={isBatchRunning}
-                      onClick={() => setBatchWorkersCount(w)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                        batchWorkersCount === w
-                          ? 'bg-zinc-900 text-white border-zinc-900'
-                          : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-100'
-                      }`}
+                      onClick={() => {
+                        setIsBatchAudioModalOpen(false);
+                        onLaunchPresentation?.(
+                          activePackage.id,
+                          batchScope === 'session' ? batchSessionNum : (activeSessionTab !== 'all' ? activeSessionTab : undefined)
+                        );
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-lg active:scale-98 transition-all cursor-pointer"
                     >
-                      {w} Threads
+                      <Play className="w-4 h-4 fill-white" />
+                      <span>Mở Improv Stage Kiểm Tra Ngay (Launch Stage)</span>
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Force Overwrite Toggle */}
-              <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
-                <div>
-                  <div className="font-bold text-zinc-800 text-xs">Ghi đè audio đã có (Force Overwrite Cloud Storage)</div>
-                  <div className="text-[11px] text-zinc-400">Tạo mới và ghi đè toàn bộ file âm thanh hiện có trên Cloud Storage</div>
-                </div>
-
-                <label className="relative inline-flex items-center cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={forceOverwrite}
-                    disabled={isBatchRunning}
-                    onChange={(e) => setForceOverwrite(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#DC2626]"></div>
-                </label>
-              </div>
-
-              {/* Progress Bar & Live Status */}
-              {isBatchRunning && (
-                <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-2 font-mono">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-                      <span>{batchProgress.statusText || 'Đang xử lý batch audio...'}</span>
-                    </span>
-                    <span className="text-amber-400 font-bold">
-                      {batchProgress.current} / {batchProgress.total}
-                    </span>
-                  </div>
-
-                  <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-amber-400 h-full transition-all duration-300 rounded-full"
-                      style={{ width: `${(batchProgress.current / (batchProgress.total || 1)) * 100}%` }}
-                    />
-                  </div>
-
-                  {/* Logs Drawer */}
-                  <div className="bg-black/60 rounded-xl p-3 max-h-32 overflow-y-auto space-y-1 text-[10px] text-zinc-300">
-                    {batchLogs.map((log, lIdx) => (
-                      <div key={lIdx}>{log}</div>
-                    ))}
                   </div>
                 </div>
+              ) : (
+                /* CONFIGURATION AND IN-PROGRESS SCREEN */
+                <>
+                  {/* Scope Selection: Toàn bộ Package vs Chỉ Session */}
+                  <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-zinc-800 text-xs">Phạm Vi Tạo Audio (Audio Scope)</div>
+                      <span className="text-[11px] font-mono text-zinc-500">
+                        {batchScope === 'session'
+                          ? `Session ${batchSessionNum} (${activePackage?.sessions.find(s => s.sessionNumber === batchSessionNum)?.items.length || 0} câu)`
+                          : `Toàn bộ ${stats.totalItems} câu (${stats.totalSessions} sessions)`}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchScope('package')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchScope === 'package'
+                            ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Toàn Bộ Package ({stats.totalItems} Items)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchScope('session')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchScope === 'session'
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <Filter className="w-3.5 h-3.5" />
+                        <span>Chỉ Riêng Session</span>
+                      </button>
+                    </div>
+
+                    {batchScope === 'session' && (
+                      <div className="pt-2 flex items-center gap-2">
+                        <span className="text-xs text-zinc-600 font-semibold shrink-0">Chọn Session:</span>
+                        <select
+                          value={batchSessionNum}
+                          disabled={isBatchRunning}
+                          onChange={(e) => setBatchSessionNum(Number(e.target.value))}
+                          className="w-full text-xs font-bold p-2 rounded-xl border border-zinc-200 bg-white text-zinc-900 cursor-pointer"
+                        >
+                          {(activePackage?.sessions || []).map(s => (
+                            <option key={s.sessionNumber} value={s.sessionNumber}>
+                              Session {s.sessionNumber} ({s.items.length} câu - {s.hcTotal} hints)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Target Language Selection: EN, VI, or BOTH */}
+                  <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60 space-y-2">
+                    <div className="font-bold text-zinc-800 text-xs">Mục Tiêu Ngôn Ngữ Audio (Audio Target)</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchTargetLang('en')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchTargetLang === 'en'
+                            ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span>Tiếng Anh (EN)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchTargetLang('vi')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchTargetLang === 'vi'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span>Tiếng Việt (VI)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => setBatchTargetLang('both')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          batchTargetLang === 'both'
+                            ? 'bg-[#DC2626] text-white border-[#DC2626] shadow-xs'
+                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span>Cả 2 (EN & VI)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Custom Voice Model Selection: EN & VI */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
+                    {/* English Voice Selector */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-zinc-800">
+                        Giọng Đọc Tiếng Anh (English Voice)
+                      </label>
+                      <select
+                        value={batchVoiceEn}
+                        disabled={isBatchRunning}
+                        onChange={(e) => setBatchVoiceEn(e.target.value)}
+                        className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
+                      >
+                        {enVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id} className="bg-white text-zinc-900">
+                            {v.name} ({v.gender}) {v.provider ? `[${v.provider}]` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Vietnamese Voice Selector */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-zinc-800">
+                        Giọng Đọc Tiếng Việt (Vietnamese Voice)
+                      </label>
+                      <select
+                        value={batchVoiceVi}
+                        disabled={isBatchRunning}
+                        onChange={(e) => setBatchVoiceVi(e.target.value)}
+                        className="w-full text-xs font-medium p-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-900 focus:ring-2 focus:ring-[#DC2626]/30 cursor-pointer"
+                      >
+                        {viVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id} className="bg-white text-zinc-900">
+                            {v.name} ({v.gender})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Workers count selector */}
+                  <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
+                    <div>
+                      <div className="font-bold text-zinc-800 text-xs">Số Luồng Xử Lý Song Song (Workers Pool)</div>
+                      <div className="text-[11px] text-zinc-400">Tối ưu tốc độ tạo âm thanh mà không nghẽn mạng</div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 font-mono">
+                      {[2, 4, 6, 8].map(w => (
+                        <button
+                          key={w}
+                          type="button"
+                          disabled={isBatchRunning}
+                          onClick={() => setBatchWorkersCount(w)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                            batchWorkersCount === w
+                              ? 'bg-zinc-900 text-white border-zinc-900'
+                              : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-100'
+                          }`}
+                        >
+                          {w} Threads
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Force Overwrite Toggle */}
+                  <div className="flex items-center justify-between p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200/60">
+                    <div>
+                      <div className="font-bold text-zinc-800 text-xs">Ghi đè audio đã có (Force Overwrite)</div>
+                      <div className="text-[11px] text-zinc-400">Tạo mới và ghi đè toàn bộ file âm thanh hiện có</div>
+                    </div>
+
+                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={forceOverwrite}
+                        disabled={isBatchRunning}
+                        onChange={(e) => setForceOverwrite(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#DC2626]"></div>
+                    </label>
+                  </div>
+
+                  {/* Progress Bar & Live Status */}
+                  {isBatchRunning && (
+                    <div className="p-4 bg-zinc-900 text-zinc-100 rounded-2xl border border-zinc-800 space-y-3 font-mono">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                          <span>{batchProgress.statusText || 'Đang xử lý batch audio...'}</span>
+                        </span>
+                        <span className="text-amber-400 font-bold">
+                          {batchProgress.current} / {batchProgress.total}
+                        </span>
+                      </div>
+
+                      <div className="w-full bg-zinc-800 h-2.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-amber-400 h-full transition-all duration-300 rounded-full"
+                          style={{ width: `${(batchProgress.current / (batchProgress.total || 1)) * 100}%` }}
+                        />
+                      </div>
+
+                      {/* Metrics Strip */}
+                      <div className="grid grid-cols-3 gap-2 text-center text-[11px] py-1 border-y border-zinc-800">
+                        <div>
+                          <span className="text-zinc-400">Đã tạo: </span>
+                          <span className="text-emerald-400 font-bold">{batchProgress.prepared}</span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-400">Có sẵn: </span>
+                          <span className="text-blue-400 font-bold">{batchProgress.skipped}</span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-400">Lỗi: </span>
+                          <span className={`font-bold ${batchProgress.failed > 0 ? 'text-red-400' : 'text-zinc-400'}`}>
+                            {batchProgress.failed}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Live Error List (if any errors during run) */}
+                      {batchErrors.length > 0 && (
+                        <div className="p-2.5 bg-red-950/60 rounded-xl border border-red-800 text-[10px] space-y-1">
+                          <div className="text-red-300 font-bold flex items-center gap-1">
+                            <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+                            <span>Phát hiện {batchErrors.length} mục lỗi:</span>
+                          </div>
+                          <div className="max-h-20 overflow-y-auto space-y-0.5 text-red-200">
+                            {batchErrors.slice(-4).map((e, idx) => (
+                              <div key={idx}>• [Session {e.sessionNum} - Item #{e.itemNumber}]: {e.error}</div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Logs Drawer */}
+                      <div className="bg-black/60 rounded-xl p-3 max-h-28 overflow-y-auto space-y-1 text-[10px] text-zinc-300">
+                        {batchLogs.map((log, lIdx) => (
+                          <div key={lIdx}>{log}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -4315,31 +4708,63 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 <button
                   onClick={() => setIsBatchAudioModalOpen(false)}
                   disabled={isBatchRunning}
-                  className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-zinc-200 hover:bg-zinc-100 text-xs font-semibold text-zinc-700 transition-all cursor-pointer disabled:opacity-50"
                 >
                   Đóng
                 </button>
 
-                <button
-                  type="button"
-                  disabled={isBatchRunning || isResettingAudio}
-                  onClick={() => handleResetPackageAudioUrls()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-700 transition-all cursor-pointer disabled:opacity-50"
-                  title="Xóa toàn bộ liên kết audio cũ của package để tạo lại từ đầu"
-                >
-                  {isResettingAudio ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
-                  <span>Xóa link audio đã có</span>
-                </button>
+                {!batchCompleted && (
+                  <button
+                    type="button"
+                    disabled={isBatchRunning || isResettingAudio}
+                    onClick={() => handleResetPackageAudioUrls(batchScope === 'session' ? batchSessionNum : undefined)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-700 transition-all cursor-pointer disabled:opacity-50"
+                    title="Xóa toàn bộ liên kết audio cũ để tạo lại từ đầu"
+                  >
+                    {isResettingAudio ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
+                    <span>Xóa link audio đã có</span>
+                  </button>
+                )}
               </div>
 
-              <button
-                onClick={handleStartBatchAudioGeneration}
-                disabled={isBatchRunning}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-              >
-                <Zap className="w-4 h-4 text-amber-300" />
-                <span>Bắt Đầu Tạo Audio ({batchWorkersCount} Workers)</span>
-              </button>
+              {batchCompleted && !isBatchRunning ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBatchCompleted(false)}
+                    className="px-4 py-2.5 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-800 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                  >
+                    Cấu Hình & Chạy Lại
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsBatchAudioModalOpen(false);
+                      onLaunchPresentation?.(
+                        activePackage.id,
+                        batchScope === 'session' ? batchSessionNum : (activeSessionTab !== 'all' ? activeSessionTab : undefined)
+                      );
+                    }}
+                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Play className="w-4 h-4 fill-white" />
+                    <span>Mở Stage Ngay</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleStartBatchAudioGeneration}
+                  disabled={isBatchRunning}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Zap className="w-4 h-4 text-amber-300" />
+                  <span>
+                    {batchScope === 'session'
+                      ? `Tạo Audio Session ${batchSessionNum} (${activePackage?.sessions.find(s => s.sessionNumber === batchSessionNum)?.items.length || 0} câu)`
+                      : `Tạo Toàn Bộ Package (${stats.totalItems} câu)`}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>

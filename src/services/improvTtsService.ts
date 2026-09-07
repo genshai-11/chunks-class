@@ -13,6 +13,25 @@ import {
   LanguageMode 
 } from '../types';
 
+export interface ImprovBatchError {
+  itemId: string;
+  sessionNum: number;
+  itemNumber: number;
+  lang: 'en' | 'vi' | 'both';
+  error: string;
+  timestamp: number;
+}
+
+export interface ImprovBatchProgress {
+  current: number;
+  total: number;
+  prepared: number;
+  skipped: number;
+  failed: number;
+  statusText: string;
+  errors?: ImprovBatchError[];
+}
+
 // --------------------------------------------------------------------------
 // 1. Web Audio Helpers & WAV Encoder
 // --------------------------------------------------------------------------
@@ -453,96 +472,182 @@ class ImprovTtsEngine {
   }
 
   /**
-   * Pre-generates and stores both full item continuous audio and individual hint audio in IndexedDB.
-   * Dynamically honors voiceEn and voiceVi from options without overriding with hardcoded values.
+   * Internal helper: processes items batch with worker pool, tracking errors and live progress.
    */
-  async preparePackageAudio(
-    pkg: ImprovPackage,
+  private async prepareItemsAudio(
+    allItems: { item: ImprovItem; sessionNum: number }[],
     options?: PrepareAudioOptions,
-    onProgress?: (current: number, total: number, statusText: string) => void
-  ): Promise<{ prepared: number; failed: number; total: number; skipped: number }> {
+    onProgress?: (progress: ImprovBatchProgress) => void
+  ): Promise<{ prepared: number; failed: number; total: number; skipped: number; errors: ImprovBatchError[] }> {
     const voiceEn = options?.voiceEn || 'flux-cliff-en';
     const voiceVi = options?.voiceVi || 'vi-VN-Neural2-A';
     const forceRegenerate = options?.forceRegenerate || false;
     const concurrency = Math.max(1, Math.min(6, options?.concurrency || 3));
-    const langMode = options?.langMode ? normalizeLanguageMode(options.langMode) : 'EN_ONLY';
 
-    // Flatten all items
-    const allItems: { item: ImprovItem; sessionNum: number }[] = [];
-    pkg.sessions.forEach(s => {
-      s.items.forEach(it => {
-        allItems.push({ item: it, sessionNum: s.sessionNumber });
-      });
-    });
+    const isBoth = options?.target === 'BOTH' || 
+                   options?.langMode === 'EN_THEN_VI' || 
+                   options?.langMode === 'VI_THEN_EN';
+    const isViOnly = !isBoth && (options?.target === 'VIETNAMESE' || options?.langMode === 'VI_ONLY');
+    const isEnOnly = !isBoth && !isViOnly;
 
     const total = allItems.length;
-    if (total === 0) return { prepared: 0, failed: 0, total: 0, skipped: 0 };
+    if (total === 0) return { prepared: 0, failed: 0, total: 0, skipped: 0, errors: [] };
 
     let prepared = 0;
     let failed = 0;
     let skipped = 0;
     let currentIndex = 0;
+    const errors: ImprovBatchError[] = [];
+
+    const reportProgress = (done: number, statusText: string) => {
+      if (onProgress) {
+        // Pass typed ImprovBatchProgress object (and secondary args for backwards compatibility)
+        (onProgress as any)({
+          current: done,
+          total,
+          prepared,
+          skipped,
+          failed,
+          statusText,
+          errors: [...errors]
+        }, total, statusText);
+      }
+    };
 
     const worker = async () => {
       while (currentIndex < total) {
         const idx = currentIndex++;
         const { item, sessionNum } = allItems[idx];
-        const itemCacheKey = `improv_item_${item.id}_${voiceEn}_${voiceVi}_${langMode}`;
 
-        const isItemCached = !forceRegenerate && Boolean(await audioPlayer.getCachedAudioAsync(itemCacheKey, langMode === 'VI_ONLY' ? voiceVi : voiceEn));
+        try {
+          if (isBoth) {
+            // Check both EN and VI readiness
+            const itemKeyEn = `improv_item_${item.id}_${voiceEn}_${voiceVi}_EN_ONLY`;
+            const itemKeyVi = `improv_item_${item.id}_${voiceEn}_${voiceVi}_VI_ONLY`;
+            const isItemCachedEn = !forceRegenerate && Boolean(await audioPlayer.getCachedAudioAsync(itemKeyEn, voiceEn));
+            const isItemCachedVi = !forceRegenerate && Boolean(await audioPlayer.getCachedAudioAsync(itemKeyVi, voiceVi));
 
-        // Check if individual hints are also already cached
-        let allHintsCached = true;
-        for (const h of (item.hints || [])) {
-          if (langMode === 'EN_ONLY' || langMode === 'EN_THEN_VI' || langMode === 'VI_THEN_EN') {
-            const hKeyEn = `improv_hint_${h.id}_${voiceEn}_en`;
-            if (!(await audioPlayer.getCachedAudioAsync(hKeyEn, voiceEn))) {
-              allHintsCached = false;
-              break;
+            let allHintsCached = true;
+            for (const h of (item.hints || [])) {
+              const hKeyEn = `improv_hint_${h.id}_${voiceEn}_en`;
+              const hKeyVi = `improv_hint_${h.id}_${voiceVi}_vi`;
+              if (!(await audioPlayer.getCachedAudioAsync(hKeyEn, voiceEn)) || 
+                  !(await audioPlayer.getCachedAudioAsync(hKeyVi, voiceVi))) {
+                allHintsCached = false;
+                break;
+              }
+            }
+
+            if (isItemCachedEn && isItemCachedVi && allHintsCached) {
+              skipped++;
+            } else {
+              // Synthesize BOTH EN_ONLY and VI_ONLY combined items and all hints!
+              await this.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, 'EN_ONLY', forceRegenerate);
+              await this.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, 'VI_ONLY', forceRegenerate);
+              // Also synthesize EN_THEN_VI for bilingual continuous playback
+              try {
+                await this.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, 'EN_THEN_VI', forceRegenerate);
+              } catch (bilingualErr) {
+                console.warn(`[Improv TTS] Bilingual combined audio optional synthesis warning for item #${item.itemNumber}:`, bilingualErr);
+              }
+              prepared++;
+            }
+          } else if (isViOnly) {
+            const itemKeyVi = `improv_item_${item.id}_${voiceEn}_${voiceVi}_VI_ONLY`;
+            const isItemCachedVi = !forceRegenerate && Boolean(await audioPlayer.getCachedAudioAsync(itemKeyVi, voiceVi));
+
+            let allHintsCached = true;
+            for (const h of (item.hints || [])) {
+              const hKeyVi = `improv_hint_${h.id}_${voiceVi}_vi`;
+              if (!(await audioPlayer.getCachedAudioAsync(hKeyVi, voiceVi))) {
+                allHintsCached = false;
+                break;
+              }
+            }
+
+            if (isItemCachedVi && allHintsCached) {
+              skipped++;
+            } else {
+              await this.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, 'VI_ONLY', forceRegenerate);
+              prepared++;
+            }
+          } else {
+            // EN_ONLY
+            const itemKeyEn = `improv_item_${item.id}_${voiceEn}_${voiceVi}_EN_ONLY`;
+            const isItemCachedEn = !forceRegenerate && Boolean(await audioPlayer.getCachedAudioAsync(itemKeyEn, voiceEn));
+
+            let allHintsCached = true;
+            for (const h of (item.hints || [])) {
+              const hKeyEn = `improv_hint_${h.id}_${voiceEn}_en`;
+              if (!(await audioPlayer.getCachedAudioAsync(hKeyEn, voiceEn))) {
+                allHintsCached = false;
+                break;
+              }
+            }
+
+            if (isItemCachedEn && allHintsCached) {
+              skipped++;
+            } else {
+              await this.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, 'EN_ONLY', forceRegenerate);
+              prepared++;
             }
           }
-          if (langMode === 'VI_ONLY' || langMode === 'EN_THEN_VI' || langMode === 'VI_THEN_EN') {
-            const hKeyVi = `improv_hint_${h.id}_${voiceVi}_vi`;
-            if (!(await audioPlayer.getCachedAudioAsync(hKeyVi, voiceVi))) {
-              allHintsCached = false;
-              break;
-            }
-          }
-        }
-
-        if (isItemCached && allHintsCached) {
-          skipped++;
-        } else {
-          try {
-            // synthesizeItemCombinedAudio automatically synthesizes & caches both
-            // the individual hints (via synthesizeSingleHintAudio) and the full continuous audio in IndexedDB.
-            await this.synthesizeItemCombinedAudio(item, voiceEn, voiceVi, langMode, forceRegenerate);
-            prepared++;
-          } catch (err) {
-            console.warn(`[Improv TTS] Batch synthesis failed for item #${item.itemNumber} (Session ${sessionNum}):`, err);
-            failed++;
-          }
+        } catch (err: any) {
+          console.warn(`[Improv TTS] Batch synthesis failed for item #${item.itemNumber} (Session ${sessionNum}):`, err);
+          errors.push({
+            itemId: item.id,
+            sessionNum,
+            itemNumber: item.itemNumber,
+            lang: isBoth ? 'both' : (isViOnly ? 'vi' : 'en'),
+            error: err?.message || String(err),
+            timestamp: Date.now()
+          });
+          failed++;
         }
 
         const done = prepared + failed + skipped;
-        onProgress?.(
-          done, 
-          total, 
-          `Session ${sessionNum} - Item #${item.itemNumber} (${done}/${total})...`
-        );
+        reportProgress(done, `Session ${sessionNum} - Item #${item.itemNumber} (${done}/${total})...`);
       }
     };
 
     const pool = Array.from({ length: Math.min(concurrency, total) }, () => worker());
     await Promise.all(pool);
 
-    onProgress?.(
-      total, 
+    reportProgress(
       total, 
       `Hoàn tất chuẩn bị audio Improv (${prepared} tạo mới, ${skipped} đã có sẵn, ${failed} lỗi)!`
     );
 
-    return { prepared, failed, total, skipped };
+    return { prepared, failed, total, skipped, errors };
+  }
+
+  /**
+   * Pre-generates and stores both full item continuous audio and individual hint audio for a single ImprovSession.
+   */
+  async prepareSessionAudio(
+    session: ImprovSession,
+    options?: PrepareAudioOptions,
+    onProgress?: (progress: ImprovBatchProgress) => void
+  ): Promise<{ prepared: number; failed: number; total: number; skipped: number; errors: ImprovBatchError[] }> {
+    const allItems = (session.items || []).map(it => ({ item: it, sessionNum: session.sessionNumber }));
+    return this.prepareItemsAudio(allItems, options, onProgress);
+  }
+
+  /**
+   * Pre-generates and stores both full item continuous audio and individual hint audio in IndexedDB for an entire ImprovPackage.
+   */
+  async preparePackageAudio(
+    pkg: ImprovPackage,
+    options?: PrepareAudioOptions,
+    onProgress?: (progress: ImprovBatchProgress) => void
+  ): Promise<{ prepared: number; failed: number; total: number; skipped: number; errors: ImprovBatchError[] }> {
+    const allItems: { item: ImprovItem; sessionNum: number }[] = [];
+    pkg.sessions.forEach(s => {
+      s.items.forEach(it => {
+        allItems.push({ item: it, sessionNum: s.sessionNumber });
+      });
+    });
+    return this.prepareItemsAudio(allItems, options, onProgress);
   }
 
   /**
@@ -632,7 +737,8 @@ class ImprovTtsEngine {
   }
 
   /**
-   * Checks if all items in an ImprovSession have their combined continuous audio cached or streamed
+   * Checks if all items in an ImprovSession have their audio ready
+   * (either via streaming URL, combined cached audio, or individual hints cached).
    */
   async isSessionAudioReady(
     session: ImprovSession, 
@@ -642,16 +748,53 @@ class ImprovTtsEngine {
   ): Promise<boolean> {
     if (!session.items || session.items.length === 0) return false;
     const normalizedMode = normalizeLanguageMode(langMode);
+    const isVi = normalizedMode === 'VI_ONLY';
+    const effVoice = isVi ? voiceVi : voiceEn;
+    const lang: 'en' | 'vi' = isVi ? 'vi' : 'en';
+
     for (const item of session.items) {
-      if (normalizedMode === 'EN_ONLY' && item.audioUrl && item.audioUrl.startsWith('http')) {
+      // 1. Streaming URL check (http or data:)
+      const streamUrl = isVi ? item.audioUrlVi : item.audioUrl;
+      if (streamUrl && streamUrl !== 'cached' && (streamUrl.startsWith('http://') || streamUrl.startsWith('https://') || streamUrl.startsWith('data:'))) {
         continue;
       }
-      if (normalizedMode === 'VI_ONLY' && item.audioUrlVi && item.audioUrlVi.startsWith('http')) {
-        continue;
-      }
+
+      // 2. Combined item audio check
       const itemCacheKey = `improv_item_${item.id}_${voiceEn}_${voiceVi}_${normalizedMode}`;
-      const cached = await audioPlayer.getCachedAudioAsync(itemCacheKey, normalizedMode === 'VI_ONLY' ? voiceVi : voiceEn);
-      if (!cached) return false;
+      const cached = await audioPlayer.getCachedAudioAsync(itemCacheKey, effVoice);
+      if (cached) {
+        continue;
+      }
+
+      // 3. All hints in item.hints check
+      if (item.hints && item.hints.length > 0) {
+        let allHintsCached = true;
+        for (const hint of item.hints) {
+          const hintStream = isVi ? hint.audioUrlVi : hint.audioUrl;
+          if (hintStream && hintStream !== 'cached' && (hintStream.startsWith('http://') || hintStream.startsWith('https://') || hintStream.startsWith('data:'))) {
+            continue;
+          }
+          const hintKey = `improv_hint_${hint.id}_${effVoice}_${lang}`;
+          const hCached = await audioPlayer.getCachedAudioAsync(hintKey, effVoice);
+          if (hCached) {
+            continue;
+          }
+          const text = sanitizeSpeechText(getHintTextByLanguage(hint, lang));
+          if (text) {
+            const textCached = await audioPlayer.getCachedAudioAsync(text, effVoice);
+            if (textCached) {
+              continue;
+            }
+          }
+          allHintsCached = false;
+          break;
+        }
+        if (allHintsCached) {
+          continue;
+        }
+      }
+
+      return false;
     }
     return true;
   }
@@ -715,8 +858,14 @@ export const synthesizeItemCombinedAudio = (
 export const preparePackageAudio = (
   pkg: ImprovPackage,
   options?: PrepareAudioOptions,
-  onProgress?: (current: number, total: number, statusText: string) => void
+  onProgress?: (progress: ImprovBatchProgress) => void
 ) => improvTts.preparePackageAudio(pkg, options, onProgress);
+
+export const prepareSessionAudio = (
+  session: ImprovSession,
+  options?: PrepareAudioOptions,
+  onProgress?: (progress: ImprovBatchProgress) => void
+) => improvTts.prepareSessionAudio(session, options, onProgress);
 
 export const playItemAudio = (
   item: ImprovItem,
