@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChunkItem, ChunkCategory } from '../types';
 import { X, Check, Volume2, Sparkles, Music, HelpCircle } from 'lucide-react';
 import { audioPlayer } from '../services/googleTtsService';
@@ -27,6 +27,20 @@ export const ChunkModal: React.FC<ChunkModalProps> = ({
   const [notes, setNotes] = useState(initialChunk?.notes || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setEnglish(initialChunk?.english || '');
+      setVietnamese(initialChunk?.vietnamese || '');
+      setCategory(initialChunk?.category || 'phrase');
+      setBeatProsody(initialChunk?.beat_prosody || '');
+      setIpa(initialChunk?.ipa || '');
+      setSpeaker(initialChunk?.speaker || '');
+      setNotes(initialChunk?.notes || '');
+      setIsSaving(false);
+      setIsPlayingAudio(false);
+    }
+  }, [initialChunk, isOpen]);
 
   if (!isOpen) return null;
 
@@ -67,6 +81,7 @@ export const ChunkModal: React.FC<ChunkModalProps> = ({
     setIsSaving(true);
     try {
       const chunkToSave: ChunkItem = {
+        ...(initialChunk || {}),
         chunk_id: initialChunk?.chunk_id || `chunk_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         item_number: initialChunk?.item_number || 999,
         category,
@@ -75,7 +90,7 @@ export const ChunkModal: React.FC<ChunkModalProps> = ({
         beat_prosody: beatProsody.trim() || null,
         ipa: ipa.trim() || null,
         speaker: speaker.trim() || null,
-        notes: notes.trim() || undefined
+        notes: notes.trim() || undefined,
       };
 
       await onSave(chunkToSave);

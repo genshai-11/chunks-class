@@ -67,6 +67,35 @@ describe("sanitizeSpeechText with Trailing Pause Comma Enhancement", () => {
     });
   });
 
+  describe("Pedagogical Clutter and Speaker Prefix Stripping", () => {
+    it("strips 'A. Teamwork B. Emotion assessment EMOTION ' prompt", () => {
+      expect(
+        sanitizeSpeechText("A. Teamwork B. Emotion assessment EMOTION Let's see how Ducky reacts")
+      ).toBe("Let's see how Ducky reacts, ");
+    });
+
+    it("strips 'REFLEXES A. Context mp3 B. Back & Forth ' prompt", () => {
+      expect(
+        sanitizeSpeechText("REFLEXES A. Context mp3 B. Back & Forth Linda is ready")
+      ).toBe("Linda is ready, ");
+    });
+
+    it("strips 'Speaker A:' and 'Speaker B:' prefixes", () => {
+      expect(sanitizeSpeechText("Speaker A: Good morning everyone")).toBe("Good morning everyone, ");
+      expect(sanitizeSpeechText("Speaker B: How's it going?")).toBe("How's it going?, ");
+    });
+
+    it("strips 'A - ' and 'B - ' dialogue prefixes", () => {
+      expect(sanitizeSpeechText("A - Nice to meet you")).toBe("Nice to meet you, ");
+      expect(sanitizeSpeechText("B: Glad to hear that")).toBe("Glad to hear that, ");
+      expect(sanitizeSpeechText("A – Absolutely")).toBe("Absolutely, ");
+    });
+
+    it("does not affect synonym slashes like 'A / B / C'", () => {
+      expect(sanitizeSpeechText("A / B / C")).toBe("A, ");
+    });
+  });
+
   describe("Normalization and Edge Cases", () => {
     it("handles empty or falsy text returning empty string", () => {
       expect(sanitizeSpeechText("")).toBe("");
@@ -89,3 +118,4 @@ describe("sanitizeSpeechText with Trailing Pause Comma Enhancement", () => {
     });
   });
 });
+

@@ -123,6 +123,14 @@ export function sanitizeSpeechText(text: string): string {
   let sanitized = text.trim();
   if (!sanitized) return '';
 
+  // 0. Speech-filter regex: Strip pedagogical clutter prompts and dialogue speaker prefixes
+  sanitized = sanitized.replace(/^A\.\s*Teamwork\s*B\.\s*Emotion\s*assessment\s*EMOTION\s*/i, '');
+  sanitized = sanitized.replace(/^REFLEXES\s*A\.\s*Context\s*mp3\s*B\.\s*Back\s*&\s*Forth\s*/i, '');
+  sanitized = sanitized.replace(/^(?:Speaker\s*)?[AB]\s*[-–—:]\s*/i, '');
+
+  sanitized = sanitized.trim();
+  if (!sanitized) return '';
+
   // 1. If beat markers (//, |) follow sentence-ending punctuation (. ! ?), preserve sentence pause
   sanitized = sanitized.replace(/([.!?])\s*(?:\/{2,}|\|+)\s*/g, '$1 ');
 

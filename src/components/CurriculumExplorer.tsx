@@ -19,7 +19,6 @@ import {
   Volume2, 
   Play, 
   Download, 
-  Music,
   Plus,
   Edit2,
   Trash2,
@@ -641,7 +640,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                     <th className="p-3 w-12 text-center">#</th>
                     <th className="p-3 w-20 text-center">Day</th>
                     <th className="p-3 w-24">Thể Loại</th>
-                    <th className="p-3">Cụm Tiếng Anh & Ngắt Nhịp</th>
+                    <th className="p-3">Cụm Tiếng Anh</th>
                     <th className="p-3">Bản Dịch Tiếng Việt</th>
                     <th className="p-3 w-40 text-center">Thao Tác</th>
                   </tr>
@@ -672,11 +671,6 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                           <div className="font-bold text-zinc-900 text-sm">
                             {chunk.english}
                           </div>
-                          {chunk.beat_prosody && (
-                            <div className="text-[11px] font-mono text-[#DC2626] mt-0.5">
-                              {chunk.beat_prosody}
-                            </div>
-                          )}
                         </td>
                         <td className="p-3 text-zinc-600 font-medium">
                           {chunk.vietnamese}
@@ -778,13 +772,6 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                         <h3 className="font-display font-bold text-base md:text-lg text-[#0A0A0A] leading-snug">
                           {chunk.english}
                         </h3>
-
-                        {chunk.beat_prosody && (
-                          <div className="text-xs font-mono font-semibold text-[#DC2626] flex items-center gap-1.5">
-                            <Music className="w-3.5 h-3.5 shrink-0" />
-                            <span>{chunk.beat_prosody}</span>
-                          </div>
-                        )}
 
                         <p className="text-xs md:text-sm text-[#6B6B6B]">
                           {chunk.vietnamese}
@@ -900,8 +887,12 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
 
       {/* Add / Edit Chunk Modal */}
       <ChunkModal
+        key={editingChunk?.chunk_id || (isChunkModalOpen ? 'open_new' : 'closed')}
         isOpen={isChunkModalOpen}
-        onClose={() => setIsChunkModalOpen(false)}
+        onClose={() => {
+          setIsChunkModalOpen(false);
+          setEditingChunk(null);
+        }}
         onSave={handleSaveChunk}
         initialChunk={editingChunk}
         dayNumber={targetDayNumber}
