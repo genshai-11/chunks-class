@@ -180,6 +180,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     timestamp: number;
     isDouble?: boolean;
     isCombo?: boolean;
+    isChord?: boolean;
   } | null>(null);
   const [shortcutToast, setShortcutToast] = useState<{ message: string; type: 'success' | 'info' | 'warning' } | null>(null);
 
@@ -269,28 +270,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           return;
         }
 
-        // 3. Auto mode: 1x vs 2x with 450ms debounce
-        if (recordingTimerRef.current && recordingPendingKey?.code === e.code) {
-          // Second press within 450ms -> Double Press!
+        // 3. Auto mode: 1x vs 2x vs 2-Key Chord (650ms debounce)
+        if (recordingTimerRef.current && recordingPendingKey) {
           clearTimeout(recordingTimerRef.current);
           recordingTimerRef.current = null;
+          const firstKey = recordingPendingKey;
           setRecordingPendingKey(null);
 
-          const doubleCode = `2x:${e.code}`;
-          shortcutConfigService.addKeyToAction(currentAction, doubleCode);
-          const keyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
-          showShortcutNotice(`Đã nhận diện bấm 2 lần! Gán cử chỉ "${keyName}" cho "${actionLabel}"!`);
-          setRecordingAction(null);
-          return;
+          if (firstKey.code === e.code) {
+            // Second press of same key within 650ms -> Double Press (2x)!
+            const doubleCode = `2x:${e.code}`;
+            shortcutConfigService.addKeyToAction(currentAction, doubleCode);
+            const keyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
+            showShortcutNotice(`Đã nhận diện bấm đúp! Gán "${keyName}" cho "${actionLabel}"!`, 'success');
+            setRecordingAction(null);
+            return;
+          } else {
+            // Second press is a different key within 650ms -> 2-Key Chord (e.g. ArrowRight+ArrowLeft)!
+            const chordCode = `${firstKey.code}+${e.code}`;
+            shortcutConfigService.addKeyToAction(currentAction, chordCode);
+            const keyName1 = firstKey.name;
+            const keyName2 = shortcutConfigService.getKeyFriendlyName(e.code);
+            showShortcutNotice(`Đã nhận diện tổ hợp 2 phím! Gán "🤝 ${keyName1} + ${keyName2}" cho "${actionLabel}"!`, 'success');
+            setRecordingAction(null);
+            return;
+          }
         }
 
         // First press of this key
         if (recordingTimerRef.current) {
           clearTimeout(recordingTimerRef.current);
           recordingTimerRef.current = null;
-          if (recordingPendingKey) {
-            shortcutConfigService.addKeyToAction(currentAction, recordingPendingKey.code);
-          }
         }
 
         const friendlyName = shortcutConfigService.getKeyFriendlyName(e.code);
@@ -300,9 +310,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           recordingTimerRef.current = null;
           setRecordingPendingKey(null);
           shortcutConfigService.addKeyToAction(currentAction, e.code);
-          showShortcutNotice(`Đã gán phím đơn "${friendlyName}" (${e.code}) cho "${actionLabel}"!`);
+          showShortcutNotice(`Đã gán phím đơn "${friendlyName}" (${e.code}) cho "${actionLabel}"!`, 'success');
           setRecordingAction(null);
-        }, 450);
+        }, 650);
 
         return;
       }
@@ -333,35 +343,49 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       }
 
       const now = Date.now();
-      const isDouble = !!(
-        lastLiveKeyPressRef.current &&
-        lastLiveKeyPressRef.current.code === e.code &&
-        now - lastLiveKeyPressRef.current.time <= 420
-      );
-
-      if (isDouble) {
+      if (lastLiveKeyPressRef.current && now - lastLiveKeyPressRef.current.time <= 500) {
+        const prevCode = lastLiveKeyPressRef.current.code;
         lastLiveKeyPressRef.current = null;
-        const doubleCode = `2x:${e.code}`;
-        const act = shortcutConfigService.findActionForKey(e.code, true) || shortcutConfigService.findActionForKey(doubleCode);
-        const friendlyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
-        setLastTestedKey({
-          code: doubleCode,
-          name: friendlyName,
-          action: act,
-          timestamp: now,
-          isDouble: true
-        });
-      } else {
-        lastLiveKeyPressRef.current = { code: e.code, time: now };
-        const act = shortcutConfigService.findActionForKey(e.code);
-        const friendlyName = shortcutConfigService.getKeyFriendlyName(e.code);
-        setLastTestedKey({
-          code: e.code,
-          name: friendlyName,
-          action: act,
-          timestamp: now
-        });
+
+        if (prevCode === e.code) {
+          // Double press
+          const doubleCode = `2x:${e.code}`;
+          const act = shortcutConfigService.findActionForKey(e.code, true) || shortcutConfigService.findActionForKey(doubleCode);
+          const friendlyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
+          setLastTestedKey({
+            code: doubleCode,
+            name: friendlyName,
+            action: act,
+            timestamp: now,
+            isDouble: true
+          });
+          return;
+        } else {
+          // 2-Key Chord sequence (e.g. ArrowRight + ArrowLeft)
+          const chordCode = `${prevCode}+${e.code}`;
+          const act = shortcutConfigService.findActionForChord(prevCode, e.code) || shortcutConfigService.findActionForKey(chordCode);
+          const friendlyName = shortcutConfigService.getKeyFriendlyName(chordCode);
+          setLastTestedKey({
+            code: chordCode,
+            name: friendlyName,
+            action: act,
+            timestamp: now,
+            isChord: true
+          });
+          return;
+        }
       }
+
+      // Single key press
+      lastLiveKeyPressRef.current = { code: e.code, time: now };
+      const act = shortcutConfigService.findActionForKey(e.code);
+      const friendlyName = shortcutConfigService.getKeyFriendlyName(e.code);
+      setLastTestedKey({
+        code: e.code,
+        name: friendlyName,
+        action: act,
+        timestamp: now
+      });
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -2571,6 +2595,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           ⚡ 2X BẤM ĐÚP
                         </span>
                       )}
+                      {lastTestedKey.isChord && (
+                        <span className="text-[10px] bg-emerald-400 text-zinc-950 px-1.5 py-0.5 rounded font-bold font-sans tracking-tight">
+                          🤝 TỔ HỢP 2 PHÍM
+                        </span>
+                      )}
                       {lastTestedKey.isCombo && (
                         <span className="text-[10px] bg-blue-400 text-zinc-950 px-1.5 py-0.5 rounded font-bold font-sans tracking-tight">
                           ⌨ TỔ HỢP
@@ -2636,12 +2665,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
 
               {!recordingAction && (
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <div className="flex items-center gap-2 text-xs text-zinc-500 flex-wrap">
                   <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium">
                     ⚡ 2x = Bấm đúp
                   </span>
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
+                    🤝 Chord = Tổ hợp 2 phím (Right + Left)
+                  </span>
                   <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium">
-                    ⌨ Combo = Tổ hợp
+                    ⌨ Combo = Phím máy tính
                   </span>
                 </div>
               )}
@@ -2664,7 +2696,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </span>
                       </div>
                       <div className="text-[11px] text-zinc-600 mt-0.5">
-                        Nhấn nút trên bút clicker hoặc bàn phím. Hệ thống sẽ tự động phân tích phím đơn, bấm đúp (2x) hoặc tổ hợp.
+                        Nhấn nút trên bút clicker hoặc bàn phím. Hệ thống sẽ tự động phân tích phím đơn, bấm đúp (2x) hoặc tổ hợp 2 phím (Right + Left).
                       </div>
                     </div>
                   </div>
@@ -2679,9 +2711,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           ? 'bg-amber-600 text-white shadow-xs'
                           : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50'
                       }`}
-                      title="Bấm 1 lần = phím đơn, bấm 2 lần nhanh = gán đúp 2x"
+                      title="Bấm 1 lần = phím đơn, bấm 2 nút khác nhau = tổ hợp 2 phím, bấm 2 lần cùng nút = gán đúp 2x"
                     >
-                      ⚡ Tự động (Auto 1x / 2x)
+                      ⚡ Tự động (Auto 1x / 2x / Chord)
                     </button>
                     <button
                       type="button"
@@ -2714,18 +2746,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 {/* Detection Guide & Status */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px]">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-[11px]">
                   <div className="p-2 rounded-xl bg-white/80 border border-zinc-200/80 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px]">1x</span>
-                    <span><strong>Bấm 1 lần:</strong> Ghi nhận Phím đơn (chờ 0.4s)</span>
+                    <span><strong>Bấm 1 lần:</strong> Phím đơn (chờ 0.6s)</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white/80 border border-emerald-200 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[10px]">🤝</span>
+                    <span><strong>Bấm 2 nút (Right + Left):</strong> Tổ hợp 2 phím</span>
                   </div>
                   <div className="p-2 rounded-xl bg-white/80 border border-amber-200 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-[10px]">2x</span>
-                    <span><strong>Bấm 2 lần nhanh (trong 400ms):</strong> Ghi nhận Cử chỉ Bấm Đúp (2x)</span>
+                    <span><strong>Bấm 2 lần cùng nút:</strong> Bấm Đúp (2x)</span>
                   </div>
                   <div className="p-2 rounded-xl bg-white/80 border border-purple-200 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-[10px]">⌥</span>
-                    <span><strong>Giữ Ctrl/Shift/Alt:</strong> Ghi nhận Tổ hợp Phím (Combine)</span>
+                    <span><strong>Giữ Ctrl/Alt/Shift:</strong> Phím Máy Tính</span>
                   </div>
                 </div>
 
@@ -2733,14 +2769,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {recordingPendingKey && (
                   <div className="p-3 bg-amber-100/90 border border-amber-300 rounded-xl flex items-center justify-between gap-2 text-xs font-bold text-amber-950 animate-pulse">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span>⚡ Đã nhận:</span>
+                      <span>⚡ Đã nhận phím 1:</span>
                       <span className="px-2 py-0.5 rounded bg-amber-200 font-mono text-amber-900 font-bold">
                         {recordingPendingKey.name} ({recordingPendingKey.code})
                       </span>
-                      <span>Bấm lần nữa để gán Bấm Đúp (2x), hoặc đợi 0.4s để hoàn tất phím đơn...</span>
+                      <span>Hãy bấm tiếp phím thứ 2 (ví dụ [Phím Trái] để tạo tổ hợp Right + Left), hoặc bấm lại để tạo Bấm Đúp 2x, hoặc đợi 0.6s để lưu phím đơn...</span>
                     </div>
                     <span className="text-[10px] font-mono text-amber-800 bg-white/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                      Đang đếm 0.4s...
+                      Đang chờ phím 2 (0.6s)...
                     </span>
                   </div>
                 )}
@@ -2774,10 +2810,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             {keys.length > 0 ? (
                               keys.map((k) => {
                                 const isDouble = k.startsWith('2x:');
-                                const isCombo = k.includes('+');
+                                const isPlus = k.includes('+');
+                                const parts = isPlus ? k.split('+') : [];
+                                const hasModifier = parts.some(p => ['ctrl', 'control', 'alt', 'shift', 'meta', 'cmd'].includes(p.toLowerCase()));
+                                const isChord = isPlus && !hasModifier;
+                                const isCombo = isPlus && hasModifier;
 
                                 const badgeClass = isDouble
                                   ? 'bg-amber-50 hover:bg-amber-100/80 border-amber-300 text-amber-900'
+                                  : isChord
+                                  ? 'bg-emerald-50 hover:bg-emerald-100/80 border-emerald-300 text-emerald-900'
                                   : isCombo
                                   ? 'bg-blue-50 hover:bg-blue-100/80 border-blue-300 text-blue-900'
                                   : 'bg-zinc-100 hover:bg-zinc-200/80 border-zinc-200 text-zinc-800';
@@ -2792,6 +2834,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     {isDouble && (
                                       <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-200 text-amber-900 font-mono">
                                         ⚡ 2X
+                                      </span>
+                                    )}
+                                    {isChord && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-200 text-emerald-900 font-mono">
+                                        🤝 CHORD
                                       </span>
                                     )}
                                     {isCombo && (
@@ -2857,7 +2904,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               </button>
                             )}
 
-                            {/* Quick Add Dropdown with 2x and Combos */}
+                            {/* Quick Add Dropdown with 2x, Chords, and Combos */}
                             <select
                               defaultValue=""
                               onChange={(e) => {
@@ -2870,6 +2917,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               className="px-2 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 text-[11px] font-semibold text-zinc-600 hover:bg-white cursor-pointer max-w-[160px]"
                             >
                               <option value="">+ Thêm nhanh phím</option>
+                              <optgroup label="🤝 Tổ hợp 2 Phím Clicker (Chord / Sequence)">
+                                <option value="ArrowRight+ArrowLeft">🤝 Tổ hợp: → (Phải) + ← (Trái)</option>
+                                <option value="PageDown+PageUp">🤝 Tổ hợp: Page Down + Page Up</option>
+                                <option value="ArrowLeft+ArrowRight">🤝 Tổ hợp: ← (Trái) + → (Phải)</option>
+                                <option value="PageUp+PageDown">🤝 Tổ hợp: Page Up + Page Down</option>
+                              </optgroup>
                               <optgroup label="⚡ Cử chỉ Bấm Đúp 2 Lần (Double-Press)">
                                 <option value="2x:ArrowLeft">⚡ Bấm đúp 2x: ← (Mũi tên Trái)</option>
                                 <option value="2x:PageUp">⚡ Bấm đúp 2x: Page Up</option>

@@ -3,11 +3,11 @@ import { ClickerAction, PresentationShortcutConfig, ShortcutModeBehavior } from 
 export const SHORTCUT_STORAGE_KEY = 'chunks_presentation_shortcuts_v1';
 
 export const DEFAULT_SHORTCUT_CONFIG: PresentationShortcutConfig = {
-  version: 2,
+  version: 3,
   keyBindings: {
     next: ['PageDown', 'ArrowRight', 'Space'],
     prev: ['PageUp', 'ArrowLeft'],
-    replay: ['KeyR', '2x:ArrowLeft', '2x:PageUp'],
+    replay: ['KeyR', '2x:ArrowLeft', '2x:PageUp', 'ArrowRight+ArrowLeft', 'PageDown+PageUp'],
     blackout: ['KeyB', 'Period'],
     subtitle: ['KeyV'],
     drawer: ['KeyP', 'KeyL'],
@@ -33,11 +33,11 @@ export type ShortcutPresetType = 'PRESENTER_REMOTE' | 'KEYBOARD_STANDARD' | 'INV
 export const SHORTCUT_PRESETS: Record<ShortcutPresetType, { name: string; description: string; bindings: Record<ClickerAction, string[]> }> = {
   PRESENTER_REMOTE: {
     name: 'Bút Trình Chiếu Chuẩn (Presenter Remote)',
-    description: 'Tương thích tiêu chuẩn Logitech (Spotlight, R400/R800), Baseus, Ugreen (PageDown = Next, PageUp = Prev, 2x PageUp/ArrowLeft = Replay).',
+    description: 'Tương thích tiêu chuẩn Logitech (Spotlight, R400/R800), Baseus, Ugreen (PageDown = Next, PageUp = Prev, 2x Prev hoặc Right+Left = Replay).',
     bindings: {
       next: ['PageDown', 'ArrowRight', 'Space'],
       prev: ['PageUp', 'ArrowLeft'],
-      replay: ['KeyR', '2x:PageUp', '2x:ArrowLeft'],
+      replay: ['KeyR', '2x:PageUp', '2x:ArrowLeft', 'ArrowRight+ArrowLeft', 'PageDown+PageUp'],
       blackout: ['KeyB', 'Period'],
       subtitle: ['KeyV'],
       drawer: ['KeyP', 'KeyL'],
@@ -49,11 +49,11 @@ export const SHORTCUT_PRESETS: Record<ShortcutPresetType, { name: string; descri
   },
   KEYBOARD_STANDARD: {
     name: 'Bàn Phím Máy Tính Chuẩn (Desktop Keyboard)',
-    description: 'Thao tác trực tiếp trên phím mũi tên, phím cách, Enter và phím tắt F5/F11 (2x Mũi tên trái / PageUp = Replay).',
+    description: 'Thao tác trực tiếp trên phím mũi tên, phím cách, Enter và phím tắt F5/F11 (2x Mũi tên trái / PageUp hoặc Right+Left = Replay).',
     bindings: {
       next: ['ArrowRight', 'Space', 'Enter'],
       prev: ['ArrowLeft', 'Backspace'],
-      replay: ['KeyR', '2x:ArrowLeft', '2x:PageUp'],
+      replay: ['KeyR', '2x:ArrowLeft', '2x:PageUp', 'ArrowRight+ArrowLeft', 'PageDown+PageUp'],
       blackout: ['KeyB', 'Period'],
       subtitle: ['KeyV'],
       drawer: ['KeyP', 'KeyL'],
@@ -65,11 +65,11 @@ export const SHORTCUT_PRESETS: Record<ShortcutPresetType, { name: string; descri
   },
   INVERTED_CLICKER: {
     name: 'Đảo Chiều Tiến ⇄ Lùi (Inverted Clicker)',
-    description: 'Phù hợp khi bút trình chiếu có bố cục phím ngược (Nút Trái = Next, Nút Phải = Prev).',
+    description: 'Phù hợp khi bút trình chiếu có bố cục phím ngược (Nút Trái = Next, Nút Phải = Prev, Left+Right = Replay).',
     bindings: {
       next: ['PageUp', 'ArrowLeft'],
       prev: ['PageDown', 'ArrowRight', 'Space'],
-      replay: ['KeyR', '2x:PageDown', '2x:ArrowRight', '2x:PageUp', '2x:ArrowLeft'],
+      replay: ['KeyR', '2x:PageDown', '2x:ArrowRight', '2x:PageUp', '2x:ArrowLeft', 'ArrowLeft+ArrowRight', 'PageUp+PageDown'],
       blackout: ['KeyB', 'Period'],
       subtitle: ['KeyV'],
       drawer: ['KeyP', 'KeyL'],
@@ -110,8 +110,18 @@ class ShortcutConfigService {
         }
       }
 
+      // Auto-migrate v2 -> v3: Ensure replay includes 2-key chords (ArrowRight+ArrowLeft, PageDown+PageUp)
+      if (version < 3 && keyBindings.replay) {
+        const defaultChords = ['ArrowRight+ArrowLeft', 'PageDown+PageUp'];
+        for (const chord of defaultChords) {
+          if (!keyBindings.replay.includes(chord)) {
+            keyBindings.replay.push(chord);
+          }
+        }
+      }
+
       return {
-        version: Math.max(version, 2),
+        version: Math.max(version, 3),
         keyBindings,
         focusMode: {
           ...DEFAULT_SHORTCUT_CONFIG.focusMode,
@@ -234,7 +244,7 @@ class ShortcutConfigService {
 
   public resetToDefault(): void {
     this.config = {
-      version: 1,
+      version: 3,
       keyBindings: {
         ...DEFAULT_SHORTCUT_CONFIG.keyBindings
       },
@@ -259,6 +269,43 @@ class ShortcutConfigService {
       }
     }
     return false;
+  }
+
+  public hasChordStartingWith(firstKey: string): boolean {
+    if (!firstKey) return false;
+    const prefix = `${firstKey}+`;
+    const actions: ClickerAction[] = ['next', 'prev', 'replay', 'blackout', 'subtitle', 'drawer', 'fullscreen', 'digit1', 'digit2', 'digit3'];
+    for (const act of actions) {
+      const keys = this.config.keyBindings[act];
+      if (keys) {
+        for (const k of keys) {
+          if (k.startsWith(prefix)) {
+            const parts = k.split('+');
+            const hasMod = parts.some(p => ['ctrl', 'control', 'alt', 'shift', 'meta', 'cmd', 'command', 'win'].includes(p.toLowerCase()));
+            if (!hasMod && parts.length === 2) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  public findActionForChord(keyA: string, keyB: string): ClickerAction | null {
+    if (!keyA || !keyB) return null;
+    const candidate1 = `${keyA}+${keyB}`;
+    const candidate2 = `${keyB}+${keyA}`;
+    const actions: ClickerAction[] = ['next', 'prev', 'replay', 'blackout', 'subtitle', 'drawer', 'fullscreen', 'digit1', 'digit2', 'digit3'];
+    for (const act of actions) {
+      const keys = this.config.keyBindings[act];
+      if (keys) {
+        if (keys.includes(candidate1) || keys.includes(candidate2)) {
+          return act;
+        }
+      }
+    }
+    return null;
   }
 
   public findActionForKey(
@@ -287,7 +334,7 @@ class ShortcutConfigService {
       candidates.push(`2x:${code}`);
     }
 
-    // 3. Exact raw code (which might already be '2x:...' or 'Ctrl+...')
+    // 3. Exact raw code (which might already be '2x:...' or 'Ctrl+...' or 'ArrowRight+ArrowLeft')
     candidates.push(code);
 
     // 4. Fallback: if code starts with '2x:', check without '2x:' if no 2x found? (no, only match explicit)
@@ -313,9 +360,17 @@ class ShortcutConfigService {
       return `⚡ Bấm đúp 2 lần: ${this.getKeyFriendlyName(baseCode)}`;
     }
 
-    // Handle modifier combination keys (e.g. Ctrl+KeyR, Shift+KeyV)
+    // Handle combinations: 2-key chords vs modifier combinations
     if (code.includes('+')) {
       const parts = code.split('+');
+      const hasModifier = parts.some(p => ['ctrl', 'control', 'alt', 'shift', 'meta', 'cmd', 'command', 'win'].includes(p.toLowerCase()));
+
+      // 2-key chord without modifiers (e.g. ArrowRight+ArrowLeft, PageDown+PageUp)
+      if (!hasModifier && parts.length === 2) {
+        return `🤝 Tổ hợp: ${this.getKeyFriendlyName(parts[0])} + ${this.getKeyFriendlyName(parts[1])}`;
+      }
+
+      // Modifier combination keys (e.g. Ctrl+KeyR, Shift+KeyV)
       const baseKey = parts[parts.length - 1];
       const modifiers = parts.slice(0, -1);
       const friendlyModifiers = modifiers.map(m => {

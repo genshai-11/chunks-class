@@ -20,8 +20,13 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
   const handlersRef = useRef<ClickerHandlers>(handlers);
   handlersRef.current = handlers;
 
-  const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingKeyRef = useRef<string | null>(null);
+  interface PendingKeyRecord {
+    code: string;
+    timer: ReturnType<typeof setTimeout>;
+    timestamp: number;
+  }
+
+  const pendingChordKeyRef = useRef<PendingKeyRecord | null>(null);
 
   // Reactive shortcut configuration
   const [config, setConfig] = useState<PresentationShortcutConfig>(() => shortcutConfigService.getConfig());
@@ -107,12 +112,11 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
 
       const hasModifiers = e.ctrlKey || e.shiftKey || e.altKey || e.metaKey;
       if (hasModifiers) {
-        // Flush any pending single-press timer
-        if (pendingTimerRef.current) {
-          clearTimeout(pendingTimerRef.current);
-          pendingTimerRef.current = null;
-          const prevKey = pendingKeyRef.current;
-          pendingKeyRef.current = null;
+        // Flush any pending key timer
+        if (pendingChordKeyRef.current) {
+          clearTimeout(pendingChordKeyRef.current.timer);
+          const prevKey = pendingChordKeyRef.current.code;
+          pendingChordKeyRef.current = null;
           if (prevKey) {
             const act = shortcutConfigService.findActionForKey(prevKey);
             if (act) dispatchAction(act);
@@ -137,67 +141,77 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
       // 4. Prevent default for common navigation/presentation keys
       const allPreventCodes = [
         'PageDown', 'PageUp', 'ArrowRight', 'ArrowLeft', 'Space', 'F5', 'F11',
-        ...(kb.next || []).map(k => k.replace(/^2x:/, '')),
-        ...(kb.prev || []).map(k => k.replace(/^2x:/, '')),
-        ...(kb.replay || []).map(k => k.replace(/^2x:/, '')),
-        ...(kb.fullscreen || []).map(k => k.replace(/^2x:/, ''))
+        ...(kb.next || []).flatMap(k => k.replace(/^2x:/, '').split('+')),
+        ...(kb.prev || []).flatMap(k => k.replace(/^2x:/, '').split('+')),
+        ...(kb.replay || []).flatMap(k => k.replace(/^2x:/, '').split('+')),
+        ...(kb.fullscreen || []).flatMap(k => k.replace(/^2x:/, '').split('+'))
       ];
       if (allPreventCodes.includes(e.code)) {
         e.preventDefault();
       }
 
-      // 5. Double-press vs Single-press Detection
-      if (pendingKeyRef.current === e.code && pendingTimerRef.current) {
-        // SECOND PRESS OF SAME KEY WITHIN TIMEOUT -> DOUBLE PRESS (2x) GESTURE!
-        clearTimeout(pendingTimerRef.current);
-        pendingTimerRef.current = null;
-        pendingKeyRef.current = null;
+      // 5. 2-Key Chord & Double-press Detection with Pending Key
+      if (pendingChordKeyRef.current) {
+        const pendingKey = pendingChordKeyRef.current.code;
+        const timer = pendingChordKeyRef.current.timer;
 
-        // Check if there is an action bound to 2x:e.code
-        const doubleAction = shortcutConfigService.findActionForKey(e.code, true);
-        if (doubleAction) {
-          dispatchAction(doubleAction);
+        if (pendingKey !== e.code) {
+          // Key B arrives while Key A is pending -> Check 2-Key Chord!
+          const chordAction = shortcutConfigService.findActionForChord(pendingKey, e.code);
+          if (chordAction) {
+            // SUCCESSFUL CHORD! Cancel pending action, invoke chord action (e.g. Replay)!
+            clearTimeout(timer);
+            pendingChordKeyRef.current = null;
+            dispatchAction(chordAction);
+            return;
+          }
+
+          // No chord matched between pendingKey and e.code:
+          // Flush pendingKey action first, then proceed to handle e.code
+          clearTimeout(timer);
+          pendingChordKeyRef.current = null;
+          const prevAction = shortcutConfigService.findActionForKey(pendingKey);
+          if (prevAction) {
+            dispatchAction(prevAction);
+          }
+          // Now continue to evaluate e.code as below
+        } else {
+          // Same key pressed again within timeout -> Double Press (2x) Gesture!
+          clearTimeout(timer);
+          pendingChordKeyRef.current = null;
+
+          const doubleAction = shortcutConfigService.findActionForKey(e.code, true);
+          if (doubleAction) {
+            dispatchAction(doubleAction);
+            return;
+          }
+
+          // Fallback: behavior.enableDoublePressReplay on prev keys
+          if (behavior.enableDoublePressReplay && kb.prev?.includes(e.code)) {
+            handlersRef.current.onReplayAudio();
+            return;
+          }
+
+          // If no 2x binding, dispatch single action for both presses
+          const singleAction = shortcutConfigService.findActionForKey(e.code);
+          if (singleAction) {
+            dispatchAction(singleAction);
+            dispatchAction(singleAction);
+            return;
+          }
           return;
         }
-
-        // Fallback: behavior.enableDoublePressReplay on prev keys
-        if (behavior.enableDoublePressReplay && kb.prev?.includes(e.code)) {
-          handlersRef.current.onReplayAudio();
-          return;
-        }
-
-        // Otherwise dispatch normal action
-        const singleAction = shortcutConfigService.findActionForKey(e.code);
-        if (singleAction) {
-          dispatchAction(singleAction);
-          return;
-        }
-        return;
       }
 
-      // If a different key was pending, flush it now
-      if (pendingTimerRef.current) {
-        clearTimeout(pendingTimerRef.current);
-        pendingTimerRef.current = null;
-        const prevKey = pendingKeyRef.current;
-        pendingKeyRef.current = null;
-        if (prevKey) {
-          const act = shortcutConfigService.findActionForKey(prevKey);
-          if (act) dispatchAction(act);
-        }
-      }
-
-      // Check if this key has any 2x double-press binding or doublePressReplay enabled
+      // 6. Check if this key should wait for a potential 2-Key Chord or 2x Double-Press
+      const hasChord = shortcutConfigService.hasChordStartingWith(e.code);
       const hasDoublePress = shortcutConfigService.hasDoublePressBinding(e.code) || 
         (behavior.enableDoublePressReplay && !!kb.prev?.includes(e.code));
 
-      if (hasDoublePress) {
-        // Start waiting for possible second press
-        pendingKeyRef.current = e.code;
-        const timeout = behavior.doublePressTimeoutMs || 380;
-        pendingTimerRef.current = setTimeout(() => {
-          pendingTimerRef.current = null;
-          pendingKeyRef.current = null;
+      if (hasChord || hasDoublePress) {
+        const timeout = hasChord ? 350 : (behavior.doublePressTimeoutMs || 380);
+        const timer = setTimeout(() => {
+          pendingChordKeyRef.current = null;
           const singleAction = shortcutConfigService.findActionForKey(e.code);
           if (singleAction) {
             dispatchAction(singleAction);
@@ -208,10 +222,16 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
             else if (e.code === 'Digit3' || e.code === 'Numpad3') dispatchAction('digit3');
           }
         }, timeout);
+
+        pendingChordKeyRef.current = {
+          code: e.code,
+          timer,
+          timestamp: Date.now()
+        };
         return;
       }
 
-      // Keys without 2x binding execute immediately (zero latency)
+      // 7. Keys without chord or 2x binding execute immediately (zero latency)
       const directAction = shortcutConfigService.findActionForKey(e.code);
       if (directAction) {
         dispatchAction(directAction);
@@ -231,10 +251,9 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      if (pendingTimerRef.current) {
-        clearTimeout(pendingTimerRef.current);
-        pendingTimerRef.current = null;
-        pendingKeyRef.current = null;
+      if (pendingChordKeyRef.current) {
+        clearTimeout(pendingChordKeyRef.current.timer);
+        pendingChordKeyRef.current = null;
       }
     };
   }, [enabled]);
