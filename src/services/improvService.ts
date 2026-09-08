@@ -127,19 +127,25 @@ Each Improv Package contains multiple Sessions. In each Session, each Item is an
 
 2. **For 3-Hint Sessions (hcTotal = 3)**:
    - Hint 1: **Keyword / Core Vocab** (1–2 words: Phrasal verb / Cụm đàm thoại / Phản hồi cảm xúc).
-   - Hint 2: **Logic word / Từ nối** (1–2 words: transition & connective words).
-     *CRITICAL RULE*: Every item MUST use a DIFFERENT logic connector! Pick from: "nói cách khác" (in other words), "sau cùng" (eventually), "trước đó" (before that), "hơn nữa" (in addition), "tiếp theo" (next), "dù vậy" (nevertheless), "nếu" (if), "đồng thời" (meanwhile), "tuy nhiên" (however), "do đó" (therefore), "ví dụ" (for example), "miễn là" (as long as), "nếu không" (otherwise), "sau đó" (then), "ngoài ra" (besides).
+   - Hint 2: **Logic word / Từ nối** (1–2 words: transition & connective words in ENGLISH).
+     *CRITICAL RULE*: Every item MUST use a DIFFERENT logic connector! Pick from: "otherwise" (nếu không), "therefore" (do đó), "eventually" (sau cùng), "before that" (trước đó), "moreover" (hơn nữa), "next" (tiếp theo), "nevertheless" (dù vậy), "meanwhile" (đồng thời), "however" (tuy nhiên), "for example" (ví dụ), "as long as" (miễn là), "besides" (ngoài ra), "after that" (sau đó), "on the other hand" (mặt khác), "as a result" (kết quả là), "even though" (mặc dù).
    - Hint 3: **Ending** (Tính từ / Trạng từ / Động từ - 1–2 words).
-   - *Example (Easy / A1-A2)*: Hint 1: "Miss the bus" (Trans: "Lỡ xe buýt", Type: "Keyword") | Hint 2: "do đó" (Trans: "therefore", Type: "Từ nối · Logic word") | Hint 3: "be late" (Trans: "đi trễ", Type: "Ending")
-   - *Example (Hard / B2-C1)*: Hint 1: "Spill the beans" (Trans: "Bật mí bí mật", Type: "Keyword") | Hint 2: "sau cùng" (Trans: "eventually", Type: "Từ nối · Logic word") | Hint 3: "catastrophic" (Trans: "thảm họa", Type: "Ending")
+   - *Example (Easy / A1-A2)*: Hint 1: "Miss the bus" (Trans: "Lỡ xe buýt", Type: "Keyword") | Hint 2: "therefore" (Trans: "do đó", Type: "Từ nối · Logic word") | Hint 3: "be late" (Trans: "đi trễ", Type: "Ending")
+   - *Example (Hard / B2-C1)*: Hint 1: "Spill the beans" (Trans: "Bật mí bí mật", Type: "Keyword") | Hint 2: "eventually" (Trans: "sau cùng", Type: "Từ nối · Logic word") | Hint 3: "catastrophic" (Trans: "thảm họa", Type: "Ending")
 
 3. **For 4-Hint Sessions (hcTotal = 4)**:
    - Hint 1: **Keyword / WH-question** (1–2 words: Danh từ, Cụm khuyên nhủ, WH word like "Why", "When", "How long", "Which").
    - Hint 2: **Logic word / Từ nối** (1–2 words: "while", "in contrast", "as long as", "but", "however", "therefore", "if", "otherwise", "then", "finally", etc. - MUST be different across all rows!).
    - Hint 3: **Fancy word / Ẩn dụ / Cụm gợi hình / Tục ngữ / Từ tượng thanh** (1–2 words colorful image: for Easy use simple vivid words like "rainy day", "warm cup", "fresh air", "bright light"; for Hard use idioms/collocations like "watchful eye", "shock wave", "Better safe than sorry", "red flag").
    - Hint 4: **Ending** (1–2 words: Danh từ, Tính từ, Trạng từ).
-   - *Example (Easy / A1-A2)*: Hint 1: "Grab a coffee" | Hint 2: "trước khi" (before) | Hint 3: "rainy day" (ngày mưa) | Hint 4: "feel warm" (cảm thấy ấm áp)
-   - *Example (Hard / B2-C1)*: Hint 1: "Elephant in the room" | Hint 2: "dù vậy" (nevertheless) | Hint 3: "watchful eye" (ánh mắt dò xét) | Hint 4: "unaddressed" (chưa giải quyết)
+   - *Example (Easy / A1-A2)*: Hint 1: "Grab a coffee" | Hint 2: "before that" (trước đó) | Hint 3: "rainy day" (ngày mưa) | Hint 4: "feel warm" (cảm thấy ấm áp)
+   - *Example (Hard / B2-C1)*: Hint 1: "Elephant in the room" | Hint 2: "nevertheless" (dù vậy) | Hint 3: "watchful eye" (ánh mắt dò xét) | Hint 4: "unaddressed" (chưa giải quyết)
+
+### CRITICAL LANGUAGE INTEGRITY RULES:
+- "text": MUST BE 100% ENGLISH. ABSOLUTELY NEVER put Vietnamese or Vietnamese diacritics in "text"!
+- "translation": MUST BE 100% VIETNAMESE with proper accents/diacritics. ABSOLUTELY NEVER put English in "translation"!
+- NEVER output the same string in both "text" and "translation"!
+- Hint 2 Logic Words MUST have English "text" (e.g. "otherwise", "therefore", "however") and Vietnamese "translation" (e.g. "nếu không", "do đó", "tuy nhiên").
 
 ### STRICT PEDAGOGICAL NEGATIVE CONSTRAINTS:
 - NEVER output obvious, pedestrian, textbook clichés (e.g. NEVER pair 'doctor' with 'hospital', 'dinner' with 'cook', 'contract' with 'sign', 'car' with 'drive', 'book' with 'read', 'teacher' with 'school').
@@ -197,6 +203,310 @@ export const GOOGLE_GENAI_DEFAULT_CONFIG: ImprovLLMConfig = {
 };
 
 export const DEFAULT_IMPROV_LLM_CONFIG: ImprovLLMConfig = GOOGLE_GENAI_DEFAULT_CONFIG;
+
+// --------------------------------------------------------------------------
+// 1b. Language Evaluation, Sanitization & Logic Connector Dictionary
+// --------------------------------------------------------------------------
+
+// Strict regex detecting all standard Vietnamese accented vowels and consonants
+export const VI_DIACRITICS_REGEX = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\u00C0-\u1EF9\u0102\u0103\u0110\u0111\u0128\u0129\u0168\u0169\u01A0\u01A1\u01AF\u01B0]/i;
+
+export const VI_TO_EN_LOGIC_MAP: Record<string, string> = {
+  'nếu không': 'otherwise',
+  'neu khong': 'otherwise',
+  'do đó': 'therefore',
+  'do do': 'therefore',
+  'vì vậy': 'so',
+  'vi vay': 'so',
+  'vì thế': 'so',
+  'vi the': 'so',
+  'tuy nhiên': 'however',
+  'tuy nhien': 'however',
+  'sau cùng': 'eventually',
+  'sau cung': 'eventually',
+  'cuối cùng': 'finally',
+  'cuoi cung': 'finally',
+  'trước đó': 'before that',
+  'truoc do': 'before that',
+  'trước khi': 'before',
+  'truoc khi': 'before',
+  'hơn nữa': 'moreover',
+  'hon nua': 'moreover',
+  'ngoài ra': 'besides',
+  'ngoai ra': 'besides',
+  'thêm vào đó': 'in addition',
+  'them vao do': 'in addition',
+  'tiếp theo': 'next',
+  'tiep theo': 'next',
+  'sau đó': 'after that',
+  'sau do': 'after that',
+  'dù vậy': 'nevertheless',
+  'du vay': 'nevertheless',
+  'mặc dù': 'although',
+  'mac du': 'although',
+  'đồng thời': 'meanwhile',
+  'dong thoi': 'meanwhile',
+  'trong khi đó': 'meanwhile',
+  'trong khi do': 'meanwhile',
+  'nói cách khác': 'in other words',
+  'noi cach khac': 'in other words',
+  'ví dụ': 'for example',
+  'vi du': 'for example',
+  'chẳng hạn': 'for instance',
+  'chang han': 'for instance',
+  'miễn là': 'as long as',
+  'mien la': 'as long as',
+  'bởi vì': 'because',
+  'boi vi': 'because',
+  'mặt khác': 'on the other hand',
+  'mat khac': 'on the other hand',
+  'kết quả là': 'as a result',
+  'ket qua la': 'as a result',
+  'thay vào đó': 'instead',
+  'thay vao do': 'instead',
+  'thực ra': 'actually',
+  'thuc ra': 'actually',
+  'tóm lại': 'in short',
+  'tom lai': 'in short',
+  'nếu': 'if',
+  'neu': 'if',
+  'nhưng': 'but',
+  'nhung': 'but',
+  'và': 'and',
+  'va': 'and',
+  'hoặc': 'or',
+  'hoac': 'or'
+};
+
+export const EN_TO_VI_LOGIC_MAP: Record<string, string> = {
+  'otherwise': 'nếu không',
+  'therefore': 'do đó',
+  'so': 'vì vậy',
+  'however': 'tuy nhiên',
+  'eventually': 'sau cùng',
+  'finally': 'cuối cùng',
+  'before that': 'trước đó',
+  'before': 'trước khi',
+  'moreover': 'hơn nữa',
+  'besides': 'ngoài ra',
+  'in addition': 'thêm vào đó',
+  'next': 'tiếp theo',
+  'after that': 'sau đó',
+  'then': 'sau đó',
+  'nevertheless': 'dù vậy',
+  'although': 'mặc dù',
+  'even though': 'mặc dù',
+  'meanwhile': 'đồng thời',
+  'in other words': 'nói cách khác',
+  'for example': 'ví dụ',
+  'for instance': 'chẳng hạn',
+  'as long as': 'miễn là',
+  'because': 'bởi vì',
+  'on the other hand': 'mặt khác',
+  'as a result': 'kết quả là',
+  'instead': 'thay vào đó',
+  'actually': 'thực ra',
+  'in short': 'tóm lại',
+  'if': 'nếu',
+  'but': 'nhưng',
+  'and': 'và',
+  'or': 'hoặc',
+  'in contrast': 'ngược lại',
+  'while': 'trong khi'
+};
+
+export interface HintEvaluationResult {
+  hintId: string;
+  sessionNumber: number;
+  itemNumber: number;
+  itemIndex: number;
+  originalText: string;
+  originalTranslation: string;
+  fixedText: string;
+  fixedTranslation: string;
+  reason: string;
+}
+
+export function evaluateAndSanitizeHint(
+  hint: ImprovHint,
+  context?: { sessionNumber?: number; itemNumber?: number }
+): { hint: ImprovHint; wasFixed: boolean; result?: HintEvaluationResult } {
+  if (!hint) {
+    return { hint, wasFixed: false };
+  }
+
+  const origText = (hint.text || '').trim();
+  const origTrans = (hint.translation || '').trim();
+  let fixedText = origText;
+  let fixedTranslation = origTrans;
+  let reason = '';
+
+  const textHasVi = VI_DIACRITICS_REGEX.test(fixedText);
+  const transHasVi = VI_DIACRITICS_REGEX.test(fixedTranslation);
+
+  // 1. Text has Vietnamese diacritics and translation does NOT:
+  // e.g. text: "Lỡ xe buýt", translation: "Miss the bus" OR text: "do đó", translation: "therefore"
+  if (textHasVi && !transHasVi) {
+    fixedText = origTrans;
+    fixedTranslation = origText;
+    reason = 'Hoán đổi: Text chứa tiếng Việt còn Translation chứa tiếng Anh.';
+
+    // Check if the newly placed fixedText is a known Vietnamese unaccented logic word
+    if (VI_TO_EN_LOGIC_MAP[fixedText.toLowerCase().trim()]) {
+      const en = VI_TO_EN_LOGIC_MAP[fixedText.toLowerCase().trim()];
+      fixedText = en;
+      fixedTranslation = EN_TO_VI_LOGIC_MAP[en.toLowerCase()] || fixedTranslation;
+    }
+  }
+
+  // 2. Text has Vietnamese diacritics and translation also has Vietnamese diacritics
+  // OR both are identical and contain a Vietnamese word
+  const textLower = fixedText.toLowerCase().trim();
+  const transLower = fixedTranslation.toLowerCase().trim();
+
+  if (
+    (VI_DIACRITICS_REGEX.test(fixedText) && VI_DIACRITICS_REGEX.test(fixedTranslation)) ||
+    (textLower === transLower && (VI_DIACRITICS_REGEX.test(fixedText) || VI_TO_EN_LOGIC_MAP[textLower]))
+  ) {
+    if (VI_TO_EN_LOGIC_MAP[textLower]) {
+      const en = VI_TO_EN_LOGIC_MAP[textLower];
+      fixedText = en;
+      fixedTranslation = EN_TO_VI_LOGIC_MAP[en.toLowerCase()] || origTrans || origText;
+      reason = `Đã dịch từ nối tiếng Việt "${origText}" sang tiếng Anh "${fixedText}".`;
+    } else if (VI_TO_EN_LOGIC_MAP[transLower]) {
+      const en = VI_TO_EN_LOGIC_MAP[transLower];
+      fixedText = en;
+      fixedTranslation = EN_TO_VI_LOGIC_MAP[en.toLowerCase()] || origTrans || origText;
+      reason = `Đã dịch từ nối tiếng Việt "${origTrans}" sang tiếng Anh "${fixedText}".`;
+    }
+  }
+
+  // 3. If fixedText still has Vietnamese diacritics after above checks:
+  // Search if any known Vietnamese logic phrase is contained in fixedText
+  if (VI_DIACRITICS_REGEX.test(fixedText)) {
+    const sortedViPhrases = Object.keys(VI_TO_EN_LOGIC_MAP).sort((a, b) => b.length - a.length);
+    for (const phrase of sortedViPhrases) {
+      if (fixedText.toLowerCase().includes(phrase)) {
+        const en = VI_TO_EN_LOGIC_MAP[phrase];
+        fixedText = en;
+        if (!fixedTranslation || fixedTranslation.toLowerCase() === phrase) {
+          fixedTranslation = EN_TO_VI_LOGIC_MAP[en.toLowerCase()] || origText;
+        }
+        reason = `Đã phát hiện và chuyển đổi cụm từ nối tiếng Việt "${phrase}" trong EN sang "${fixedText}".`;
+        break;
+      }
+    }
+  }
+
+  // 4. Checks if translation has NO Vietnamese diacritics but is an English logic word (and text is English):
+  const currentTransLower = fixedTranslation.toLowerCase().trim();
+  if (
+    !VI_DIACRITICS_REGEX.test(fixedTranslation) &&
+    EN_TO_VI_LOGIC_MAP[currentTransLower] &&
+    !VI_DIACRITICS_REGEX.test(fixedText)
+  ) {
+    const mappedVi = EN_TO_VI_LOGIC_MAP[currentTransLower];
+    if (fixedTranslation !== mappedVi) {
+      fixedTranslation = mappedVi;
+      if (!reason) {
+        reason = 'Đã dịch từ nối tiếng Anh ở ô Translation sang tiếng Việt.';
+      }
+    }
+  }
+
+  // 5. If text.trim().toLowerCase() === translation.trim().toLowerCase():
+  if (fixedText.trim().toLowerCase() === fixedTranslation.trim().toLowerCase()) {
+    const term = fixedText.trim().toLowerCase();
+    if (EN_TO_VI_LOGIC_MAP[term]) {
+      fixedTranslation = EN_TO_VI_LOGIC_MAP[term];
+      if (!reason) reason = `Đã tách ô trùng lặp tiếng Anh sang tiếng Việt: "${fixedTranslation}".`;
+    } else if (VI_TO_EN_LOGIC_MAP[term]) {
+      fixedText = VI_TO_EN_LOGIC_MAP[term];
+      if (!reason) reason = `Đã tách ô trùng lặp tiếng Việt sang tiếng Anh: "${fixedText}".`;
+    }
+  }
+
+  const wasFixed = fixedText !== origText || fixedTranslation !== origTrans;
+  if (wasFixed) {
+    const result: HintEvaluationResult = {
+      hintId: hint.id || `hint_${Date.now()}`,
+      sessionNumber: context?.sessionNumber ?? 0,
+      itemNumber: context?.itemNumber ?? 0,
+      itemIndex: hint.itemIndex ?? 0,
+      originalText: origText,
+      originalTranslation: origTrans,
+      fixedText,
+      fixedTranslation,
+      reason: reason || 'Chuẩn hóa định dạng tiếng Anh / tiếng Việt.'
+    };
+
+    return {
+      hint: {
+        ...hint,
+        text: fixedText,
+        translation: fixedTranslation
+      },
+      wasFixed: true,
+      result
+    };
+  }
+
+  return {
+    hint,
+    wasFixed: false
+  };
+}
+
+export function evaluateAndSanitizePackage(pkg: ImprovPackage): {
+  package: ImprovPackage;
+  fixedCount: number;
+  issues: HintEvaluationResult[];
+} {
+  if (!pkg) {
+    return { package: pkg, fixedCount: 0, issues: [] };
+  }
+
+  const issues: HintEvaluationResult[] = [];
+  let fixedCount = 0;
+
+  const newSessions: ImprovSession[] = (pkg.sessions || []).map(session => {
+    const newItems: ImprovItem[] = (session.items || []).map(item => {
+      const newHints: ImprovHint[] = (item.hints || []).map(hint => {
+        const { hint: sanitizedHint, wasFixed, result } = evaluateAndSanitizeHint(hint, {
+          sessionNumber: session.sessionNumber,
+          itemNumber: item.itemNumber
+        });
+        if (wasFixed && result) {
+          fixedCount++;
+          issues.push(result);
+        }
+        return sanitizedHint;
+      });
+
+      return {
+        ...item,
+        hints: newHints
+      };
+    });
+
+    return {
+      ...session,
+      items: newItems
+    };
+  });
+
+  const updatedPkg: ImprovPackage = {
+    ...pkg,
+    sessions: newSessions,
+    updatedAt: fixedCount > 0 ? new Date().toISOString() : pkg.updatedAt
+  };
+
+  return {
+    package: updatedPkg,
+    fixedCount,
+    issues
+  };
+}
 
 const LOCAL_STORAGE_IMPROV_KEY = 'chunks_improv_packages_local';
 
@@ -1511,6 +1821,23 @@ CRITICAL RULES:
         };
       });
 
+      // Post-Generation Language Integrity Evaluation Gate for batch items
+      let batchFixedCount = 0;
+      validatedBatchItems = validatedBatchItems.map(item => ({
+        ...item,
+        hints: item.hints.map(hint => {
+          const { hint: sanitizedHint, wasFixed } = evaluateAndSanitizeHint(hint, {
+            sessionNumber: sessionNum,
+            itemNumber: item.itemNumber
+          });
+          if (wasFixed) batchFixedCount++;
+          return sanitizedHint;
+        })
+      }));
+      if (batchFixedCount > 0) {
+        console.log(`[generateImprovPackage] Auto-sanitized ${batchFixedCount} corrupted language fields in batch ${batchStep + 1}`);
+      }
+
       // If LLM returned fewer items than requested, synthesize remaining items to guarantee count
       while (validatedBatchItems.length < batch.count) {
         const missingIdx = validatedBatchItems.length;
@@ -1607,13 +1934,19 @@ CRITICAL RULES:
     updatedAt: now
   };
 
-  // Step 4: Save to Firestore & Local Storage
-  await saveImprovPackage(pkg);
+  // Step 4: Run full package evaluation & sanitization before persisting
+  const { package: sanitizedFinalPkg, fixedCount: totalFixedInFinal } = evaluateAndSanitizePackage(pkg);
+  if (totalFixedInFinal > 0) {
+    console.log(`[generateImprovPackage] Final pass auto-sanitized ${totalFixedInFinal} hints across package "${sanitizedFinalPkg.title}"`);
+  }
+
+  // Save to Firestore & Local Storage
+  await saveImprovPackage(sanitizedFinalPkg);
 
   onProgress?.(
     100, 
     100, 
-    `Hoàn tất tạo thành công ${pkg.title} với ${totalItemsCount} items!`,
+    `Hoàn tất tạo thành công ${sanitizedFinalPkg.title} với ${totalItemsCount} items!`,
     {
       batchIndex: totalBatchesCount - 1,
       totalBatches: totalBatchesCount,
@@ -1623,5 +1956,5 @@ CRITICAL RULES:
     }
   );
 
-  return pkg;
+  return sanitizedFinalPkg;
 }

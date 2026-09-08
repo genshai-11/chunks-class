@@ -12,6 +12,10 @@ import {
   ImprovPackage, 
   LanguageMode 
 } from '../types';
+import { 
+  VI_TO_EN_LOGIC_MAP, 
+  EN_TO_VI_LOGIC_MAP 
+} from './improvService';
 
 export interface ImprovBatchError {
   itemId: string;
@@ -244,6 +248,26 @@ export function getHintLanguagePair(hint: ImprovHint): { en: string; vi: string 
     return { en: text, vi: translation };
   }
 
+  // 1b. When BOTH text and translation have Vietnamese diacritics OR are identical:
+  // Recover English logic word from dictionary if present
+  const textLower = text.toLowerCase().trim();
+  const transLower = translation.toLowerCase().trim();
+
+  if (VI_TO_EN_LOGIC_MAP[textLower]) {
+    const en = VI_TO_EN_LOGIC_MAP[textLower];
+    return { 
+      en, 
+      vi: translation || EN_TO_VI_LOGIC_MAP[en.toLowerCase()] || text 
+    };
+  }
+  if (VI_TO_EN_LOGIC_MAP[transLower]) {
+    const en = VI_TO_EN_LOGIC_MAP[transLower];
+    return { 
+      en, 
+      vi: translation || text 
+    };
+  }
+
   // 2. Letters F, J, W, Z exist in English but NEVER in native Vietnamese alphabet
   const NON_VI_LETTER_REGEX = /[fjwz]/i;
   const textHasNonVi = NON_VI_LETTER_REGEX.test(text);
@@ -268,10 +292,28 @@ export function getHintLanguagePair(hint: ImprovHint): { en: string; vi: string 
     return { en: translation, vi: text };
   }
 
-  // 4. Default: Modern CHUNKS schema convention
+  // 4. Candidate verification: If candidate 'en' (currently text) has Vietnamese diacritics
+  // and candidate 'vi' has NO Vietnamese diacritics with Latin letters: SWAP them!
+  let candidateEn = text;
+  let candidateVi = translation;
+
+  if (VI_DIACRITICS_REGEX.test(candidateEn)) {
+    if (!VI_DIACRITICS_REGEX.test(candidateVi) && /[a-zA-Z]/.test(candidateVi)) {
+      return { en: candidateVi, vi: candidateEn };
+    }
+    if (VI_TO_EN_LOGIC_MAP[candidateEn.toLowerCase().trim()]) {
+      const en = VI_TO_EN_LOGIC_MAP[candidateEn.toLowerCase().trim()];
+      return { 
+        en, 
+        vi: candidateVi || EN_TO_VI_LOGIC_MAP[en.toLowerCase()] || candidateEn 
+      };
+    }
+  }
+
+  // 5. Default: Modern CHUNKS schema convention
   // In the standard schema (and all newly generated AI packages),
   // `text` is the primary English clue, and `translation` is the Vietnamese translation.
-  return { en: text, vi: translation };
+  return { en: candidateEn, vi: candidateVi };
 }
 
 export function getHintTextByLanguage(hint: ImprovHint, lang: 'en' | 'vi'): string {

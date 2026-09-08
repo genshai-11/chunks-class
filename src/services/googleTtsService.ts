@@ -673,6 +673,48 @@ async function clearAudioBlobsFromDB(): Promise<void> {
   });
 }
 
+export async function deleteAudioBlobFromDB(key: string): Promise<void> {
+  const db = await openIndexedDB();
+  if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.delete(key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+export async function deleteAudioBlobsByPrefixFromDB(prefix: string): Promise<number> {
+  const db = await openIndexedDB();
+  if (!db) return 0;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.getAllKeys();
+      request.onsuccess = (e: any) => {
+        const keys: IDBValidKey[] = e.target.result || [];
+        let deleted = 0;
+        for (const k of keys) {
+          if (typeof k === 'string' && k.startsWith(prefix)) {
+            store.delete(k);
+            deleted++;
+          }
+        }
+        tx.oncomplete = () => resolve(deleted);
+      };
+      request.onerror = () => resolve(0);
+    } catch {
+      resolve(0);
+    }
+  });
+}
+
 export interface AudioCacheExportData {
   version: number;
   exportedAt: string;
@@ -905,6 +947,20 @@ class AudioPlayService {
   public clearAllCache() {
     this.audioCache.clear();
     clearAudioBlobsFromDB().catch(() => {});
+  }
+
+  public deleteCacheKey(key: string) {
+    this.audioCache.delete(key);
+    deleteAudioBlobFromDB(key).catch(() => {});
+  }
+
+  public deleteCacheByPrefix(prefix: string) {
+    for (const k of Array.from(this.audioCache.keys())) {
+      if (k.startsWith(prefix)) {
+        this.audioCache.delete(k);
+      }
+    }
+    deleteAudioBlobsByPrefixFromDB(prefix).catch(() => {});
   }
 
   public async exportAudioBlobs(): Promise<AudioCacheExportData> {

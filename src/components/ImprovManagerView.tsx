@@ -31,7 +31,9 @@ import {
   GOOGLE_GENAI_DEFAULT_CONFIG, 
   generateImprovPackage,
   executeLlmGeneration, 
-  testLlmConnection 
+  testLlmConnection,
+  evaluateAndSanitizePackage,
+  HintEvaluationResult
 } from '../services/improvService';
 import { IMPROV_SET_01, IMPROV_SET_02 } from '../data/improvSet01And02';
 import { DEFAULT_IMPROV_PACKAGES } from '../data/defaultImprovPackages';
@@ -115,7 +117,8 @@ import {
   Minimize2,
   Moon,
   Sun,
-  CloudUpload
+  CloudUpload,
+  Languages
 } from 'lucide-react';
 
 // --------------------------------------------------------------------------
@@ -222,6 +225,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [editingItem, setEditingItem] = useState<ImprovItem | null>(null);
   const [newItem, setNewItem] = useState<ImprovItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<{ sessionNumber: number; itemId: string; itemNumber: number } | null>(null);
+  const [isSanitizingLanguage, setIsSanitizingLanguage] = useState<boolean>(false);
+  const [auditReportModal, setAuditReportModal] = useState<{
+    isOpen: boolean;
+    packageTitle: string;
+    fixedCount: number;
+    issues: HintEvaluationResult[];
+  }>({
+    isOpen: false,
+    packageTitle: '',
+    fixedCount: 0,
+    issues: []
+  });
 
   // --------------------------------------------------------------------------
   // C. Audio Playback & Synthesis State
@@ -2113,6 +2128,50 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   };
 
   // --------------------------------------------------------------------------
+  // 6c. Audit & Sanitize Package Language (1-Click Evaluation Pipeline)
+  // --------------------------------------------------------------------------
+  const handleAuditAndSanitizePackageLanguage = async () => {
+    if (!activePackage) return;
+    setIsSanitizingLanguage(true);
+    try {
+      const { package: fixedPkg, fixedCount, issues } = evaluateAndSanitizePackage(activePackage);
+
+      if (fixedCount === 0) {
+        alert(`Tuyệt vời! Toàn bộ 100% các câu trong Package "${activePackage.title}" đều chuẩn xác (EN = Tiếng Anh, VI = Tiếng Việt). Không có lỗi lẫn lộn ngôn ngữ!`);
+        return;
+      }
+
+      // 1. Save sanitized package to Firestore & Local Storage
+      await saveImprovPackage(fixedPkg);
+
+      // 2. Update local packages state
+      setPackages(prev => prev.map(p => p.id === fixedPkg.id ? fixedPkg : p));
+
+      // 3. Clear audio cache for fixed hints and clear in-memory cache to evict mispronounced audio
+      for (const issue of issues) {
+        audioPlayer.deleteCacheByPrefix(`improv_hint_${issue.hintId}`);
+      }
+      audioPlayer.clearCache();
+
+      // 4. Trigger celebration confetti
+      confetti({ particleCount: 55, spread: 65 });
+
+      // 5. Open clean audit report modal
+      setAuditReportModal({
+        isOpen: true,
+        packageTitle: fixedPkg.title,
+        fixedCount,
+        issues
+      });
+    } catch (err: any) {
+      console.error('[ImprovManagerView] Error sanitizing package language:', err);
+      alert(`Lỗi khi chuẩn hóa ngôn ngữ: ${err?.message || 'Không xác định'}`);
+    } finally {
+      setIsSanitizingLanguage(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
   // 7. Delete Package
   // --------------------------------------------------------------------------
 
@@ -2270,6 +2329,21 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             >
               <Edit3 className="w-3.5 h-3.5 text-zinc-500" />
               <span className="hidden sm:inline">Đổi Tên</span>
+            </button>
+
+            {/* Audit & Sanitize Language Button */}
+            <button
+              onClick={handleAuditAndSanitizePackageLanguage}
+              disabled={isSanitizingLanguage || !activePackage}
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/80 text-xs font-semibold text-emerald-800 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+              title="Đánh giá và tự động sửa các lỗi lẫn lộn tiếng Anh/tiếng Việt (ví dụ: 'nếu không' bị đặt nhầm vào ô EN)"
+            >
+              {isSanitizingLanguage ? (
+                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin shrink-0" />
+              ) : (
+                <Languages className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              )}
+              <span className="hidden sm:inline">Chuẩn Hóa Ngôn Ngữ</span>
             </button>
 
             {/* Import / Export Excel */}
@@ -5728,6 +5802,110 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white rounded-xl shadow-2xl font-bold text-xs animate-in fade-in slide-in-from-bottom-3 duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-100 shrink-0" />
           <span>{renameSuccessToast}</span>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 13. MODAL: AUDIT & LANGUAGE SANITIZATION REPORT */}
+      {/* ==================================================================== */}
+      {auditReportModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl border border-emerald-200 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-emerald-100 bg-emerald-50/60">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-200">
+                  <Languages className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display font-bold text-base text-zinc-900">
+                      Báo Cáo Chuẩn Hóa Ngôn Ngữ
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      ĐÃ SỬA {auditReportModal.fixedCount} GỢI Ý
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Gói: <span className="font-semibold text-zinc-700">{auditReportModal.packageTitle}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAuditReportModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-5 overflow-y-auto space-y-3 max-h-[60vh]">
+              <div className="flex items-center gap-2 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 text-xs text-emerald-900">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  Đã tự động rà soát và chuẩn hóa toàn bộ các ô bị lẫn lộn tiếng Việt trong ô EN hoặc dịch sai từ nối logic. Toàn bộ gợi ý đã được lưu vào cơ sở dữ liệu.
+                </span>
+              </div>
+
+              {auditReportModal.issues.map((issue, idx) => (
+                <div
+                  key={`${issue.hintId}_${idx}`}
+                  className="p-3.5 rounded-2xl border border-zinc-200 bg-zinc-50/70 hover:bg-white transition-all space-y-2 text-xs"
+                >
+                  <div className="flex items-center justify-between font-mono text-[11px] text-zinc-500">
+                    <span className="font-bold text-zinc-800">
+                      Session {issue.sessionNumber} · Câu {issue.itemNumber} (Gợi ý #{issue.itemIndex})
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-zinc-200/80 text-zinc-700 text-[10px]">
+                      ID: {issue.hintId}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1 border-t border-zinc-200/50">
+                    {/* Before */}
+                    <div className="p-2.5 rounded-xl bg-rose-50/80 border border-rose-200/60">
+                      <div className="text-[10px] font-bold uppercase text-rose-700 tracking-wider">Trước (Cũ):</div>
+                      <div className="text-zinc-800 mt-1">
+                        <span className="font-mono text-zinc-500 font-semibold">EN:</span> <span className="text-rose-700 font-semibold line-through">"{issue.originalText}"</span>
+                      </div>
+                      <div className="text-zinc-800 mt-0.5">
+                        <span className="font-mono text-zinc-500 font-semibold">VI:</span> "{issue.originalTranslation}"
+                      </div>
+                    </div>
+
+                    {/* After */}
+                    <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200">
+                      <div className="text-[10px] font-bold uppercase text-emerald-700 tracking-wider">Sau (Mới):</div>
+                      <div className="text-zinc-800 mt-1">
+                        <span className="font-mono text-zinc-500 font-semibold">EN:</span> <span className="text-emerald-700 font-bold">"{issue.fixedText}"</span>
+                      </div>
+                      <div className="text-zinc-800 mt-0.5">
+                        <span className="font-mono text-zinc-500 font-semibold">VI:</span> <span className="text-emerald-700 font-semibold">"{issue.fixedTranslation}"</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reason */}
+                  <div className="text-[11px] text-zinc-600 flex items-center gap-1.5 pt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span><strong className="text-zinc-700">Lý do xử lý:</strong> {issue.reason}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-zinc-100 bg-zinc-50 flex items-center justify-end">
+              <button
+                onClick={() => setAuditReportModal(prev => ({ ...prev, isOpen: false }))}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>Đóng & Tiếp Tục Giảng Dạy</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
