@@ -126,6 +126,8 @@ export function sanitizeSpeechText(text: string): string {
   // 0. Speech-filter regex: Strip pedagogical clutter prompts and dialogue speaker prefixes
   sanitized = sanitized.replace(/^A\.\s*Teamwork\s*B\.\s*Emotion\s*assessment\s*EMOTION\s*/i, '');
   sanitized = sanitized.replace(/^REFLEXES\s*A\.\s*Context\s*mp3\s*B\.\s*Back\s*&\s*Forth\s*/i, '');
+  sanitized = sanitized.replace(/^(?:Speaker\s+[A-Za-z0-9]+|[A-Za-z]{1,15})\s*:\s*/i, '');
+  sanitized = sanitized.replace(/^(?:Linda|Ducky|Morgan|Claire|Jerry|Victor|Tyler|Roseline|Elise|Selena|Misen|Nguyet|Chloe|Huy|Kim|Ivy|Andy|[A-Z])\s*[-–—:]\s*/i, '');
   sanitized = sanitized.replace(/^(?:Speaker\s*)?[AB]\s*[-–—:]\s*/i, '');
 
   sanitized = sanitized.trim();

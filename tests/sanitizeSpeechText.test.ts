@@ -91,6 +91,44 @@ describe("sanitizeSpeechText with Trailing Pause Comma Enhancement", () => {
       expect(sanitizeSpeechText("A – Absolutely")).toBe("Absolutely, ");
     });
 
+    it("strips character speaker prefixes (Linda, Ducky, Morgan, M, L, Andy)", () => {
+      expect(
+        sanitizeSpeechText("Linda: Đừng có nói tui là bà chưa từng nghe đến cái luật bất thành văn đó nha.")
+      ).toBe("Đừng có nói tui là bà chưa từng nghe đến cái luật bất thành văn đó nha, ");
+      expect(
+        sanitizeSpeechText("Ducky: Bà biết tui đâu có trả lời được mấy cái câu hỏi kiểu đó.")
+      ).toBe("Bà biết tui đâu có trả lời được mấy cái câu hỏi kiểu đó, ");
+      expect(
+        sanitizeSpeechText("Morgan: How are you doing today?")
+      ).toBe("How are you doing today?, ");
+      expect(
+        sanitizeSpeechText("M: 2 rưỡi, tui nghĩ ta không còn nhiều thời gian đâu nếu cậu muốn làm gì đó.")
+      ).toBe("2 rưỡi, tui nghĩ ta không còn nhiều thời gian đâu nếu cậu muốn làm gì đó, ");
+      expect(
+        sanitizeSpeechText("L: Are you ready?")
+      ).toBe("Are you ready?, ");
+      expect(
+        sanitizeSpeechText("Andy: Let's get started.")
+      ).toBe("Let's get started, ");
+      expect(
+        sanitizeSpeechText("Speaker 1: Welcome to the meeting.")
+      ).toBe("Welcome to the meeting, ");
+    });
+
+    it("preserves time strings like '2:30' and does not misidentify them as speaker prefixes", () => {
+      expect(
+        sanitizeSpeechText("2:30, I think we don't have much time left if you want to do something.")
+      ).toBe("2:30, I think we don't have much time left if you want to do something, ");
+      expect(
+        sanitizeSpeechText("10:15 is the exact time we agreed on.")
+      ).toBe("10:15 is the exact time we agreed on, ");
+    });
+
+    it("preserves hyphenated compound words like 'One-man job' and 'Last-minute'", () => {
+      expect(sanitizeSpeechText("One-man job")).toBe("One-man job, ");
+      expect(sanitizeSpeechText("Last-minute changes")).toBe("Last-minute changes, ");
+    });
+
     it("does not affect synonym slashes like 'A / B / C'", () => {
       expect(sanitizeSpeechText("A / B / C")).toBe("A, ");
     });
