@@ -62,6 +62,29 @@ const getCategoryLabel = (category: string): string => {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
+const TONE_CHARS = /[áàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/gi;
+const FUSED_VI_REGEX = /([áàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ])(ch|kh|ngh|ng|nh|ph|th|tr|[bcdđghklmnprstvx])([aăâeêioôơuưyáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ])/i;
+
+export function hasVietnameseFusedWords(text?: string | null): boolean {
+  if (!text) return false;
+  const tokens = text.match(/[\p{L}\p{M}]+/gu) || [];
+  for (const t of tokens) {
+    if ((t.match(TONE_CHARS) || []).length >= 2 || FUSED_VI_REGEX.test(t)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export type QualityFilterType = 
+  | 'all' 
+  | 'missing_translation' 
+  | 'missing_en' 
+  | 'missing_vi' 
+  | 'missing_space_vi' 
+  | 'missing_audio' 
+  | 'complete';
+
 export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   onLaunchProjectorForLesson,
   defaultCourseLevel = 'LEVEL_B_ERES'
@@ -71,6 +94,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedDay, setSelectedDay] = useState<number | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState<ChunkCategory | 'all'>('all');
+  const [qualityFilter, setQualityFilter] = useState<QualityFilterType>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [playingChunkId, setPlayingChunkId] = useState<string | null>(null);
 
@@ -168,6 +192,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
 
   // Play audio preview
   const handlePlayChunk = async (chunk: ChunkItem) => {
+    if (!chunk.english?.trim()) return;
     setPlayingChunkId(chunk.chunk_id);
     try {
       await audioPlayer.playChunk(
@@ -197,48 +222,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedLevel, selectedDay, selectedCategory]);
-
-  // Filtered Chunks memo
-  const filteredChunks = useMemo(() => {
-    const q = debouncedQuery;
-    let list: { chunk: ChunkItem; lesson: LessonDoc }[] = [];
-
-    lessons.forEach(lesson => {
-      if (selectedDay === 'all' || lesson.day_number === selectedDay) {
-        (lesson.chunks || []).forEach(chunk => {
-          if (selectedCategory === 'all' || chunk.category === selectedCategory) {
-            if (!q) {
-              list.push({ chunk, lesson });
-            } else {
-              const matchesSearch = 
-                (chunk.english && chunk.english.toLowerCase().includes(q)) ||
-                (chunk.vietnamese && chunk.vietnamese.toLowerCase().includes(q)) ||
-                (chunk.beat_prosody && chunk.beat_prosody.toLowerCase().includes(q)) ||
-                (chunk.ipa && chunk.ipa.toLowerCase().includes(q));
-
-              if (matchesSearch) {
-                list.push({ chunk, lesson });
-              }
-            }
-          }
-        });
-      }
-    });
-
-    return list;
-  }, [lessons, selectedDay, selectedCategory, debouncedQuery]);
-
-  const totalPages = Math.ceil(filteredChunks.length / PAGE_SIZE) || 1;
-  const paginatedChunks = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredChunks.slice(start, start + PAGE_SIZE);
-  }, [filteredChunks, currentPage]);
-
-  // Total statistics
-  const totalChunksInLevel = useMemo(() => {
-    return lessons.reduce((acc, l) => acc + (l.chunks?.length || 0), 0);
-  }, [lessons]);
+  }, [selectedLevel, selectedDay, selectedCategory, qualityFilter]);
 
   // Compute chunks in current scope (either all lessons in level or specific selected day)
   const currentScopeChunks = useMemo(() => {
@@ -252,6 +236,96 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
     });
     return list;
   }, [lessons, selectedDay]);
+
+  // Compute Quality Counts for Current Selection
+  const qualityCounts = useMemo(() => {
+    let missingEn = 0;
+    let missingVi = 0;
+    let missingTranslation = 0;
+    let missingSpaceVi = 0;
+    let missingAudio = 0;
+    let complete = 0;
+
+    currentScopeChunks.forEach(chunk => {
+      const noEn = !chunk.english || !chunk.english.trim();
+      const noVi = !chunk.vietnamese || !chunk.vietnamese.trim();
+      const fusedVi = hasVietnameseFusedWords(chunk.vietnamese);
+      const noAudio = !chunk.audio_url;
+
+      if (noEn) missingEn++;
+      if (noVi) missingVi++;
+      if (noEn || noVi) missingTranslation++;
+      if (fusedVi) missingSpaceVi++;
+      if (noAudio) missingAudio++;
+      if (!noEn && !noVi && !fusedVi) complete++;
+    });
+
+    return {
+      missingEn,
+      missingVi,
+      missingTranslation,
+      missingSpaceVi,
+      missingAudio,
+      complete,
+    };
+  }, [currentScopeChunks]);
+
+  // Filtered Chunks memo
+  const filteredChunks = useMemo(() => {
+    const q = debouncedQuery;
+    let list: { chunk: ChunkItem; lesson: LessonDoc }[] = [];
+
+    lessons.forEach(lesson => {
+      if (selectedDay === 'all' || lesson.day_number === selectedDay) {
+        (lesson.chunks || []).forEach(chunk => {
+          if (selectedCategory !== 'all' && chunk.category !== selectedCategory) {
+            return;
+          }
+
+          if (qualityFilter === 'missing_translation') {
+            if (chunk.english?.trim() && chunk.vietnamese?.trim()) return;
+          } else if (qualityFilter === 'missing_en') {
+            if (chunk.english?.trim()) return;
+          } else if (qualityFilter === 'missing_vi') {
+            if (chunk.vietnamese?.trim()) return;
+          } else if (qualityFilter === 'missing_space_vi') {
+            if (!hasVietnameseFusedWords(chunk.vietnamese)) return;
+          } else if (qualityFilter === 'missing_audio') {
+            if (chunk.audio_url) return;
+          } else if (qualityFilter === 'complete') {
+            if (!chunk.english?.trim() || !chunk.vietnamese?.trim() || hasVietnameseFusedWords(chunk.vietnamese)) return;
+          }
+
+          if (!q) {
+            list.push({ chunk, lesson });
+          } else {
+            const matchesSearch = 
+              (chunk.english && chunk.english.toLowerCase().includes(q)) ||
+              (chunk.vietnamese && chunk.vietnamese.toLowerCase().includes(q)) ||
+              (chunk.beat_prosody && chunk.beat_prosody.toLowerCase().includes(q)) ||
+              (chunk.ipa && chunk.ipa.toLowerCase().includes(q));
+
+            if (matchesSearch) {
+              list.push({ chunk, lesson });
+            }
+          }
+        });
+      }
+    });
+
+    return list;
+  }, [lessons, selectedDay, selectedCategory, qualityFilter, debouncedQuery]);
+
+  const totalPages = Math.ceil(filteredChunks.length / PAGE_SIZE) || 1;
+  const paginatedChunks = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredChunks.slice(start, start + PAGE_SIZE);
+  }, [filteredChunks, currentPage]);
+
+  // Total statistics
+  const totalChunksInLevel = useMemo(() => {
+    return lessons.reduce((acc, l) => acc + (l.chunks?.length || 0), 0);
+  }, [lessons]);
 
   // Dynamically compute unique categories present in current selection with chunk counts
   const dynamicCategories = useMemo(() => {
@@ -325,7 +399,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
 
   // Delete chunk
   const handleDeleteChunk = async (chunk: ChunkItem, lesson: LessonDoc) => {
-    if (window.confirm(`Bạn có chắc muốn xóa cụm "${chunk.english}" khỏi Day ${lesson.day_number}?`)) {
+    if (window.confirm(`Bạn có chắc muốn xóa cụm "${chunk.english || chunk.chunk_id}" khỏi Day ${lesson.day_number}?`)) {
       await deleteChunk(lesson.id, chunk.chunk_id);
       await loadCurriculumData();
     }
@@ -348,8 +422,8 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
       chunk.chunk_id,
       `Day ${lesson.day_number}`,
       chunk.category,
-      `"${chunk.english.replace(/"/g, '""')}"`,
-      `"${chunk.vietnamese.replace(/"/g, '""')}"`,
+      `"${(chunk.english || '').replace(/"/g, '""')}"`,
+      `"${(chunk.vietnamese || '').replace(/"/g, '""')}"`,
       `"${chunk.beat_prosody || ''}"`,
       `"${chunk.ipa || ''}"`,
       `"${chunk.speaker || ''}"`
@@ -508,6 +582,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                     setSelectedLevel(course.level_code); 
                     setSelectedDay('all');
                     setSelectedCategory('all');
+                    setQualityFilter('all');
                   }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     isSelected ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
@@ -566,48 +641,94 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
         </div>
 
         {/* Row 3: Filter & Search Controls */}
-        <div className="pt-3 border-t border-[#E8E8EC] grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm tiếng Anh, tiếng Việt, IPA, trọng âm..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-medium text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626]"
-            />
+        <div className="pt-3 border-t border-[#E8E8EC] space-y-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Search Box */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm tiếng Anh, tiếng Việt, IPA, trọng âm..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-medium text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626]"
+              />
+            </div>
+
+            {/* Day Selector */}
+            <select
+              value={selectedDay}
+              onChange={(e) => setSelectedDay(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+              className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
+            >
+              <option value="all">Tất Cả {lessons.length} Bài Học (Day 1 – {lessons.length > 0 ? Math.max(...lessons.map(l => l.day_number)) : 15})</option>
+              {lessons.map(l => (
+                <option key={l.id} value={l.day_number}>
+                  Day {l.day_number}: {l.lesson_title} ({l.chunks?.length || 0} chunks)
+                </option>
+              ))}
+            </select>
+
+            {/* Dynamic Category Selector */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value as ChunkCategory | 'all')}
+              className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
+            >
+              <option value="all">
+                Tất Cả Thể Loại (All Categories) ({currentScopeChunks.length})
+              </option>
+              {dynamicCategories.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.label} ({c.count})
+                </option>
+              ))}
+            </select>
+
+            {/* Quality Selector */}
+            <select
+              value={qualityFilter}
+              onChange={(e) => setQualityFilter(e.target.value as any)}
+              className={`w-full px-3 py-2 border rounded-xl text-xs font-semibold focus:bg-white focus:outline-none cursor-pointer transition-all ${
+                qualityFilter !== 'all' 
+                  ? 'bg-amber-50 border-amber-300 text-amber-900 font-bold' 
+                  : 'bg-[#FAFAFA] border-[#E8E8EC] text-[#0A0A0A] focus:border-[#DC2626]'
+              }`}
+            >
+              <option value="all">Tất Cả Trạng Thái ({currentScopeChunks.length})</option>
+              <option value="missing_translation">⚠️ Thiếu Bản Dịch EN/VI ({qualityCounts.missingTranslation})</option>
+              <option value="missing_en">⚠️ Thiếu Tiếng Anh ({qualityCounts.missingEn})</option>
+              <option value="missing_vi">⚠️ Thiếu Tiếng Việt ({qualityCounts.missingVi})</option>
+              <option value="missing_space_vi">🔍 Lỗi Dính Chữ VI ({qualityCounts.missingSpaceVi})</option>
+              <option value="missing_audio">🔇 Chưa Có Audio ({qualityCounts.missingAudio})</option>
+              <option value="complete">✅ Hoàn Chỉnh Đầy Đủ ({qualityCounts.complete})</option>
+            </select>
           </div>
 
-          {/* Day Selector */}
-          <select
-            value={selectedDay}
-            onChange={(e) => setSelectedDay(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-            className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
-          >
-            <option value="all">Tất Cả {lessons.length} Bài Học (Day 1 – {lessons.length > 0 ? Math.max(...lessons.map(l => l.day_number)) : 15})</option>
-            {lessons.map(l => (
-              <option key={l.id} value={l.day_number}>
-                Day {l.day_number}: {l.lesson_title} ({l.chunks?.length || 0} chunks)
-              </option>
-            ))}
-          </select>
-
-          {/* Dynamic Category Selector */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value as ChunkCategory | 'all')}
-            className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
-          >
-            <option value="all">
-              Tất Cả Thể Loại (All Categories) ({currentScopeChunks.length})
-            </option>
-            {dynamicCategories.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.label} ({c.count})
-              </option>
-            ))}
-          </select>
+          {/* Active filter indicator badge */}
+          {qualityFilter !== 'all' && (
+            <div className="flex items-center gap-2 pt-0.5 flex-wrap">
+              <span className="text-xs text-zinc-500 font-medium">Đang lọc chất lượng:</span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 font-bold text-xs">
+                <span>
+                  {qualityFilter === 'missing_translation' && '⚠️ Thiếu Bản Dịch EN/VI'}
+                  {qualityFilter === 'missing_en' && '⚠️ Thiếu Tiếng Anh'}
+                  {qualityFilter === 'missing_vi' && '⚠️ Thiếu Tiếng Việt'}
+                  {qualityFilter === 'missing_space_vi' && '🔍 Lỗi Dính Chữ VI'}
+                  {qualityFilter === 'missing_audio' && '🔇 Chưa Có Audio'}
+                  {qualityFilter === 'complete' && '✅ Hoàn Chỉnh Đầy Đủ'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQualityFilter('all')}
+                  className="ml-1 px-1.5 py-0.5 rounded text-[11px] bg-amber-200/70 hover:bg-amber-300 text-amber-950 font-bold transition-all cursor-pointer"
+                  title="Xóa bộ lọc chất lượng"
+                >
+                  ✕ Xóa lọc
+                </button>
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -668,12 +789,34 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                           </span>
                         </td>
                         <td className="p-3">
-                          <div className="font-bold text-zinc-900 text-sm">
-                            {chunk.english}
+                          <div className="font-bold text-zinc-900 text-sm flex items-center gap-2 flex-wrap">
+                            {chunk.english?.trim() ? (
+                              <span>{chunk.english}</span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
+                                [Thiếu Tiếng Anh]
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="p-3 text-zinc-600 font-medium">
-                          {chunk.vietnamese}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {chunk.vietnamese?.trim() ? (
+                              <span>{chunk.vietnamese}</span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
+                                [Thiếu Tiếng Việt]
+                              </span>
+                            )}
+                            {hasVietnameseFusedWords(chunk.vietnamese) && (
+                              <span 
+                                className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300"
+                                title="Có từ dính chữ không có dấu cách trong tiếng Việt"
+                              >
+                                [🔍 Dính chữ]
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3 text-center">
                           <div className="flex items-center justify-center gap-1.5">
@@ -769,13 +912,37 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                       </button>
 
                       <div className="space-y-1">
-                        <h3 className="font-display font-bold text-base md:text-lg text-[#0A0A0A] leading-snug">
-                          {chunk.english}
-                        </h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {chunk.english?.trim() ? (
+                            <h3 className="font-display font-bold text-base md:text-lg text-[#0A0A0A] leading-snug">
+                              {chunk.english}
+                            </h3>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-red-100 text-red-700 border border-red-200">
+                              [Thiếu Tiếng Anh]
+                            </span>
+                          )}
+                        </div>
 
-                        <p className="text-xs md:text-sm text-[#6B6B6B]">
-                          {chunk.vietnamese}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {chunk.vietnamese?.trim() ? (
+                            <p className="text-xs md:text-sm text-[#6B6B6B]">
+                              {chunk.vietnamese}
+                            </p>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-red-100 text-red-700 border border-red-200">
+                              [Thiếu Tiếng Việt]
+                            </span>
+                          )}
+                          {hasVietnameseFusedWords(chunk.vietnamese) && (
+                            <span 
+                              className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300"
+                              title="Có từ dính chữ không có dấu cách trong tiếng Việt"
+                            >
+                              [🔍 Dính chữ]
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

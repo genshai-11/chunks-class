@@ -2892,7 +2892,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 236,
         "category": "monologue",
         "english": "But how come you lost your phone?!?",
-        "vietnamese": "Mà sao mày lại có thểđể mất cái điện thoại được nhờ?!?",
+        "vietnamese": "Mà sao mày lại có thể để mất cái điện thoại được nhờ?!?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "But how come you lost your phone?!?"
@@ -7144,7 +7144,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 302,
         "category": "dialogue",
         "english": "Okay, I've taken advantage of this special strength to generate a lot of achievements",
-        "vietnamese": "Okay, em đã tận dụng cái thếmạnh đặc biệt này đểtạo ra vô sốnhững thành tựu",
+        "vietnamese": "Okay, em đã tận dụng cái thế mạnh đặc biệt này để tạo ra vô số những thành tựu",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Okay // I've taken advantage of this special strength to generate a lot of achievements"
@@ -7164,7 +7164,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 304,
         "category": "dialogue",
         "english": "No matter how small that thing was",
-        "vietnamese": "Bất kểcái thứđó có nhỏđến cỡnào đi nữa",
+        "vietnamese": "Bất kể cái thứ đó có nhỏ đến cỡ nào đi nữa",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "No matter how small that thing was"
@@ -7244,7 +7244,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 312,
         "category": "dialogue",
         "english": "Okay, good job, I think I've heard enough,",
-        "vietnamese": "Okay, good job em, anh nghĩ anh đã nghe đủrồi",
+        "vietnamese": "Okay, good job em, anh nghĩ anh đã nghe đủ rồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Okay // good job // I think I've heard enough,"
@@ -8073,7 +8073,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 31,
         "category": "monologue",
         "english": "But how come you lost your phone?!?",
-        "vietnamese": "Mà sao mày lại có thểđể mất cái điện thoại được nhờ?!?",
+        "vietnamese": "Mà sao mày lại có thể để mất cái điện thoại được nhờ?!?",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "But how come you lost your phone?!?"
@@ -10253,7 +10253,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 249,
         "category": "dialogue",
         "english": "Okay, I've taken advantage of this special strength to generate a lot of achievements",
-        "vietnamese": "Okay, em đã tận dụng cái thếmạnh đặc biệt này đểtạo ra vô sốnhững thành tựu",
+        "vietnamese": "Okay, em đã tận dụng cái thế mạnh đặc biệt này để tạo ra vô số những thành tựu",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "Okay // I've taken advantage of this special strength to generate a lot of achievements"
@@ -10273,7 +10273,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 251,
         "category": "dialogue",
         "english": "No matter how small that thing was",
-        "vietnamese": "Bất kểcái thứđó có nhỏđến cỡnào đi nữa",
+        "vietnamese": "Bất kể cái thứ đó có nhỏ đến cỡ nào đi nữa",
         "speaker": "T",
         "audio_url": null,
         "beat_prosody": "No matter how small that thing was"
@@ -10353,7 +10353,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 259,
         "category": "dialogue",
         "english": "Okay, good job, I think I've heard enough,",
-        "vietnamese": "Okay, good job em, anh nghĩ anh đã nghe đủrồi",
+        "vietnamese": "Okay, good job em, anh nghĩ anh đã nghe đủ rồi",
         "speaker": "SH",
         "audio_url": null,
         "beat_prosody": "Okay // good job // I think I've heard enough,"
@@ -13095,7 +13095,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 222,
         "category": "sentence",
         "english": "It's easy for you to say you're good at English",
-        "vietnamese": "Cậu nói thì dễrồi, cậu giỏi tiếng Anh mà",
+        "vietnamese": "Cậu nói thì dễ rồi, cậu giỏi tiếng Anh mà",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It's easy for you to say you're good at English"
@@ -14105,7 +14105,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 323,
         "category": "dialogue",
         "english": "All negative results",
-        "vietnamese": "Toàn là kết quảxấu",
+        "vietnamese": "Toàn là kết quả xấu",
         "speaker": "456",
         "audio_url": null,
         "beat_prosody": "All negative results"
@@ -15547,7 +15547,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 87,
         "category": "vocab",
         "english": "I'll buy you a house",
-        "vietnamese": "Tôi sẽmua cậu cái nhà",
+        "vietnamese": "Tôi sẽ mua cậu cái nhà",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I'll buy you a house"
@@ -17527,7 +17527,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 285,
         "category": "dialogue",
         "english": "Look, you see that little button on the right?",
-        "vietnamese": "Nhìn nè, ông thấy cái nút nhỏ nhỏbên phải đó không?",
+        "vietnamese": "Nhìn nè, ông thấy cái nút nhỏ nhỏ bên phải đó không?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Look // you see that little button on the right?"
@@ -18456,7 +18456,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 17,
         "category": "sentence",
         "english": "It's easy for you to say you're good at English",
-        "vietnamese": "Cậu nói thì dễrồi, cậu giỏi tiếng Anh mà",
+        "vietnamese": "Cậu nói thì dễ rồi, cậu giỏi tiếng Anh mà",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "It's easy for you to say you're good at English"
@@ -19466,7 +19466,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 118,
         "category": "dialogue",
         "english": "All negative results",
-        "vietnamese": "Toàn là kết quảxấu",
+        "vietnamese": "Toàn là kết quả xấu",
         "speaker": "456",
         "audio_url": null,
         "beat_prosody": "All negative results"
@@ -20846,7 +20846,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 256,
         "category": "dialogue",
         "english": "Look, you see that little button on the right?",
-        "vietnamese": "Nhìn nè, ông thấy cái nút nhỏ nhỏbên phải đó không?",
+        "vietnamese": "Nhìn nè, ông thấy cái nút nhỏ nhỏ bên phải đó không?",
         "speaker": "P",
         "audio_url": null,
         "beat_prosody": "Look // you see that little button on the right?"
@@ -27780,7 +27780,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 246,
         "category": "monologue",
         "english": "In this marketing world,",
-        "vietnamese": "Trong thếgiới marketing này,",
+        "vietnamese": "Trong thế giới marketing này,",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "In this marketing world,"
@@ -27830,7 +27830,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 251,
         "category": "monologue",
         "english": "They are master at this",
-        "vietnamese": "Họlà master cái này",
+        "vietnamese": "Họ là master cái này",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "They are master at this"
@@ -31049,7 +31049,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 208,
         "category": "monologue",
         "english": "In this marketing world,",
-        "vietnamese": "Trong thếgiới marketing này,",
+        "vietnamese": "Trong thế giới marketing này,",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "In this marketing world,"
@@ -31099,7 +31099,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 213,
         "category": "monologue",
         "english": "They are master at this",
-        "vietnamese": "Họlà master cái này",
+        "vietnamese": "Họ là master cái này",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "They are master at this"
@@ -32491,7 +32491,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 25,
         "category": "vocab",
         "english": "Category",
-        "vietnamese": "Thểloại",
+        "vietnamese": "Thể loại",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "Category"
@@ -37213,7 +37213,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 133,
         "category": "phrase",
         "english": "This event will be in English 100%",
-        "vietnamese": "Sựkiện này sẽlà bằng tiếng Anh 100%",
+        "vietnamese": "Sự kiện này sẽ là bằng tiếng Anh 100%",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "This event will be in English 100%"
@@ -37513,7 +37513,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 163,
         "category": "phrase",
         "english": "I'll pass it down to sales team",
-        "vietnamese": "Tôi sẽpass nó xuống cho team sales",
+        "vietnamese": "Tôi sẽ pass nó xuống cho team sales",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "I'll pass it down to sales team"
@@ -43904,7 +43904,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERES: LessonDoc[] = [
         "item_number": 116,
         "category": "phrase",
         "english": "From the bottom of my heart",
-        "vietnamese": "Từtận đáy lòng",
+        "vietnamese": "Từ tận đáy lòng",
         "speaker": null,
         "audio_url": null,
         "beat_prosody": "From the bottom of my heart"
