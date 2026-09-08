@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { PresentationShortcutConfig } from '../types';
+import { shortcutConfigService } from '../services/shortcutConfigService';
 
 export interface ClickerHandlers {
   onNext: () => void;
-  onPrev: () => void;
+  onPrev: (options?: { playAudio?: boolean }) => void;
   onToggleBlackout: () => void;
   onToggleSubtitle: () => void;
   onReplayAudio: () => void;
@@ -11,12 +13,27 @@ export interface ClickerHandlers {
   onToggleFullscreen?: () => void;
   onSetLoop?: (count: number) => void;
   isModalOpen?: boolean;
+  mode?: 'focus' | 'improv';
 }
 
 export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean = true) {
   const handlersRef = useRef<ClickerHandlers>(handlers);
   handlersRef.current = handlers;
   const prevClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reactive shortcut configuration
+  const [config, setConfig] = useState<PresentationShortcutConfig>(() => shortcutConfigService.getConfig());
+  const configRef = useRef<PresentationShortcutConfig>(config);
+  configRef.current = config;
+
+  useEffect(() => {
+    const unsub = shortcutConfigService.subscribe(() => {
+      const latest = shortcutConfigService.getConfig();
+      setConfig(latest);
+      configRef.current = latest;
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;
@@ -33,66 +50,110 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
         return;
       }
 
-      if (['PageDown', 'PageUp', 'ArrowRight', 'ArrowLeft', 'Space'].includes(e.code)) {
+      const curConfig = configRef.current;
+      const kb = curConfig.keyBindings;
+
+      // Prevent default for common navigation/presentation keys to stop page scrolling or refreshing
+      const allPreventCodes = [
+        'PageDown', 'PageUp', 'ArrowRight', 'ArrowLeft', 'Space', 'F5', 'F11',
+        ...(kb.next || []),
+        ...(kb.prev || []),
+        ...(kb.fullscreen || [])
+      ];
+      if (allPreventCodes.includes(e.code)) {
         e.preventDefault();
       }
 
       const h = handlersRef.current;
-      switch (e.code) {
-        case 'PageDown':
-        case 'ArrowRight':
-        case 'Space':
+      const mode = h.mode || 'focus';
+      const behavior = mode === 'improv' ? curConfig.improvMode : curConfig.focusMode;
+
+      // Check Next action
+      if (kb.next?.includes(e.code)) {
+        if (prevClickTimerRef.current) {
+          clearTimeout(prevClickTimerRef.current);
+          prevClickTimerRef.current = null;
+        }
+        h.onNext();
+        return;
+      }
+
+      // Check Prev action (with optional double-press replay)
+      if (kb.prev?.includes(e.code)) {
+        if (behavior.enableDoublePressReplay) {
           if (prevClickTimerRef.current) {
-            clearTimeout(prevClickTimerRef.current);
-            prevClickTimerRef.current = null;
-          }
-          h.onNext();
-          break;
-        case 'PageUp':
-        case 'ArrowLeft':
-          if (prevClickTimerRef.current) {
-            // Double-click detected within 380ms: cancel pending timer and replay audio!
+            // Double-press detected within timeout: cancel timer and replay audio!
             clearTimeout(prevClickTimerRef.current);
             prevClickTimerRef.current = null;
             h.onReplayAudio();
           } else {
-            // First press: start 380ms timer; invoke onPrev if no second press occurs
+            // First press: start timer; invoke onPrev if no second press occurs
             prevClickTimerRef.current = setTimeout(() => {
               prevClickTimerRef.current = null;
-              handlersRef.current.onPrev();
-            }, 380);
+              handlersRef.current.onPrev({ playAudio: behavior.playAudioOnPrev });
+            }, behavior.doublePressTimeoutMs || 380);
           }
-          break;
-        case 'KeyB':
-        case 'Period':
-          h.onToggleBlackout();
-          break;
-        case 'KeyV':
-          h.onToggleSubtitle();
-          break;
-        case 'KeyR':
-          h.onReplayAudio();
-          break;
-        case 'KeyP':
-          h.onTogglePartsDrawer?.();
-          break;
-        case 'KeyL':
-          h.onToggleChunkList?.();
-          break;
-        case 'KeyF':
-        case 'F5':
-          e.preventDefault();
-          h.onToggleFullscreen?.();
-          break;
-        case 'Digit1':
-          h.onSetLoop?.(1);
-          break;
-        case 'Digit2':
-          h.onSetLoop?.(2);
-          break;
-        case 'Digit3':
-          h.onSetLoop?.(3);
-          break;
+        } else {
+          // Immediate execution without delay
+          if (prevClickTimerRef.current) {
+            clearTimeout(prevClickTimerRef.current);
+            prevClickTimerRef.current = null;
+          }
+          h.onPrev({ playAudio: behavior.playAudioOnPrev });
+        }
+        return;
+      }
+
+      // Check Replay action
+      if (kb.replay?.includes(e.code)) {
+        h.onReplayAudio();
+        return;
+      }
+
+      // Check Blackout action
+      if (kb.blackout?.includes(e.code)) {
+        h.onToggleBlackout();
+        return;
+      }
+
+      // Check Subtitle action
+      if (kb.subtitle?.includes(e.code)) {
+        h.onToggleSubtitle();
+        return;
+      }
+
+      // Check Drawer action
+      if (kb.drawer?.includes(e.code)) {
+        if (h.onTogglePartsDrawer) {
+          h.onTogglePartsDrawer();
+        } else if (h.onToggleChunkList) {
+          h.onToggleChunkList();
+        }
+        return;
+      }
+
+      // Check Fullscreen action
+      if (kb.fullscreen?.includes(e.code)) {
+        h.onToggleFullscreen?.();
+        return;
+      }
+
+      // Check Digit1 action
+      if (kb.digit1?.includes(e.code) || e.code === 'Digit1' || e.code === 'Numpad1') {
+        h.onSetLoop?.(1);
+        return;
+      }
+
+      // Check Digit2 action
+      if (kb.digit2?.includes(e.code) || e.code === 'Digit2' || e.code === 'Numpad2') {
+        h.onSetLoop?.(2);
+        return;
+      }
+
+      // Check Digit3 action
+      if (kb.digit3?.includes(e.code) || e.code === 'Digit3' || e.code === 'Numpad3') {
+        h.onSetLoop?.(3);
+        return;
       }
     };
 
@@ -104,5 +165,5 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
         prevClickTimerRef.current = null;
       }
     };
-  }, [enabled]); // Attached ONCE per enablement change — eliminates render thrashing!
+  }, [enabled]);
 }

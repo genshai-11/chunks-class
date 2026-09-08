@@ -7,6 +7,7 @@ import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption,
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
+import { shortcutConfigService } from '../services/shortcutConfigService';
 import { PartsDrawer, groupChunksIntoParts } from './PartsDrawer';
 import { ChunkListPreviewDrawer } from './ChunkListPreviewDrawer';
 import { PresentationProgressBar } from './PresentationProgressBar';
@@ -128,6 +129,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   useEffect(() => {
     return modelRegistryService.subscribe(() => {
       setRegistryRevision(r => r + 1);
+    });
+  }, []);
+
+  const [shortcutConfig, setShortcutConfig] = useState(() => shortcutConfigService.getConfig());
+  useEffect(() => {
+    return shortcutConfigService.subscribe(() => {
+      setShortcutConfig(shortcutConfigService.getConfig());
     });
   }, []);
   const [prepTarget, setPrepTarget] = useState<AudioBatchTarget>('BOTH');
@@ -606,7 +614,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   };
 
   // Step Back (Clicker Prev / PageUp)
-  const handlePrev = () => {
+  const handlePrev = (opts?: { playAudio?: boolean }) => {
     if (isBlackout) {
       setIsBlackout(false);
       return;
@@ -614,7 +622,12 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     if (currentChunkIndex > 0) {
       const prevIdx = currentChunkIndex - 1;
       setCurrentChunkIndex(prevIdx);
-      playCurrentChunkAudio(chunks[prevIdx]);
+      const shouldPlay = opts?.playAudio ?? shortcutConfigService.getConfig().focusMode.playAudioOnPrev;
+      if (shouldPlay) {
+        playCurrentChunkAudio(chunks[prevIdx]);
+      } else {
+        audioPlayer.stop();
+      }
     }
   };
 
@@ -658,6 +671,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
   // Hook Wireless Hardware Clicker
   usePresenterClicker({
+    mode: 'focus',
     onNext: handleNext,
     onPrev: handlePrev,
     onToggleBlackout: handleToggleBlackout,
@@ -1541,35 +1555,51 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Next Chunk (Manual Step)</span>
-                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">PageDown / Right / Space</span>
+                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
+                  {shortcutConfig.keyBindings.next?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Previous Chunk</span>
-                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">PageUp / Left</span>
+                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
+                  {shortcutConfig.keyBindings.prev?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Replay Audio</span>
-                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">Key R</span>
+                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
+                  {shortcutConfig.keyBindings.replay?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Blackout (Blank Screen)</span>
-                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">Key B / Period (.)</span>
+                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
+                  {shortcutConfig.keyBindings.blackout?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Toggle Vietnamese Translation</span>
-                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">Key V</span>
+                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
+                  {shortcutConfig.keyBindings.subtitle?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Open Parts Navigation Drawer</span>
-                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">Key P</span>
+                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
+                  {shortcutConfig.keyBindings.drawer?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Fullscreen Toggle</span>
-                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">F / F5</span>
+                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
+                  {shortcutConfig.keyBindings.fullscreen?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Loop 1x / 2x / 3x</span>
-                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">Keys 1, 2, 3</span>
+                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
+                  {(shortcutConfig.keyBindings.digit1?.length ? [...shortcutConfig.keyBindings.digit1, ...(shortcutConfig.keyBindings.digit2 || []), ...(shortcutConfig.keyBindings.digit3 || [])] : ['Digit1', 'Digit2', 'Digit3']).map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ')}
+                </span>
               </div>
             </div>
 
