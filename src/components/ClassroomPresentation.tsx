@@ -1143,27 +1143,6 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               </button>
             )}
 
-            {/* Audio Readiness Badge in Topbar */}
-            <button
-              type="button"
-              onClick={() => setIsDiagnosticOpen(true)}
-              className={`text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
-                audioReadyPercent === 100
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
-                  : audioReadyPercent > 50
-                  ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
-                  : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
-              }`}
-              title={`Trạng thái Audio: ${readyChunksCount}/${chunks.length} chunks (${audioReadyPercent}%). Nhấp để mở chẩn đoán âm thanh.`}
-            >
-              <Volume2 className={`w-3.5 h-3.5 ${
-                audioReadyPercent === 100 ? 'text-emerald-600 dark:text-emerald-400' :
-                audioReadyPercent > 50 ? 'text-amber-600 dark:text-amber-400' :
-                'text-rose-600 dark:text-rose-400'
-              }`} />
-              <span>Audio: {readyChunksCount}/${chunks.length} ({audioReadyPercent}%)</span>
-            </button>
-
             <button
               type="button"
               onClick={() => setIsChunkListOpen(true)}
@@ -1732,13 +1711,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 <div className="my-auto py-4 w-full">
                   {/* Primary Large Text */}
                   <h1
-                    className={`font-display font-bold leading-tight md:leading-tight tracking-tight transition-all duration-200 ${
+                    className={`font-display font-bold leading-tight md:leading-tight tracking-tight transition-colors duration-150 transform-gpu ${
                       primaryText.length > 70 
                         ? 'text-3xl md:text-5xl' 
                         : primaryText.length > 40 
                           ? 'text-4xl md:text-6xl' 
                           : 'text-5xl md:text-7xl'
-                    } ${isPrimarySpeaking ? 'text-[#DC2626] scale-[1.02]' : ''}`}
+                    } ${isPrimarySpeaking ? 'text-[#DC2626]' : ''}`}
                   >
                     {primaryText}
                   </h1>
@@ -1746,7 +1725,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   {/* Subtitle (Toggleable via Key V, Font size +20% enlarged: text-2xl md:text-3xl font-medium) */}
                   <div className="min-h-[4rem] mt-6 flex items-center justify-center">
                     {showSubtitle ? (
-                      <p className={`text-2xl md:text-3xl font-medium transition-all leading-relaxed ${
+                      <p className={`text-2xl md:text-3xl font-medium transition-colors duration-150 leading-relaxed ${
                         isSubtitleSpeaking 
                           ? 'text-emerald-600 font-bold' 
                           : highContrastDark ? 'text-zinc-400' : 'text-[#6B6B6B]'

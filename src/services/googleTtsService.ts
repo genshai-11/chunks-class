@@ -83,6 +83,52 @@ export function detectGoogleKeyType(key: string): 'GOOGLE_CLOUD_TTS' | 'GEMINI_A
   return key.trim().startsWith('AQ.') ? 'GEMINI_AI_STUDIO' : 'GOOGLE_CLOUD_TTS';
 }
 
+/**
+ * Gender-aware fallback helper for Google Cloud English voice:
+ * - Male voices (flux-cliff-en, aura-orion-en, aura-arcas-en, aura-perseus-en, aura-helios-en, aura-angus-en, aura-orpheus-en, aura-zeus-en, en-US-Journey-D, en-US-Studio-Q, en-US-Neural2-D) -> 'en-US-Journey-D'
+ * - Female voices (aura-asteria-en, aura-luna-en, aura-stella-en, aura-athena-en, aura-hera-en, en-US-Journey-F, en-US-Studio-O, en-US-Neural2-F) -> 'en-US-Journey-F'
+ */
+export function getFallbackGoogleEnVoice(voiceId?: string | null): string {
+  if (!voiceId) return 'en-US-Journey-D';
+  const v = voiceId.toLowerCase().trim();
+
+  const maleVoices = [
+    'flux-cliff-en', 'aura-orion-en', 'aura-arcas-en', 'aura-perseus-en',
+    'aura-helios-en', 'aura-angus-en', 'aura-orpheus-en', 'aura-zeus-en',
+    'en-us-journey-d', 'en-us-studio-q', 'en-us-neural2-d'
+  ];
+  if (maleVoices.includes(v)) {
+    return 'en-US-Journey-D';
+  }
+
+  const femaleVoices = [
+    'aura-asteria-en', 'aura-luna-en', 'aura-stella-en', 'aura-athena-en',
+    'aura-hera-en', 'en-us-journey-f', 'en-us-studio-o', 'en-us-neural2-f'
+  ];
+  if (femaleVoices.includes(v)) {
+    return 'en-US-Journey-F';
+  }
+
+  if (
+    v.includes('cliff') || v.includes('orion') || v.includes('arcas') ||
+    v.includes('perseus') || v.includes('helios') || v.includes('angus') ||
+    v.includes('orpheus') || v.includes('zeus') || v.includes('journey-d') ||
+    v.includes('-d') || v.includes('-q') || v.includes('-m')
+  ) {
+    return 'en-US-Journey-D';
+  }
+
+  if (
+    v.includes('asteria') || v.includes('luna') || v.includes('stella') ||
+    v.includes('athena') || v.includes('hera') || v.includes('journey-f') ||
+    v.includes('-f') || v.includes('-o')
+  ) {
+    return 'en-US-Journey-F';
+  }
+
+  return 'en-US-Journey-D';
+}
+
 export function maskApiKey(key: string): string {
   if (!key || key.length < 8) return '****';
   return `${key.slice(0, 8)}...${key.slice(-5)}`;
@@ -1664,7 +1710,7 @@ class AudioPlayService {
       const isDeepgram = effectiveVoice.startsWith('aura-') || effectiveVoice.startsWith('flux-') || (this.activeProvider === 'DEEPGRAM_AURA' && !effectiveVoice.startsWith('en-US-'));
       const effectiveEnVoice = isDeepgram
         ? (isFluxOrAura ? effectiveVoice : 'flux-cliff-en')
-        : (isGoogleEnVoice ? effectiveVoice : (effectiveVoice && !effectiveVoice.startsWith('vi-') ? effectiveVoice : 'en-US-Journey-F'));
+        : (isGoogleEnVoice ? effectiveVoice : (effectiveVoice && !effectiveVoice.startsWith('vi-') ? effectiveVoice : getFallbackGoogleEnVoice(effectiveVoice)));
 
       // Step 1: GCS Master Permanent Audio (can play for any voice if available and not forced to cloud TTS)
       const canUseGcsAudio = !forceCloudTts;
@@ -1729,7 +1775,7 @@ class AudioPlayService {
 
       // Step 3: Google Cloud Text-to-Speech (en-US)
       try {
-        const googleVoice = (effectiveEnVoice.startsWith('aura-') || effectiveEnVoice.startsWith('flux-')) ? 'en-US-Journey-F' : effectiveEnVoice;
+        const googleVoice = (effectiveEnVoice.startsWith('aura-') || effectiveEnVoice.startsWith('flux-')) ? getFallbackGoogleEnVoice(effectiveEnVoice) : effectiveEnVoice;
         const base64Audio = await this.synthesizeWithGoogleTTS(cleanText, googleVoice, 1.0);
         if (base64Audio) {
           this.setCache(cacheKey, base64Audio);
@@ -1868,9 +1914,7 @@ class AudioPlayService {
       const isFluxOrAura = Boolean(params.voiceName && (params.voiceName.startsWith('aura-') || params.voiceName.startsWith('flux-')));
       const isGoogleEn = Boolean(params.voiceName && params.voiceName.startsWith('en-US-'));
       const isDeepgram = isFluxOrAura || (!isGoogleEn && activeProvider === 'DEEPGRAM_AURA');
-      const voiceEn = isDeepgram
-        ? (isFluxOrAura ? params.voiceName! : 'flux-cliff-en')
-        : (isGoogleEn ? params.voiceName! : (params.voiceName || 'en-US-Journey-F'));
+      const voiceEn = params.voiceName || (isDeepgram ? 'flux-cliff-en' : 'en-US-Journey-D');
       const cacheKey = this.getCacheKey(voiceEn, cleanText);
 
       if (!forceRegenerate) {
@@ -1901,10 +1945,16 @@ class AudioPlayService {
         if (forceRegenerate) {
           deepgramTts.clearCache();
         }
-        const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
-        if (base64) {
-          this.setCache(cacheKey, base64);
-          return { base64, source: 'DEEPGRAM_AURA', voice: dgModel, language: 'en' };
+        try {
+          const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
+          if (base64) {
+            this.setCache(cacheKey, base64);
+            return { base64, source: 'DEEPGRAM_AURA', voice: dgModel, language: 'en' };
+          }
+          throw new Error(`Deepgram TTS trả về dữ liệu rỗng cho model ${dgModel}`);
+        } catch (dgErr: any) {
+          // Strictly throw clear descriptive error - DO NOT silently fall back to female Google voice!
+          throw new Error(`Deepgram TTS (${dgModel}) thất bại: ${dgErr?.message || String(dgErr)}`);
         }
       } else {
         const base64 = await this.synthesizeWithGoogleTTS(cleanText, voiceEn, speed, forceRegenerate);
@@ -1914,7 +1964,7 @@ class AudioPlayService {
         }
       }
 
-      throw new Error('English TTS synthesis failed.');
+      throw new Error(`English TTS synthesis failed for voice: ${voiceEn}`);
     }
   }
 
@@ -1956,7 +2006,10 @@ class AudioPlayService {
     }
 
     const provider = opts.provider || this.activeProvider;
-    const voiceEn = opts.voiceEn || (provider === 'DEEPGRAM_AURA' ? 'flux-cliff-en' : 'en-US-Journey-F');
+    const isFluxOrAura = Boolean(opts.voiceEn && (opts.voiceEn.startsWith('aura-') || opts.voiceEn.startsWith('flux-')));
+    const isGoogleEn = Boolean(opts.voiceEn && opts.voiceEn.startsWith('en-US-'));
+    const isDeepgram = isFluxOrAura || (!isGoogleEn && provider === 'DEEPGRAM_AURA');
+    const voiceEn = opts.voiceEn || (isDeepgram ? 'flux-cliff-en' : 'en-US-Journey-D');
     const voiceVi = opts.voiceVi || 'vi-VN-Neural2-A';
     let target: AudioBatchTarget = opts.target || (opts.langMode === 'VIETNAMESE' ? 'VIETNAMESE' : opts.langMode === 'ENGLISH' ? 'ENGLISH' : 'BOTH');
     const forceRegenerate = opts.forceRegenerate || false;
@@ -1975,8 +2028,8 @@ class AudioPlayService {
     const total = workingChunks.length;
     if (total === 0) return { prepared: 0, failed: 0, total: 0, skipped: 0, failedItems: [] };
 
-    const isDeepgram = provider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-') || voiceEn.startsWith('flux-');
-    const modelEn = isDeepgram && !voiceEn.startsWith('aura-') && !voiceEn.startsWith('flux-') ? 'flux-cliff-en' : voiceEn;
+    // Strictly deterministic: preserve opts.voiceEn if provided, otherwise voiceEn
+    const modelEn = opts.voiceEn || voiceEn;
     const modelVi = (voiceVi && voiceVi.startsWith('vi-')) ? voiceVi : 'vi-VN-Neural2-A';
 
     let prepared = 0;
@@ -2265,7 +2318,7 @@ class AudioPlayService {
    */
   private async synthesizeWithGoogleTTS(
     text: string, 
-    voiceName: string = 'en-US-Journey-F', 
+    voiceName: string = 'en-US-Journey-D', 
     speed: number = 1.0,
     forceRefresh: boolean = false
   ): Promise<string> {
@@ -2275,7 +2328,7 @@ class AudioPlayService {
     const isVi = isVietnameseText(cleanText, voiceName);
     const effectiveVoice = isVi
       ? (voiceName && voiceName.startsWith('vi-') ? voiceName : 'vi-VN-Neural2-A')
-      : (voiceName && !voiceName.startsWith('aura-') && !voiceName.startsWith('vi-') ? voiceName : 'en-US-Journey-F');
+      : (voiceName && !voiceName.startsWith('aura-') && !voiceName.startsWith('flux-') && !voiceName.startsWith('vi-') ? voiceName : getFallbackGoogleEnVoice(voiceName));
     const langCode = isVi ? 'vi-VN' : 'en-US';
 
     const cacheKey = this.getCacheKey(effectiveVoice, cleanText);

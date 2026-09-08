@@ -144,6 +144,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [editViText, setEditViText] = useState<string>('');
   const [isSavingChunk, setIsSavingChunk] = useState<boolean>(false);
 
+  // Pre-generation Review Modal State
+  const [showModalRegenReview, setShowModalRegenReview] = useState<boolean>(false);
+  const [modalRegenTarget, setModalRegenTarget] = useState<AudioBatchTarget>('BOTH');
+  const [modalRegenOverwrite, setModalRegenOverwrite] = useState<boolean>(true);
+
   // --------------------------------------------------------------------------
   // 5. Batch Generator State & Concurrency Controls
   // --------------------------------------------------------------------------
@@ -246,24 +251,17 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       if (fetched && fetched.length > 0) {
         setLessons(fetched);
         setBatchTargetLessonId(prev => (!prev || !fetched.some(l => l.id === prev)) ? fetched[0].id : prev);
-        if (!inspectingLesson) {
-          setInspectingLesson(fetched[0]);
-        }
       } else {
         const defaultLessons = curriculumRegistry.getLessons(selectedCourseLevel);
         setLessons(defaultLessons);
         if (defaultLessons.length > 0) {
           setBatchTargetLessonId(prev => (!prev || !defaultLessons.some(l => l.id === prev)) ? defaultLessons[0].id : prev);
         }
-        if (!inspectingLesson && defaultLessons.length > 0) {
-          setInspectingLesson(defaultLessons[0]);
-        }
       }
     } catch (e: any) {
       console.error('Failed to load lessons for AudioManager:', e);
       const fallback = curriculumRegistry.getLessons(selectedCourseLevel);
       setLessons(fallback);
-      if (fallback.length > 0) setInspectingLesson(fallback[0]);
     } finally {
       setIsLoadingLessons(false);
     }
@@ -575,7 +573,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     overrideScope?: 'current_lesson' | 'entire_course',
     overrideLessonId?: string,
     modeOverride?: BatchPreparationMode,
-    targetChunkIds?: string[]
+    targetChunkIds?: string[],
+    targetOverride?: AudioBatchTarget,
+    forceOverwriteOverride?: boolean
   ) => {
     if (isBatchRunning) return;
 
@@ -589,7 +589,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         ? overrideLessonId 
         : (batchTargetLessonId || lessons[0]?.id || '');
 
-    const effectiveMode: BatchPreparationMode = modeOverride || batchMode;
+    const effectiveTarget: AudioBatchTarget = targetOverride || batchTarget;
+    const effectiveForceOverwrite: boolean = forceOverwriteOverride !== undefined ? forceOverwriteOverride : forceOverwrite;
+    const effectiveMode: BatchPreparationMode = modeOverride || (effectiveForceOverwrite ? 'full' : batchMode);
 
     cancelBatchRef.current = false;
     setIsBatchRunning(true);
@@ -634,17 +636,19 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       }
       scopeDesc = `[Thử Lại Lỗi] ${targetItems.length} câu - ${scopeDesc}`;
     } else if (effectiveMode === 'missing_only') {
-      const shouldCheckEn = batchTarget === 'ENGLISH' || batchTarget === 'BOTH';
-      const shouldCheckVi = batchTarget === 'VIETNAMESE' || batchTarget === 'BOTH';
+      const shouldCheckEn = effectiveTarget === 'ENGLISH' || effectiveTarget === 'BOTH';
+      const shouldCheckVi = effectiveTarget === 'VIETNAMESE' || effectiveTarget === 'BOTH';
 
       targetItems = candidateItems.filter(item => {
         const c = item.chunk;
+        const targetVoiceEn = chunkVoiceEn[c.chunk_id] || voiceProfileEn;
+        const targetVoiceVi = chunkVoiceVi[c.chunk_id] || voiceProfileVi;
         const hasGcsEn = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-        const isCachedEn = audioPlayer.hasCachedAudio(c.english, voiceProfileEn);
+        const isCachedEn = audioPlayer.hasCachedAudio(c.english, targetVoiceEn);
         const needsEn = shouldCheckEn && !hasGcsEn && !isCachedEn;
 
         const hasGcsVi = Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'));
-        const isCachedVi = c.vietnamese ? audioPlayer.hasCachedAudio(c.vietnamese, voiceProfileVi) : true;
+        const isCachedVi = c.vietnamese ? audioPlayer.hasCachedAudio(c.vietnamese, targetVoiceVi) : true;
         const needsVi = shouldCheckVi && Boolean(c.vietnamese) && !hasGcsVi && !isCachedVi;
 
         return needsEn || needsVi;
@@ -669,7 +673,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       targetItems = candidateItems;
     }
 
-    const multiplier = batchTarget === 'BOTH' ? 2 : 1;
+    const multiplier = effectiveTarget === 'BOTH' ? 2 : 1;
     const totalOperations = targetItems.length * multiplier;
 
     // Stage 1: Preparing
@@ -708,30 +712,32 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         const cleanVi = chunk.vietnamese ? sanitizeSpeechText(chunk.vietnamese) : '';
 
         // --- 1. Synthesize English ---
-        if (batchTarget === 'ENGLISH' || batchTarget === 'BOTH') {
+        if (effectiveTarget === 'ENGLISH' || effectiveTarget === 'BOTH') {
           if (cancelBatchRef.current) break;
 
+          const targetVoiceEn = chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
           const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
-          const isCachedEn = audioPlayer.hasCachedAudio(cleanEn, voiceProfileEn);
+          const isCachedEn = audioPlayer.hasCachedAudio(cleanEn, targetVoiceEn);
 
           // If not forceOverwrite and already has permanent GCS audio or cached in missing_only mode
-          if (!forceOverwrite && (hasGcsEn || (effectiveMode === 'missing_only' && isCachedEn))) {
+          if (!effectiveForceOverwrite && (hasGcsEn || (effectiveMode === 'missing_only' && isCachedEn))) {
             skippedCount++;
             processedCount++;
+            addLog(`[Worker ${workerId}] Bỏ qua EN #${chunk.item_number} do đã có audio GCS cũ. (Bật 'Ghi đè' để đổi model sang ${targetVoiceEn})`, 'info');
           } else {
             setBatchProgress(prev => ({
               ...prev,
               stage: 'synthesizing',
-              currentTask: `Worker ${workerId} -> Tạo TTS EN: "${cleanEn.slice(0, 20)}..."`
+              currentTask: `Worker ${workerId} -> Tạo TTS EN: "${cleanEn.slice(0, 20)}..." [${targetVoiceEn}]`
             }));
 
             try {
               const synthRes = await audioPlayer.synthesizeSingleChunk({
                 text: cleanEn,
                 language: 'en',
-                voiceName: voiceProfileEn,
+                voiceName: targetVoiceEn,
                 provider: activeProvider,
-                forceRegenerate: forceOverwrite
+                forceRegenerate: effectiveForceOverwrite
               });
 
               if (!synthRes?.base64) {
@@ -743,7 +749,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 setBatchProgress(prev => ({
                   ...prev,
                   stage: 'uploading_cloud',
-                  currentTask: `Worker ${workerId} -> Tải lên Cloud GCS: #${chunk.item_number}`
+                  currentTask: `Worker ${workerId} -> Tải lên Cloud GCS: #${chunk.item_number} [${targetVoiceEn}]`
                 }));
 
                 try {
@@ -759,11 +765,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   successCount++;
                   succeededChunkIds.add(chunk.chunk_id);
                   modifiedLessonsMap.set(chunkLesson.id, chunkLesson);
-                  addLog(`[Cloud Sync] Tải lên GCS EN thành công: #${chunk.item_number} (Day ${chunkLesson.day_number})`, 'cloud');
+                  addLog(`[Worker ${workerId}] [Cloud Sync] Tải lên GCS EN #${chunk.item_number} [${targetVoiceEn}] thành công`, 'cloud');
                 } catch (uploadErr: any) {
                   failCount++;
                   const errMsg = uploadErr?.message || String(uploadErr);
-                  addLog(`[Upload Lỗi] Không thể tải EN lên GCS cho #${chunk.item_number}: ${errMsg}`, 'error');
+                  addLog(`[Worker ${workerId}] [Upload Lỗi] Không thể tải EN lên GCS cho #${chunk.item_number}: ${errMsg}`, 'error');
                   newlyFailedMap.set(`${chunk.chunk_id}_en`, {
                     chunkId: chunk.chunk_id,
                     itemNumber: chunk.item_number,
@@ -782,12 +788,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               } else {
                 successCount++;
                 succeededChunkIds.add(chunk.chunk_id);
-                addLog(`Tạo TTS EN thành công cho #${chunk.item_number}`, 'success');
+                addLog(`[Worker ${workerId}] Tạo TTS EN #${chunk.item_number} [${targetVoiceEn}] (${activeProvider}) thành công`, 'success');
               }
             } catch (e: any) {
               failCount++;
               const errMsg = e?.message || 'Lỗi tạo TTS';
-              addLog(`[Worker ${workerId}] Lỗi TTS EN (#${chunk.item_number}): ${errMsg}`, 'error');
+              addLog(`[Worker ${workerId}] Lỗi TTS EN #${chunk.item_number} [${targetVoiceEn}]: ${errMsg}`, 'error');
               newlyFailedMap.set(`${chunk.chunk_id}_en`, {
                 chunkId: chunk.chunk_id,
                 itemNumber: chunk.item_number,
@@ -819,29 +825,31 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         }
 
         // --- 2. Synthesize Vietnamese ---
-        if ((batchTarget === 'VIETNAMESE' || batchTarget === 'BOTH') && cleanVi) {
+        if ((effectiveTarget === 'VIETNAMESE' || effectiveTarget === 'BOTH') && cleanVi) {
           if (cancelBatchRef.current) break;
 
+          const targetVoiceVi = chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
           const hasGcsVi = Boolean(chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http'));
-          const isCachedVi = audioPlayer.hasCachedAudio(cleanVi, voiceProfileVi);
+          const isCachedVi = audioPlayer.hasCachedAudio(cleanVi, targetVoiceVi);
 
-          if (!forceOverwrite && (hasGcsVi || (effectiveMode === 'missing_only' && isCachedVi))) {
+          if (!effectiveForceOverwrite && (hasGcsVi || (effectiveMode === 'missing_only' && isCachedVi))) {
             skippedCount++;
             processedCount++;
+            addLog(`[Worker ${workerId}] Bỏ qua VI #${chunk.item_number} do đã có audio GCS cũ. (Bật 'Ghi đè' để đổi model sang ${targetVoiceVi})`, 'info');
           } else {
             setBatchProgress(prev => ({
               ...prev,
               stage: 'synthesizing',
-              currentTask: `Worker ${workerId} -> Tạo TTS VI: "${cleanVi.slice(0, 20)}..."`
+              currentTask: `Worker ${workerId} -> Tạo TTS VI: "${cleanVi.slice(0, 20)}..." [${targetVoiceVi}]`
             }));
 
             try {
               const synthResVi = await audioPlayer.synthesizeSingleChunk({
                 text: cleanVi,
                 language: 'vi',
-                voiceName: voiceProfileVi,
+                voiceName: targetVoiceVi,
                 provider: 'GOOGLE_TTS',
-                forceRegenerate: forceOverwrite
+                forceRegenerate: effectiveForceOverwrite
               });
 
               if (!synthResVi?.base64) {
@@ -852,7 +860,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 setBatchProgress(prev => ({
                   ...prev,
                   stage: 'uploading_cloud',
-                  currentTask: `Worker ${workerId} -> Tải lên Cloud GCS VI: #${chunk.item_number}`
+                  currentTask: `Worker ${workerId} -> Tải lên Cloud GCS VI: #${chunk.item_number} [${targetVoiceVi}]`
                 }));
 
                 try {
@@ -868,11 +876,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   successCount++;
                   succeededChunkIds.add(chunk.chunk_id);
                   modifiedLessonsMap.set(chunkLesson.id, chunkLesson);
-                  addLog(`[Cloud Sync] Tải lên GCS VI thành công: #${chunk.item_number} (Day ${chunkLesson.day_number})`, 'cloud');
+                  addLog(`[Worker ${workerId}] [Cloud Sync] Tải lên GCS VI #${chunk.item_number} [${targetVoiceVi}] thành công`, 'cloud');
                 } catch (uploadErr: any) {
                   failCount++;
                   const errMsg = uploadErr?.message || String(uploadErr);
-                  addLog(`[Upload Lỗi] Không thể tải VI lên GCS cho #${chunk.item_number}: ${errMsg}`, 'error');
+                  addLog(`[Worker ${workerId}] [Upload Lỗi] Không thể tải VI lên GCS cho #${chunk.item_number}: ${errMsg}`, 'error');
                   newlyFailedMap.set(`${chunk.chunk_id}_vi`, {
                     chunkId: chunk.chunk_id,
                     itemNumber: chunk.item_number,
@@ -891,12 +899,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               } else {
                 successCount++;
                 succeededChunkIds.add(chunk.chunk_id);
-                addLog(`Tạo TTS VI thành công cho #${chunk.item_number}`, 'success');
+                addLog(`[Worker ${workerId}] Tạo TTS VI #${chunk.item_number} [${targetVoiceVi}] thành công`, 'success');
               }
             } catch (e: any) {
               failCount++;
               const errMsg = e?.message || 'Lỗi tạo TTS VI';
-              addLog(`[Worker ${workerId}] Lỗi TTS VI (#${chunk.item_number}): ${errMsg}`, 'error');
+              addLog(`[Worker ${workerId}] Lỗi TTS VI #${chunk.item_number} [${targetVoiceVi}]: ${errMsg}`, 'error');
               newlyFailedMap.set(`${chunk.chunk_id}_vi`, {
                 chunkId: chunk.chunk_id,
                 itemNumber: chunk.item_number,
@@ -1452,6 +1460,31 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           </div>
         </div>
 
+        {/* Uniform Voice Model Banner */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-900 dark:text-amber-200">
+          <div className="flex items-center gap-2 text-xs font-bold font-mono">
+            <span className="text-base">🎙️</span>
+            <span>
+              Model áp dụng đồng nhất cho toàn bộ Workers: <span className="underline decoration-amber-500 font-black">[{voiceProfileEn}]</span> ({activeProvider === 'DEEPGRAM_AURA' ? 'Deepgram' : 'Google Cloud'})
+            </span>
+          </div>
+          {!isBatchRunning && (
+            <button
+              type="button"
+              onClick={() => {
+                setForceOverwrite(true);
+                setBatchMode('full');
+                handleStartBatchGeneration(undefined, undefined, 'full', undefined, undefined, true);
+              }}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+              title={`Ghi đè toàn bộ audio bằng ${voiceProfileEn}`}
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>⚡ Tạo Lại Toàn Bộ (Ghi Đè) Bằng [{voiceProfileEn}]</span>
+            </button>
+          )}
+        </div>
+
         {/* Configuration Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Scope Selector */}
@@ -1657,8 +1690,14 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               <input
                 type="checkbox"
                 checked={forceOverwrite}
-                disabled={isBatchRunning || batchMode === 'missing_only' || batchMode === 'failed_only'}
-                onChange={(e) => setForceOverwrite(e.target.checked)}
+                disabled={isBatchRunning}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setForceOverwrite(checked);
+                  if (checked && batchMode === 'missing_only') {
+                    setBatchMode('full');
+                  }
+                }}
                 className="w-4 h-4 rounded text-[#DC2626] border-zinc-300 focus:ring-[#DC2626] cursor-pointer disabled:opacity-50"
               />
               <span className="text-xs font-bold text-zinc-800">
@@ -2325,7 +2364,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   type="button"
                   disabled={isBatchRunning}
                   onClick={() => {
-                    handleStartBatchGeneration('current_lesson', inspectingLesson.id);
+                    setShowModalRegenReview(prev => !prev);
                   }}
                   className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
                   title="Tạo lại audio cho riêng bài học này"
@@ -2358,13 +2397,134 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 )}
 
                 <button
-                  onClick={() => setInspectingLesson(null)}
+                  onClick={() => {
+                    setInspectingLesson(null);
+                    setShowModalRegenReview(false);
+                  }}
                   className="p-2 rounded-xl text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200 transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
+
+            {/* Pre-Generation Review Drawer / Banner */}
+            {showModalRegenReview && (
+              <div className="p-4 bg-zinc-900 text-white border-b border-zinc-800 animate-fade-in space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎙️</span>
+                    <h4 className="font-bold text-sm text-zinc-100">
+                      Xác Nhận Tạo Lại Audio Cho Day {inspectingLesson.day_number}: {inspectingLesson.lesson_title}
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowModalRegenReview(false)}
+                    className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                  {/* Target Language Pills */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Ngôn ngữ mục tiêu
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      {(['ENGLISH', 'VIETNAMESE', 'BOTH'] as AudioBatchTarget[]).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setModalRegenTarget(t)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            modalRegenTarget === t
+                              ? 'bg-[#DC2626] text-white shadow-xs'
+                              : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                          }`}
+                        >
+                          {t === 'ENGLISH' ? 'Tiếng Anh (EN)' : t === 'VIETNAMESE' ? 'Tiếng Việt (VI)' : 'Cả Hai (EN + VI)'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Model Review Badges */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Giọng Model Áp Dụng
+                    </label>
+                    <div className="space-y-1 text-xs font-mono">
+                      <div className="flex items-center gap-1 text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40">
+                        <span className="font-bold">EN:</span>
+                        <span className="truncate">[{voiceProfileEn}] ({activeProvider === 'DEEPGRAM_AURA' ? 'Deepgram' : 'Google'})</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-blue-400 bg-blue-950/50 px-2 py-0.5 rounded border border-blue-800/40">
+                        <span className="font-bold">VI:</span>
+                        <span className="truncate">[{voiceProfileVi}] (Google Cloud)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Overwrite Toggle & Action Buttons */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
+                      Chế độ thực thi
+                    </label>
+                    <div className="flex items-center gap-2 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => setModalRegenOverwrite(true)}
+                        className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                          modalRegenOverwrite ? 'bg-amber-600 text-white shadow-xs' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                        }`}
+                      >
+                        Ghi đè toàn bộ audio cũ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModalRegenOverwrite(false)}
+                        className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                          !modalRegenOverwrite ? 'bg-emerald-600 text-white shadow-xs' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                        }`}
+                      >
+                        Chỉ tạo câu còn thiếu
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isBatchRunning}
+                        onClick={() => {
+                          setShowModalRegenReview(false);
+                          handleStartBatchGeneration(
+                            'current_lesson',
+                            inspectingLesson.id,
+                            modalRegenOverwrite ? 'full' : 'missing_only',
+                            undefined,
+                            modalRegenTarget,
+                            modalRegenOverwrite
+                          );
+                        }}
+                        className="px-3 py-1.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Bắt Đầu Tạo Audio</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowModalRegenReview(false)}
+                        className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                      >
+                        Hủy
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Search & Filter Subheader */}
             <div className="p-4 border-b border-zinc-100 flex flex-wrap items-center justify-between gap-3 bg-white">

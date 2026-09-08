@@ -935,9 +935,9 @@ class ModelRegistryService {
     } catch {}
 
     // Seed Deepgram Key
-    const envDeepgram = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEEPGRAM_API_KEY) || '92def6215618aeda77c43f4446ba84ef7152091c';
+    const envDeepgram = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEEPGRAM_API_KEY) || '51d7d8b230bf742178e681e7836a3dc1571b1c11';
     const legacyDg = typeof localStorage !== 'undefined' ? localStorage.getItem('chunks_deepgram_api_key') : null;
-    const effectiveDgKey = (legacyDg && legacyDg.trim() && legacyDg !== '51d7d8b230bf742178e681e7836a3dc1571b1c11') 
+    const effectiveDgKey = (legacyDg && legacyDg.trim()) 
       ? legacyDg.trim() 
       : envDeepgram;
 

@@ -182,7 +182,7 @@ export function sanitizeSpeechText(text: string): string {
 
 class DeepgramTtsService {
   private cache = new Map<string, string>(); // text+model -> base64 mp3
-  private defaultApiKey: string = import.meta.env.VITE_DEEPGRAM_API_KEY || '92def6215618aeda77c43f4446ba84ef7152091c';
+  private defaultApiKey: string = import.meta.env.VITE_DEEPGRAM_API_KEY || '51d7d8b230bf742178e681e7836a3dc1571b1c11';
 
   getApiKey(): string {
     const registryKey = modelRegistryService.getNextActiveKey('DEEPGRAM');
@@ -190,10 +190,10 @@ class DeepgramTtsService {
       return registryKey.trim();
     }
     const key = localStorage.getItem('chunks_deepgram_api_key');
-    if (!key || key.trim() === '' || key === '51d7d8b230bf742178e681e7836a3dc1571b1c11') {
+    if (!key || key.trim() === '') {
       return this.defaultApiKey;
     }
-    return key;
+    return key.trim();
   }
 
   setApiKey(key: string): void {
