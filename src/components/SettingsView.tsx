@@ -1,7 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Cohort, CourseLevel, LanguageMode, CohortAudioSettings } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Cohort, 
+  CourseLevel, 
+  LanguageMode, 
+  CohortAudioSettings,
+  ClickerAction,
+  PresentationShortcutConfig,
+  ShortcutModeBehavior
+} from '../types';
 import { calculateSessions } from '../utils/scheduler';
 import { curriculumRegistry } from '../services/curriculumRegistry';
+import { 
+  shortcutConfigService, 
+  SHORTCUT_PRESETS, 
+  ShortcutPresetType 
+} from '../services/shortcutConfigService';
 import { 
   modelRegistryService, 
   RegisteredModel, 
@@ -36,21 +49,22 @@ import {
   Upload, 
   Search, 
   Eye, 
-  EyeOff,
-  Copy,
-  Zap,
+  EyeOff, 
+  Copy, 
+  Zap, 
   ShieldCheck, 
   Clock, 
-  RefreshCw,
-  ExternalLink,
-  Info,
-  CheckSquare,
-  Cloud,
-  SlidersHorizontal,
-  Filter
+  RefreshCw, 
+  ExternalLink, 
+  Info, 
+  CheckSquare, 
+  Cloud, 
+  SlidersHorizontal, 
+  Filter,
+  Keyboard
 } from 'lucide-react';
 
-type SubTabId = 'cohort' | 'main-models' | 'providers' | 'ai-generator' | 'import-audition' | 'visibility-matrix';
+type SubTabId = 'cohort' | 'main-models' | 'providers' | 'ai-generator' | 'import-audition' | 'visibility-matrix' | 'shortcuts';
 
 interface SettingsViewProps {
   cohort: Cohort;
@@ -150,6 +164,239 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     });
     return unsub;
   }, []);
+
+  // Shortcut & Remote Clicker State
+  const [shortcutConfig, setShortcutConfig] = useState<PresentationShortcutConfig>(() => shortcutConfigService.getConfig());
+  const [recordingAction, setRecordingAction] = useState<ClickerAction | null>(null);
+  const [recorderMode, setRecorderMode] = useState<'auto' | 'force2x'>('auto');
+  const [recordingPendingKey, setRecordingPendingKey] = useState<{ code: string; name: string } | null>(null);
+  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastLiveKeyPressRef = useRef<{ code: string; time: number } | null>(null);
+
+  const [lastTestedKey, setLastTestedKey] = useState<{
+    code: string;
+    name: string;
+    action: ClickerAction | null;
+    timestamp: number;
+    isDouble?: boolean;
+    isCombo?: boolean;
+    isChord?: boolean;
+  } | null>(null);
+  const [shortcutToast, setShortcutToast] = useState<{ message: string; type: 'success' | 'info' | 'warning' } | null>(null);
+
+  const showShortcutNotice = (msg: string, type: 'success' | 'info' | 'warning' = 'success') => {
+    setShortcutToast({ message: msg, type });
+    setTimeout(() => {
+      setShortcutToast(null);
+    }, 2800);
+  };
+
+  useEffect(() => {
+    const unsub = shortcutConfigService.subscribe(() => {
+      setShortcutConfig(shortcutConfigService.getConfig());
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (activeSubTab !== 'shortcuts') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in a text input or textarea
+      const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') {
+        return;
+      }
+
+      // If in recording mode for an action
+      if (recordingAction) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (e.code === 'Escape') {
+          if (recordingTimerRef.current) {
+            clearTimeout(recordingTimerRef.current);
+            recordingTimerRef.current = null;
+          }
+          setRecordingPendingKey(null);
+          setRecordingAction(null);
+          showShortcutNotice('Đã hủy gán phím', 'info');
+          return;
+        }
+
+        const isModifierOnly = ['ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'].includes(e.code);
+        if (isModifierOnly) {
+          return;
+        }
+
+        const mods: string[] = [];
+        if (e.ctrlKey) mods.push('Ctrl');
+        if (e.altKey) mods.push('Alt');
+        if (e.shiftKey) mods.push('Shift');
+        if (e.metaKey) mods.push('Meta');
+
+        const currentAction = recordingAction;
+        const actionLabel = shortcutConfigService.getActionLabel(currentAction).title;
+
+        // 1. Modifier combination (e.g. Ctrl+KeyR)
+        if (mods.length > 0) {
+          if (recordingTimerRef.current) {
+            clearTimeout(recordingTimerRef.current);
+            recordingTimerRef.current = null;
+          }
+          setRecordingPendingKey(null);
+
+          const comboCode = `${mods.join('+')}+${e.code}`;
+          shortcutConfigService.addKeyToAction(currentAction, comboCode);
+          const keyName = shortcutConfigService.getKeyFriendlyName(comboCode);
+          showShortcutNotice(`Đã gán tổ hợp "${keyName}" (${comboCode}) cho "${actionLabel}"!`);
+          setRecordingAction(null);
+          return;
+        }
+
+        // 2. Force 2x mode
+        if (recorderMode === 'force2x') {
+          if (recordingTimerRef.current) {
+            clearTimeout(recordingTimerRef.current);
+            recordingTimerRef.current = null;
+          }
+          setRecordingPendingKey(null);
+
+          const doubleCode = `2x:${e.code}`;
+          shortcutConfigService.addKeyToAction(currentAction, doubleCode);
+          const keyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
+          showShortcutNotice(`Đã gán cử chỉ "${keyName}" cho "${actionLabel}"!`);
+          setRecordingAction(null);
+          return;
+        }
+
+        // 3. Auto mode: 1x vs 2x vs 2-Key Chord (650ms debounce)
+        if (recordingTimerRef.current && recordingPendingKey) {
+          clearTimeout(recordingTimerRef.current);
+          recordingTimerRef.current = null;
+          const firstKey = recordingPendingKey;
+          setRecordingPendingKey(null);
+
+          if (firstKey.code === e.code) {
+            // Second press of same key within 650ms -> Double Press (2x)!
+            const doubleCode = `2x:${e.code}`;
+            shortcutConfigService.addKeyToAction(currentAction, doubleCode);
+            const keyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
+            showShortcutNotice(`Đã nhận diện bấm đúp! Gán "${keyName}" cho "${actionLabel}"!`, 'success');
+            setRecordingAction(null);
+            return;
+          } else {
+            // Second press is a different key within 650ms -> 2-Key Chord (e.g. ArrowRight+ArrowLeft)!
+            const chordCode = `${firstKey.code}+${e.code}`;
+            shortcutConfigService.addKeyToAction(currentAction, chordCode);
+            const keyName1 = firstKey.name;
+            const keyName2 = shortcutConfigService.getKeyFriendlyName(e.code);
+            showShortcutNotice(`Đã nhận diện tổ hợp 2 phím! Gán "🤝 ${keyName1} + ${keyName2}" cho "${actionLabel}"!`, 'success');
+            setRecordingAction(null);
+            return;
+          }
+        }
+
+        // First press of this key
+        if (recordingTimerRef.current) {
+          clearTimeout(recordingTimerRef.current);
+          recordingTimerRef.current = null;
+        }
+
+        const friendlyName = shortcutConfigService.getKeyFriendlyName(e.code);
+        setRecordingPendingKey({ code: e.code, name: friendlyName });
+
+        recordingTimerRef.current = setTimeout(() => {
+          recordingTimerRef.current = null;
+          setRecordingPendingKey(null);
+          shortcutConfigService.addKeyToAction(currentAction, e.code);
+          showShortcutNotice(`Đã gán phím đơn "${friendlyName}" (${e.code}) cho "${actionLabel}"!`, 'success');
+          setRecordingAction(null);
+        }, 650);
+
+        return;
+      }
+
+      // Live Key Tester
+      const isModifierOnly = ['ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'].includes(e.code);
+      if (isModifierOnly) return;
+
+      const mods: string[] = [];
+      if (e.ctrlKey) mods.push('Ctrl');
+      if (e.altKey) mods.push('Alt');
+      if (e.shiftKey) mods.push('Shift');
+      if (e.metaKey) mods.push('Meta');
+
+      if (mods.length > 0) {
+        const comboCode = `${mods.join('+')}+${e.code}`;
+        const act = shortcutConfigService.findActionForKey(comboCode);
+        const friendlyName = shortcutConfigService.getKeyFriendlyName(comboCode);
+        setLastTestedKey({
+          code: comboCode,
+          name: friendlyName,
+          action: act,
+          timestamp: Date.now(),
+          isCombo: true
+        });
+        lastLiveKeyPressRef.current = null;
+        return;
+      }
+
+      const now = Date.now();
+      if (lastLiveKeyPressRef.current && now - lastLiveKeyPressRef.current.time <= 500) {
+        const prevCode = lastLiveKeyPressRef.current.code;
+        lastLiveKeyPressRef.current = null;
+
+        if (prevCode === e.code) {
+          // Double press
+          const doubleCode = `2x:${e.code}`;
+          const act = shortcutConfigService.findActionForKey(e.code, true) || shortcutConfigService.findActionForKey(doubleCode);
+          const friendlyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
+          setLastTestedKey({
+            code: doubleCode,
+            name: friendlyName,
+            action: act,
+            timestamp: now,
+            isDouble: true
+          });
+          return;
+        } else {
+          // 2-Key Chord sequence (e.g. ArrowRight + ArrowLeft)
+          const chordCode = `${prevCode}+${e.code}`;
+          const act = shortcutConfigService.findActionForChord(prevCode, e.code) || shortcutConfigService.findActionForKey(chordCode);
+          const friendlyName = shortcutConfigService.getKeyFriendlyName(chordCode);
+          setLastTestedKey({
+            code: chordCode,
+            name: friendlyName,
+            action: act,
+            timestamp: now,
+            isChord: true
+          });
+          return;
+        }
+      }
+
+      // Single key press
+      lastLiveKeyPressRef.current = { code: e.code, time: now };
+      const act = shortcutConfigService.findActionForKey(e.code);
+      const friendlyName = shortcutConfigService.getKeyFriendlyName(e.code);
+      setLastTestedKey({
+        code: e.code,
+        name: friendlyName,
+        action: act,
+        timestamp: now
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (recordingTimerRef.current) {
+        clearTimeout(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    };
+  }, [activeSubTab, recordingAction, recorderMode, recordingPendingKey]);
 
   const handleUpdateAiConfig = (updates: Partial<AiGenerationConfig>) => {
     const next = { ...aiConfig, ...updates };
@@ -426,7 +673,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     { id: 'providers', label: '3. Nhà Cung Cấp & Multi-Key Pool', icon: <Server className="w-4 h-4" />, badge: '429 FAILOVER' },
     { id: 'ai-generator', label: '4. Cấu Hình AI Generator (Gemini)', icon: <Sparkles className="w-4 h-4 text-purple-600" />, badge: 'GEMINI LLM' },
     { id: 'import-audition', label: '5. Import & Nghe Thử Model', icon: <Volume2 className="w-4 h-4" /> },
-    { id: 'visibility-matrix', label: '6. Ma Trận Hiển Thị (Improv & Focus)', icon: <Layers className="w-4 h-4" />, badge: 'MATRIX' }
+    { id: 'visibility-matrix', label: '6. Ma Trận Hiển Thị (Improv & Focus)', icon: <Layers className="w-4 h-4" />, badge: 'MATRIX' },
+    { id: 'shortcuts', label: '7. Phím Tắt & Remote Clicker', icon: <Keyboard className="w-4 h-4 text-blue-600" />, badge: 'REMOTE' }
   ];
 
   // Filtering for Audition Tab
@@ -2205,6 +2453,752 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* SUBTAB 7: PRESENTATION SHORTCUTS & REMOTE CLICKER */}
+      {/* ===================================================================== */}
+      {activeSubTab === 'shortcuts' && (
+        <div className="space-y-6">
+          {/* Toast / Notification */}
+          {shortcutToast && (
+            <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl shadow-xl border animate-fade-in text-xs font-bold ${
+              shortcutToast.type === 'success' 
+                ? 'bg-emerald-600 text-white border-emerald-500' 
+                : shortcutToast.type === 'warning'
+                ? 'bg-amber-500 text-white border-amber-400'
+                : 'bg-zinc-800 text-white border-zinc-700'
+            }`}>
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{shortcutToast.message}</span>
+            </div>
+          )}
+
+          {/* 1. Header Bar with Title, Description, Quick Actions & Presets */}
+          <div className="bg-white rounded-2xl border border-zinc-200 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <Keyboard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-display font-bold text-base text-zinc-900 flex items-center gap-2">
+                    <span>Cấu Hình Phím Tắt Trình Chiếu & Remote Clicker</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                      v{shortcutConfig.version}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-zinc-500">
+                    Tùy biến phím bấm cho bút trình chiếu không dây (Logitech, Baseus, Ugreen...) và bàn phím máy tính cho cả Focus Mode và Improv Mode.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions & Presets */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  shortcutConfigService.swapNextPrev();
+                  showShortcutNotice('Đã đảo chiều phím Tiến ⇄ Lùi thành công!');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                title="Đảo chiều phím Tiến (Next) và Lùi (Prev)"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Đảo Chiều Tiến ⇄ Lùi</span>
+              </button>
+
+              <div className="h-6 w-px bg-zinc-200 mx-1 hidden sm:block" />
+
+              {/* Presets */}
+              <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-xl border border-zinc-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    shortcutConfigService.applyPreset('PRESENTER_REMOTE');
+                    showShortcutNotice('Đã áp dụng cấu hình: Bút Trình Chiếu Chuẩn (PageDown / PageUp)');
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-white hover:text-zinc-900 text-zinc-600 transition-all cursor-pointer"
+                  title="PageDown = Next, PageUp = Prev"
+                >
+                  Bút Trình Chiếu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    shortcutConfigService.applyPreset('KEYBOARD_STANDARD');
+                    showShortcutNotice('Đã áp dụng cấu hình: Bàn Phím Chuẩn (Mũi tên / Enter / Phím cách)');
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-white hover:text-zinc-900 text-zinc-600 transition-all cursor-pointer"
+                  title="Mũi tên phải/Space/Enter = Next, Mũi tên trái/Backspace = Prev"
+                >
+                  Bàn Phím Chuẩn
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    shortcutConfigService.applyPreset('INVERTED_CLICKER');
+                    showShortcutNotice('Đã áp dụng cấu hình: Bút Trình Chiếu Đảo Ngược');
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-white hover:text-zinc-900 text-zinc-600 transition-all cursor-pointer"
+                  title="PageUp = Next, PageDown = Prev"
+                >
+                  Đảo Ngược
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('Bạn có chắc chắn muốn khôi phục toàn bộ phím tắt và hành vi về mặc định gốc?')) {
+                    shortcutConfigService.resetToDefault();
+                    showShortcutNotice('Đã khôi phục toàn bộ cài đặt về mặc định xuất xưởng!');
+                  }
+                }}
+                className="p-2 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 hover:text-red-600 transition-all cursor-pointer"
+                title="Khôi phục mặc định"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Interactive Live Key Tester Box */}
+          <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white rounded-2xl p-5 shadow-md border border-zinc-700/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-700/60 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2.5 w-2.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-200">
+                  Khu Vực Bấm Thử Bút Trình Chiếu & Bàn Phím (Live Key Tester)
+                </span>
+              </div>
+              <span className="text-[11px] text-zinc-400 font-sans">
+                Bấm bất kỳ nút nào trên bút clicker hoặc bàn phím để nhận diện ngay
+              </span>
+            </div>
+
+            <div className="min-h-[72px] flex items-center justify-between flex-wrap gap-4 bg-zinc-950/60 rounded-xl p-4 border border-zinc-800">
+              {lastTestedKey ? (
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-400">Mã phím:</span>
+                    <span className="px-3 py-1 bg-zinc-800 border border-zinc-600 rounded-lg font-mono font-bold text-sm text-amber-300 tracking-wide shadow-xs flex items-center gap-2">
+                      {lastTestedKey.isDouble && (
+                        <span className="text-[10px] bg-amber-400 text-zinc-950 px-1.5 py-0.5 rounded font-bold font-sans tracking-tight">
+                          ⚡ 2X BẤM ĐÚP
+                        </span>
+                      )}
+                      {lastTestedKey.isChord && (
+                        <span className="text-[10px] bg-emerald-400 text-zinc-950 px-1.5 py-0.5 rounded font-bold font-sans tracking-tight">
+                          🤝 TỔ HỢP 2 PHÍM
+                        </span>
+                      )}
+                      {lastTestedKey.isCombo && (
+                        <span className="text-[10px] bg-blue-400 text-zinc-950 px-1.5 py-0.5 rounded font-bold font-sans tracking-tight">
+                          ⌨ TỔ HỢP
+                        </span>
+                      )}
+                      <span>{lastTestedKey.code}</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-400">Tên nhận diện:</span>
+                    <span className="px-2.5 py-1 bg-zinc-800/80 rounded-lg text-xs font-semibold text-zinc-100">
+                      {lastTestedKey.name}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-400">Hành động kích hoạt:</span>
+                    {lastTestedKey.action ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 animate-pulse">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        {shortcutConfigService.getActionLabel(lastTestedKey.action).title}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-400 border border-zinc-700">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                        Chưa gán vào hành động nào
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-zinc-400 text-xs py-1">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400">
+                    <Keyboard className="w-4 h-4" />
+                  </div>
+                  <span>Chưa nhận tín hiệu. Bấm phím đơn, bấm đúp 2 lần (2x), hoặc tổ hợp phím trên bút clicker / bàn phím...</span>
+                </div>
+              )}
+
+              {lastTestedKey && (
+                <button
+                  type="button"
+                  onClick={() => setLastTestedKey(null)}
+                  className="text-[11px] text-zinc-400 hover:text-white px-2 py-1 rounded-md hover:bg-zinc-800 transition-all cursor-pointer"
+                >
+                  Xóa kết quả
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 3. Key Mapping Table */}
+          <div className="bg-white rounded-2xl border border-zinc-200 shadow-xs overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="font-display font-bold text-sm text-zinc-900 flex items-center gap-2">
+                  <span>Danh Sách Phím Tắt Đã Gán (Key Bindings)</span>
+                </h3>
+                <p className="text-xs text-zinc-500">
+                  Mỗi hành động có thể gán phím đơn, cử chỉ bấm đúp 2 lần (2x), hoặc tổ hợp phím (Ctrl/Alt/Shift).
+                </p>
+              </div>
+
+              {!recordingAction && (
+                <div className="flex items-center gap-2 text-xs text-zinc-500 flex-wrap">
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium">
+                    ⚡ 2x = Bấm đúp
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
+                    🤝 Chord = Tổ hợp 2 phím (Right + Left)
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+                    ⌨ Combo = Phím máy tính
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Overhauled Recording Overlay Banner */}
+            {recordingAction && (
+              <div className="p-4 bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-amber-500/10 border-b border-amber-200/80 animate-fade-in space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                    </span>
+                    <div>
+                      <div className="text-xs font-bold text-zinc-900 flex items-center gap-2 flex-wrap">
+                        <span>Đang lắng nghe phím bấm cho:</span>
+                        <span className="text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-lg font-bold">
+                          {shortcutConfigService.getActionLabel(recordingAction).title}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-zinc-600 mt-0.5">
+                        Nhấn nút trên bút clicker hoặc bàn phím. Hệ thống sẽ tự động phân tích phím đơn, bấm đúp (2x) hoặc tổ hợp 2 phím (Right + Left).
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mode selection pills */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setRecorderMode('auto')}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        recorderMode === 'auto'
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50'
+                      }`}
+                      title="Bấm 1 lần = phím đơn, bấm 2 nút khác nhau = tổ hợp 2 phím, bấm 2 lần cùng nút = gán đúp 2x"
+                    >
+                      ⚡ Tự động (Auto 1x / 2x / Chord)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecorderMode('force2x')}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        recorderMode === 'force2x'
+                          ? 'bg-purple-600 text-white shadow-xs'
+                          : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50'
+                      }`}
+                      title="Bấm bất kỳ phím nào sẽ gán ngay thành cử chỉ Bấm đúp 2 lần (2x)"
+                    >
+                      ⚡⚡ Chế độ 2x (Bấm đúp)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (recordingTimerRef.current) {
+                          clearTimeout(recordingTimerRef.current);
+                          recordingTimerRef.current = null;
+                        }
+                        setRecordingPendingKey(null);
+                        setRecordingAction(null);
+                        showShortcutNotice('Đã hủy gán phím', 'info');
+                      }}
+                      className="px-3 py-1 rounded-xl text-xs font-bold bg-white text-red-600 border border-red-200 hover:bg-red-50 transition-all cursor-pointer"
+                    >
+                      ✕ Hủy (ESC)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Detection Guide & Status */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-[11px]">
+                  <div className="p-2 rounded-xl bg-white/80 border border-zinc-200/80 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px]">1x</span>
+                    <span><strong>Bấm 1 lần:</strong> Phím đơn (chờ 0.6s)</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white/80 border border-emerald-200 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[10px]">🤝</span>
+                    <span><strong>Bấm 2 nút (Right + Left):</strong> Tổ hợp 2 phím</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white/80 border border-amber-200 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-[10px]">2x</span>
+                    <span><strong>Bấm 2 lần cùng nút:</strong> Bấm Đúp (2x)</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white/80 border border-purple-200 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-[10px]">⌥</span>
+                    <span><strong>Giữ Ctrl/Alt/Shift:</strong> Phím Máy Tính</span>
+                  </div>
+                </div>
+
+                {/* Pending Key Feedback */}
+                {recordingPendingKey && (
+                  <div className="p-3 bg-amber-100/90 border border-amber-300 rounded-xl flex items-center justify-between gap-2 text-xs font-bold text-amber-950 animate-pulse">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span>⚡ Đã nhận phím 1:</span>
+                      <span className="px-2 py-0.5 rounded bg-amber-200 font-mono text-amber-900 font-bold">
+                        {recordingPendingKey.name} ({recordingPendingKey.code})
+                      </span>
+                      <span>Hãy bấm tiếp phím thứ 2 (ví dụ [Phím Trái] để tạo tổ hợp Right + Left), hoặc bấm lại để tạo Bấm Đúp 2x, hoặc đợi 0.6s để lưu phím đơn...</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-amber-800 bg-white/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                      Đang chờ phím 2 (0.6s)...
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-zinc-50/75 border-b border-zinc-200 text-zinc-500 font-semibold uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-4 w-[28%]">Hành Động (Action)</th>
+                    <th className="py-3 px-4 w-[48%]">Các Phím Đang Gán (Assigned Keys)</th>
+                    <th className="py-3 px-4 w-[24%] text-right">Thao Tác Gán Phím</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {(['next', 'prev', 'replay', 'blackout', 'subtitle', 'drawer', 'fullscreen'] as ClickerAction[]).map((action) => {
+                    const label = shortcutConfigService.getActionLabel(action);
+                    const keys = shortcutConfig.keyBindings[action] || [];
+                    const isRecording = recordingAction === action;
+
+                    return (
+                      <tr key={action} className={`hover:bg-zinc-50/60 transition-colors ${isRecording ? 'bg-amber-50/50' : ''}`}>
+                        <td className="py-3.5 px-4 align-top">
+                          <div className="font-bold text-zinc-900 text-xs">{label.title}</div>
+                          <div className="text-[11px] text-zinc-500 mt-0.5">{label.description}</div>
+                        </td>
+
+                        <td className="py-3.5 px-4 align-middle">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {keys.length > 0 ? (
+                              keys.map((k) => {
+                                const isDouble = k.startsWith('2x:');
+                                const isPlus = k.includes('+');
+                                const parts = isPlus ? k.split('+') : [];
+                                const hasModifier = parts.some(p => ['ctrl', 'control', 'alt', 'shift', 'meta', 'cmd'].includes(p.toLowerCase()));
+                                const isChord = isPlus && !hasModifier;
+                                const isCombo = isPlus && hasModifier;
+
+                                const badgeClass = isDouble
+                                  ? 'bg-amber-50 hover:bg-amber-100/80 border-amber-300 text-amber-900'
+                                  : isChord
+                                  ? 'bg-emerald-50 hover:bg-emerald-100/80 border-emerald-300 text-emerald-900'
+                                  : isCombo
+                                  ? 'bg-blue-50 hover:bg-blue-100/80 border-blue-300 text-blue-900'
+                                  : 'bg-zinc-100 hover:bg-zinc-200/80 border-zinc-200 text-zinc-800';
+
+                                const friendlyName = shortcutConfigService.getKeyFriendlyName(k);
+
+                                return (
+                                  <span
+                                    key={k}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold shadow-2xs transition-all ${badgeClass}`}
+                                  >
+                                    {isDouble && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-200 text-amber-900 font-mono">
+                                        ⚡ 2X
+                                      </span>
+                                    )}
+                                    {isChord && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-200 text-emerald-900 font-mono">
+                                        🤝 CHORD
+                                      </span>
+                                    )}
+                                    {isCombo && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-200 text-blue-900 font-mono">
+                                        ⌨ COMBO
+                                      </span>
+                                    )}
+                                    <span>{friendlyName}</span>
+                                    <span className="text-[10px] opacity-60 font-mono">({k})</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        shortcutConfigService.removeKeyFromAction(action, k);
+                                        showShortcutNotice(`Đã xóa phím "${k}" khỏi "${label.title}"`);
+                                      }}
+                                      className="ml-1 text-zinc-400 hover:text-red-600 cursor-pointer font-bold"
+                                      title="Xóa phím này"
+                                    >
+                                      ✕
+                                    </button>
+                                  </span>
+                                );
+                              })
+                            ) : (
+                              <span className="text-zinc-400 italic text-xs">Chưa gán phím nào</span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4 align-middle text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {isRecording ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (recordingTimerRef.current) {
+                                    clearTimeout(recordingTimerRef.current);
+                                    recordingTimerRef.current = null;
+                                  }
+                                  setRecordingPendingKey(null);
+                                  setRecordingAction(null);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-xs cursor-pointer animate-pulse"
+                              >
+                                Đang bấm... (Hủy)
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (recordingTimerRef.current) {
+                                    clearTimeout(recordingTimerRef.current);
+                                    recordingTimerRef.current = null;
+                                  }
+                                  setRecordingPendingKey(null);
+                                  setRecordingAction(action);
+                                  showShortcutNotice(`Nhấn phím trên clicker hoặc bàn phím để gán cho "${label.title}" (bấm 2 lần để gán đúp 2x)`, 'info');
+                                }}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-white text-zinc-700 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-zinc-300"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Gán Phím</span>
+                              </button>
+                            )}
+
+                            {/* Quick Add Dropdown with 2x, Chords, and Combos */}
+                            <select
+                              defaultValue=""
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  shortcutConfigService.addKeyToAction(action, e.target.value);
+                                  showShortcutNotice(`Đã gán "${shortcutConfigService.getKeyFriendlyName(e.target.value)}" vào "${label.title}"`);
+                                  e.target.value = '';
+                                }
+                              }}
+                              className="px-2 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 text-[11px] font-semibold text-zinc-600 hover:bg-white cursor-pointer max-w-[160px]"
+                            >
+                              <option value="">+ Thêm nhanh phím</option>
+                              <optgroup label="🤝 Tổ hợp 2 Phím Clicker (Chord / Sequence)">
+                                <option value="ArrowRight+ArrowLeft">🤝 Tổ hợp: → (Phải) + ← (Trái)</option>
+                                <option value="PageDown+PageUp">🤝 Tổ hợp: Page Down + Page Up</option>
+                                <option value="ArrowLeft+ArrowRight">🤝 Tổ hợp: ← (Trái) + → (Phải)</option>
+                                <option value="PageUp+PageDown">🤝 Tổ hợp: Page Up + Page Down</option>
+                              </optgroup>
+                              <optgroup label="⚡ Cử chỉ Bấm Đúp 2 Lần (Double-Press)">
+                                <option value="2x:ArrowLeft">⚡ Bấm đúp 2x: ← (Mũi tên Trái)</option>
+                                <option value="2x:PageUp">⚡ Bấm đúp 2x: Page Up</option>
+                                <option value="2x:ArrowRight">⚡ Bấm đúp 2x: → (Mũi tên Phải)</option>
+                                <option value="2x:PageDown">⚡ Bấm đúp 2x: Page Down</option>
+                                <option value="2x:Space">⚡ Bấm đúp 2x: Phím Cách (Space)</option>
+                              </optgroup>
+                              <optgroup label="Bút Clicker & Di Chuyển (Phím đơn)">
+                                <option value="PageDown">PageDown</option>
+                                <option value="PageUp">PageUp</option>
+                                <option value="ArrowRight">ArrowRight (→)</option>
+                                <option value="ArrowLeft">ArrowLeft (←)</option>
+                                <option value="ArrowUp">ArrowUp (↑)</option>
+                                <option value="ArrowDown">ArrowDown (↓)</option>
+                                <option value="Space">Space (Phím cách)</option>
+                                <option value="Enter">Enter (↵)</option>
+                                <option value="Backspace">Backspace</option>
+                              </optgroup>
+                              <optgroup label="Phím Chữ & Ký Tự">
+                                <option value="KeyR">Key R (Replay)</option>
+                                <option value="KeyB">Key B (Blackout)</option>
+                                <option value="Period">Period (.)</option>
+                                <option value="KeyV">Key V (Vietsub)</option>
+                                <option value="KeyP">Key P (Parts)</option>
+                                <option value="KeyL">Key L (List)</option>
+                                <option value="KeyF">Key F (Fullscreen)</option>
+                                <option value="F5">F5</option>
+                                <option value="F11">F11</option>
+                              </optgroup>
+                              <optgroup label="Tổ hợp Phím Thường Dùng (Combine)">
+                                <option value="Ctrl+KeyR">Ctrl + Phím R (Replay)</option>
+                                <option value="Shift+KeyR">Shift + Phím R</option>
+                                <option value="Ctrl+KeyB">Ctrl + Phím B (Blackout)</option>
+                                <option value="Alt+KeyB">Alt + Phím B</option>
+                                <option value="Ctrl+Space">Ctrl + Phím Cách</option>
+                              </optgroup>
+                              <optgroup label="Phím Số (Lặp & Ngôn ngữ)">
+                                <option value="Digit1">Phím 1</option>
+                                <option value="Digit2">Phím 2</option>
+                                <option value="Digit3">Phím 3</option>
+                              </optgroup>
+                            </select>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 4. Navigation & Audio Behaviors Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Card Focus Mode */}
+            <div className="bg-white rounded-2xl border border-zinc-200 p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                    F
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold text-sm text-zinc-900">
+                      Hành Vi Chế Độ Focus (Classroom Presentation)
+                    </h4>
+                    <p className="text-[11px] text-zinc-500">
+                      Cài đặt điều phối âm thanh khi dùng Remote Clicker trong lớp học chính khóa
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                  FOCUS
+                </span>
+              </div>
+
+              <div className="space-y-4 text-xs">
+                {/* Toggle 1: Play Audio on Prev */}
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-zinc-50 border border-zinc-200">
+                  <div>
+                    <div className="font-bold text-zinc-900">Tự động phát âm thanh khi lùi câu (Play audio on Prev)</div>
+                    <div className="text-[11px] text-zinc-500 mt-0.5">
+                      {shortcutConfig.focusMode.playAudioOnPrev 
+                        ? 'Đang BẬT: Khi bấm lùi về câu trước, hệ thống sẽ phát âm thanh câu đó.' 
+                        : 'Đang TẮT: Khi bấm lùi, chỉ chuyển slide và ngắt âm thanh để không làm ồn lớp học.'}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextVal = !shortcutConfig.focusMode.playAudioOnPrev;
+                      shortcutConfigService.updateModeBehavior('focusMode', { playAudioOnPrev: nextVal });
+                      showShortcutNotice(`Focus Mode: Tự động phát âm khi lùi đã ${nextVal ? 'BẬT' : 'TẮT'}`);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                      shortcutConfig.focusMode.playAudioOnPrev 
+                        ? 'bg-blue-600 text-white shadow-xs' 
+                        : 'bg-zinc-200 text-zinc-600'
+                    }`}
+                  >
+                    {shortcutConfig.focusMode.playAudioOnPrev ? 'BẬT' : 'TẮT'}
+                  </button>
+                </div>
+
+                {/* Toggle 2: Double Press Prev to Replay */}
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-zinc-50 border border-zinc-200">
+                  <div>
+                    <div className="font-bold text-zinc-900">Bấm đúp phím Lùi để Replay (Double-press Prev to Replay)</div>
+                    <div className="text-[11px] text-zinc-500 mt-0.5">
+                      {shortcutConfig.focusMode.enableDoublePressReplay 
+                        ? 'Đang BẬT: Bấm 2 lần nhanh phím Lùi sẽ phát lại âm thanh của câu hiện tại.' 
+                        : 'Đang TẮT: Bấm phím Lùi sẽ thực thi ngay lập tức không có độ trễ nhận diện đúp.'}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextVal = !shortcutConfig.focusMode.enableDoublePressReplay;
+                      shortcutConfigService.updateModeBehavior('focusMode', { enableDoublePressReplay: nextVal });
+                      showShortcutNotice(`Focus Mode: Bấm đúp để Replay đã ${nextVal ? 'BẬT' : 'TẮT'}`);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                      shortcutConfig.focusMode.enableDoublePressReplay 
+                        ? 'bg-blue-600 text-white shadow-xs' 
+                        : 'bg-zinc-200 text-zinc-600'
+                    }`}
+                  >
+                    {shortcutConfig.focusMode.enableDoublePressReplay ? 'BẬT' : 'TẮT'}
+                  </button>
+                </div>
+
+                {/* Slider: Double press timeout */}
+                {shortcutConfig.focusMode.enableDoublePressReplay && (
+                  <div className="p-3 rounded-xl bg-blue-50/40 border border-blue-100 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-zinc-800">Thời gian nhận diện bấm đúp (Timeout)</span>
+                      <span className="font-mono font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded text-[11px]">
+                        {shortcutConfig.focusMode.doublePressTimeoutMs} ms
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={250}
+                      max={700}
+                      step={10}
+                      value={shortcutConfig.focusMode.doublePressTimeoutMs}
+                      onChange={(e) => {
+                        const ms = parseInt(e.target.value, 10);
+                        shortcutConfigService.updateModeBehavior('focusMode', { doublePressTimeoutMs: ms });
+                      }}
+                      className="w-full h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
+                      <span>Nhanh (250ms)</span>
+                      <span>Mặc định (420ms)</span>
+                      <span>Chậm (700ms)</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Card Improv Mode */}
+            <div className="bg-white rounded-2xl border border-zinc-200 p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs">
+                    I
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold text-sm text-zinc-900">
+                      Hành Vi Chế Độ Improv (Luyện Phản Xạ Improv)
+                    </h4>
+                    <p className="text-[11px] text-zinc-500">
+                      Cài đặt điều phối âm thanh khi trình chiếu gợi ý & phản xạ nhanh
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">
+                  IMPROV
+                </span>
+              </div>
+
+              <div className="space-y-4 text-xs">
+                {/* Toggle 1: Play Audio on Prev */}
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-zinc-50 border border-zinc-200">
+                  <div>
+                    <div className="font-bold text-zinc-900">Tự động phát âm thanh khi lùi gợi ý (Play audio on Prev)</div>
+                    <div className="text-[11px] text-zinc-500 mt-0.5">
+                      {shortcutConfig.improvMode.playAudioOnPrev 
+                        ? 'Đang BẬT: Khi lùi gợi ý, tự động đọc lại các hint tương ứng.' 
+                        : 'Đang TẮT (Khuyên dùng): Lùi gợi ý trong im lặng để học viên tự nhớ lại.'}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextVal = !shortcutConfig.improvMode.playAudioOnPrev;
+                      shortcutConfigService.updateModeBehavior('improvMode', { playAudioOnPrev: nextVal });
+                      showShortcutNotice(`Improv Mode: Tự động phát âm khi lùi đã ${nextVal ? 'BẬT' : 'TẮT'}`);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                      shortcutConfig.improvMode.playAudioOnPrev 
+                        ? 'bg-purple-600 text-white shadow-xs' 
+                        : 'bg-zinc-200 text-zinc-600'
+                    }`}
+                  >
+                    {shortcutConfig.improvMode.playAudioOnPrev ? 'BẬT' : 'TẮT'}
+                  </button>
+                </div>
+
+                {/* Toggle 2: Double Press Prev to Replay */}
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-zinc-50 border border-zinc-200">
+                  <div>
+                    <div className="font-bold text-zinc-900">Bấm đúp phím Lùi để Replay (Double-press Prev to Replay)</div>
+                    <div className="text-[11px] text-zinc-500 mt-0.5">
+                      {shortcutConfig.improvMode.enableDoublePressReplay 
+                        ? 'Đang BẬT: Bấm 2 lần nhanh phím Lùi sẽ phát lại các gợi ý đã mở kèm khoảng nghỉ.' 
+                        : 'Đang TẮT: Bấm phím Lùi sẽ thực thi lùi ngay lập tức.'}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextVal = !shortcutConfig.improvMode.enableDoublePressReplay;
+                      shortcutConfigService.updateModeBehavior('improvMode', { enableDoublePressReplay: nextVal });
+                      showShortcutNotice(`Improv Mode: Bấm đúp để Replay đã ${nextVal ? 'BẬT' : 'TẮT'}`);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                      shortcutConfig.improvMode.enableDoublePressReplay 
+                        ? 'bg-purple-600 text-white shadow-xs' 
+                        : 'bg-zinc-200 text-zinc-600'
+                    }`}
+                  >
+                    {shortcutConfig.improvMode.enableDoublePressReplay ? 'BẬT' : 'TẮT'}
+                  </button>
+                </div>
+
+                {/* Slider: Double press timeout */}
+                {shortcutConfig.improvMode.enableDoublePressReplay && (
+                  <div className="p-3 rounded-xl bg-purple-50/40 border border-purple-100 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-zinc-800">Thời gian nhận diện bấm đúp (Timeout)</span>
+                      <span className="font-mono font-bold text-purple-700 bg-purple-100/80 px-2 py-0.5 rounded text-[11px]">
+                        {shortcutConfig.improvMode.doublePressTimeoutMs} ms
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={250}
+                      max={700}
+                      step={10}
+                      value={shortcutConfig.improvMode.doublePressTimeoutMs}
+                      onChange={(e) => {
+                        const ms = parseInt(e.target.value, 10);
+                        shortcutConfigService.updateModeBehavior('improvMode', { doublePressTimeoutMs: ms });
+                      }}
+                      className="w-full h-1.5 bg-purple-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
+                      <span>Nhanh (250ms)</span>
+                      <span>Mặc định (420ms)</span>
+                      <span>Chậm (700ms)</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Persistent Auto-save notice */}
+          <div className="flex items-center justify-between p-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs text-zinc-500">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Tất cả thay đổi phím tắt & hành vi âm thanh được tự động lưu vào bộ nhớ cục bộ (localStorage).</span>
+            </div>
+            <span className="font-mono text-[11px] text-zinc-400">chunks_presentation_shortcuts_v1</span>
           </div>
         </div>
       )}

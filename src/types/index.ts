@@ -156,3 +156,31 @@ export type NavTab =
 // 4. CHUNKS Improv Domain Models
 // --------------------------------------------------------------------------
 export * from './improv';
+
+// --------------------------------------------------------------------------
+// 5. Presentation Shortcut & Remote Clicker Contracts
+// --------------------------------------------------------------------------
+export type ClickerAction = 
+  | 'next' 
+  | 'prev' 
+  | 'replay' 
+  | 'blackout' 
+  | 'subtitle' 
+  | 'drawer' 
+  | 'fullscreen' 
+  | 'digit1' 
+  | 'digit2' 
+  | 'digit3';
+
+export interface ShortcutModeBehavior {
+  playAudioOnPrev: boolean;
+  enableDoublePressReplay: boolean;
+  doublePressTimeoutMs: number;
+}
+
+export interface PresentationShortcutConfig {
+  version: number;
+  keyBindings: Record<ClickerAction, string[]>;
+  focusMode: ShortcutModeBehavior;
+  improvMode: ShortcutModeBehavior;
+}

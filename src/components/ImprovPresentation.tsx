@@ -29,6 +29,7 @@ import {
   isPackageAudioReady 
 } from '../services/improvTtsService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
+import { shortcutConfigService } from '../services/shortcutConfigService';
 import confetti from 'canvas-confetti';
 import { 
   Volume2, 
@@ -223,6 +224,13 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const [highContrastDark, setHighContrastDark] = useState<boolean>(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState<boolean>(false);
   const [isListDrawerOpen, setIsListDrawerOpen] = useState<boolean>(false);
+
+  const [shortcutConfig, setShortcutConfig] = useState(() => shortcutConfigService.getConfig());
+  useEffect(() => {
+    return shortcutConfigService.subscribe(() => {
+      setShortcutConfig(shortcutConfigService.getConfig());
+    });
+  }, []);
 
   // Audio Engine & Synthesis State
   const [languageMode, setLanguageMode] = useState<'EN_ONLY' | 'VI_ONLY'>(() => {
@@ -930,7 +938,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     }
   };
 
-  const handlePrev = () => {
+  const handlePrev = (opts?: { playAudio?: boolean }) => {
     if (isBlackout) {
       setIsBlackout(false);
       return;
@@ -941,9 +949,17 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       return;
     }
 
+    const shouldPlay = opts?.playAudio ?? shortcutConfigService.getConfig().improvMode.playAudioOnPrev;
+
     if (revealMode === 'step') {
       if (currentRevealStep > 1) {
-        setCurrentRevealStep(currentRevealStep - 1);
+        const nextStep = currentRevealStep - 1;
+        setCurrentRevealStep(nextStep);
+        if (shouldPlay) {
+          playRevealedHintsAudio(hints.slice(0, nextStep), selectedVoice, selectedVoiceVi);
+        } else {
+          audioPlayer.stop();
+        }
       } else {
         if (currentItemIndex > 0) {
           const prevIndex = currentItemIndex - 1;
@@ -951,6 +967,11 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           const prevItem = items[prevIndex];
           const prevTotalHints = prevItem?.hints?.length || 1;
           setCurrentRevealStep(prevTotalHints);
+          if (shouldPlay) {
+            playRevealedHintsAudio(prevItem?.hints || [], selectedVoice, selectedVoiceVi);
+          } else {
+            audioPlayer.stop();
+          }
         } else if (currentItemIndex === 0 && currentRevealStep === 1 && prevSession && prevSession.items.length > 0) {
           // Step back to the last item of previous session
           const lastIdx = prevSession.items.length - 1;
@@ -960,13 +981,26 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
           setCurrentItemIndex(lastIdx);
           setCurrentRevealStep(lastItemHintsCount);
           onSelectPackage?.(selectedPkgId, prevSession.sessionNumber);
+          if (shouldPlay) {
+            playRevealedHintsAudio(lastItem?.hints || [], selectedVoice, selectedVoiceVi);
+          } else {
+            audioPlayer.stop();
+          }
         }
       }
     } else {
       if (currentItemIndex > 0) {
         const prevIndex = currentItemIndex - 1;
         setCurrentItemIndex(prevIndex);
-        setCurrentRevealStep(items[prevIndex]?.hints?.length || 1);
+        const prevItem = items[prevIndex];
+        setCurrentRevealStep(prevItem?.hints?.length || 1);
+        if (shouldPlay) {
+          if (prevItem) {
+            playWholeItemAudio(prevItem, selectedVoice, selectedVoiceVi);
+          }
+        } else {
+          audioPlayer.stop();
+        }
       } else if (currentItemIndex === 0 && prevSession && prevSession.items.length > 0) {
         // Step back to the last item of previous session
         const lastIdx = prevSession.items.length - 1;
@@ -976,6 +1010,13 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         setCurrentItemIndex(lastIdx);
         setCurrentRevealStep(lastItemHintsCount);
         onSelectPackage?.(selectedPkgId, prevSession.sessionNumber);
+        if (shouldPlay) {
+          if (lastItem) {
+            playWholeItemAudio(lastItem, selectedVoice, selectedVoiceVi);
+          }
+        } else {
+          audioPlayer.stop();
+        }
       }
     }
   };
@@ -1022,6 +1063,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
   // Hardware Clicker Listener Hook
   usePresenterClicker({
+    mode: 'improv',
     onNext: handleNext,
     onPrev: handlePrev,
     onToggleBlackout: () => setIsBlackout(prev => !prev),
@@ -2337,49 +2379,49 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="text-zinc-500">Mở gợi ý tiếp / Sang câu & Session kế</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                  Space / PageDown / →
+                  {shortcutConfig.keyBindings.next?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="text-zinc-500">Quay lại gợi ý / Câu & Session trước</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                  PageUp / ←
+                  {shortcutConfig.keyBindings.prev?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="text-zinc-500">Đọc lại gợi ý (kèm khoảng nghỉ)</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                  Key R
+                  {shortcutConfig.keyBindings.replay?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="text-zinc-500">Chế độ Tiếng Anh / Tiếng Việt</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                  Phím 1 / Phím 2
+                  {shortcutConfig.keyBindings.digit1?.length ? [shortcutConfig.keyBindings.digit1[0], shortcutConfig.keyBindings.digit2?.[0] || 'Digit2'].map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') : 'Phím 1 / Phím 2'}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="text-zinc-500">Mở danh sách câu trong bài</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                  Key L / Key P
+                  {shortcutConfig.keyBindings.drawer?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="text-zinc-500">Bật / tắt dịch nghĩa tiếng Việt</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                  Key V
+                  {shortcutConfig.keyBindings.subtitle?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
                 <span className="text-zinc-500">Màn hình đen (Blackout)</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                  Key B / Dấu chấm (.)
+                  {shortcutConfig.keyBindings.blackout?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5">
                 <span className="text-zinc-500">Toàn màn hình</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
-                  F5 / Key F
+                  {shortcutConfig.keyBindings.fullscreen?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
                 </span>
               </div>
             </div>
