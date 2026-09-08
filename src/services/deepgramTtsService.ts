@@ -116,10 +116,12 @@ export const DEEPGRAM_VOICES = DEEPGRAM_AURA_VOICES;
  * 1. Synonym Slashes (/): When English text contains multiple synonyms/options separated by '/', speaks ONLY the first option.
  * 2. Sentence Pauses & Prosody (//, |): Converts beat markers and semicolons into natural respiratory pauses.
  * 3. Normalization: Normalizes multiple commas and whitespace while preserving visual text integrity.
+ * 4. Trailing Pause Comma (", "): Appends a soft trailing comma pause to prevent speech engines from abruptly clipping trailing consonants/vowels.
  */
 export function sanitizeSpeechText(text: string): string {
   if (!text || typeof text !== 'string') return '';
   let sanitized = text.trim();
+  if (!sanitized) return '';
 
   // 1. If beat markers (//, |) follow sentence-ending punctuation (. ! ?), preserve sentence pause
   sanitized = sanitized.replace(/([.!?])\s*(?:\/{2,}|\|+)\s*/g, '$1 ');
@@ -140,8 +142,30 @@ export function sanitizeSpeechText(text: string): string {
     .replace(/\s+,/g, ',')           // No space before comma
     .replace(/,\s*,+/g, ', ')        // No consecutive double commas
     .replace(/\s+/g, ' ')            // Normalize multiple spaces
-    .replace(/,\s*$/g, '')           // Trim trailing comma
     .trim();
+
+  if (!sanitized) return '';
+
+  // 6. Trailing Pause Comma enhancement:
+  // - If input ends with ? or !, preserve the question/exclamation mark and append ", " (e.g. "Sounds familiar?, " or "Why not!, ")
+  // - If input ends with ., replace with ", " (e.g. "I didn't do anything." -> "I didn't do anything, ")
+  // - Strip any trailing whitespace, periods, colons, duplicate commas, and append a clean trailing comma pause: ", "
+  const questionOrExclamationMatch = sanitized.match(/([?!]+)[.,:;\s]*$/);
+  if (questionOrExclamationMatch) {
+    const punct = questionOrExclamationMatch[1];
+    const prefix = sanitized.slice(0, questionOrExclamationMatch.index).replace(/[,.:;\s]+$/, '');
+    sanitized = prefix ? `${prefix}${punct}, ` : `${punct}, `;
+  } else {
+    const stripped = sanitized.replace(/[,.:;\s]+$/, '');
+    if (!stripped) return '';
+    sanitized = `${stripped}, `;
+  }
+
+  // Final normalization: avoid any consecutive duplicate commas or leading commas
+  sanitized = sanitized
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*,+/g, ', ')
+    .replace(/^\s*,+\s*/, '');
 
   return sanitized;
 }
