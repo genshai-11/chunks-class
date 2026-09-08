@@ -3,11 +3,11 @@ import { ClickerAction, PresentationShortcutConfig, ShortcutModeBehavior } from 
 export const SHORTCUT_STORAGE_KEY = 'chunks_presentation_shortcuts_v1';
 
 export const DEFAULT_SHORTCUT_CONFIG: PresentationShortcutConfig = {
-  version: 1,
+  version: 2,
   keyBindings: {
     next: ['PageDown', 'ArrowRight', 'Space'],
     prev: ['PageUp', 'ArrowLeft'],
-    replay: ['KeyR'],
+    replay: ['KeyR', '2x:ArrowLeft', '2x:PageUp'],
     blackout: ['KeyB', 'Period'],
     subtitle: ['KeyV'],
     drawer: ['KeyP', 'KeyL'],
@@ -33,11 +33,11 @@ export type ShortcutPresetType = 'PRESENTER_REMOTE' | 'KEYBOARD_STANDARD' | 'INV
 export const SHORTCUT_PRESETS: Record<ShortcutPresetType, { name: string; description: string; bindings: Record<ClickerAction, string[]> }> = {
   PRESENTER_REMOTE: {
     name: 'Bút Trình Chiếu Chuẩn (Presenter Remote)',
-    description: 'Tương thích tiêu chuẩn Logitech (Spotlight, R400/R800), Baseus, Ugreen (PageDown = Next, PageUp = Prev).',
+    description: 'Tương thích tiêu chuẩn Logitech (Spotlight, R400/R800), Baseus, Ugreen (PageDown = Next, PageUp = Prev, 2x PageUp/ArrowLeft = Replay).',
     bindings: {
       next: ['PageDown', 'ArrowRight', 'Space'],
       prev: ['PageUp', 'ArrowLeft'],
-      replay: ['KeyR'],
+      replay: ['KeyR', '2x:PageUp', '2x:ArrowLeft'],
       blackout: ['KeyB', 'Period'],
       subtitle: ['KeyV'],
       drawer: ['KeyP', 'KeyL'],
@@ -49,11 +49,11 @@ export const SHORTCUT_PRESETS: Record<ShortcutPresetType, { name: string; descri
   },
   KEYBOARD_STANDARD: {
     name: 'Bàn Phím Máy Tính Chuẩn (Desktop Keyboard)',
-    description: 'Thao tác trực tiếp trên phím mũi tên, phím cách, Enter và phím tắt F5/F11.',
+    description: 'Thao tác trực tiếp trên phím mũi tên, phím cách, Enter và phím tắt F5/F11 (2x Mũi tên trái / PageUp = Replay).',
     bindings: {
       next: ['ArrowRight', 'Space', 'Enter'],
       prev: ['ArrowLeft', 'Backspace'],
-      replay: ['KeyR'],
+      replay: ['KeyR', '2x:ArrowLeft', '2x:PageUp'],
       blackout: ['KeyB', 'Period'],
       subtitle: ['KeyV'],
       drawer: ['KeyP', 'KeyL'],
@@ -69,7 +69,7 @@ export const SHORTCUT_PRESETS: Record<ShortcutPresetType, { name: string; descri
     bindings: {
       next: ['PageUp', 'ArrowLeft'],
       prev: ['PageDown', 'ArrowRight', 'Space'],
-      replay: ['KeyR'],
+      replay: ['KeyR', '2x:PageDown', '2x:ArrowRight', '2x:PageUp', '2x:ArrowLeft'],
       blackout: ['KeyB', 'Period'],
       subtitle: ['KeyV'],
       drawer: ['KeyP', 'KeyL'],
@@ -94,12 +94,25 @@ class ShortcutConfigService {
       const raw = localStorage.getItem(SHORTCUT_STORAGE_KEY);
       if (!raw) return { ...DEFAULT_SHORTCUT_CONFIG };
       const parsed = JSON.parse(raw);
+      const version = parsed.version || 1;
+      const keyBindings: Record<ClickerAction, string[]> = {
+        ...DEFAULT_SHORTCUT_CONFIG.keyBindings,
+        ...(parsed.keyBindings || {})
+      };
+
+      // Auto-migrate v1 -> v2: Ensure replay includes double-press prev keys if not present
+      if (version < 2 && keyBindings.replay) {
+        if (!keyBindings.replay.includes('2x:ArrowLeft')) {
+          keyBindings.replay.push('2x:ArrowLeft');
+        }
+        if (!keyBindings.replay.includes('2x:PageUp')) {
+          keyBindings.replay.push('2x:PageUp');
+        }
+      }
+
       return {
-        version: parsed.version || 1,
-        keyBindings: {
-          ...DEFAULT_SHORTCUT_CONFIG.keyBindings,
-          ...(parsed.keyBindings || {})
-        },
+        version: Math.max(version, 2),
+        keyBindings,
         focusMode: {
           ...DEFAULT_SHORTCUT_CONFIG.focusMode,
           ...(parsed.focusMode || {})
@@ -235,13 +248,57 @@ class ShortcutConfigService {
     this.saveConfig();
   }
 
-  public findActionForKey(code: string): ClickerAction | null {
-    if (!code) return null;
+  public hasDoublePressBinding(code: string): boolean {
+    if (!code) return false;
+    const doubleCode = code.startsWith('2x:') ? code : `2x:${code}`;
     const actions: ClickerAction[] = ['next', 'prev', 'replay', 'blackout', 'subtitle', 'drawer', 'fullscreen', 'digit1', 'digit2', 'digit3'];
     for (const act of actions) {
       const keys = this.config.keyBindings[act];
-      if (keys && keys.includes(code)) {
-        return act;
+      if (keys && keys.includes(doubleCode)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public findActionForKey(
+    code: string,
+    isDouble?: boolean,
+    modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean; meta?: boolean }
+  ): ClickerAction | null {
+    if (!code) return null;
+    const actions: ClickerAction[] = ['next', 'prev', 'replay', 'blackout', 'subtitle', 'drawer', 'fullscreen', 'digit1', 'digit2', 'digit3'];
+
+    const candidates: string[] = [];
+
+    // 1. Modifiers combination candidate (e.g. Ctrl+KeyR)
+    const modPrefixes: string[] = [];
+    if (modifiers?.ctrl) modPrefixes.push('Ctrl');
+    if (modifiers?.alt) modPrefixes.push('Alt');
+    if (modifiers?.shift) modPrefixes.push('Shift');
+    if (modifiers?.meta) modPrefixes.push('Meta');
+
+    if (modPrefixes.length > 0) {
+      candidates.push(`${modPrefixes.join('+')}+${code}`);
+    }
+
+    // 2. Double-press candidate (e.g. 2x:ArrowLeft)
+    if (isDouble && !code.startsWith('2x:')) {
+      candidates.push(`2x:${code}`);
+    }
+
+    // 3. Exact raw code (which might already be '2x:...' or 'Ctrl+...')
+    candidates.push(code);
+
+    // 4. Fallback: if code starts with '2x:', check without '2x:' if no 2x found? (no, only match explicit)
+    for (const act of actions) {
+      const keys = this.config.keyBindings[act];
+      if (keys) {
+        for (const candidate of candidates) {
+          if (keys.includes(candidate)) {
+            return act;
+          }
+        }
       }
     }
     return null;
@@ -249,6 +306,28 @@ class ShortcutConfigService {
 
   public getKeyFriendlyName(code: string): string {
     if (!code) return '';
+
+    // Handle 2x double-press prefix
+    if (code.startsWith('2x:')) {
+      const baseCode = code.slice(3);
+      return `⚡ Bấm đúp 2 lần: ${this.getKeyFriendlyName(baseCode)}`;
+    }
+
+    // Handle modifier combination keys (e.g. Ctrl+KeyR, Shift+KeyV)
+    if (code.includes('+')) {
+      const parts = code.split('+');
+      const baseKey = parts[parts.length - 1];
+      const modifiers = parts.slice(0, -1);
+      const friendlyModifiers = modifiers.map(m => {
+        const lower = m.toLowerCase();
+        if (lower === 'ctrl' || lower === 'control') return 'Ctrl';
+        if (lower === 'alt') return 'Alt';
+        if (lower === 'shift') return 'Shift';
+        if (lower === 'meta' || lower === 'cmd') return 'Command / Win';
+        return m;
+      });
+      return `${friendlyModifiers.join(' + ')} + ${this.getKeyFriendlyName(baseKey)}`;
+    }
 
     const friendlyMap: Record<string, string> = {
       'ArrowRight': '→ (Mũi tên Phải)',

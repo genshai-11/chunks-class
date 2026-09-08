@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { PresentationShortcutConfig } from '../types';
+import { PresentationShortcutConfig, ClickerAction } from '../types';
 import { shortcutConfigService } from '../services/shortcutConfigService';
 
 export interface ClickerHandlers {
@@ -19,7 +19,9 @@ export interface ClickerHandlers {
 export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean = true) {
   const handlersRef = useRef<ClickerHandlers>(handlers);
   handlersRef.current = handlers;
-  const prevClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingKeyRef = useRef<string | null>(null);
 
   // Reactive shortcut configuration
   const [config, setConfig] = useState<PresentationShortcutConfig>(() => shortcutConfigService.getConfig());
@@ -34,6 +36,50 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
     });
     return unsub;
   }, []);
+
+  const dispatchAction = (action: ClickerAction) => {
+    const h = handlersRef.current;
+    const curConfig = configRef.current;
+    const mode = h.mode || 'focus';
+    const behavior = mode === 'improv' ? curConfig.improvMode : curConfig.focusMode;
+
+    switch (action) {
+      case 'next':
+        h.onNext();
+        break;
+      case 'prev':
+        h.onPrev({ playAudio: behavior.playAudioOnPrev });
+        break;
+      case 'replay':
+        h.onReplayAudio();
+        break;
+      case 'blackout':
+        h.onToggleBlackout();
+        break;
+      case 'subtitle':
+        h.onToggleSubtitle();
+        break;
+      case 'drawer':
+        if (h.onTogglePartsDrawer) {
+          h.onTogglePartsDrawer();
+        } else if (h.onToggleChunkList) {
+          h.onToggleChunkList();
+        }
+        break;
+      case 'fullscreen':
+        h.onToggleFullscreen?.();
+        break;
+      case 'digit1':
+        h.onSetLoop?.(1);
+        break;
+      case 'digit2':
+        h.onSetLoop?.(2);
+        break;
+      case 'digit3':
+        h.onSetLoop?.(3);
+        break;
+    }
+  };
 
   useEffect(() => {
     if (!enabled) return;
@@ -52,117 +98,143 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
 
       const curConfig = configRef.current;
       const kb = curConfig.keyBindings;
+      const mode = handlersRef.current.mode || 'focus';
+      const behavior = mode === 'improv' ? curConfig.improvMode : curConfig.focusMode;
 
-      // Prevent default for common navigation/presentation keys to stop page scrolling or refreshing
+      // 3. Modifier Combination Handling (e.g. Ctrl+KeyR, Shift+KeyR, Alt+KeyB)
+      const isModifierOnly = ['ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'].includes(e.code);
+      if (isModifierOnly) return;
+
+      const hasModifiers = e.ctrlKey || e.shiftKey || e.altKey || e.metaKey;
+      if (hasModifiers) {
+        // Flush any pending single-press timer
+        if (pendingTimerRef.current) {
+          clearTimeout(pendingTimerRef.current);
+          pendingTimerRef.current = null;
+          const prevKey = pendingKeyRef.current;
+          pendingKeyRef.current = null;
+          if (prevKey) {
+            const act = shortcutConfigService.findActionForKey(prevKey);
+            if (act) dispatchAction(act);
+          }
+        }
+
+        const mods: string[] = [];
+        if (e.ctrlKey) mods.push('Ctrl');
+        if (e.altKey) mods.push('Alt');
+        if (e.shiftKey) mods.push('Shift');
+        if (e.metaKey) mods.push('Meta');
+        const comboCode = `${mods.join('+')}+${e.code}`;
+
+        const comboAction = shortcutConfigService.findActionForKey(comboCode);
+        if (comboAction) {
+          e.preventDefault();
+          dispatchAction(comboAction);
+          return;
+        }
+      }
+
+      // 4. Prevent default for common navigation/presentation keys
       const allPreventCodes = [
         'PageDown', 'PageUp', 'ArrowRight', 'ArrowLeft', 'Space', 'F5', 'F11',
-        ...(kb.next || []),
-        ...(kb.prev || []),
-        ...(kb.fullscreen || [])
+        ...(kb.next || []).map(k => k.replace(/^2x:/, '')),
+        ...(kb.prev || []).map(k => k.replace(/^2x:/, '')),
+        ...(kb.replay || []).map(k => k.replace(/^2x:/, '')),
+        ...(kb.fullscreen || []).map(k => k.replace(/^2x:/, ''))
       ];
       if (allPreventCodes.includes(e.code)) {
         e.preventDefault();
       }
 
-      const h = handlersRef.current;
-      const mode = h.mode || 'focus';
-      const behavior = mode === 'improv' ? curConfig.improvMode : curConfig.focusMode;
+      // 5. Double-press vs Single-press Detection
+      if (pendingKeyRef.current === e.code && pendingTimerRef.current) {
+        // SECOND PRESS OF SAME KEY WITHIN TIMEOUT -> DOUBLE PRESS (2x) GESTURE!
+        clearTimeout(pendingTimerRef.current);
+        pendingTimerRef.current = null;
+        pendingKeyRef.current = null;
 
-      // Check Next action
-      if (kb.next?.includes(e.code)) {
-        if (prevClickTimerRef.current) {
-          clearTimeout(prevClickTimerRef.current);
-          prevClickTimerRef.current = null;
+        // Check if there is an action bound to 2x:e.code
+        const doubleAction = shortcutConfigService.findActionForKey(e.code, true);
+        if (doubleAction) {
+          dispatchAction(doubleAction);
+          return;
         }
-        h.onNext();
+
+        // Fallback: behavior.enableDoublePressReplay on prev keys
+        if (behavior.enableDoublePressReplay && kb.prev?.includes(e.code)) {
+          handlersRef.current.onReplayAudio();
+          return;
+        }
+
+        // Otherwise dispatch normal action
+        const singleAction = shortcutConfigService.findActionForKey(e.code);
+        if (singleAction) {
+          dispatchAction(singleAction);
+          return;
+        }
         return;
       }
 
-      // Check Prev action (with optional double-press replay)
-      if (kb.prev?.includes(e.code)) {
-        if (behavior.enableDoublePressReplay) {
-          if (prevClickTimerRef.current) {
-            // Double-press detected within timeout: cancel timer and replay audio!
-            clearTimeout(prevClickTimerRef.current);
-            prevClickTimerRef.current = null;
-            h.onReplayAudio();
+      // If a different key was pending, flush it now
+      if (pendingTimerRef.current) {
+        clearTimeout(pendingTimerRef.current);
+        pendingTimerRef.current = null;
+        const prevKey = pendingKeyRef.current;
+        pendingKeyRef.current = null;
+        if (prevKey) {
+          const act = shortcutConfigService.findActionForKey(prevKey);
+          if (act) dispatchAction(act);
+        }
+      }
+
+      // Check if this key has any 2x double-press binding or doublePressReplay enabled
+      const hasDoublePress = shortcutConfigService.hasDoublePressBinding(e.code) || 
+        (behavior.enableDoublePressReplay && !!kb.prev?.includes(e.code));
+
+      if (hasDoublePress) {
+        // Start waiting for possible second press
+        pendingKeyRef.current = e.code;
+        const timeout = behavior.doublePressTimeoutMs || 380;
+        pendingTimerRef.current = setTimeout(() => {
+          pendingTimerRef.current = null;
+          pendingKeyRef.current = null;
+          const singleAction = shortcutConfigService.findActionForKey(e.code);
+          if (singleAction) {
+            dispatchAction(singleAction);
           } else {
-            // First press: start timer; invoke onPrev if no second press occurs
-            prevClickTimerRef.current = setTimeout(() => {
-              prevClickTimerRef.current = null;
-              handlersRef.current.onPrev({ playAudio: behavior.playAudioOnPrev });
-            }, behavior.doublePressTimeoutMs || 380);
+            // Default digit fallback
+            if (e.code === 'Digit1' || e.code === 'Numpad1') dispatchAction('digit1');
+            else if (e.code === 'Digit2' || e.code === 'Numpad2') dispatchAction('digit2');
+            else if (e.code === 'Digit3' || e.code === 'Numpad3') dispatchAction('digit3');
           }
-        } else {
-          // Immediate execution without delay
-          if (prevClickTimerRef.current) {
-            clearTimeout(prevClickTimerRef.current);
-            prevClickTimerRef.current = null;
-          }
-          h.onPrev({ playAudio: behavior.playAudioOnPrev });
-        }
+        }, timeout);
         return;
       }
 
-      // Check Replay action
-      if (kb.replay?.includes(e.code)) {
-        h.onReplayAudio();
+      // Keys without 2x binding execute immediately (zero latency)
+      const directAction = shortcutConfigService.findActionForKey(e.code);
+      if (directAction) {
+        dispatchAction(directAction);
         return;
       }
 
-      // Check Blackout action
-      if (kb.blackout?.includes(e.code)) {
-        h.onToggleBlackout();
-        return;
-      }
-
-      // Check Subtitle action
-      if (kb.subtitle?.includes(e.code)) {
-        h.onToggleSubtitle();
-        return;
-      }
-
-      // Check Drawer action
-      if (kb.drawer?.includes(e.code)) {
-        if (h.onTogglePartsDrawer) {
-          h.onTogglePartsDrawer();
-        } else if (h.onToggleChunkList) {
-          h.onToggleChunkList();
-        }
-        return;
-      }
-
-      // Check Fullscreen action
-      if (kb.fullscreen?.includes(e.code)) {
-        h.onToggleFullscreen?.();
-        return;
-      }
-
-      // Check Digit1 action
-      if (kb.digit1?.includes(e.code) || e.code === 'Digit1' || e.code === 'Numpad1') {
-        h.onSetLoop?.(1);
-        return;
-      }
-
-      // Check Digit2 action
-      if (kb.digit2?.includes(e.code) || e.code === 'Digit2' || e.code === 'Numpad2') {
-        h.onSetLoop?.(2);
-        return;
-      }
-
-      // Check Digit3 action
-      if (kb.digit3?.includes(e.code) || e.code === 'Digit3' || e.code === 'Numpad3') {
-        h.onSetLoop?.(3);
-        return;
+      // Fallback for digits if not explicitly mapped
+      if (e.code === 'Digit1' || e.code === 'Numpad1') {
+        dispatchAction('digit1');
+      } else if (e.code === 'Digit2' || e.code === 'Numpad2') {
+        dispatchAction('digit2');
+      } else if (e.code === 'Digit3' || e.code === 'Numpad3') {
+        dispatchAction('digit3');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      if (prevClickTimerRef.current) {
-        clearTimeout(prevClickTimerRef.current);
-        prevClickTimerRef.current = null;
+      if (pendingTimerRef.current) {
+        clearTimeout(pendingTimerRef.current);
+        pendingTimerRef.current = null;
+        pendingKeyRef.current = null;
       }
     };
   }, [enabled]);

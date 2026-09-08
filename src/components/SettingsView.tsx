@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Cohort, 
   CourseLevel, 
@@ -168,11 +168,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // Shortcut & Remote Clicker State
   const [shortcutConfig, setShortcutConfig] = useState<PresentationShortcutConfig>(() => shortcutConfigService.getConfig());
   const [recordingAction, setRecordingAction] = useState<ClickerAction | null>(null);
+  const [recorderMode, setRecorderMode] = useState<'auto' | 'force2x'>('auto');
+  const [recordingPendingKey, setRecordingPendingKey] = useState<{ code: string; name: string } | null>(null);
+  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastLiveKeyPressRef = useRef<{ code: string; time: number } | null>(null);
+
   const [lastTestedKey, setLastTestedKey] = useState<{
     code: string;
     name: string;
     action: ClickerAction | null;
     timestamp: number;
+    isDouble?: boolean;
+    isCombo?: boolean;
   } | null>(null);
   const [shortcutToast, setShortcutToast] = useState<{ message: string; type: 'success' | 'info' | 'warning' } | null>(null);
 
@@ -206,33 +213,166 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         e.stopPropagation();
 
         if (e.code === 'Escape') {
+          if (recordingTimerRef.current) {
+            clearTimeout(recordingTimerRef.current);
+            recordingTimerRef.current = null;
+          }
+          setRecordingPendingKey(null);
           setRecordingAction(null);
           showShortcutNotice('Đã hủy gán phím', 'info');
           return;
         }
 
-        shortcutConfigService.addKeyToAction(recordingAction, e.code);
-        const actionLabel = shortcutConfigService.getActionLabel(recordingAction).title;
-        const keyName = shortcutConfigService.getKeyFriendlyName(e.code);
-        showShortcutNotice(`Đã gán "${keyName}" (${e.code}) cho "${actionLabel}"!`);
-        setRecordingAction(null);
+        const isModifierOnly = ['ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'].includes(e.code);
+        if (isModifierOnly) {
+          return;
+        }
+
+        const mods: string[] = [];
+        if (e.ctrlKey) mods.push('Ctrl');
+        if (e.altKey) mods.push('Alt');
+        if (e.shiftKey) mods.push('Shift');
+        if (e.metaKey) mods.push('Meta');
+
+        const currentAction = recordingAction;
+        const actionLabel = shortcutConfigService.getActionLabel(currentAction).title;
+
+        // 1. Modifier combination (e.g. Ctrl+KeyR)
+        if (mods.length > 0) {
+          if (recordingTimerRef.current) {
+            clearTimeout(recordingTimerRef.current);
+            recordingTimerRef.current = null;
+          }
+          setRecordingPendingKey(null);
+
+          const comboCode = `${mods.join('+')}+${e.code}`;
+          shortcutConfigService.addKeyToAction(currentAction, comboCode);
+          const keyName = shortcutConfigService.getKeyFriendlyName(comboCode);
+          showShortcutNotice(`Đã gán tổ hợp "${keyName}" (${comboCode}) cho "${actionLabel}"!`);
+          setRecordingAction(null);
+          return;
+        }
+
+        // 2. Force 2x mode
+        if (recorderMode === 'force2x') {
+          if (recordingTimerRef.current) {
+            clearTimeout(recordingTimerRef.current);
+            recordingTimerRef.current = null;
+          }
+          setRecordingPendingKey(null);
+
+          const doubleCode = `2x:${e.code}`;
+          shortcutConfigService.addKeyToAction(currentAction, doubleCode);
+          const keyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
+          showShortcutNotice(`Đã gán cử chỉ "${keyName}" cho "${actionLabel}"!`);
+          setRecordingAction(null);
+          return;
+        }
+
+        // 3. Auto mode: 1x vs 2x with 450ms debounce
+        if (recordingTimerRef.current && recordingPendingKey?.code === e.code) {
+          // Second press within 450ms -> Double Press!
+          clearTimeout(recordingTimerRef.current);
+          recordingTimerRef.current = null;
+          setRecordingPendingKey(null);
+
+          const doubleCode = `2x:${e.code}`;
+          shortcutConfigService.addKeyToAction(currentAction, doubleCode);
+          const keyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
+          showShortcutNotice(`Đã nhận diện bấm 2 lần! Gán cử chỉ "${keyName}" cho "${actionLabel}"!`);
+          setRecordingAction(null);
+          return;
+        }
+
+        // First press of this key
+        if (recordingTimerRef.current) {
+          clearTimeout(recordingTimerRef.current);
+          recordingTimerRef.current = null;
+          if (recordingPendingKey) {
+            shortcutConfigService.addKeyToAction(currentAction, recordingPendingKey.code);
+          }
+        }
+
+        const friendlyName = shortcutConfigService.getKeyFriendlyName(e.code);
+        setRecordingPendingKey({ code: e.code, name: friendlyName });
+
+        recordingTimerRef.current = setTimeout(() => {
+          recordingTimerRef.current = null;
+          setRecordingPendingKey(null);
+          shortcutConfigService.addKeyToAction(currentAction, e.code);
+          showShortcutNotice(`Đã gán phím đơn "${friendlyName}" (${e.code}) cho "${actionLabel}"!`);
+          setRecordingAction(null);
+        }, 450);
+
         return;
       }
 
-      // Otherwise, update live tester
-      const act = shortcutConfigService.findActionForKey(e.code);
-      const friendlyName = shortcutConfigService.getKeyFriendlyName(e.code);
-      setLastTestedKey({
-        code: e.code,
-        name: friendlyName,
-        action: act,
-        timestamp: Date.now()
-      });
+      // Live Key Tester
+      const isModifierOnly = ['ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'].includes(e.code);
+      if (isModifierOnly) return;
+
+      const mods: string[] = [];
+      if (e.ctrlKey) mods.push('Ctrl');
+      if (e.altKey) mods.push('Alt');
+      if (e.shiftKey) mods.push('Shift');
+      if (e.metaKey) mods.push('Meta');
+
+      if (mods.length > 0) {
+        const comboCode = `${mods.join('+')}+${e.code}`;
+        const act = shortcutConfigService.findActionForKey(comboCode);
+        const friendlyName = shortcutConfigService.getKeyFriendlyName(comboCode);
+        setLastTestedKey({
+          code: comboCode,
+          name: friendlyName,
+          action: act,
+          timestamp: Date.now(),
+          isCombo: true
+        });
+        lastLiveKeyPressRef.current = null;
+        return;
+      }
+
+      const now = Date.now();
+      const isDouble = !!(
+        lastLiveKeyPressRef.current &&
+        lastLiveKeyPressRef.current.code === e.code &&
+        now - lastLiveKeyPressRef.current.time <= 420
+      );
+
+      if (isDouble) {
+        lastLiveKeyPressRef.current = null;
+        const doubleCode = `2x:${e.code}`;
+        const act = shortcutConfigService.findActionForKey(e.code, true) || shortcutConfigService.findActionForKey(doubleCode);
+        const friendlyName = shortcutConfigService.getKeyFriendlyName(doubleCode);
+        setLastTestedKey({
+          code: doubleCode,
+          name: friendlyName,
+          action: act,
+          timestamp: now,
+          isDouble: true
+        });
+      } else {
+        lastLiveKeyPressRef.current = { code: e.code, time: now };
+        const act = shortcutConfigService.findActionForKey(e.code);
+        const friendlyName = shortcutConfigService.getKeyFriendlyName(e.code);
+        setLastTestedKey({
+          code: e.code,
+          name: friendlyName,
+          action: act,
+          timestamp: now
+        });
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeSubTab, recordingAction]);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (recordingTimerRef.current) {
+        clearTimeout(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    };
+  }, [activeSubTab, recordingAction, recorderMode, recordingPendingKey]);
 
   const handleUpdateAiConfig = (updates: Partial<AiGenerationConfig>) => {
     const next = { ...aiConfig, ...updates };
@@ -2424,14 +2564,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {lastTestedKey ? (
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400">Mã phím (e.code):</span>
-                    <span className="px-3 py-1 bg-zinc-800 border border-zinc-600 rounded-lg font-mono font-bold text-sm text-amber-300 tracking-wide shadow-xs">
-                      {lastTestedKey.code}
+                    <span className="text-xs text-zinc-400">Mã phím:</span>
+                    <span className="px-3 py-1 bg-zinc-800 border border-zinc-600 rounded-lg font-mono font-bold text-sm text-amber-300 tracking-wide shadow-xs flex items-center gap-2">
+                      {lastTestedKey.isDouble && (
+                        <span className="text-[10px] bg-amber-400 text-zinc-950 px-1.5 py-0.5 rounded font-bold font-sans tracking-tight">
+                          ⚡ 2X BẤM ĐÚP
+                        </span>
+                      )}
+                      {lastTestedKey.isCombo && (
+                        <span className="text-[10px] bg-blue-400 text-zinc-950 px-1.5 py-0.5 rounded font-bold font-sans tracking-tight">
+                          ⌨ TỔ HỢP
+                        </span>
+                      )}
+                      <span>{lastTestedKey.code}</span>
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400">Tên phím:</span>
+                    <span className="text-xs text-zinc-400">Tên nhận diện:</span>
                     <span className="px-2.5 py-1 bg-zinc-800/80 rounded-lg text-xs font-semibold text-zinc-100">
                       {lastTestedKey.name}
                     </span>
@@ -2457,7 +2607,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400">
                     <Keyboard className="w-4 h-4" />
                   </div>
-                  <span>Chưa nhận tín hiệu bấm phím. Hãy nhấn một phím trên bàn phím hoặc nút trên bút clicker...</span>
+                  <span>Chưa nhận tín hiệu. Bấm phím đơn, bấm đúp 2 lần (2x), hoặc tổ hợp phím trên bút clicker / bàn phím...</span>
                 </div>
               )}
 
@@ -2481,23 +2631,121 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span>Danh Sách Phím Tắt Đã Gán (Key Bindings)</span>
                 </h3>
                 <p className="text-xs text-zinc-500">
-                  Mỗi hành động có thể gán nhiều phím khác nhau để linh hoạt sử dụng cả clicker và bàn phím.
+                  Mỗi hành động có thể gán phím đơn, cử chỉ bấm đúp 2 lần (2x), hoặc tổ hợp phím (Ctrl/Alt/Shift).
                 </p>
               </div>
 
-              {recordingAction && (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold animate-pulse">
-                  <span>Đang ghi nhận phím cho: {shortcutConfigService.getActionLabel(recordingAction).title}</span>
-                  <button
-                    type="button"
-                    onClick={() => setRecordingAction(null)}
-                    className="text-amber-700 hover:text-amber-900 underline cursor-pointer ml-1"
-                  >
-                    Hủy (ESC)
-                  </button>
+              {!recordingAction && (
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium">
+                    ⚡ 2x = Bấm đúp
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+                    ⌨ Combo = Tổ hợp
+                  </span>
                 </div>
               )}
             </div>
+
+            {/* Overhauled Recording Overlay Banner */}
+            {recordingAction && (
+              <div className="p-4 bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-amber-500/10 border-b border-amber-200/80 animate-fade-in space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                    </span>
+                    <div>
+                      <div className="text-xs font-bold text-zinc-900 flex items-center gap-2 flex-wrap">
+                        <span>Đang lắng nghe phím bấm cho:</span>
+                        <span className="text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-lg font-bold">
+                          {shortcutConfigService.getActionLabel(recordingAction).title}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-zinc-600 mt-0.5">
+                        Nhấn nút trên bút clicker hoặc bàn phím. Hệ thống sẽ tự động phân tích phím đơn, bấm đúp (2x) hoặc tổ hợp.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mode selection pills */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setRecorderMode('auto')}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        recorderMode === 'auto'
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50'
+                      }`}
+                      title="Bấm 1 lần = phím đơn, bấm 2 lần nhanh = gán đúp 2x"
+                    >
+                      ⚡ Tự động (Auto 1x / 2x)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecorderMode('force2x')}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        recorderMode === 'force2x'
+                          ? 'bg-purple-600 text-white shadow-xs'
+                          : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50'
+                      }`}
+                      title="Bấm bất kỳ phím nào sẽ gán ngay thành cử chỉ Bấm đúp 2 lần (2x)"
+                    >
+                      ⚡⚡ Chế độ 2x (Bấm đúp)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (recordingTimerRef.current) {
+                          clearTimeout(recordingTimerRef.current);
+                          recordingTimerRef.current = null;
+                        }
+                        setRecordingPendingKey(null);
+                        setRecordingAction(null);
+                        showShortcutNotice('Đã hủy gán phím', 'info');
+                      }}
+                      className="px-3 py-1 rounded-xl text-xs font-bold bg-white text-red-600 border border-red-200 hover:bg-red-50 transition-all cursor-pointer"
+                    >
+                      ✕ Hủy (ESC)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Detection Guide & Status */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px]">
+                  <div className="p-2 rounded-xl bg-white/80 border border-zinc-200/80 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px]">1x</span>
+                    <span><strong>Bấm 1 lần:</strong> Ghi nhận Phím đơn (chờ 0.4s)</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white/80 border border-amber-200 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-[10px]">2x</span>
+                    <span><strong>Bấm 2 lần nhanh (trong 400ms):</strong> Ghi nhận Cử chỉ Bấm Đúp (2x)</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white/80 border border-purple-200 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-[10px]">⌥</span>
+                    <span><strong>Giữ Ctrl/Shift/Alt:</strong> Ghi nhận Tổ hợp Phím (Combine)</span>
+                  </div>
+                </div>
+
+                {/* Pending Key Feedback */}
+                {recordingPendingKey && (
+                  <div className="p-3 bg-amber-100/90 border border-amber-300 rounded-xl flex items-center justify-between gap-2 text-xs font-bold text-amber-950 animate-pulse">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span>⚡ Đã nhận:</span>
+                      <span className="px-2 py-0.5 rounded bg-amber-200 font-mono text-amber-900 font-bold">
+                        {recordingPendingKey.name} ({recordingPendingKey.code})
+                      </span>
+                      <span>Bấm lần nữa để gán Bấm Đúp (2x), hoặc đợi 0.4s để hoàn tất phím đơn...</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-amber-800 bg-white/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                      Đang đếm 0.4s...
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
@@ -2524,26 +2772,49 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <td className="py-3.5 px-4 align-middle">
                           <div className="flex flex-wrap items-center gap-1.5">
                             {keys.length > 0 ? (
-                              keys.map((k) => (
-                                <span
-                                  key={k}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-800 text-xs font-semibold shadow-2xs transition-all"
-                                >
-                                  <span>{shortcutConfigService.getKeyFriendlyName(k)}</span>
-                                  <span className="text-[10px] text-zinc-400 font-mono">({k})</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      shortcutConfigService.removeKeyFromAction(action, k);
-                                      showShortcutNotice(`Đã xóa phím "${k}" khỏi "${label.title}"`);
-                                    }}
-                                    className="ml-1 text-zinc-400 hover:text-red-600 cursor-pointer font-bold"
-                                    title="Xóa phím này"
+                              keys.map((k) => {
+                                const isDouble = k.startsWith('2x:');
+                                const isCombo = k.includes('+');
+
+                                const badgeClass = isDouble
+                                  ? 'bg-amber-50 hover:bg-amber-100/80 border-amber-300 text-amber-900'
+                                  : isCombo
+                                  ? 'bg-blue-50 hover:bg-blue-100/80 border-blue-300 text-blue-900'
+                                  : 'bg-zinc-100 hover:bg-zinc-200/80 border-zinc-200 text-zinc-800';
+
+                                const friendlyName = shortcutConfigService.getKeyFriendlyName(k);
+
+                                return (
+                                  <span
+                                    key={k}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold shadow-2xs transition-all ${badgeClass}`}
                                   >
-                                    ✕
-                                  </button>
-                                </span>
-                              ))
+                                    {isDouble && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-200 text-amber-900 font-mono">
+                                        ⚡ 2X
+                                      </span>
+                                    )}
+                                    {isCombo && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-200 text-blue-900 font-mono">
+                                        ⌨ COMBO
+                                      </span>
+                                    )}
+                                    <span>{friendlyName}</span>
+                                    <span className="text-[10px] opacity-60 font-mono">({k})</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        shortcutConfigService.removeKeyFromAction(action, k);
+                                        showShortcutNotice(`Đã xóa phím "${k}" khỏi "${label.title}"`);
+                                      }}
+                                      className="ml-1 text-zinc-400 hover:text-red-600 cursor-pointer font-bold"
+                                      title="Xóa phím này"
+                                    >
+                                      ✕
+                                    </button>
+                                  </span>
+                                );
+                              })
                             ) : (
                               <span className="text-zinc-400 italic text-xs">Chưa gán phím nào</span>
                             )}
@@ -2555,7 +2826,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             {isRecording ? (
                               <button
                                 type="button"
-                                onClick={() => setRecordingAction(null)}
+                                onClick={() => {
+                                  if (recordingTimerRef.current) {
+                                    clearTimeout(recordingTimerRef.current);
+                                    recordingTimerRef.current = null;
+                                  }
+                                  setRecordingPendingKey(null);
+                                  setRecordingAction(null);
+                                }}
                                 className="px-3 py-1.5 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-xs cursor-pointer animate-pulse"
                               >
                                 Đang bấm... (Hủy)
@@ -2564,8 +2842,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => {
+                                  if (recordingTimerRef.current) {
+                                    clearTimeout(recordingTimerRef.current);
+                                    recordingTimerRef.current = null;
+                                  }
+                                  setRecordingPendingKey(null);
                                   setRecordingAction(action);
-                                  showShortcutNotice(`Nhấn phím bất kỳ trên bàn phím hoặc clicker để gán cho "${label.title}"`, 'info');
+                                  showShortcutNotice(`Nhấn phím trên clicker hoặc bàn phím để gán cho "${label.title}" (bấm 2 lần để gán đúp 2x)`, 'info');
                                 }}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-white text-zinc-700 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-zinc-300"
                               >
@@ -2574,7 +2857,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               </button>
                             )}
 
-                            {/* Quick Add Dropdown */}
+                            {/* Quick Add Dropdown with 2x and Combos */}
                             <select
                               defaultValue=""
                               onChange={(e) => {
@@ -2584,10 +2867,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                   e.target.value = '';
                                 }
                               }}
-                              className="px-2 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 text-[11px] font-semibold text-zinc-600 hover:bg-white cursor-pointer"
+                              className="px-2 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 text-[11px] font-semibold text-zinc-600 hover:bg-white cursor-pointer max-w-[160px]"
                             >
-                              <option value="">+ Chọn nhanh phím</option>
-                              <optgroup label="Bút Clicker & Di Chuyển">
+                              <option value="">+ Thêm nhanh phím</option>
+                              <optgroup label="⚡ Cử chỉ Bấm Đúp 2 Lần (Double-Press)">
+                                <option value="2x:ArrowLeft">⚡ Bấm đúp 2x: ← (Mũi tên Trái)</option>
+                                <option value="2x:PageUp">⚡ Bấm đúp 2x: Page Up</option>
+                                <option value="2x:ArrowRight">⚡ Bấm đúp 2x: → (Mũi tên Phải)</option>
+                                <option value="2x:PageDown">⚡ Bấm đúp 2x: Page Down</option>
+                                <option value="2x:Space">⚡ Bấm đúp 2x: Phím Cách (Space)</option>
+                              </optgroup>
+                              <optgroup label="Bút Clicker & Di Chuyển (Phím đơn)">
                                 <option value="PageDown">PageDown</option>
                                 <option value="PageUp">PageUp</option>
                                 <option value="ArrowRight">ArrowRight (→)</option>
@@ -2608,6 +2898,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <option value="KeyF">Key F (Fullscreen)</option>
                                 <option value="F5">F5</option>
                                 <option value="F11">F11</option>
+                              </optgroup>
+                              <optgroup label="Tổ hợp Phím Thường Dùng (Combine)">
+                                <option value="Ctrl+KeyR">Ctrl + Phím R (Replay)</option>
+                                <option value="Shift+KeyR">Shift + Phím R</option>
+                                <option value="Ctrl+KeyB">Ctrl + Phím B (Blackout)</option>
+                                <option value="Alt+KeyB">Alt + Phím B</option>
+                                <option value="Ctrl+Space">Ctrl + Phím Cách</option>
                               </optgroup>
                               <optgroup label="Phím Số (Lặp & Ngôn ngữ)">
                                 <option value="Digit1">Phím 1</option>
