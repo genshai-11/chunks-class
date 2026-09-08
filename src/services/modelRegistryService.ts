@@ -60,6 +60,8 @@ export interface AiGenerationConfig {
   webClientId?: string; // default or user-provided '918426218910-3o6ed7m94u6clst7ae0d19s2rrasrekf.apps.googleusercontent.com'
 }
 
+export const KNOWN_DEAD_KEYS = new Set(['92def6215618aeda77c43f4446ba84ef7152091c']);
+
 const DEFAULT_GEMINI_API_KEY_B64 = 'QVEuQWI4Uk42SmU3d2NZQTZLLWs0YmlnOUprZDRrd3RfOUJlbE1WT3VzU2J5a3ZFWnRkYVE=';
 export const getSafeGeminiKey = (): string => {
   if (typeof atob !== 'undefined') {
@@ -806,6 +808,7 @@ export function getMinimalName(model: RegisteredModel): string {
 
 class ModelRegistryService {
   private keys: ProviderApiKey[] = [];
+  private keyCursors: Record<string, number> = {};
   private models: RegisteredModel[] = [];
   private mainModelEn: string = 'flux-cliff-en';
   private mainModelVi: string = 'vi-VN-Neural2-A';
@@ -832,12 +835,30 @@ class ModelRegistryService {
     }
 
     try {
-      // 1. Load Keys
+      // 1. Auto-Purge Obsolete Dead Keys from legacy localStorage
+      const legacyDg = localStorage.getItem('chunks_deepgram_api_key');
+      if (legacyDg && KNOWN_DEAD_KEYS.has(legacyDg.trim())) {
+        localStorage.removeItem('chunks_deepgram_api_key');
+      }
+
+      // Load Keys from chunks_provider_keys_v2 and filter out any blacklisted dead keys
       const rawKeys = localStorage.getItem('chunks_provider_keys_v2');
       if (rawKeys) {
         const parsed = JSON.parse(rawKeys);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          this.keys = parsed;
+          const filteredKeys: ProviderApiKey[] = parsed.filter(
+            (k: ProviderApiKey) => k && k.key && !KNOWN_DEAD_KEYS.has(k.key.trim())
+          );
+          if (!filteredKeys.some(k => k.provider === 'DEEPGRAM')) {
+            filteredKeys.push({
+              id: 'key_deepgram_default',
+              provider: 'DEEPGRAM',
+              key: '51d7d8b230bf742178e681e7836a3dc1571b1c11',
+              label: 'Deepgram Aura/Flux Production Key',
+              status: 'READY'
+            });
+          }
+          this.keys = filteredKeys;
         } else {
           this.seedInitialKeys();
         }
@@ -937,9 +958,13 @@ class ModelRegistryService {
     // Seed Deepgram Key
     const envDeepgram = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEEPGRAM_API_KEY) || '51d7d8b230bf742178e681e7836a3dc1571b1c11';
     const legacyDg = typeof localStorage !== 'undefined' ? localStorage.getItem('chunks_deepgram_api_key') : null;
-    const effectiveDgKey = (legacyDg && legacyDg.trim()) 
+    let effectiveDgKey = (legacyDg && legacyDg.trim() && !KNOWN_DEAD_KEYS.has(legacyDg.trim())) 
       ? legacyDg.trim() 
       : envDeepgram;
+
+    if (KNOWN_DEAD_KEYS.has(effectiveDgKey)) {
+      effectiveDgKey = '51d7d8b230bf742178e681e7836a3dc1571b1c11';
+    }
 
     keys.push({
       id: 'key_deepgram_default',
@@ -958,7 +983,7 @@ class ModelRegistryService {
           if (Array.isArray(parsed)) {
             parsed.forEach((k: string, idx: number) => {
               const trimmed = String(k).trim();
-              if (trimmed && !keys.some(x => x.key === trimmed)) {
+              if (trimmed && !KNOWN_DEAD_KEYS.has(trimmed) && !keys.some(x => x.key === trimmed)) {
                 const isGemini = trimmed.startsWith('AQ.');
                 keys.push({
                   id: `key_migrated_${idx}_${Date.now()}`,
@@ -1079,9 +1104,25 @@ class ModelRegistryService {
       const data = snap.data();
       if (!data) return false;
 
-      // 1. Keys
+      // 1. Keys (with KNOWN_DEAD_KEYS auto-purge and Deepgram fallback)
       if (Array.isArray(data.keys) && data.keys.length > 0) {
-        this.keys = data.keys;
+        const filteredKeys: ProviderApiKey[] = data.keys.filter(
+          (k: ProviderApiKey) => k && k.key && !KNOWN_DEAD_KEYS.has(k.key.trim())
+        );
+        if (!filteredKeys.some(k => k.provider === 'DEEPGRAM')) {
+          filteredKeys.push({
+            id: 'key_deepgram_default',
+            provider: 'DEEPGRAM',
+            key: '51d7d8b230bf742178e681e7836a3dc1571b1c11',
+            label: 'Deepgram Aura/Flux Production Key',
+            status: 'READY'
+          });
+        }
+        const hadDeadKeys = filteredKeys.length !== data.keys.length;
+        this.keys = filteredKeys;
+        if (hadDeadKeys) {
+          this.scheduleFirestoreSync(500);
+        }
       }
 
       // 2. Main Models
@@ -1186,26 +1227,29 @@ class ModelRegistryService {
 
   public getAllKeys(): ProviderApiKey[] {
     this.cleanExpiredCooldowns();
-    return [...this.keys];
+    return this.keys.filter(k => !KNOWN_DEAD_KEYS.has(k.key.trim()));
   }
 
   public getKeysByProvider(provider: TtsProviderType): ProviderApiKey[] {
     this.cleanExpiredCooldowns();
-    return this.keys.filter(k => k.provider === provider);
+    return this.keys.filter(k => k.provider === provider && !KNOWN_DEAD_KEYS.has(k.key.trim()));
   }
 
   public getNextActiveKey(provider: TtsProviderType): string | null {
     this.cleanExpiredCooldowns();
-    const providerKeys = this.keys.filter(k => k.provider === provider);
+    const providerKeys = this.keys.filter(k => k.provider === provider && !KNOWN_DEAD_KEYS.has(k.key.trim()));
     if (providerKeys.length === 0) return null;
 
     const now = Date.now();
-    // 1. Ready keys with no active cooldown
+    // 1. Ready keys with no active cooldown (Round-robin multi-key load balancing)
     const readyKeys = providerKeys.filter(k => 
       k.status === 'READY' && (!k.rateLimitedUntil || k.rateLimitedUntil <= now)
     );
     if (readyKeys.length > 0) {
-      return readyKeys[0].key;
+      const cur = this.keyCursors[provider] || 0;
+      const selectedKey = readyKeys[cur % readyKeys.length].key;
+      this.keyCursors[provider] = (cur + 1) % readyKeys.length;
+      return selectedKey;
     }
 
     // 2. Cooldown keys if all are limited, pick the one closest to expiry
@@ -1215,8 +1259,8 @@ class ModelRegistryService {
       return nonErrorKeys[0].key;
     }
 
-    // 3. Fallback to any key
-    return providerKeys[0].key;
+    // 3. Fallback: all keys are in ERROR status
+    return null;
   }
 
   /**
@@ -1240,9 +1284,33 @@ class ModelRegistryService {
     return nextKey;
   }
 
+  /**
+   * Automatic 401 / Authentication Error Handler & Failover:
+   * Marks key as ERROR, saves state to storage & schedules Firestore sync,
+   * then returns the next active non-error key.
+   */
+  public markKeyError(provider: TtsProviderType, currentKey: string, errorMsg: string): string | null {
+    const keyItem = this.keys.find(k => k.provider === provider && k.key.trim() === currentKey.trim());
+    if (keyItem) {
+      keyItem.status = 'ERROR';
+      keyItem.lastError = errorMsg;
+      console.warn(`[ModelRegistry] Provider ${provider} key (${this.maskKey(keyItem.key)}) marked ERROR: ${errorMsg}`);
+    }
+
+    this.saveKeys();
+    return this.getNextActiveKey(provider);
+  }
+
+  public rotateKeyOnAuthError(provider: TtsProviderType, currentKey: string, errorMsg: string = 'HTTP 401: Invalid Credentials'): string | null {
+    return this.markKeyError(provider, currentKey, errorMsg);
+  }
+
   public addKey(provider: TtsProviderType, rawKey: string, label?: string): ProviderApiKey {
     const trimmed = rawKey.trim();
     if (!trimmed) throw new Error('API Key cannot be empty');
+    if (KNOWN_DEAD_KEYS.has(trimmed)) {
+      throw new Error('API Key này đã hết hạn hoặc không hợp lệ (nằm trong danh sách blacklist).');
+    }
 
     // Prevent exact duplicates
     const existing = this.keys.find(k => k.provider === provider && k.key === trimmed);

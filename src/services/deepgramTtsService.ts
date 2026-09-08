@@ -1,4 +1,4 @@
-import { modelRegistryService } from './modelRegistryService';
+import { modelRegistryService, KNOWN_DEAD_KEYS } from './modelRegistryService';
 
 export interface DeepgramVoiceOption {
   id: string;
@@ -186,20 +186,27 @@ class DeepgramTtsService {
 
   getApiKey(): string {
     const registryKey = modelRegistryService.getNextActiveKey('DEEPGRAM');
-    if (registryKey && registryKey.trim()) {
+    if (registryKey && registryKey.trim() && !KNOWN_DEAD_KEYS.has(registryKey.trim())) {
       return registryKey.trim();
     }
-    const key = localStorage.getItem('chunks_deepgram_api_key');
-    if (!key || key.trim() === '') {
-      return this.defaultApiKey;
+    if (typeof localStorage !== 'undefined') {
+      const key = localStorage.getItem('chunks_deepgram_api_key');
+      if (key && key.trim() && !KNOWN_DEAD_KEYS.has(key.trim())) {
+        return key.trim();
+      }
     }
-    return key.trim();
+    return !KNOWN_DEAD_KEYS.has(this.defaultApiKey) ? this.defaultApiKey : '51d7d8b230bf742178e681e7836a3dc1571b1c11';
   }
 
   setApiKey(key: string): void {
     if (key && key.trim()) {
-      localStorage.setItem('chunks_deepgram_api_key', key.trim());
-      modelRegistryService.addKey('DEEPGRAM', key.trim(), 'Deepgram Aura Custom');
+      const trimmed = key.trim();
+      if (KNOWN_DEAD_KEYS.has(trimmed)) {
+        console.warn('[Deepgram] Bỏ qua vì key này nằm trong danh sách blacklist/đã hết hạn.');
+        return;
+      }
+      localStorage.setItem('chunks_deepgram_api_key', trimmed);
+      modelRegistryService.addKey('DEEPGRAM', trimmed, 'Deepgram Aura Custom');
     } else {
       localStorage.removeItem('chunks_deepgram_api_key');
     }
@@ -229,42 +236,88 @@ class DeepgramTtsService {
       return this.cache.get(cacheKey)!;
     }
 
-    const apiKey = this.getApiKey();
-    if (!apiKey) {
-      throw new Error('Deepgram API Key is missing. Please configure VITE_DEEPGRAM_API_KEY.');
-    }
+    const candidateKeysCount = Math.max(
+      1,
+      modelRegistryService.getKeysByProvider('DEEPGRAM').filter(k => k.status === 'READY' && !KNOWN_DEAD_KEYS.has(k.key.trim())).length
+    );
+    const maxAttempts = Math.max(2, candidateKeysCount);
+    let lastErrorMsg = '';
+    const triedKeys = new Set<string>();
 
-    const isFlux = effectiveModel.startsWith('flux-');
-    const url = isFlux
-      ? `https://api.deepgram.com/v2/speak?model=${effectiveModel}&speed=1&expressivity=0`
-      : `https://api.deepgram.com/v1/speak?model=${effectiveModel}&encoding=mp3`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ text: cleanText })
-    });
-
-    if (response.status === 429) {
-      console.warn(`[Deepgram] Hit 429 Rate Limit on key. Rotating key in pool...`);
-      const nextKey = modelRegistryService.rotateKeyOn429('DEEPGRAM', apiKey);
-      if (nextKey && nextKey !== apiKey) {
-        return this.synthesizeText(text, modelName);
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const apiKey = this.getApiKey();
+      if (!apiKey) {
+        if (attempt === 0) {
+          throw new Error('Deepgram API Key is missing. Please configure VITE_DEEPGRAM_API_KEY.');
+        }
+        break;
       }
+
+      if (triedKeys.has(apiKey)) {
+        // All active unique keys have been attempted
+        break;
+      }
+      triedKeys.add(apiKey);
+
+      const isFlux = effectiveModel.startsWith('flux-');
+      const url = isFlux
+        ? `https://api.deepgram.com/v2/speak?model=${effectiveModel}&speed=1&expressivity=0`
+        : `https://api.deepgram.com/v1/speak?model=${effectiveModel}&encoding=mp3`;
+
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ text: cleanText })
+        });
+      } catch (netErr: any) {
+        lastErrorMsg = netErr?.message || 'Network connection error';
+        console.warn(`[Deepgram] Network request failed on key (${apiKey.slice(0, 6)}...):`, lastErrorMsg);
+        if (attempt < maxAttempts - 1) {
+          continue;
+        }
+        throw netErr;
+      }
+
+      if (response.status === 401) {
+        const errText = await response.text();
+        lastErrorMsg = `Deepgram ${isFlux ? 'Flux' : 'Aura'} API Error (401): ${errText || 'Invalid credentials'}`;
+        console.warn(
+          `[Deepgram] Key (${apiKey.slice(0, 6)}...${apiKey.slice(-4)}) failed with 401 Unauthorized / INVALID_AUTH. Marking key ERROR and trying next key in pool...`
+        );
+        modelRegistryService.markKeyError('DEEPGRAM', apiKey, 'HTTP 401: Invalid Credentials');
+        continue;
+      }
+
+      if (response.status === 429) {
+        const errText = await response.text();
+        lastErrorMsg = `Deepgram ${isFlux ? 'Flux' : 'Aura'} API Error (429): ${errText || 'Rate limit exceeded'}`;
+        console.warn(`[Deepgram] Key (${apiKey.slice(0, 6)}...) hit 429 Rate Limit. Rotating key...`);
+        modelRegistryService.rotateKeyOn429('DEEPGRAM', apiKey);
+        continue;
+      }
+
+      if (!response.ok) {
+        const errText = await response.text();
+        lastErrorMsg = `Deepgram ${isFlux ? 'Flux' : 'Aura'} API Error (${response.status}): ${errText}`;
+        console.warn(`[Deepgram] Key (${apiKey.slice(0, 6)}...) error (${response.status}):`, errText);
+        if (attempt < maxAttempts - 1) {
+          continue;
+        }
+        throw new Error(lastErrorMsg);
+      }
+
+      const blob = await response.blob();
+      const base64 = await this.blobToBase64(blob);
+      this.cache.set(cacheKey, base64);
+      return base64;
     }
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Deepgram ${isFlux ? 'Flux' : 'Aura'} API Error (${response.status}): ${errText}`);
-    }
-
-    const blob = await response.blob();
-    const base64 = await this.blobToBase64(blob);
-    this.cache.set(cacheKey, base64);
-    return base64;
+    throw new Error(`Deepgram TTS (${modelName}) thất bại trên toàn bộ ${candidateKeysCount} keys trong pool: ${lastErrorMsg}`);
   }
 
   private blobToBase64(blob: Blob): Promise<string> {
