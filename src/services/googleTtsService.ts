@@ -1058,6 +1058,7 @@ class AudioPlayService {
       if (this.audioCache.has(text)) return this.audioCache.get(text)!;
     }
     const clean = sanitizeSpeechText(text);
+    const rawNoComma = text.trim().replace(/,\s*$/, '').trim();
     const isVi = (voiceName && voiceName.toLowerCase().startsWith('vi')) ||
                  isVietnameseText(clean, voiceName) ||
                  text.endsWith('_vi');
@@ -1075,6 +1076,10 @@ class AudioPlayService {
       if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
       const k2 = this.getCacheKey(cleanVoice, text);
       if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
+      if (rawNoComma) {
+        const k3 = this.getCacheKey(cleanVoice, rawNoComma);
+        if (this.audioCache.has(k3)) return this.audioCache.get(k3)!;
+      }
 
       return null;
     }
@@ -1092,6 +1097,10 @@ class AudioPlayService {
     if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
     const k2 = this.getCacheKey(cleanVoice, text);
     if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
+    if (rawNoComma) {
+      const k3 = this.getCacheKey(cleanVoice, rawNoComma);
+      if (this.audioCache.has(k3)) return this.audioCache.get(k3)!;
+    }
 
     return null; // Tuyệt đối KHÔNG loop sang các voice khác như Asteria, Athena, Journey...
   }
@@ -1117,6 +1126,7 @@ class AudioPlayService {
     if (memCached) return memCached;
 
     const clean = sanitizeSpeechText(text);
+    const rawNoComma = text.trim().replace(/,\s*$/, '').trim();
     const isVi = (voiceName && voiceName.toLowerCase().startsWith('vi')) ||
                  isVietnameseText(clean, voiceName) ||
                  text.endsWith('_vi');
@@ -1133,6 +1143,9 @@ class AudioPlayService {
         this.getCacheKey(cleanVoice, clean),
         this.getCacheKey(cleanVoice, text)
       );
+      if (rawNoComma) {
+        keysToCheck.push(this.getCacheKey(cleanVoice, rawNoComma));
+      }
 
       for (const key of keysToCheck) {
         const fromDb = await getAudioBlobFromDB(key);
@@ -1158,6 +1171,9 @@ class AudioPlayService {
       this.getCacheKey(cleanVoice, clean),
       this.getCacheKey(cleanVoice, text)
     );
+    if (rawNoComma) {
+      keysToCheck.push(this.getCacheKey(cleanVoice, rawNoComma));
+    }
 
     for (const key of keysToCheck) {
       const fromDb = await getAudioBlobFromDB(key);
@@ -1595,7 +1611,7 @@ class AudioPlayService {
 
         const effectiveViVoice = (effectiveVoice && effectiveVoice.startsWith('vi-')) ? effectiveVoice : 'vi-VN-Neural2-A';
         const cacheKey = this.getCacheKey(effectiveViVoice, cleanText);
-        const cached = await this.getCachedAudioAsync(cleanText, effectiveViVoice);
+        const cached = await this.getCachedAudioAsync(text, effectiveViVoice);
 
         if (cached) {
           this.setLastSource('GOOGLE_CLOUD_AI');
@@ -1657,7 +1673,7 @@ class AudioPlayService {
       }
 
       const cacheKey = this.getCacheKey(effectiveEnVoice, cleanText);
-      const cached = await this.getCachedAudioAsync(cleanText, effectiveEnVoice);
+      const cached = await this.getCachedAudioAsync(text, effectiveEnVoice);
 
       if (cached) {
         this.setLastSource(isDeepgram ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI');
@@ -2040,11 +2056,12 @@ class AudioPlayService {
     const geminiVoice = isMale ? 'Puck' : 'Kore';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${apiKey}`;
 
+    const cleanText = sanitizeSpeechText(text);
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text }] }],
+        contents: [{ parts: [{ text: cleanText }] }],
         generationConfig: {
           responseModalities: ['AUDIO'],
           speechConfig: {
@@ -2391,6 +2408,49 @@ class AudioPlayService {
     });
   }
 
+  /**
+   * Helper to prepare single chunk audio (EN and/or VI) using sanitizeSpeechText
+   */
+  public async prepareChunkAudio(
+    chunk: { english: string; vietnamese?: string },
+    voiceEn: string = 'flux-cliff-en',
+    voiceVi: string = 'vi-VN-Neural2-A'
+  ): Promise<{ enBase64?: string; viBase64?: string }> {
+    const cleanEn = sanitizeSpeechText(chunk.english);
+    const cleanVi = chunk.vietnamese ? sanitizeSpeechText(chunk.vietnamese) : '';
+    let enBase64: string | undefined;
+    let viBase64: string | undefined;
+
+    if (cleanEn) {
+      const resEn = await this.synthesizeSingleChunk({ text: cleanEn, language: 'en', voiceName: voiceEn });
+      enBase64 = resEn.base64;
+    }
+    if (cleanVi) {
+      const resVi = await this.synthesizeSingleChunk({ text: cleanVi, language: 'vi', voiceName: voiceVi });
+      viBase64 = resVi.base64;
+    }
+    return { enBase64, viBase64 };
+  }
+
+  /**
+   * Prepares speech text with trailing comma pause and prosody sanitization
+   */
+  public prepareSpeechText(text: string): string {
+    return sanitizeSpeechText(text);
+  }
+
+  public async synthesizeGoogleCloudTts(params: { text: string; voiceName?: string; speed?: number; forceRefresh?: boolean }): Promise<string> {
+    return this.synthesizeWithGoogleTTS(params.text, params.voiceName, params.speed, params.forceRefresh);
+  }
+
+  public async synthesizeGeminiAudio(text: string, apiKey: string, voiceName?: string): Promise<string> {
+    return this.synthesizeWithGeminiTTS(text, apiKey, voiceName);
+  }
+
+  public speakViaBrowserLocal(text: string, voiceName: string = 'en-US', speed: number = 1.0): Promise<void> {
+    return this.playBrowserTts(text, voiceName, speed);
+  }
+
   stop() {
     this.activeSequenceId++; // Invalidate any in-flight bilingual timeouts or sequences
     if (this.currentAudio) {
@@ -2412,5 +2472,7 @@ export const isLessonAudioReady = (lesson: { chunks?: ChunkItem[] }): boolean =>
 
 export const isLessonFullyReadyAsync = (lesson: { chunks?: ChunkItem[] }): Promise<boolean> =>
   audioPlayer.isLessonFullyReadyAsync(lesson);
+
+export const prepareSpeechText = sanitizeSpeechText;
 
 export { AudioPlayService, AudioPlayService as GoogleTtsService };

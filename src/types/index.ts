@@ -52,6 +52,7 @@ export interface ChunkItem {
   source_sheet?: string;
   source_row?: number;
   notes?: string;
+  part?: string;
   [key: string]: any;
 }
 
@@ -62,6 +63,7 @@ export interface LessonDoc {
   day_number: number;              // 0, 1, 2, ... N
   course_title?: string;
   lesson_title: string;
+  title?: string;                  // Canonical title alias matching lesson_title
   lesson_type: string;
   total_chunks: number;
   categories: string[];

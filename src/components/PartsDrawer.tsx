@@ -4,31 +4,34 @@ import { Layers, X, ChevronRight, Hash } from 'lucide-react';
 
 export function groupChunksIntoParts(chunks: ChunkItem[]): LessonPart[] {
   const parts: LessonPart[] = [];
-  let currentCategory = '';
+  let currentKey = '';
   let startIndex = 0;
 
   chunks.forEach((chunk, index) => {
-    if (chunk.category !== currentCategory) {
-      if (currentCategory !== '') {
+    const groupKey = chunk.part || chunk.category;
+    if (groupKey !== currentKey) {
+      if (currentKey !== '') {
+        const firstChunkOfGroup = chunks[startIndex];
         parts.push({
           part_index: parts.length + 1,
-          category: currentCategory,
-          title: `Part ${parts.length + 1}: ${currentCategory.toUpperCase().replace('_', ' ')}`,
+          category: firstChunkOfGroup.part ? firstChunkOfGroup.part : currentKey.toUpperCase().replace('_', ' '),
+          title: firstChunkOfGroup.part ? firstChunkOfGroup.part : `Part ${parts.length + 1}: ${currentKey.toUpperCase().replace('_', ' ')}`,
           start_index: startIndex,
           end_index: index - 1,
           chunk_count: index - startIndex
         });
       }
-      currentCategory = chunk.category;
+      currentKey = groupKey;
       startIndex = index;
     }
   });
 
   if (chunks.length > 0) {
+    const firstChunkOfGroup = chunks[startIndex];
     parts.push({
       part_index: parts.length + 1,
-      category: currentCategory,
-      title: `Part ${parts.length + 1}: ${currentCategory.toUpperCase().replace('_', ' ')}`,
+      category: firstChunkOfGroup.part ? firstChunkOfGroup.part : currentKey.toUpperCase().replace('_', ' '),
+      title: firstChunkOfGroup.part ? firstChunkOfGroup.part : `Part ${parts.length + 1}: ${currentKey.toUpperCase().replace('_', ' ')}`,
       start_index: startIndex,
       end_index: chunks.length - 1,
       chunk_count: chunks.length - startIndex
