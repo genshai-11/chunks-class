@@ -3065,7 +3065,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <input
                       type="range"
                       min={250}
-                      max={600}
+                      max={700}
                       step={10}
                       value={shortcutConfig.focusMode.doublePressTimeoutMs}
                       onChange={(e) => {
@@ -3076,8 +3076,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     />
                     <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
                       <span>Nhanh (250ms)</span>
-                      <span>Mặc định (380ms)</span>
-                      <span>Chậm (600ms)</span>
+                      <span>Mặc định (420ms)</span>
+                      <span>Chậm (700ms)</span>
                     </div>
                   </div>
                 )}
@@ -3172,7 +3172,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <input
                       type="range"
                       min={250}
-                      max={600}
+                      max={700}
                       step={10}
                       value={shortcutConfig.improvMode.doublePressTimeoutMs}
                       onChange={(e) => {
@@ -3183,8 +3183,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     />
                     <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
                       <span>Nhanh (250ms)</span>
-                      <span>Mặc định (380ms)</span>
-                      <span>Chậm (600ms)</span>
+                      <span>Mặc định (420ms)</span>
+                      <span>Chậm (700ms)</span>
                     </div>
                   </div>
                 )}

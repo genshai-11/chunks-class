@@ -90,6 +90,9 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
     if (!enabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 0. Ignore repeat events caused by holding down a key or clicker debounce
+      if (e.repeat) return;
+
       // 1. Guard against typing inside input, textarea, select
       const activeTag = document.activeElement?.tagName.toLowerCase();
       if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
@@ -209,7 +212,7 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
         (behavior.enableDoublePressReplay && !!kb.prev?.includes(e.code));
 
       if (hasChord || hasDoublePress) {
-        const timeout = hasChord ? 350 : (behavior.doublePressTimeoutMs || 380);
+        const timeout = Math.max(hasChord ? 400 : 0, hasDoublePress ? (behavior.doublePressTimeoutMs || 420) : 0);
         const timer = setTimeout(() => {
           pendingChordKeyRef.current = null;
           const singleAction = shortcutConfigService.findActionForKey(e.code);

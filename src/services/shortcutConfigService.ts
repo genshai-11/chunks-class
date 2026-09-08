@@ -19,12 +19,12 @@ export const DEFAULT_SHORTCUT_CONFIG: PresentationShortcutConfig = {
   focusMode: {
     playAudioOnPrev: true,
     enableDoublePressReplay: true,
-    doublePressTimeoutMs: 380
+    doublePressTimeoutMs: 420
   },
   improvMode: {
     playAudioOnPrev: false,
     enableDoublePressReplay: true,
-    doublePressTimeoutMs: 380
+    doublePressTimeoutMs: 420
   }
 };
 
@@ -120,17 +120,27 @@ class ShortcutConfigService {
         }
       }
 
+      const focusMode = {
+        ...DEFAULT_SHORTCUT_CONFIG.focusMode,
+        ...(parsed.focusMode || {})
+      };
+      if (focusMode.doublePressTimeoutMs === 380) {
+        focusMode.doublePressTimeoutMs = 420;
+      }
+
+      const improvMode = {
+        ...DEFAULT_SHORTCUT_CONFIG.improvMode,
+        ...(parsed.improvMode || {})
+      };
+      if (improvMode.doublePressTimeoutMs === 380) {
+        improvMode.doublePressTimeoutMs = 420;
+      }
+
       return {
         version: Math.max(version, 3),
         keyBindings,
-        focusMode: {
-          ...DEFAULT_SHORTCUT_CONFIG.focusMode,
-          ...(parsed.focusMode || {})
-        },
-        improvMode: {
-          ...DEFAULT_SHORTCUT_CONFIG.improvMode,
-          ...(parsed.improvMode || {})
-        }
+        focusMode,
+        improvMode
       };
     } catch {
       return { ...DEFAULT_SHORTCUT_CONFIG };
@@ -273,16 +283,15 @@ class ShortcutConfigService {
 
   public hasChordStartingWith(firstKey: string): boolean {
     if (!firstKey) return false;
-    const prefix = `${firstKey}+`;
     const actions: ClickerAction[] = ['next', 'prev', 'replay', 'blackout', 'subtitle', 'drawer', 'fullscreen', 'digit1', 'digit2', 'digit3'];
     for (const act of actions) {
       const keys = this.config.keyBindings[act];
       if (keys) {
         for (const k of keys) {
-          if (k.startsWith(prefix)) {
+          if (k.includes('+')) {
             const parts = k.split('+');
             const hasMod = parts.some(p => ['ctrl', 'control', 'alt', 'shift', 'meta', 'cmd', 'command', 'win'].includes(p.toLowerCase()));
-            if (!hasMod && parts.length === 2) {
+            if (!hasMod && parts.length === 2 && (parts[0] === firstKey || parts[1] === firstKey)) {
               return true;
             }
           }
@@ -316,9 +325,7 @@ class ShortcutConfigService {
     if (!code) return null;
     const actions: ClickerAction[] = ['next', 'prev', 'replay', 'blackout', 'subtitle', 'drawer', 'fullscreen', 'digit1', 'digit2', 'digit3'];
 
-    const candidates: string[] = [];
-
-    // 1. Modifiers combination candidate (e.g. Ctrl+KeyR)
+    // 1. Modifiers combination candidate (e.g. Ctrl+KeyR) checked across ALL actions first
     const modPrefixes: string[] = [];
     if (modifiers?.ctrl) modPrefixes.push('Ctrl');
     if (modifiers?.alt) modPrefixes.push('Alt');
@@ -326,28 +333,38 @@ class ShortcutConfigService {
     if (modifiers?.meta) modPrefixes.push('Meta');
 
     if (modPrefixes.length > 0) {
-      candidates.push(`${modPrefixes.join('+')}+${code}`);
-    }
-
-    // 2. Double-press candidate (e.g. 2x:ArrowLeft)
-    if (isDouble && !code.startsWith('2x:')) {
-      candidates.push(`2x:${code}`);
-    }
-
-    // 3. Exact raw code (which might already be '2x:...' or 'Ctrl+...' or 'ArrowRight+ArrowLeft')
-    candidates.push(code);
-
-    // 4. Fallback: if code starts with '2x:', check without '2x:' if no 2x found? (no, only match explicit)
-    for (const act of actions) {
-      const keys = this.config.keyBindings[act];
-      if (keys) {
-        for (const candidate of candidates) {
-          if (keys.includes(candidate)) {
-            return act;
-          }
+      const comboCandidate = `${modPrefixes.join('+')}+${code}`;
+      for (const act of actions) {
+        const keys = this.config.keyBindings[act];
+        if (keys && keys.includes(comboCandidate)) {
+          return act;
         }
       }
     }
+
+    // 2. Double-press candidate (e.g. 2x:ArrowLeft) checked across ALL actions first
+    // Note: If isDouble is true, search 2x:${code} across ALL actions BEFORE falling back to single keys!
+    if (isDouble || code.startsWith('2x:')) {
+      const doubleCode = code.startsWith('2x:') ? code : `2x:${code}`;
+      for (const act of actions) {
+        const keys = this.config.keyBindings[act];
+        if (keys && keys.includes(doubleCode)) {
+          return act;
+        }
+      }
+    }
+
+    // 3. Fall back to matching raw code across all actions
+    // (Only if not a 2x prefixed key, or if no 2x binding matched any action)
+    if (!code.startsWith('2x:')) {
+      for (const act of actions) {
+        const keys = this.config.keyBindings[act];
+        if (keys && keys.includes(code)) {
+          return act;
+        }
+      }
+    }
+
     return null;
   }
 
