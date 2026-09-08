@@ -5,7 +5,9 @@ import {
   Course, 
   LessonDoc, 
   ChunkItem,
-  LanguageMode 
+  LanguageMode,
+  FailedAudioChunkInfo,
+  BatchPreparationMode
 } from '../types';
 import { 
   audioPlayer, 
@@ -58,7 +60,11 @@ import {
   Edit3,
   Save,
   Trash2,
-  CloudUpload
+  CloudUpload,
+  AlertTriangle,
+  RefreshCcw,
+  CheckCheck,
+  Filter
 } from 'lucide-react';
 
 interface AudioManagerViewProps {
@@ -84,7 +90,7 @@ interface BatchLogItem {
   id: string;
   timestamp: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'cloud';
 }
 
 export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
@@ -145,23 +151,58 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [batchTargetLessonId, setBatchTargetLessonId] = useState<string>('');
   const [batchTarget, setBatchTarget] = useState<AudioBatchTarget>('BOTH');
   const [batchWorkersCount, setBatchWorkersCount] = useState<number>(4);
-  const [forceOverwrite, setForceOverwrite] = useState<boolean>(true);
+  const [forceOverwrite, setForceOverwrite] = useState<boolean>(false);
   const [isResettingAudio, setIsResettingAudio] = useState<boolean>(false);
   const [isBatchRunning, setIsBatchRunning] = useState<boolean>(false);
+
+  // New Batch Preparation Controls & Auto-Sync
+  const [batchMode, setBatchMode] = useState<BatchPreparationMode>('missing_only');
+  const [autoSyncToCloud, setAutoSyncToCloud] = useState<boolean>(true);
+  const [logFilter, setLogFilter] = useState<'all' | 'error' | 'success' | 'cloud'>('all');
+
+  // Failed Audio Queue with LocalStorage Persistence
+  const [failedChunks, setFailedChunks] = useState<FailedAudioChunkInfo[]>(() => {
+    try {
+      const saved = localStorage.getItem('chunks_audio_failed_queue');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('chunks_audio_failed_queue', JSON.stringify(failedChunks));
+    } catch (e) {
+      console.warn('Failed to persist failedChunks to localStorage:', e);
+    }
+  }, [failedChunks]);
+
+  const clearFailedQueue = () => setFailedChunks([]);
+  const removeFailedChunk = (chunkId: string) => {
+    setFailedChunks(prev => prev.filter(c => c.chunkId !== chunkId));
+  };
+
   const [batchProgress, setBatchProgress] = useState<{
+    stage: 'idle' | 'preparing' | 'synthesizing' | 'uploading_cloud' | 'saving_firestore' | 'completed' | 'cancelled';
     current: number;
     total: number;
     percentage: number;
     currentTask: string;
     successCount: number;
     failCount: number;
+    cloudSyncedCount: number;
+    skippedCount: number;
   }>({
+    stage: 'idle',
     current: 0,
     total: 0,
     percentage: 0,
     currentTask: '',
     successCount: 0,
-    failCount: 0
+    failCount: 0,
+    cloudSyncedCount: 0,
+    skippedCount: 0
   });
   const [batchLogs, setBatchLogs] = useState<BatchLogItem[]>([]);
   const cancelBatchRef = useRef<boolean>(false);
@@ -302,11 +343,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   };
 
   // Helper log function for batch engine
-  const addLog = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
+  const addLog = (message: string, type: 'info' | 'success' | 'warning' | 'error' | 'cloud' = 'info') => {
     const timeStr = new Date().toLocaleTimeString('vi-VN', { hour12: false });
     setBatchLogs(prev => [
       { id: `${Date.now()}-${Math.random()}`, timestamp: timeStr, message, type },
-      ...prev.slice(0, 99)
+      ...prev.slice(0, 199)
     ]);
   };
 
@@ -529,10 +570,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     }
   };
 
-  // Start Batch Generation Engine
+  // Start Batch Generation Engine with Granular Staging & Tracking
   const handleStartBatchGeneration = async (
     overrideScope?: 'current_lesson' | 'entire_course',
-    overrideLessonId?: string
+    overrideLessonId?: string,
+    modeOverride?: BatchPreparationMode,
+    targetChunkIds?: string[]
   ) => {
     if (isBatchRunning) return;
 
@@ -546,16 +589,17 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         ? overrideLessonId 
         : (batchTargetLessonId || lessons[0]?.id || '');
 
+    const effectiveMode: BatchPreparationMode = modeOverride || batchMode;
+
     cancelBatchRef.current = false;
     setIsBatchRunning(true);
-    setBatchLogs([]);
 
     interface BatchItem {
       chunk: ChunkItem;
       lesson: LessonDoc;
     }
 
-    let targetItems: BatchItem[] = [];
+    let candidateItems: BatchItem[] = [];
     let scopeDesc = '';
 
     if (effectiveScope === 'current_lesson') {
@@ -565,52 +609,122 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         setIsBatchRunning(false);
         return;
       }
-      targetItems = lesson.chunks.map(chunk => ({ chunk, lesson }));
-      scopeDesc = `Day ${lesson.day_number} (${lesson.lesson_title}) - ${targetItems.length} chunks`;
+      candidateItems = lesson.chunks.map(chunk => ({ chunk, lesson }));
+      scopeDesc = `Day ${lesson.day_number} (${lesson.lesson_title}) - ${candidateItems.length} chunks`;
     } else {
-      targetItems = lessons.flatMap(lesson => (lesson.chunks || []).map(chunk => ({ chunk, lesson })));
-      scopeDesc = `Toàn bộ ${selectedCourseLevel} (${lessons.length} bài học) - ${targetItems.length} chunks`;
+      candidateItems = lessons.flatMap(lesson => (lesson.chunks || []).map(chunk => ({ chunk, lesson })));
+      scopeDesc = `Toàn bộ ${selectedCourseLevel} (${lessons.length} bài học) - ${candidateItems.length} chunks`;
+    }
+
+    let targetItems: BatchItem[] = [];
+    let initialSkippedCount = 0;
+
+    // Filter candidate items based on effectiveMode
+    if (effectiveMode === 'failed_only') {
+      const retryIds = new Set(
+        targetChunkIds && targetChunkIds.length > 0 
+          ? targetChunkIds 
+          : failedChunks.map(f => f.chunkId)
+      );
+      targetItems = candidateItems.filter(item => retryIds.has(item.chunk.chunk_id));
+      if (targetItems.length === 0) {
+        addLog('Không tìm thấy câu nào trong danh sách lỗi cần thử lại cho phạm vi này.', 'warning');
+        setIsBatchRunning(false);
+        return;
+      }
+      scopeDesc = `[Thử Lại Lỗi] ${targetItems.length} câu - ${scopeDesc}`;
+    } else if (effectiveMode === 'missing_only') {
+      const shouldCheckEn = batchTarget === 'ENGLISH' || batchTarget === 'BOTH';
+      const shouldCheckVi = batchTarget === 'VIETNAMESE' || batchTarget === 'BOTH';
+
+      targetItems = candidateItems.filter(item => {
+        const c = item.chunk;
+        const hasGcsEn = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
+        const isCachedEn = audioPlayer.hasCachedAudio(c.english, voiceProfileEn);
+        const needsEn = shouldCheckEn && !hasGcsEn && !isCachedEn;
+
+        const hasGcsVi = Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'));
+        const isCachedVi = c.vietnamese ? audioPlayer.hasCachedAudio(c.vietnamese, voiceProfileVi) : true;
+        const needsVi = shouldCheckVi && Boolean(c.vietnamese) && !hasGcsVi && !isCachedVi;
+
+        return needsEn || needsVi;
+      });
+
+      initialSkippedCount = candidateItems.length - targetItems.length;
+
+      if (targetItems.length === 0) {
+        addLog(`✓ Toàn bộ ${candidateItems.length} audio trong phạm vi đã có sẵn! Không có câu nào bị thiếu.`, 'success');
+        setIsBatchRunning(false);
+        setBatchProgress(prev => ({
+          ...prev,
+          stage: 'completed',
+          percentage: 100,
+          currentTask: 'Toàn bộ audio đã đầy đủ (0 câu thiếu)'
+        }));
+        return;
+      }
+      scopeDesc = `[Chỉ Câu Thiếu] ${targetItems.length} câu (bỏ qua ${initialSkippedCount} câu đã có) - ${scopeDesc}`;
+    } else {
+      // 'full'
+      targetItems = candidateItems;
     }
 
     const multiplier = batchTarget === 'BOTH' ? 2 : 1;
     const totalOperations = targetItems.length * multiplier;
 
+    // Stage 1: Preparing
     setBatchProgress({
+      stage: 'preparing',
       current: 0,
       total: totalOperations,
       percentage: 0,
-      currentTask: `Khởi tạo quy trình cho ${scopeDesc}...`,
+      currentTask: `Khởi tạo hàng đợi cho ${scopeDesc}...`,
       successCount: 0,
-      failCount: 0
+      failCount: 0,
+      cloudSyncedCount: 0,
+      skippedCount: initialSkippedCount
     });
 
-    addLog(`Bắt đầu chạy Batch Generator: ${scopeDesc} | Engine: ${activeProvider} | Workers: ${batchWorkersCount}`, 'info');
+    addLog(`Bắt đầu chạy Batch Generator: ${scopeDesc} | Chế độ: ${effectiveMode} | Auto Cloud Sync: ${autoSyncToCloud ? 'BẬT' : 'TẮT'} | Workers: ${batchWorkersCount}`, 'info');
 
     let processedCount = 0;
     let successCount = 0;
     let failCount = 0;
+    let cloudSyncedCount = 0;
+    let skippedCount = initialSkippedCount;
     let cursor = 0;
+
+    const succeededChunkIds = new Set<string>();
+    const newlyFailedMap = new Map<string, FailedAudioChunkInfo>();
+    const modifiedLessonsMap = new Map<string, LessonDoc>();
 
     const worker = async (workerId: number) => {
       while (cursor < targetItems.length) {
-        if (cancelBatchRef.current) {
-          break;
-        }
+        if (cancelBatchRef.current) break;
 
         const index = cursor++;
         const { chunk, lesson: chunkLesson } = targetItems[index];
         const cleanEn = sanitizeSpeechText(chunk.english);
         const cleanVi = chunk.vietnamese ? sanitizeSpeechText(chunk.vietnamese) : '';
 
-        // Synthesize EN (Background synthesis directly into persistent IndexedDB cache + GCS Upload)
-        // Strict: ONLY when batchTarget is ENGLISH or BOTH (NEVER when VIETNAMESE)
+        // --- 1. Synthesize English ---
         if (batchTarget === 'ENGLISH' || batchTarget === 'BOTH') {
           if (cancelBatchRef.current) break;
+
           const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
-          if (!forceOverwrite && hasGcsEn) {
-            successCount++;
+          const isCachedEn = audioPlayer.hasCachedAudio(cleanEn, voiceProfileEn);
+
+          // If not forceOverwrite and already has permanent GCS audio or cached in missing_only mode
+          if (!forceOverwrite && (hasGcsEn || (effectiveMode === 'missing_only' && isCachedEn))) {
+            skippedCount++;
             processedCount++;
           } else {
+            setBatchProgress(prev => ({
+              ...prev,
+              stage: 'synthesizing',
+              currentTask: `Worker ${workerId} -> Tạo TTS EN: "${cleanEn.slice(0, 20)}..."`
+            }));
+
             try {
               const synthRes = await audioPlayer.synthesizeSingleChunk({
                 text: cleanEn,
@@ -619,7 +733,19 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 provider: activeProvider,
                 forceRegenerate: forceOverwrite
               });
-              if (synthRes?.base64) {
+
+              if (!synthRes?.base64) {
+                throw new Error('Dữ liệu âm thanh trả về rỗng từ nhà cung cấp TTS');
+              }
+
+              // English TTS Succeeded
+              if (autoSyncToCloud) {
+                setBatchProgress(prev => ({
+                  ...prev,
+                  stage: 'uploading_cloud',
+                  currentTask: `Worker ${workerId} -> Tải lên Cloud GCS: #${chunk.item_number}`
+                }));
+
                 try {
                   const gcsUrl = await uploadBase64AudioToGcs({
                     base64Audio: synthRes.base64,
@@ -629,37 +755,86 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                     lang: 'en'
                   });
                   chunk.audio_url = gcsUrl;
-                } catch (uploadErr) {
-                  console.warn(`[Batch] Upload to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
+                  cloudSyncedCount++;
+                  successCount++;
+                  succeededChunkIds.add(chunk.chunk_id);
+                  modifiedLessonsMap.set(chunkLesson.id, chunkLesson);
+                  addLog(`[Cloud Sync] Tải lên GCS EN thành công: #${chunk.item_number} (Day ${chunkLesson.day_number})`, 'cloud');
+                } catch (uploadErr: any) {
+                  failCount++;
+                  const errMsg = uploadErr?.message || String(uploadErr);
+                  addLog(`[Upload Lỗi] Không thể tải EN lên GCS cho #${chunk.item_number}: ${errMsg}`, 'error');
+                  newlyFailedMap.set(`${chunk.chunk_id}_en`, {
+                    chunkId: chunk.chunk_id,
+                    itemNumber: chunk.item_number,
+                    lessonId: chunkLesson.id,
+                    dayNumber: chunkLesson.day_number,
+                    lessonTitle: chunkLesson.lesson_title,
+                    textEn: chunk.english,
+                    textVi: chunk.vietnamese,
+                    lang: 'en',
+                    error: errMsg,
+                    stage: 'cloud_upload',
+                    timestamp: new Date().toLocaleTimeString('vi-VN'),
+                    retryCount: 1
+                  });
                 }
+              } else {
+                successCount++;
+                succeededChunkIds.add(chunk.chunk_id);
+                addLog(`Tạo TTS EN thành công cho #${chunk.item_number}`, 'success');
               }
-              successCount++;
             } catch (e: any) {
               failCount++;
-              addLog(`[Worker ${workerId}] Lỗi EN (#${chunk.item_number}): ${e?.message || 'Failed'}`, 'warning');
+              const errMsg = e?.message || 'Lỗi tạo TTS';
+              addLog(`[Worker ${workerId}] Lỗi TTS EN (#${chunk.item_number}): ${errMsg}`, 'error');
+              newlyFailedMap.set(`${chunk.chunk_id}_en`, {
+                chunkId: chunk.chunk_id,
+                itemNumber: chunk.item_number,
+                lessonId: chunkLesson.id,
+                dayNumber: chunkLesson.day_number,
+                lessonTitle: chunkLesson.lesson_title,
+                textEn: chunk.english,
+                textVi: chunk.vietnamese,
+                lang: 'en',
+                error: errMsg,
+                stage: 'tts_synthesis',
+                timestamp: new Date().toLocaleTimeString('vi-VN'),
+                retryCount: 1
+              });
             }
             processedCount++;
           }
+
           const percent = Math.round((processedCount / totalOperations) * 100);
           setBatchProgress(prev => ({
             ...prev,
             current: processedCount,
             percentage: Math.min(100, percent),
-            currentTask: `Worker ${workerId} -> EN: "${cleanEn.slice(0, 24)}..."`,
             successCount,
-            failCount
+            failCount,
+            cloudSyncedCount,
+            skippedCount
           }));
         }
 
-        // Synthesize VI (Background synthesis directly into persistent IndexedDB cache + GCS Upload)
-        // Strict: ONLY when batchTarget is VIETNAMESE or BOTH (NEVER when ENGLISH)
+        // --- 2. Synthesize Vietnamese ---
         if ((batchTarget === 'VIETNAMESE' || batchTarget === 'BOTH') && cleanVi) {
           if (cancelBatchRef.current) break;
+
           const hasGcsVi = Boolean(chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http'));
-          if (!forceOverwrite && hasGcsVi) {
-            successCount++;
+          const isCachedVi = audioPlayer.hasCachedAudio(cleanVi, voiceProfileVi);
+
+          if (!forceOverwrite && (hasGcsVi || (effectiveMode === 'missing_only' && isCachedVi))) {
+            skippedCount++;
             processedCount++;
           } else {
+            setBatchProgress(prev => ({
+              ...prev,
+              stage: 'synthesizing',
+              currentTask: `Worker ${workerId} -> Tạo TTS VI: "${cleanVi.slice(0, 20)}..."`
+            }));
+
             try {
               const synthResVi = await audioPlayer.synthesizeSingleChunk({
                 text: cleanVi,
@@ -668,7 +843,18 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 provider: 'GOOGLE_TTS',
                 forceRegenerate: forceOverwrite
               });
-              if (synthResVi?.base64) {
+
+              if (!synthResVi?.base64) {
+                throw new Error('Dữ liệu âm thanh VI rỗng từ Google Cloud TTS');
+              }
+
+              if (autoSyncToCloud) {
+                setBatchProgress(prev => ({
+                  ...prev,
+                  stage: 'uploading_cloud',
+                  currentTask: `Worker ${workerId} -> Tải lên Cloud GCS VI: #${chunk.item_number}`
+                }));
+
                 try {
                   const gcsUrlVi = await uploadBase64AudioToGcs({
                     base64Audio: synthResVi.base64,
@@ -678,30 +864,71 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                     lang: 'vi'
                   });
                   chunk.audio_url_vi = gcsUrlVi;
-                } catch (uploadErr) {
-                  console.warn(`[Batch] Upload VI to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
+                  cloudSyncedCount++;
+                  successCount++;
+                  succeededChunkIds.add(chunk.chunk_id);
+                  modifiedLessonsMap.set(chunkLesson.id, chunkLesson);
+                  addLog(`[Cloud Sync] Tải lên GCS VI thành công: #${chunk.item_number} (Day ${chunkLesson.day_number})`, 'cloud');
+                } catch (uploadErr: any) {
+                  failCount++;
+                  const errMsg = uploadErr?.message || String(uploadErr);
+                  addLog(`[Upload Lỗi] Không thể tải VI lên GCS cho #${chunk.item_number}: ${errMsg}`, 'error');
+                  newlyFailedMap.set(`${chunk.chunk_id}_vi`, {
+                    chunkId: chunk.chunk_id,
+                    itemNumber: chunk.item_number,
+                    lessonId: chunkLesson.id,
+                    dayNumber: chunkLesson.day_number,
+                    lessonTitle: chunkLesson.lesson_title,
+                    textEn: chunk.english,
+                    textVi: chunk.vietnamese,
+                    lang: 'vi',
+                    error: errMsg,
+                    stage: 'cloud_upload',
+                    timestamp: new Date().toLocaleTimeString('vi-VN'),
+                    retryCount: 1
+                  });
                 }
+              } else {
+                successCount++;
+                succeededChunkIds.add(chunk.chunk_id);
+                addLog(`Tạo TTS VI thành công cho #${chunk.item_number}`, 'success');
               }
-              successCount++;
             } catch (e: any) {
               failCount++;
-              addLog(`[Worker ${workerId}] Lỗi VI (#${chunk.item_number}): ${e?.message || 'Failed'}`, 'warning');
+              const errMsg = e?.message || 'Lỗi tạo TTS VI';
+              addLog(`[Worker ${workerId}] Lỗi TTS VI (#${chunk.item_number}): ${errMsg}`, 'error');
+              newlyFailedMap.set(`${chunk.chunk_id}_vi`, {
+                chunkId: chunk.chunk_id,
+                itemNumber: chunk.item_number,
+                lessonId: chunkLesson.id,
+                dayNumber: chunkLesson.day_number,
+                lessonTitle: chunkLesson.lesson_title,
+                textEn: chunk.english,
+                textVi: chunk.vietnamese,
+                lang: 'vi',
+                error: errMsg,
+                stage: 'tts_synthesis',
+                timestamp: new Date().toLocaleTimeString('vi-VN'),
+                retryCount: 1
+              });
             }
             processedCount++;
           }
+
           const percent = Math.round((processedCount / totalOperations) * 100);
           setBatchProgress(prev => ({
             ...prev,
             current: processedCount,
             percentage: Math.min(100, percent),
-            currentTask: `Worker ${workerId} -> VI: "${cleanVi.slice(0, 24)}..."`,
             successCount,
-            failCount
+            failCount,
+            cloudSyncedCount,
+            skippedCount
           }));
         }
 
         // Periodic UI update
-        if (index % 3 === 0 || cursor >= targetItems.length) {
+        if (index % 4 === 0 || cursor >= targetItems.length) {
           calculateReadinessStatus();
         }
       }
@@ -714,34 +941,87 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       );
       await Promise.all(workers);
 
-      // Persist updated chunks to Firestore for all affected lessons
-      const affectedLessonIds = new Set(targetItems.map(item => item.lesson.id));
-      for (const lesson of lessons) {
-        if (affectedLessonIds.has(lesson.id) && lesson.chunks && lesson.chunks.length > 0) {
+      // --- Stage 3: Firestore Persistence ---
+      if (modifiedLessonsMap.size > 0) {
+        setBatchProgress(prev => ({
+          ...prev,
+          stage: 'saving_firestore',
+          currentTask: `Đang lưu ${modifiedLessonsMap.size} bài học vào cơ sở dữ liệu Firestore...`
+        }));
+        addLog(`Đang cập nhật link audio mới cho ${modifiedLessonsMap.size} bài học lên Firestore...`, 'info');
+
+        for (const lesson of modifiedLessonsMap.values()) {
           try {
             await updateLessonChunks(lesson.id, lesson.chunks);
-          } catch (saveErr) {
-            console.warn(`[Batch] Failed to persist chunks to Firestore for lesson ${lesson.id}:`, saveErr);
+            addLog(`Đã lưu link audio mới cho Day ${lesson.day_number} (${lesson.lesson_title}) vào Firestore`, 'success');
+          } catch (saveErr: any) {
+            const errMsg = saveErr?.message || String(saveErr);
+            addLog(`[Lỗi Firestore] Không thể lưu Day ${lesson.day_number}: ${errMsg}`, 'error');
+            for (const chk of lesson.chunks) {
+              if (succeededChunkIds.has(chk.chunk_id)) {
+                newlyFailedMap.set(`${chk.chunk_id}_firestore`, {
+                  chunkId: chk.chunk_id,
+                  itemNumber: chk.item_number,
+                  lessonId: lesson.id,
+                  dayNumber: lesson.day_number,
+                  lessonTitle: lesson.lesson_title,
+                  textEn: chk.english,
+                  textVi: chk.vietnamese,
+                  lang: 'both',
+                  error: `Lỗi lưu Firestore: ${errMsg}`,
+                  stage: 'firestore_save',
+                  timestamp: new Date().toLocaleTimeString('vi-VN'),
+                  retryCount: 1
+                });
+              }
+            }
           }
         }
+      }
+
+      // --- Stage 4: Post-Batch Auto-Sync Verification ---
+      if (autoSyncToCloud && modifiedLessonsMap.size > 0 && !cancelBatchRef.current) {
+        addLog('Đang hoàn tất kiểm tra trạng thái Cloud Storage bucket...', 'info');
       }
 
       await loadLessons();
       calculateReadinessStatus();
 
+      // --- Stage 5: Update Failed Chunks Queue & Final Status ---
+      setFailedChunks(prev => {
+        // Remove items that succeeded
+        const remaining = prev.filter(f => !succeededChunkIds.has(f.chunkId));
+        const updated = [...remaining];
+        newlyFailedMap.forEach(newItem => {
+          const existingIdx = updated.findIndex(u => u.chunkId === newItem.chunkId && u.lang === newItem.lang);
+          if (existingIdx >= 0) {
+            updated[existingIdx] = {
+              ...newItem,
+              retryCount: (updated[existingIdx].retryCount || 1) + 1
+            };
+          } else {
+            updated.push(newItem);
+          }
+        });
+        return updated;
+      });
+
       if (cancelBatchRef.current) {
-        addLog(`Đã dừng Batch Generator theo yêu cầu của người dùng. (Đã xử lý: ${processedCount}/${totalOperations})`, 'warning');
+        addLog(`Đã dừng Batch Generator theo yêu cầu. (Đã xử lý: ${processedCount}/${totalOperations})`, 'warning');
       } else {
-        addLog(`🎉 Hoàn tất Batch Audio cho ${scopeDesc}! Thành công: ${successCount}, Lỗi: ${failCount}`, 'success');
+        const statusType = failCount > 0 ? 'warning' : 'success';
+        addLog(`🎉 Hoàn tất Batch Audio cho ${scopeDesc}! Thành công: ${successCount}, Tải lên Cloud: ${cloudSyncedCount}, Lỗi: ${failCount}, Bỏ qua/Có sẵn: ${skippedCount}`, statusType);
       }
     } catch (err: any) {
-      addLog(`Lỗi xử lý batch: ${err?.message || String(err)}`, 'error');
+      addLog(`Lỗi quy trình batch: ${err?.message || String(err)}`, 'error');
     } finally {
       setIsBatchRunning(false);
       calculateReadinessStatus();
       setBatchProgress(prev => ({
         ...prev,
-        currentTask: cancelBatchRef.current ? 'Đã hủy quy trình' : 'Đã hoàn tất xử lý batch'
+        stage: cancelBatchRef.current ? 'cancelled' : 'completed',
+        percentage: 100,
+        currentTask: cancelBatchRef.current ? 'Đã dừng quy trình theo yêu cầu' : 'Hoàn tất quy trình xử lý batch'
       }));
     }
   };
@@ -749,6 +1029,18 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const handleStopBatchGeneration = () => {
     cancelBatchRef.current = true;
     addLog('Đang gửi lệnh dừng đến các luồng worker...', 'warning');
+  };
+
+  // Retry All Failed Chunks Action
+  const handleRetryAllFailedChunks = () => {
+    if (failedChunks.length === 0 || isBatchRunning) return;
+    handleStartBatchGeneration(undefined, undefined, 'failed_only');
+  };
+
+  // Retry Single Failed Chunk Action
+  const handleRetrySingleFailedChunk = (failedItem: FailedAudioChunkInfo) => {
+    if (isBatchRunning) return;
+    handleStartBatchGeneration(undefined, undefined, 'failed_only', [failedItem.chunkId]);
   };
 
   // Sync IndexedDB Local Cached Audio to GCS Bucket & Firestore
@@ -1096,6 +1388,70 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           </div>
         </div>
 
+        {/* Mode Selector Tabs */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-zinc-50 rounded-xl border border-zinc-200">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-zinc-500 font-mono uppercase px-1">Chế Độ Tạo:</span>
+            
+            <button
+              type="button"
+              disabled={isBatchRunning}
+              onClick={() => setBatchMode('missing_only')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                batchMode === 'missing_only'
+                  ? 'bg-emerald-600 text-white shadow-xs font-extrabold'
+                  : 'bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-200'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Chỉ Câu Còn Thiếu (Missing Only)</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isBatchRunning}
+              onClick={() => setBatchMode('full')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                batchMode === 'full'
+                  ? 'bg-zinc-900 text-white shadow-xs font-extrabold'
+                  : 'bg-white hover:bg-zinc-100 text-zinc-700 border border-zinc-200'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Toàn Bộ (Full)</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isBatchRunning || failedChunks.length === 0}
+              onClick={() => setBatchMode('failed_only')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                batchMode === 'failed_only'
+                  ? 'bg-rose-600 text-white shadow-xs font-extrabold'
+                  : failedChunks.length > 0
+                  ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                  : 'bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed opacity-60'
+              }`}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>🔄 Thử Lại Câu Bị Lỗi (Failed Only)</span>
+              {failedChunks.length > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                  batchMode === 'failed_only' ? 'bg-white text-rose-700' : 'bg-rose-600 text-white'
+                }`}>
+                  {failedChunks.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="text-[11px] text-zinc-400 font-mono">
+            {batchMode === 'missing_only' && '💡 Bỏ qua các câu đã có audio để tiết kiệm quota & chi phí'}
+            {batchMode === 'full' && '⚡ Tổng hợp lại toàn bộ audio trong phạm vi đã chọn'}
+            {batchMode === 'failed_only' && `⚠️ Chỉ xử lý ${failedChunks.length} câu trong hàng đợi lỗi`}
+          </div>
+        </div>
+
         {/* Configuration Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Scope Selector */}
@@ -1236,10 +1592,30 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => handleStartBatchGeneration()}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+                  className={`flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs ${
+                    batchMode === 'failed_only'
+                      ? 'bg-rose-600 hover:bg-rose-700'
+                      : batchMode === 'missing_only'
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-[#DC2626] hover:bg-[#B91C1C]'
+                  }`}
                 >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Bắt Đầu Tạo Audio</span>
+                  {batchMode === 'failed_only' ? (
+                    <>
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Thử Lại Lỗi ({failedChunks.length})</span>
+                    </>
+                  ) : batchMode === 'missing_only' ? (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 fill-current" />
+                      <span>Tạo Câu Còn Thiếu</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Bắt Đầu Tạo Audio</span>
+                    </>
+                  )}
                 </button>
               ) : (
                 <button
@@ -1255,23 +1631,44 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           </div>
         </div>
 
-        {/* Overwrite Toggle & Quick Actions Bar */}
+        {/* Overwrite Toggle & Auto Cloud Sync Controls Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-zinc-50 rounded-xl border border-zinc-200">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={forceOverwrite}
-              disabled={isBatchRunning}
-              onChange={(e) => setForceOverwrite(e.target.checked)}
-              className="w-4 h-4 rounded text-[#DC2626] border-zinc-300 focus:ring-[#DC2626] cursor-pointer"
-            />
-            <span className="text-xs font-bold text-zinc-800">
-              Ghi đè audio đã có (Force Overwrite Cloud Storage)
-            </span>
-            <span className="text-[10px] text-zinc-400">
-              {forceOverwrite ? '— Tạo mới và tải đè lên GCS' : '— Bỏ qua các chunk đã có file audio'}
-            </span>
-          </label>
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Auto Cloud Sync Toggle */}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoSyncToCloud}
+                disabled={isBatchRunning}
+                onChange={(e) => setAutoSyncToCloud(e.target.checked)}
+                className="w-4 h-4 rounded text-blue-600 border-zinc-300 focus:ring-blue-500 cursor-pointer"
+              />
+              <span className="text-xs font-bold text-zinc-900 flex items-center gap-1">
+                <CloudUpload className="w-3.5 h-3.5 text-blue-600" />
+                Tự động tải lên Cloud Storage & lưu Firestore (Auto Cloud Sync)
+              </span>
+              <span className="text-[10px] text-zinc-500 hidden sm:inline">
+                {autoSyncToCloud ? '— Tải ngay lên GCS bucket & cập nhật DB' : '— Chỉ lưu tạm vào IndexedDB'}
+              </span>
+            </label>
+
+            {/* Overwrite Toggle */}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={forceOverwrite}
+                disabled={isBatchRunning || batchMode === 'missing_only' || batchMode === 'failed_only'}
+                onChange={(e) => setForceOverwrite(e.target.checked)}
+                className="w-4 h-4 rounded text-[#DC2626] border-zinc-300 focus:ring-[#DC2626] cursor-pointer disabled:opacity-50"
+              />
+              <span className="text-xs font-bold text-zinc-800">
+                Ghi đè audio đã có (Force Overwrite)
+              </span>
+              <span className="text-[10px] text-zinc-400 hidden sm:inline">
+                {forceOverwrite ? '— Tạo mới và tải đè lên GCS' : '— Bỏ qua các chunk đã có file audio'}
+              </span>
+            </label>
+          </div>
 
           <div className="flex items-center gap-2">
             <button
@@ -1291,57 +1688,297 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           </div>
         </div>
 
-        {/* Live Progress Bar and Stats */}
-        {isBatchRunning && (
-          <div className="p-4 bg-zinc-900 text-white rounded-xl space-y-2 font-mono text-xs animate-fade-in">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-300 truncate max-w-md">
-                {batchProgress.currentTask}
-              </span>
-              <span className="text-[#DC2626] font-bold text-sm">
-                {batchProgress.percentage}% ({batchProgress.current} / {batchProgress.total})
-              </span>
+        {/* Live Multi-Stage Progress Tracker & Metrics */}
+        {(isBatchRunning || batchProgress.stage !== 'idle') && (
+          <div className="p-5 bg-zinc-950 text-white rounded-2xl space-y-3.5 font-mono text-xs border border-zinc-800 shadow-xl animate-fade-in">
+            {/* Visual Stage Pipeline */}
+            <div className="flex flex-wrap items-center justify-between gap-1.5 p-2 bg-zinc-900/90 rounded-xl border border-zinc-800">
+              {[
+                { key: 'preparing', num: '1', label: 'Chuẩn Bị' },
+                { key: 'synthesizing', num: '2', label: 'Tạo TTS' },
+                { key: 'uploading_cloud', num: '3', label: 'Tải Lên Cloud' },
+                { key: 'saving_firestore', num: '4', label: 'Lưu Firestore' },
+                { key: 'completed', num: '5', label: 'Hoàn Tất' }
+              ].map((step, sIdx, sArr) => {
+                const stageOrder = ['preparing', 'synthesizing', 'uploading_cloud', 'saving_firestore', 'completed'];
+                const curIdx = stageOrder.indexOf(batchProgress.stage);
+                const thisIdx = stageOrder.indexOf(step.key);
+                const isCurrent = batchProgress.stage === step.key;
+                const isPassed = curIdx > thisIdx || batchProgress.stage === 'completed';
+
+                return (
+                  <React.Fragment key={step.key}>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all text-xs ${
+                      isCurrent
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold animate-pulse'
+                        : isPassed
+                        ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 font-semibold'
+                        : 'text-zinc-500 border border-transparent'
+                    }`}>
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        isCurrent 
+                          ? 'bg-amber-400 text-zinc-950' 
+                          : isPassed 
+                          ? 'bg-emerald-500 text-zinc-950' 
+                          : 'bg-zinc-800 text-zinc-400'
+                      }`}>
+                        {isPassed && !isCurrent ? '✓' : step.num}
+                      </span>
+                      <span>{step.label}</span>
+                    </div>
+                    {sIdx < sArr.length - 1 && (
+                      <span className="text-zinc-700 text-xs">➔</span>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </div>
 
-            <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-[#DC2626] h-full transition-all duration-200"
-                style={{ width: `${batchProgress.percentage}%` }}
-              />
+            {/* Progress Bar & Current Status */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-300 truncate max-w-lg flex items-center gap-2">
+                  {isBatchRunning && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#DC2626] shrink-0" />}
+                  <span>{batchProgress.currentTask || 'Đang xử lý quy trình batch...'}</span>
+                </span>
+                <span className="text-[#DC2626] font-bold text-sm shrink-0">
+                  {batchProgress.percentage}% ({batchProgress.current} / {batchProgress.total})
+                </span>
+              </div>
+
+              <div className="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 h-full transition-all duration-200"
+                  style={{ width: `${batchProgress.percentage}%` }}
+                />
+              </div>
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1">
-              <span>Đã hoàn thành: <b className="text-emerald-400">{batchProgress.successCount}</b></span>
-              <span>Lỗi / Cần thử lại: <b className="text-rose-400">{batchProgress.failCount}</b></span>
-              <span>Workers đang chạy: <b className="text-amber-400">{batchWorkersCount}</b></span>
+            {/* Live Metric Tiles Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+              <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center">
+                <div className="text-[10px] text-zinc-400 uppercase font-sans">Tổng Số Câu</div>
+                <div className="text-base font-bold text-white font-mono mt-0.5">{batchProgress.total}</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center">
+                <div className="text-[10px] text-emerald-400 uppercase font-sans flex items-center justify-center gap-1">
+                  <Check className="w-3 h-3" /> Thành Công
+                </div>
+                <div className="text-base font-bold text-emerald-400 font-mono mt-0.5">{batchProgress.successCount}</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center">
+                <div className="text-[10px] text-blue-400 uppercase font-sans flex items-center justify-center gap-1">
+                  <CloudUpload className="w-3 h-3" /> Đã Tải Cloud
+                </div>
+                <div className="text-base font-bold text-blue-400 font-mono mt-0.5">{batchProgress.cloudSyncedCount}</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center">
+                <div className="text-[10px] text-rose-400 uppercase font-sans flex items-center justify-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> Bị Lỗi
+                </div>
+                <div className="text-base font-bold text-rose-400 font-mono mt-0.5">{batchProgress.failCount}</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center col-span-2 sm:col-span-1">
+                <div className="text-[10px] text-zinc-400 uppercase font-sans">Đã Có / Bỏ Qua</div>
+                <div className="text-base font-bold text-zinc-300 font-mono mt-0.5">{batchProgress.skippedCount}</div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Live Log Console (Show when logs exist) */}
+        {/* Failed Audio Queue / Selective Regeneration Panel */}
+        {failedChunks.length > 0 && (
+          <div className="p-5 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-3.5 animate-fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-rose-200/80">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-rose-100 text-rose-700">
+                  <AlertTriangle className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="font-display font-bold text-sm text-rose-950 flex items-center gap-2">
+                    <span>Phát Hiện {failedChunks.length} Audio Bị Lỗi Trong Hàng Đợi</span>
+                    <span className="px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 text-xs font-mono font-bold">
+                      {failedChunks.length} lỗi
+                    </span>
+                  </h3>
+                  <p className="text-xs text-rose-700">
+                    Các câu này gặp sự cố mạng, hạn mức API hoặc lỗi tải lên Cloud Storage. Bạn có thể thử lại ngay mà không cần tạo lại toàn bộ khóa học.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isBatchRunning}
+                  onClick={handleRetryAllFailedChunks}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>🔄 Thử Lại Toàn Bộ ({failedChunks.length} câu)</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isBatchRunning}
+                  onClick={clearFailedQueue}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-rose-300 bg-white hover:bg-rose-100/50 text-rose-700 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Xóa Hàng Đợi Lỗi</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Failed Chunks List Table */}
+            <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-xl border border-rose-200/80 bg-white">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-rose-100/60 text-rose-900 font-bold border-b border-rose-200 sticky top-0 z-10">
+                  <tr>
+                    <th className="py-2.5 px-3 w-16 text-center">Buổi</th>
+                    <th className="py-2.5 px-3 w-16 text-center">Câu #</th>
+                    <th className="py-2.5 px-3">Văn Bản (EN / VI)</th>
+                    <th className="py-2.5 px-3 w-32 text-center">Giai Đoạn Lỗi</th>
+                    <th className="py-2.5 px-3">Chi Tiết Lỗi</th>
+                    <th className="py-2.5 px-3 w-36 text-center">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-rose-100">
+                  {failedChunks.map((item, idx) => (
+                    <tr key={`${item.chunkId}-${item.lang}-${idx}`} className="hover:bg-rose-50/50">
+                      <td className="py-2.5 px-3 text-center font-mono font-bold text-zinc-700">
+                        Day {item.dayNumber || '?'}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-mono font-bold text-zinc-800">
+                        #{item.itemNumber}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="font-semibold text-zinc-900 truncate max-w-xs">{item.textEn}</div>
+                        {item.textVi && (
+                          <div className="text-[11px] text-zinc-500 truncate max-w-xs">{item.textVi}</div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                          item.stage === 'cloud_upload'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : item.stage === 'firestore_save'
+                            ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                            : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        }`}>
+                          {item.stage === 'cloud_upload' ? 'Lỗi Tải Cloud' : item.stage === 'firestore_save' ? 'Lỗi Lưu DB' : 'Lỗi Tạo TTS'}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 font-mono text-[11px] text-rose-700 max-w-xs truncate" title={item.error}>
+                        {item.error}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled={isBatchRunning}
+                            onClick={() => handleRetrySingleFailedChunk(item)}
+                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                            title="Thử lại câu này ngay"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Thử Lại</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeFailedChunk(item.chunkId)}
+                            className="p-1 rounded-lg hover:bg-rose-200 text-rose-600 transition-all cursor-pointer"
+                            title="Xóa khỏi danh sách lỗi"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Live Log Console with Filtering Tabs */}
         {batchLogs.length > 0 && (
-          <div className="p-3 bg-zinc-950 text-zinc-200 rounded-xl border border-zinc-800 font-mono text-[11px] max-h-36 overflow-y-auto space-y-1">
-            <div className="text-zinc-500 font-bold border-b border-zinc-800 pb-1 mb-1 flex items-center justify-between">
-              <span>Bảng Nhật Ký Hoạt Động (Live Activity Console)</span>
+          <div className="p-3.5 bg-zinc-950 text-zinc-200 rounded-xl border border-zinc-800 font-mono text-[11px] space-y-2">
+            <div className="text-zinc-400 font-bold border-b border-zinc-800 pb-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-300 font-bold">Bảng Nhật Ký Hoạt Động (Live Activity Console)</span>
+                {/* Filter Pills */}
+                <div className="flex items-center gap-1 ml-2">
+                  <button
+                    type="button"
+                    onClick={() => setLogFilter('all')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      logFilter === 'all' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    Tất cả ({batchLogs.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLogFilter('error')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      logFilter === 'error' ? 'bg-rose-900 text-rose-200' : 'text-rose-400 hover:text-rose-300'
+                    }`}
+                  >
+                    Lỗi ({batchLogs.filter(l => l.type === 'error' || l.type === 'warning').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLogFilter('cloud')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      logFilter === 'cloud' ? 'bg-blue-900 text-blue-200' : 'text-blue-400 hover:text-blue-300'
+                    }`}
+                  >
+                    Cloud Sync ({batchLogs.filter(l => l.type === 'cloud' || l.message.toLowerCase().includes('cloud') || l.message.toLowerCase().includes('gcs')).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLogFilter('success')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      logFilter === 'success' ? 'bg-emerald-900 text-emerald-200' : 'text-emerald-400 hover:text-emerald-300'
+                    }`}
+                  >
+                    Thành công ({batchLogs.filter(l => l.type === 'success').length})
+                  </button>
+                </div>
+              </div>
               <button 
                 onClick={() => setBatchLogs([])} 
-                className="text-zinc-500 hover:text-zinc-300 text-[10px]"
+                className="text-zinc-500 hover:text-zinc-300 text-[10px] cursor-pointer"
               >
                 Xóa Log
               </button>
             </div>
-            {batchLogs.map(log => (
-              <div key={log.id} className="flex items-start gap-2">
-                <span className="text-zinc-600 shrink-0">[{log.timestamp}]</span>
-                <span className={
-                  log.type === 'success' ? 'text-emerald-400' :
-                  log.type === 'warning' ? 'text-amber-400' :
-                  log.type === 'error' ? 'text-rose-400' : 'text-zinc-300'
-                }>
-                  {log.message}
-                </span>
-              </div>
-            ))}
+
+            <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
+              {batchLogs
+                .filter(log => {
+                  if (logFilter === 'all') return true;
+                  if (logFilter === 'error') return log.type === 'error' || log.type === 'warning';
+                  if (logFilter === 'cloud') return log.type === 'cloud' || log.message.toLowerCase().includes('cloud') || log.message.toLowerCase().includes('gcs');
+                  if (logFilter === 'success') return log.type === 'success';
+                  return true;
+                })
+                .map(log => (
+                  <div key={log.id} className="flex items-start gap-2">
+                    <span className="text-zinc-600 shrink-0">[{log.timestamp}]</span>
+                    <span className={
+                      log.type === 'success' ? 'text-emerald-400' :
+                      log.type === 'cloud' ? 'text-cyan-400' :
+                      log.type === 'warning' ? 'text-amber-400' :
+                      log.type === 'error' ? 'text-rose-400' : 'text-zinc-300'
+                    }>
+                      {log.message}
+                    </span>
+                  </div>
+                ))}
+            </div>
           </div>
         )}
       </div>
@@ -1430,7 +2067,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 <th className="py-3 px-4 w-40 text-center">Tiếng Anh (EN)</th>
                 <th className="py-3 px-4 w-40 text-center">Tiếng Việt (VI)</th>
                 <th className="py-3 px-4 w-28 text-center">GCS Master</th>
-                <th className="py-3 px-4 w-60 text-center">Thao Tác</th>
+                <th className="py-3 px-4 w-72 text-center">Thao Tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 bg-white">
@@ -1539,7 +2176,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
                       {/* Action Buttons */}
                       <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex flex-wrap items-center justify-center gap-1.5">
                           {/* Audition First Chunk */}
                           <button
                             type="button"
@@ -1555,6 +2192,46 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                             <span>Nghe Thử</span>
                           </button>
 
+                          {/* Quick Retry If Lesson Has Failed Chunks */}
+                          {(() => {
+                            const lessonFailedChunks = failedChunks.filter(f => f.lessonId === item.lessonId);
+                            if (lessonFailedChunks.length === 0) return null;
+                            return (
+                              <button
+                                type="button"
+                                disabled={isBatchRunning}
+                                onClick={() => {
+                                  setBatchScope('current_lesson');
+                                  setBatchTargetLessonId(item.lessonId);
+                                  handleStartBatchGeneration('current_lesson', item.lessonId, 'failed_only', lessonFailedChunks.map(f => f.chunkId));
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 border border-rose-200 shadow-2xs"
+                                title={`Thử lại ${lessonFailedChunks.length} câu bị lỗi trong bài này`}
+                              >
+                                <RotateCcw className="w-3 h-3 text-rose-600" />
+                                <span>Thử Lỗi ({lessonFailedChunks.length})</span>
+                              </button>
+                            );
+                          })()}
+
+                          {/* Quick Create Missing Audio If Not 100% Ready */}
+                          {(item.enPercent < 100 || item.viPercent < 100) && (
+                            <button
+                              type="button"
+                              disabled={isBatchRunning}
+                              onClick={() => {
+                                setBatchScope('current_lesson');
+                                setBatchTargetLessonId(item.lessonId);
+                                handleStartBatchGeneration('current_lesson', item.lessonId, 'missing_only');
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 border border-emerald-200 shadow-2xs"
+                              title="Tạo các câu còn thiếu cho bài này"
+                            >
+                              <Sparkles className="w-3 h-3 text-emerald-600" />
+                              <span>Tạo Thiếu</span>
+                            </button>
+                          )}
+
                           {/* Regenerate This Lesson */}
                           <button
                             type="button"
@@ -1562,7 +2239,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                             onClick={() => {
                               setBatchScope('current_lesson');
                               setBatchTargetLessonId(item.lessonId);
-                              handleStartBatchGeneration('current_lesson', item.lessonId);
+                              handleStartBatchGeneration('current_lesson', item.lessonId, 'full');
                             }}
                             className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
                             title="Tạo lại toàn bộ audio cho bài này"

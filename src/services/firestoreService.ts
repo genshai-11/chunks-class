@@ -220,6 +220,8 @@ export async function getAllLessons(courseIdOrLevel?: CourseLevel | string): Pro
 // 5. Save / Update Lesson & Chunks
 // --------------------------------------------------------------------------
 export async function saveLesson(lesson: LessonDoc): Promise<void> {
+  // Update in-memory registry immediately so current and future tab components see changes instantly
+  curriculumRegistry.updateLesson(lesson);
   try {
     const docRef = doc(db, 'lessons', lesson.id);
     await setDoc(docRef, lesson, { merge: true });

@@ -3,6 +3,8 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { ChunkItem, LessonDoc, ImprovPackage, ImprovHint, ImprovItem } from '../types';
 import { updateLessonChunks } from './firestoreService';
 import { audioPlayer } from './googleTtsService';
+import { sanitizeSpeechText } from './deepgramTtsService';
+import { curriculumRegistry } from './curriculumRegistry';
 import { saveImprovPackage, getAllImprovPackages } from './improvService';
 import { improvTts, getHintTextByLanguage } from './improvTtsService';
 
@@ -103,34 +105,91 @@ export async function syncLessonCachedAudioToCloud(
     target?: 'ENGLISH' | 'VIETNAMESE' | 'BOTH';
     onProgress?: (current: number, total: number, status: string) => void;
     forceOverwrite?: boolean;
+    chunkIds?: string[];
   }
-): Promise<{ uploadedEn: number; uploadedVi: number; skipped: number; total: number }> {
+): Promise<{
+  uploadedEn: number;
+  uploadedVi: number;
+  skipped: number;
+  total: number;
+  failedUploads: { chunkId: string; lang: 'en' | 'vi'; error: string }[];
+  updatedChunks: ChunkItem[];
+}> {
   if (!lesson.chunks || lesson.chunks.length === 0) {
-    return { uploadedEn: 0, uploadedVi: 0, skipped: 0, total: 0 };
+    return { uploadedEn: 0, uploadedVi: 0, skipped: 0, total: 0, failedUploads: [], updatedChunks: [] };
   }
 
   const target = options?.target || 'BOTH';
   const shouldSyncEn = target === 'ENGLISH' || target === 'BOTH';
   const shouldSyncVi = target === 'VIETNAMESE' || target === 'BOTH';
   const forceOverwrite = Boolean(options?.forceOverwrite);
+  const allowedChunkIds = options?.chunkIds && options.chunkIds.length > 0 ? new Set(options.chunkIds) : null;
 
   const total = lesson.chunks.length;
   let uploadedEn = 0;
   let uploadedVi = 0;
   let skipped = 0;
   let hasModifications = false;
+  const failedUploads: { chunkId: string; lang: 'en' | 'vi'; error: string }[] = [];
 
   const updatedChunks: ChunkItem[] = [...lesson.chunks];
 
+  const enVoiceCandidates = [
+    'flux-cliff-en',
+    'aura-asteria-en',
+    'aura-luna-en',
+    'aura-stella-en',
+    'aura-athena-en',
+    'aura-hera-en',
+    'aura-orpheus-en',
+    'en-US-Journey-F',
+    'en-US-Journey-D',
+    'en-US-Studio-O',
+    'en-US-Neural2-A'
+  ];
+
+  const viVoiceCandidates = [
+    'vi-VN-Neural2-A',
+    'vi-VN-Neural2-D',
+    'vi-VN-Wavenet-A',
+    'vi-VN-Standard-A'
+  ];
+
   for (let i = 0; i < updatedChunks.length; i++) {
     const chunk = { ...updatedChunks[i] };
+    if (allowedChunkIds && !allowedChunkIds.has(chunk.chunk_id)) {
+      skipped++;
+      continue;
+    }
+
     options?.onProgress?.(i + 1, total, `Đang kiểm tra chunk #${chunk.item_number || i + 1}...`);
+
+    let chunkModified = false;
 
     // 1. Sync English if requested and (chunk lacks permanent audio_url or forceOverwrite is true)
     if (shouldSyncEn && chunk.english) {
       const needsEn = forceOverwrite || !chunk.audio_url || !chunk.audio_url.startsWith('http') || chunk.audio_url.includes('placeholder');
       if (needsEn) {
-        const cachedEn = await audioPlayer.getCachedAudioAsync(chunk.english, options?.voiceEn);
+        let cachedEn = await audioPlayer.getCachedAudioAsync(chunk.english, options?.voiceEn);
+        if (!cachedEn) {
+          const cleanEn = sanitizeSpeechText(chunk.english);
+          cachedEn = await audioPlayer.getCachedAudioAsync(cleanEn, options?.voiceEn);
+        }
+        if (!cachedEn) {
+          const rawNoComma = chunk.english.trim().replace(/,\s*$/, '').trim();
+          cachedEn = await audioPlayer.getCachedAudioAsync(rawNoComma, options?.voiceEn);
+        }
+        if (!cachedEn) {
+          for (const cand of enVoiceCandidates) {
+            if (cand === options?.voiceEn) continue;
+            cachedEn = await audioPlayer.getCachedAudioAsync(chunk.english, cand);
+            if (!cachedEn) {
+              cachedEn = await audioPlayer.getCachedAudioAsync(sanitizeSpeechText(chunk.english), cand);
+            }
+            if (cachedEn) break;
+          }
+        }
+
         if (cachedEn) {
           try {
             const gcsUrl = await uploadBase64AudioToGcs({
@@ -141,10 +200,16 @@ export async function syncLessonCachedAudioToCloud(
               lang: 'en'
             });
             chunk.audio_url = gcsUrl;
+            chunkModified = true;
             hasModifications = true;
             uploadedEn++;
-          } catch (err) {
+          } catch (err: any) {
             console.warn(`[GCS Sync] Failed to upload EN audio for chunk ${chunk.chunk_id}:`, err);
+            failedUploads.push({
+              chunkId: chunk.chunk_id,
+              lang: 'en',
+              error: err?.message || String(err)
+            });
           }
         }
       }
@@ -154,7 +219,20 @@ export async function syncLessonCachedAudioToCloud(
     if (shouldSyncVi && chunk.vietnamese) {
       const needsVi = forceOverwrite || !chunk.audio_url_vi || !chunk.audio_url_vi.startsWith('http');
       if (needsVi) {
-        const cachedVi = await audioPlayer.getCachedAudioAsync(chunk.vietnamese, options?.voiceVi || 'vi-VN-Neural2-A');
+        let cachedVi = await audioPlayer.getCachedAudioAsync(chunk.vietnamese, options?.voiceVi || 'vi-VN-Neural2-A');
+        if (!cachedVi) {
+          const cleanVi = sanitizeSpeechText(chunk.vietnamese);
+          cachedVi = await audioPlayer.getCachedAudioAsync(cleanVi, options?.voiceVi || 'vi-VN-Neural2-A');
+        }
+        if (!cachedVi) {
+          for (const cand of viVoiceCandidates) {
+            if (cand === (options?.voiceVi || 'vi-VN-Neural2-A')) continue;
+            cachedVi = await audioPlayer.getCachedAudioAsync(chunk.vietnamese, cand) ||
+                       await audioPlayer.getCachedAudioAsync(sanitizeSpeechText(chunk.vietnamese), cand);
+            if (cachedVi) break;
+          }
+        }
+
         if (cachedVi) {
           try {
             const gcsUrlVi = await uploadBase64AudioToGcs({
@@ -165,16 +243,22 @@ export async function syncLessonCachedAudioToCloud(
               lang: 'vi'
             });
             chunk.audio_url_vi = gcsUrlVi;
+            chunkModified = true;
             hasModifications = true;
             uploadedVi++;
-          } catch (err) {
+          } catch (err: any) {
             console.warn(`[GCS Sync] Failed to upload VI audio for chunk ${chunk.chunk_id}:`, err);
+            failedUploads.push({
+              chunkId: chunk.chunk_id,
+              lang: 'vi',
+              error: err?.message || String(err)
+            });
           }
         }
       }
     }
 
-    if (!hasModifications) {
+    if (!chunkModified) {
       skipped++;
     }
 
@@ -183,9 +267,14 @@ export async function syncLessonCachedAudioToCloud(
 
   if (hasModifications) {
     await updateLessonChunks(lesson.id, updatedChunks);
+    curriculumRegistry.updateLesson({
+      ...lesson,
+      chunks: updatedChunks,
+      total_chunks: updatedChunks.length
+    });
   }
 
-  return { uploadedEn, uploadedVi, skipped, total };
+  return { uploadedEn, uploadedVi, skipped, total, failedUploads, updatedChunks };
 }
 
 export async function syncImprovPackageCachedAudioToCloud(

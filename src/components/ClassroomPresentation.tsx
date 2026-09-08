@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart } from '../types';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart, LessonTopicInfo } from '../types';
 import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
 import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
+import { playTopicTransitionChime, playLessonCompletionFanfare } from '../utils/audioChimes';
 import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
@@ -87,6 +88,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isPartsDrawerOpen, setIsPartsDrawerOpen] = useState<boolean>(false);
   const [isChunkListOpen, setIsChunkListOpen] = useState<boolean>(false);
+  const [isTopicCompleteGate, setIsTopicCompleteGate] = useState<boolean>(false);
+  const [isLessonCompleteGate, setIsLessonCompleteGate] = useState<boolean>(false);
 
   // Redesign Popover States
   const [isLessonSwitcherOpen, setIsLessonSwitcherOpen] = useState<boolean>(false);
@@ -171,6 +174,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
       }
       if (cleanId !== currentLessonId) {
+        setIsTopicCompleteGate(false);
+        setIsLessonCompleteGate(false);
         setCurrentLessonId(cleanId);
         setCurrentChunkIndex(0);
       }
@@ -180,6 +185,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   // Synchronize when providedLesson changes
   useEffect(() => {
     if (providedLesson) {
+      setIsTopicCompleteGate(false);
+      setIsLessonCompleteGate(false);
       setFetchedLessonDoc(providedLesson);
       setCurrentLessonId(providedLesson.id);
       setCurrentChunkIndex(0);
@@ -265,10 +272,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       // If audio was generated, sync to Cloud Storage so it becomes permanent
       if (activeLesson && result.prepared > 0) {
         try {
-          await syncLessonCachedAudioToCloud(activeLesson, {
+          const syncRes = await syncLessonCachedAudioToCloud(activeLesson, {
             voiceEn: selectedVoice,
             voiceVi: selectedVoiceVi
           });
+          if (syncRes.updatedChunks && syncRes.updatedChunks.length > 0) {
+            setFetchedLessonDoc(prev => prev ? { ...prev, chunks: syncRes.updatedChunks } : prev);
+          }
         } catch (syncErr) {
           console.warn('[Presenter] Cloud Storage sync failed after batch prepare:', syncErr);
         }
@@ -391,8 +401,73 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
   const currentChunk: ChunkItem = chunks[currentChunkIndex] || chunks[0];
 
-  const parts: LessonPart[] = groupChunksIntoParts(chunks);
+  const checkAudioReady = useCallback((chunk: ChunkItem) => {
+    if (chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder')) return true;
+    return audioPlayer.hasCachedAudio(chunk.english, selectedVoice);
+  }, [selectedVoice]);
+
+  const parts: LessonPart[] = useMemo(() => {
+    return groupChunksIntoParts(chunks, activeLesson?.lesson_title, checkAudioReady);
+  }, [chunks, activeLesson?.lesson_title, checkAudioReady]);
+
   const currentPart = parts.find(p => currentChunkIndex >= p.start_index && currentChunkIndex <= p.end_index) || parts[0] || null;
+
+  // 2-Topics Model
+  const topic1Parts = useMemo(() => parts.filter(p => p.topic_number === 1), [parts]);
+  const topic2Parts = useMemo(() => parts.filter(p => p.topic_number === 2), [parts]);
+  const hasMultipleTopics = topic1Parts.length > 0 && topic2Parts.length > 0;
+
+  const topic1Title = topic1Parts[0]?.topic_title || 'Topic 1';
+  const topic2Title = topic2Parts[0]?.topic_title || 'Topic 2';
+
+  const topic1StartIndex = topic1Parts[0]?.start_index ?? 0;
+  const topic1EndIndex = topic1Parts[topic1Parts.length - 1]?.end_index ?? (chunks.length - 1);
+  const topic2StartIndex = topic2Parts[0]?.start_index ?? chunks.length;
+  const topic2EndIndex = topic2Parts[topic2Parts.length - 1]?.end_index ?? (chunks.length - 1);
+
+  const currentTopicNumber: 1 | 2 = (hasMultipleTopics && currentChunkIndex >= topic2StartIndex) ? 2 : 1;
+
+  const lessonTopics: LessonTopicInfo[] = useMemo(() => {
+    if (!hasMultipleTopics) {
+      return [{
+        topic_number: 1,
+        title: activeLesson?.lesson_title || 'Lesson',
+        part_count: parts.length,
+        start_chunk_index: 0,
+        end_chunk_index: chunks.length - 1,
+        total_chunks: chunks.length,
+        audio_ready_chunks: chunks.filter(c => checkAudioReady(c)).length
+      }];
+    }
+    const readyT1 = chunks.slice(topic1StartIndex, topic1EndIndex + 1).filter(c => checkAudioReady(c)).length;
+    const readyT2 = chunks.slice(topic2StartIndex, topic2EndIndex + 1).filter(c => checkAudioReady(c)).length;
+    return [
+      {
+        topic_number: 1,
+        title: topic1Title,
+        part_count: topic1Parts.length,
+        start_chunk_index: topic1StartIndex,
+        end_chunk_index: topic1EndIndex,
+        total_chunks: topic1EndIndex - topic1StartIndex + 1,
+        audio_ready_chunks: readyT1
+      },
+      {
+        topic_number: 2,
+        title: topic2Title,
+        part_count: topic2Parts.length,
+        start_chunk_index: topic2StartIndex,
+        end_chunk_index: topic2EndIndex,
+        total_chunks: topic2EndIndex - topic2StartIndex + 1,
+        audio_ready_chunks: readyT2
+      }
+    ];
+  }, [hasMultipleTopics, activeLesson?.lesson_title, parts.length, chunks, checkAudioReady, topic1Title, topic2Title, topic1Parts.length, topic2Parts.length, topic1StartIndex, topic1EndIndex, topic2StartIndex, topic2EndIndex]);
+
+  const readyChunksCount = useMemo(() => {
+    return chunks.filter(c => checkAudioReady(c)).length;
+  }, [chunks, checkAudioReady]);
+
+  const audioReadyPercent = chunks.length > 0 ? Math.round((readyChunksCount / chunks.length) * 100) : 0;
 
   // Grouped courses for the quick lesson switcher
   const groupedCourses = useMemo(() => {
@@ -480,6 +555,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
     }
     audioPlayer.stop();
+    setIsTopicCompleteGate(false);
+    setIsLessonCompleteGate(false);
     setCurrentLessonId(cleanId);
     setCurrentChunkIndex(0);
     const localDoc = curriculumRegistry.getLessonById(cleanId);
@@ -600,16 +677,51 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       return;
     }
 
+    // 1. Topic 1 completion transition gate (modeled after Improv stage)
+    if (hasMultipleTopics && currentChunkIndex === topic1EndIndex) {
+      if (!isTopicCompleteGate) {
+        setIsTopicCompleteGate(true);
+        playTopicTransitionChime();
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+        audioPlayer.stop();
+        return;
+      } else {
+        setIsTopicCompleteGate(false);
+        setCurrentChunkIndex(topic2StartIndex);
+        playCurrentChunkAudio(chunks[topic2StartIndex]);
+        return;
+      }
+    }
+
+    // 2. Lesson completion gate (last chunk of lesson)
+    if (currentChunkIndex === chunks.length - 1) {
+      if (!isLessonCompleteGate) {
+        setIsLessonCompleteGate(true);
+        playLessonCompletionFanfare();
+        confetti({
+          particleCount: 150,
+          spread: 100,
+          origin: { y: 0.5 }
+        });
+        audioPlayer.stop();
+        return;
+      } else {
+        setIsLessonCompleteGate(false);
+        return;
+      }
+    }
+
+    if (isTopicCompleteGate) setIsTopicCompleteGate(false);
+    if (isLessonCompleteGate) setIsLessonCompleteGate(false);
+
     if (currentChunkIndex < chunks.length - 1) {
       const nextIdx = currentChunkIndex + 1;
       setCurrentChunkIndex(nextIdx);
       playCurrentChunkAudio(chunks[nextIdx]);
-    } else {
-      confetti({
-        particleCount: 120,
-        spread: 90,
-        origin: { y: 0.6 }
-      });
     }
   };
 
@@ -617,6 +729,14 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const handlePrev = (opts?: { playAudio?: boolean }) => {
     if (isBlackout) {
       setIsBlackout(false);
+      return;
+    }
+    if (isTopicCompleteGate) {
+      setIsTopicCompleteGate(false);
+      return;
+    }
+    if (isLessonCompleteGate) {
+      setIsLessonCompleteGate(false);
       return;
     }
     if (currentChunkIndex > 0) {
@@ -764,6 +884,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         parts={parts}
         highContrastDark={highContrastDark}
         onSeek={(targetIndex) => {
+          setIsTopicCompleteGate(false);
+          setIsLessonCompleteGate(false);
           setCurrentChunkIndex(targetIndex);
           playCurrentChunkAudio(chunks[targetIndex]);
         }}
@@ -979,6 +1101,32 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
           {/* Part & Class Progress Pills with Tooltips */}
           <div className="hidden md:flex items-center gap-1.5 shrink-0">
+            {/* 2-Topic Navigation Pill */}
+            {hasMultipleTopics && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTopicCompleteGate(false);
+                  setIsLessonCompleteGate(false);
+                  if (currentTopicNumber === 1) {
+                    setCurrentChunkIndex(topic2StartIndex);
+                    playCurrentChunkAudio(chunks[topic2StartIndex]);
+                  } else {
+                    setCurrentChunkIndex(topic1StartIndex);
+                    playCurrentChunkAudio(chunks[topic1StartIndex]);
+                  }
+                }}
+                className={`text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                  currentTopicNumber === 1
+                    ? 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
+                    : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                }`}
+                title={`Nhấp để chuyển nhanh giữa Topic 1 (${topic1Title}) và Topic 2 (${topic2Title})`}
+              >
+                <span>{currentTopicNumber === 1 ? '📘 Topic 1' : '📗 Topic 2'}: {currentTopicNumber === 1 ? topic1Title : topic2Title}</span>
+              </button>
+            )}
+
             {currentPart && (
               <button
                 type="button"
@@ -988,12 +1136,33 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                     ? 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'
                     : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                 }`}
-                title={`Part ${currentPart.part_index}: ${currentPart.category.toUpperCase()} (${partChunkCurrent}/${partChunkTotal} chunks, ${partProgressPercent}%)`}
+                title={`Part ${currentPart.part_in_topic || currentPart.part_index}: ${currentPart.category.toUpperCase()} (${partChunkCurrent}/${partChunkTotal} chunks, ${partProgressPercent}%)`}
               >
                 <Layers className="w-3.5 h-3.5 text-[#DC2626]" />
-                <span>Part {currentPart.part_index}: {partProgressPercent}%</span>
+                <span>{currentPart.part_in_topic ? `Phần ${currentPart.part_in_topic}` : `Part ${currentPart.part_index}`}: {partProgressPercent}%</span>
               </button>
             )}
+
+            {/* Audio Readiness Badge in Topbar */}
+            <button
+              type="button"
+              onClick={() => setIsDiagnosticOpen(true)}
+              className={`text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                audioReadyPercent === 100
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                  : audioReadyPercent > 50
+                  ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
+                  : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
+              }`}
+              title={`Trạng thái Audio: ${readyChunksCount}/${chunks.length} chunks (${audioReadyPercent}%). Nhấp để mở chẩn đoán âm thanh.`}
+            >
+              <Volume2 className={`w-3.5 h-3.5 ${
+                audioReadyPercent === 100 ? 'text-emerald-600 dark:text-emerald-400' :
+                audioReadyPercent > 50 ? 'text-amber-600 dark:text-amber-400' :
+                'text-rose-600 dark:text-rose-400'
+              }`} />
+              <span>Audio: {readyChunksCount}/${chunks.length} ({audioReadyPercent}%)</span>
+            </button>
 
             <button
               type="button"
@@ -1423,97 +1592,198 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
       {/* 4. PRIMARY DRILL STAGE (DYNAMIC LANGUAGE INVERSION & ENLARGED TYPOGRAPHY - Feature 4) */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-14 text-center max-w-5xl mx-auto w-full relative">
-        {/* Badges */}
-        <div className="flex items-center gap-2 mb-6 flex-wrap justify-center">
-          {currentChunk.speaker && (
-            <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-zinc-800 text-white flex items-center gap-1.5">
-              <GraduationCap className="w-3.5 h-3.5 text-[#DC2626]" />
-              Speaker: {currentChunk.speaker}
-            </span>
-          )}
-
-          <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${getCategoryColor(currentChunk.category)}`}>
-            {currentChunk.category}
-          </span>
-
-          {currentChunk.audio_url && (
-            <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-              <Radio className="w-3 h-3 text-emerald-600" />
-              GCS Master Audio
-            </span>
-          )}
-
-          {currentChunk.ipa && (
-            <span className={`text-xs font-mono px-3 py-1 rounded-full border ${
-              highContrastDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-50 text-zinc-600 border-zinc-200'
-            }`}>
-              {currentChunk.ipa}
-            </span>
-          )}
-        </div>
-
-        {/* Primary Stage Chunk (Dynamic Language Inversion based on languageMode) */}
-        {(() => {
-          const isViMode = languageMode === 'VI_ONLY';
-          const primaryText = isViMode ? (currentChunk.vietnamese || currentChunk.english) : currentChunk.english;
-          const subtitleText = isViMode ? currentChunk.english : currentChunk.vietnamese;
-          const isPrimarySpeaking = isViMode ? activeSpeechStep === 'vi' : activeSpeechStep === 'en';
-          const isSubtitleSpeaking = isViMode ? activeSpeechStep === 'en' : activeSpeechStep === 'vi';
-
-          return (
-            <div className="my-auto py-4 w-full">
-              {/* Primary Large Text */}
-              <h1
-                className={`font-display font-bold leading-tight md:leading-tight tracking-tight transition-all duration-200 ${
-                  primaryText.length > 70 
-                    ? 'text-3xl md:text-5xl' 
-                    : primaryText.length > 40 
-                      ? 'text-4xl md:text-6xl' 
-                      : 'text-5xl md:text-7xl'
-                } ${isPrimarySpeaking ? 'text-[#DC2626] scale-[1.02]' : ''}`}
-              >
-                {primaryText}
-              </h1>
-
-              {/* Subtitle (Toggleable via Key V, Font size +20% enlarged: text-2xl md:text-3xl font-medium) */}
-              <div className="min-h-[4rem] mt-6 flex items-center justify-center">
-                {showSubtitle ? (
-                  <p className={`text-2xl md:text-3xl font-medium transition-all leading-relaxed ${
-                    isSubtitleSpeaking 
-                      ? 'text-emerald-600 font-bold' 
-                      : highContrastDark ? 'text-zinc-400' : 'text-[#6B6B6B]'
-                  }`}>
-                    {subtitleText}
-                  </p>
-                ) : (
-                  <button
-                    onClick={() => setShowSubtitle(true)}
-                    className={`text-xs font-mono px-3.5 py-2 rounded-xl border border-dashed cursor-pointer transition-colors ${
-                      highContrastDark 
-                        ? 'text-zinc-400 hover:text-zinc-200 bg-zinc-800 border-zinc-700' 
-                        : 'text-zinc-400 hover:text-zinc-600 bg-zinc-100 border-zinc-300'
-                    }`}
-                  >
-                    {isViMode 
-                      ? "[English translation hidden — Press 'V' or click to reveal]" 
-                      : "[Subtitle Hidden — Press 'V' or click to reveal translation]"}
-                  </button>
-                )}
-              </div>
+        {isTopicCompleteGate ? (
+          <div className="my-auto py-8 w-full max-w-3xl mx-auto p-8 sm:p-10 rounded-3xl border-2 shadow-2xl transition-all animate-fade-in text-center flex flex-col items-center bg-white dark:bg-zinc-900 border-[#DC2626]/40 shadow-red-500/10">
+            <div className="w-16 h-16 rounded-2xl bg-red-100 dark:bg-red-950/60 text-[#DC2626] flex items-center justify-center text-4xl mb-4 shadow-xs">
+              🎉
             </div>
-          );
-        })()}
-
-        {/* Audio Speaking State Animation */}
-        {isPlayingAudio && (
-          <div className="flex items-center gap-2 font-mono text-xs text-[#DC2626] font-bold mt-2">
-            <span className="flex gap-1 h-3 items-end">
-              <span className="w-1 bg-[#DC2626] h-full animate-bounce"></span>
-              <span className="w-1 bg-[#DC2626] h-2/3 animate-bounce [animation-delay:0.2s]"></span>
-              <span className="w-1 bg-[#DC2626] h-4/5 animate-bounce [animation-delay:0.4s]"></span>
-            </span>
-            <span>Playing: {activeSpeechStep === 'en' ? 'English (EN)' : activeSpeechStep === 'vi' ? 'Vietnamese (VI)' : 'Drill Audio'}</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-mono font-bold uppercase tracking-wider mb-2">
+              <span>📘 CỔNG CHUYỂN TOPIC</span>
+            </div>
+            <h2 className="font-display font-black text-2xl md:text-3xl text-zinc-950 dark:text-white tracking-tight mb-2">
+              ĐÃ HOÀN THÀNH TOPIC 1: {topic1Title.toUpperCase()}!
+            </h2>
+            <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-300 max-w-lg mb-8">
+              Bấm <span className="font-bold text-[#DC2626]">Next</span> (Phím <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono text-xs">Space</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono text-xs">➔</kbd> trên bút clicker) để bắt đầu <span className="font-bold text-emerald-600 dark:text-emerald-400">Topic 2: {topic2Title}</span>
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTopicCompleteGate(false);
+                  setCurrentChunkIndex(topic2StartIndex);
+                  playCurrentChunkAudio(chunks[topic2StartIndex]);
+                }}
+                className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm md:text-base shadow-lg hover:shadow-xl transition-all cursor-pointer active:scale-95 animate-pulse"
+              >
+                <span>Bắt đầu Topic 2 ({topic2Title})</span>
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTopicCompleteGate(false);
+                  setCurrentChunkIndex(topic1StartIndex);
+                  playCurrentChunkAudio(chunks[topic1StartIndex]);
+                }}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 text-zinc-800 dark:text-zinc-200 font-bold text-xs md:text-sm transition-all cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Luyện lại Topic 1</span>
+              </button>
+            </div>
           </div>
+        ) : isLessonCompleteGate ? (
+          <div className="my-auto py-8 w-full max-w-3xl mx-auto p-8 sm:p-10 rounded-3xl border-2 shadow-2xl transition-all animate-fade-in text-center flex flex-col items-center bg-gradient-to-r from-rose-50 via-amber-50 to-rose-50 dark:from-zinc-900 dark:via-zinc-850 dark:to-zinc-900 border-amber-300 dark:border-amber-700/60 shadow-amber-500/10">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white flex items-center justify-center text-4xl mb-4 shadow-md">
+              🏆
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-xs font-mono font-bold uppercase tracking-wider mb-2">
+              <span>Xuất sắc · {chunks.length} Chunks Hoàn Tất</span>
+            </div>
+            <h2 className="font-display font-black text-2xl md:text-3xl text-zinc-950 dark:text-white tracking-tight mb-2">
+              Chúc Mừng! Đã Hoàn Thành Toàn Bộ Bài Học
+            </h2>
+            <p className="text-base font-bold text-[#DC2626] mb-2">
+              {activeLesson?.lesson_title}
+            </p>
+            <p className="text-xs md:text-sm text-zinc-600 dark:text-zinc-300 max-w-lg mb-8">
+              Tất cả các phần trong {hasMultipleTopics ? `Topic 1 (${topic1Title}) và Topic 2 (${topic2Title})` : 'bài học'} đã được hoàn tất trọn vẹn!
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLessonCompleteGate(false);
+                  setCurrentChunkIndex(0);
+                  playCurrentChunkAudio(chunks[0]);
+                }}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white font-extrabold text-xs md:text-sm shadow-lg transition-all cursor-pointer active:scale-95"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Luyện lại từ đầu</span>
+              </button>
+              {hasMultipleTopics && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLessonCompleteGate(false);
+                    setCurrentChunkIndex(topic2StartIndex);
+                    playCurrentChunkAudio(chunks[topic2StartIndex]);
+                  }}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 font-bold text-xs md:text-sm transition-all cursor-pointer"
+                >
+                  <span>Luyện lại Topic 2</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  playLessonCompletionFanfare();
+                  confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+                }}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-bold text-xs md:text-sm transition-all cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-amber-600" />
+                <span>Ăn mừng (Confetti)</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Badges */}
+            <div className="flex items-center gap-2 mb-6 flex-wrap justify-center">
+              {currentChunk.speaker && (
+                <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-zinc-800 text-white flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-[#DC2626]" />
+                  Speaker: {currentChunk.speaker}
+                </span>
+              )}
+
+              <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${getCategoryColor(currentChunk.category)}`}>
+                {currentChunk.category}
+              </span>
+
+              {currentChunk.audio_url && (
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                  <Radio className="w-3 h-3 text-emerald-600" />
+                  GCS Master Audio
+                </span>
+              )}
+
+              {currentChunk.ipa && (
+                <span className={`text-xs font-mono px-3 py-1 rounded-full border ${
+                  highContrastDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-50 text-zinc-600 border-zinc-200'
+                }`}>
+                  {currentChunk.ipa}
+                </span>
+              )}
+            </div>
+
+            {/* Primary Stage Chunk (Dynamic Language Inversion based on languageMode) */}
+            {(() => {
+              const isViMode = languageMode === 'VI_ONLY';
+              const primaryText = isViMode ? (currentChunk.vietnamese || currentChunk.english) : currentChunk.english;
+              const subtitleText = isViMode ? currentChunk.english : currentChunk.vietnamese;
+              const isPrimarySpeaking = isViMode ? activeSpeechStep === 'vi' : activeSpeechStep === 'en';
+              const isSubtitleSpeaking = isViMode ? activeSpeechStep === 'en' : activeSpeechStep === 'vi';
+
+              return (
+                <div className="my-auto py-4 w-full">
+                  {/* Primary Large Text */}
+                  <h1
+                    className={`font-display font-bold leading-tight md:leading-tight tracking-tight transition-all duration-200 ${
+                      primaryText.length > 70 
+                        ? 'text-3xl md:text-5xl' 
+                        : primaryText.length > 40 
+                          ? 'text-4xl md:text-6xl' 
+                          : 'text-5xl md:text-7xl'
+                    } ${isPrimarySpeaking ? 'text-[#DC2626] scale-[1.02]' : ''}`}
+                  >
+                    {primaryText}
+                  </h1>
+
+                  {/* Subtitle (Toggleable via Key V, Font size +20% enlarged: text-2xl md:text-3xl font-medium) */}
+                  <div className="min-h-[4rem] mt-6 flex items-center justify-center">
+                    {showSubtitle ? (
+                      <p className={`text-2xl md:text-3xl font-medium transition-all leading-relaxed ${
+                        isSubtitleSpeaking 
+                          ? 'text-emerald-600 font-bold' 
+                          : highContrastDark ? 'text-zinc-400' : 'text-[#6B6B6B]'
+                      }`}>
+                        {subtitleText}
+                      </p>
+                    ) : (
+                      <button
+                        onClick={() => setShowSubtitle(true)}
+                        className={`text-xs font-mono px-3.5 py-2 rounded-xl border border-dashed cursor-pointer transition-colors ${
+                          highContrastDark 
+                            ? 'text-zinc-400 hover:text-zinc-200 bg-zinc-800 border-zinc-700' 
+                            : 'text-zinc-400 hover:text-zinc-600 bg-zinc-100 border-zinc-300'
+                        }`}
+                      >
+                        {isViMode 
+                          ? "[English translation hidden — Press 'V' or click to reveal]" 
+                          : "[Subtitle Hidden — Press 'V' or click to reveal translation]"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Audio Speaking State Animation */}
+            {isPlayingAudio && (
+              <div className="flex items-center gap-2 font-mono text-xs text-[#DC2626] font-bold mt-2">
+                <span className="flex gap-1 h-3 items-end">
+                  <span className="w-1 bg-[#DC2626] h-full animate-bounce"></span>
+                  <span className="w-1 bg-[#DC2626] h-2/3 animate-bounce [animation-delay:0.2s]"></span>
+                  <span className="w-1 bg-[#DC2626] h-4/5 animate-bounce [animation-delay:0.4s]"></span>
+                </span>
+                <span>Playing: {activeSpeechStep === 'en' ? 'English (EN)' : activeSpeechStep === 'vi' ? 'Vietnamese (VI)' : 'Drill Audio'}</span>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -1523,7 +1793,10 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         onClose={() => setIsPartsDrawerOpen(false)}
         parts={parts}
         currentChunkIndex={currentChunkIndex}
+        lessonTitle={activeLesson?.lesson_title}
         onSelectPart={(startIndex) => {
+          setIsTopicCompleteGate(false);
+          setIsLessonCompleteGate(false);
           setCurrentChunkIndex(startIndex);
           playCurrentChunkAudio(chunks[startIndex]);
         }}
@@ -1637,10 +1910,22 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
           <button
             onClick={handleNext}
-            className="inline-flex items-center gap-1 px-4 py-1.5 rounded-xl bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-800 transition-all cursor-pointer shadow-xs"
+            className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs ${
+              isTopicCompleteGate
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white animate-pulse shadow-emerald-500/20 ring-2 ring-emerald-400/50'
+                : isLessonCompleteGate || currentChunkIndex === chunks.length - 1
+                ? 'bg-amber-600 text-white hover:bg-amber-500 shadow-amber-500/20'
+                : 'bg-zinc-900 text-white hover:bg-zinc-800'
+            }`}
             title="Next Chunk (PageDown / Right / Space)"
           >
-            <span>{currentChunkIndex === chunks.length - 1 ? 'Hoàn Tất 🎉' : 'Tiếp (Next)'}</span>
+            <span>
+              {isTopicCompleteGate
+                ? 'Bắt đầu Topic 2 ➔'
+                : (isLessonCompleteGate || currentChunkIndex === chunks.length - 1)
+                ? 'Hoàn Tất 🎉'
+                : 'Tiếp (Next)'}
+            </span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -1774,6 +2059,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         currentPart={currentPart}
         highContrastDark={highContrastDark}
         onSelectChunk={(targetIndex) => {
+          setIsTopicCompleteGate(false);
+          setIsLessonCompleteGate(false);
           setCurrentChunkIndex(targetIndex);
           playCurrentChunkAudio(chunks[targetIndex]);
         }}

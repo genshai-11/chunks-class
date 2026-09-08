@@ -26,6 +26,8 @@ export interface PrepareAudioOptions {
   forceRegenerate?: boolean;
   onProgress?: (current: number, total: number, statusText: string) => void;
   concurrency?: number;
+  targetChunkIds?: string[];
+  onlyMissing?: boolean;
 }
 
 export interface ChunkAudioStatus {
@@ -1047,6 +1049,10 @@ class AudioPlayService {
     return this.getCachedAudio(text, voiceName) !== null;
   }
 
+  public hasCachedAudio(text: string, voiceName?: string): boolean {
+    return this.isChunkCached(text, voiceName);
+  }
+
   /**
    * Synchronous cache retrieval (Memory Map).
    * Strictly enforces namespace isolation between English and Vietnamese cache entries
@@ -1513,7 +1519,7 @@ class AudioPlayService {
       const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
       const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
 
-      const isEnReady = hasEnAudio || (effectiveVoiceEn === 'aura-asteria-en' && hasGcsAudio);
+      const isEnReady = hasEnAudio || hasGcsAudio;
       const isViReady = hasViAudio || hasGcsAudioVi;
 
       if (isEnReady) enCached++;
@@ -1916,11 +1922,23 @@ class AudioPlayService {
    * Fast Concurrent Batch Pre-generator (Worker pool + English / Vietnamese / Both)
    */
   async prepareChunksAudio(
-    chunks: { english: string; vietnamese?: string; audio_url?: string | null; chunk_id?: string }[],
+    chunks: { english: string; vietnamese?: string; audio_url?: string | null; audio_url_vi?: string | null; chunk_id?: string; item_number?: number }[],
     optionsOrVoiceEn?: PrepareAudioOptions | string,
     providerLegacy: AudioProvider = 'DEEPGRAM_AURA',
     onProgressLegacy?: (current: number, total: number, statusText: string) => void
-  ): Promise<{ prepared: number; failed: number; total: number; skipped: number }> {
+  ): Promise<{
+    prepared: number;
+    failed: number;
+    total: number;
+    skipped: number;
+    failedItems: {
+      chunkId: string;
+      itemNumber?: number;
+      text: string;
+      lang: 'en' | 'vi';
+      error: string;
+    }[];
+  }> {
     let opts: PrepareAudioOptions = {};
 
     if (typeof optionsOrVoiceEn === 'string') {
@@ -1944,9 +1962,18 @@ class AudioPlayService {
     const forceRegenerate = opts.forceRegenerate || false;
     const onProgress = opts.onProgress;
     const concurrency = Math.max(1, Math.min(8, opts.concurrency || 4));
+    const targetChunkIds = opts.targetChunkIds;
+    const onlyMissing = opts.onlyMissing || false;
 
-    const total = chunks.length;
-    if (total === 0) return { prepared: 0, failed: 0, total: 0, skipped: 0 };
+    // Filter by targetChunkIds if provided
+    let workingChunks = chunks;
+    if (targetChunkIds && targetChunkIds.length > 0) {
+      const idSet = new Set(targetChunkIds);
+      workingChunks = workingChunks.filter(c => c.chunk_id && idSet.has(c.chunk_id));
+    }
+
+    const total = workingChunks.length;
+    if (total === 0) return { prepared: 0, failed: 0, total: 0, skipped: 0, failedItems: [] };
 
     const isDeepgram = provider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-') || voiceEn.startsWith('flux-');
     const modelEn = isDeepgram && !voiceEn.startsWith('aura-') && !voiceEn.startsWith('flux-') ? 'flux-cliff-en' : voiceEn;
@@ -1956,19 +1983,33 @@ class AudioPlayService {
     let failed = 0;
     let skipped = 0;
     let chunkIndex = 0;
+    const failedItems: {
+      chunkId: string;
+      itemNumber?: number;
+      text: string;
+      lang: 'en' | 'vi';
+      error: string;
+    }[] = [];
 
     const worker = async () => {
       while (chunkIndex < total) {
         const index = chunkIndex++;
-        const c = chunks[index];
+        const c = workingChunks[index];
         const cleanEn = sanitizeSpeechText(c.english);
         const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
+        const chunkId = c.chunk_id || `chunk_${index}`;
+        const itemNumber = c.item_number ?? (index + 1);
 
         // 1. Synthesize English ONLY if target is ENGLISH or BOTH (NEVER when VIETNAMESE)
         if (target !== 'VIETNAMESE' && (target === 'ENGLISH' || target === 'BOTH')) {
           if (cleanEn) {
+            const hasValidGcsEn = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
             const cacheKeyEn = this.getCacheKey(modelEn, cleanEn);
-            if (forceRegenerate || !this.audioCache.has(cacheKeyEn)) {
+            const isCachedEn = this.audioCache.has(cacheKeyEn);
+
+            if (onlyMissing && (hasValidGcsEn || isCachedEn)) {
+              skipped++;
+            } else if (forceRegenerate || !isCachedEn) {
               try {
                 if (isDeepgram) {
                   const base64 = await deepgramTts.synthesizeText(cleanEn, modelEn);
@@ -1977,6 +2018,13 @@ class AudioPlayService {
                     prepared++;
                   } else {
                     failed++;
+                    failedItems.push({
+                      chunkId,
+                      itemNumber,
+                      text: cleanEn,
+                      lang: 'en',
+                      error: 'Deepgram synthesis returned empty audio'
+                    });
                   }
                 } else {
                   const base64 = await this.synthesizeWithGoogleTTS(cleanEn, modelEn, 1.0, forceRegenerate);
@@ -1985,11 +2033,25 @@ class AudioPlayService {
                     prepared++;
                   } else {
                     failed++;
+                    failedItems.push({
+                      chunkId,
+                      itemNumber,
+                      text: cleanEn,
+                      lang: 'en',
+                      error: 'Google TTS synthesis returned empty audio'
+                    });
                   }
                 }
-              } catch (e) {
+              } catch (e: any) {
                 console.warn(`[Audio Batch] EN synthesis failed for chunk #${index + 1}:`, e);
                 failed++;
+                failedItems.push({
+                  chunkId,
+                  itemNumber,
+                  text: cleanEn,
+                  lang: 'en',
+                  error: e?.message || 'EN TTS synthesis failed'
+                });
               }
             } else {
               skipped++;
@@ -1999,8 +2061,13 @@ class AudioPlayService {
 
         // 2. Synthesize Vietnamese ONLY if target is VIETNAMESE or BOTH (NEVER when ENGLISH)
         if (target !== 'ENGLISH' && (target === 'VIETNAMESE' || target === 'BOTH') && cleanVi) {
+          const hasValidGcsVi = Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'));
           const cacheKeyVi = this.getCacheKey(modelVi, cleanVi);
-          if (forceRegenerate || !this.audioCache.has(cacheKeyVi)) {
+          const isCachedVi = this.audioCache.has(cacheKeyVi);
+
+          if (onlyMissing && (hasValidGcsVi || isCachedVi)) {
+            skipped++;
+          } else if (forceRegenerate || !isCachedVi) {
             let success = false;
             try {
               const base64 = await this.synthesizeWithGoogleTTS(cleanVi, modelVi, 1.0, forceRegenerate);
@@ -2009,8 +2076,15 @@ class AudioPlayService {
                 prepared++;
                 success = true;
               }
-            } catch (cloudErr) {
+            } catch (cloudErr: any) {
               console.warn(`[Audio Batch] VI synthesis failed for chunk #${index + 1}:`, cloudErr);
+              failedItems.push({
+                chunkId,
+                itemNumber,
+                text: cleanVi,
+                lang: 'vi',
+                error: cloudErr?.message || 'VI TTS synthesis failed'
+              });
             }
             if (!success) {
               failed++;
@@ -2040,7 +2114,7 @@ class AudioPlayService {
       totalSteps,
       `Hoàn tất chuẩn bị audio! (${prepared} tạo mới, ${skipped} đã có sẵn, ${failed} lỗi)`
     );
-    return { prepared, failed, total, skipped };
+    return { prepared, failed, total, skipped, failedItems };
   }
 
   /**

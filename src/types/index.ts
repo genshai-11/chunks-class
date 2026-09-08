@@ -136,12 +136,27 @@ export interface Cohort {
 }
 
 export interface LessonPart {
-  part_index: number;
+  part_index: number;              // 1 to N
   category: string;
   title: string;
   start_index: number;
   end_index: number;
   chunk_count: number;
+  topic_number?: 1 | 2;            // 1 for Topic 1, 2 for Topic 2
+  topic_title?: string;            // Extracted topic title, e.g. "Gossipy" or "Office romance"
+  part_in_topic?: number;          // 1 to 7 within the respective topic
+  audio_ready_count?: number;      // Number of chunks in this part with audio ready
+  audio_total_count?: number;      // Total chunks in this part
+}
+
+export interface LessonTopicInfo {
+  topic_number: 1 | 2;
+  title: string;
+  part_count: number;
+  start_chunk_index: number;
+  end_chunk_index: number;
+  total_chunks: number;
+  audio_ready_chunks: number;
 }
 
 export type NavTab = 
@@ -186,3 +201,24 @@ export interface PresentationShortcutConfig {
   focusMode: ShortcutModeBehavior;
   improvMode: ShortcutModeBehavior;
 }
+
+// --------------------------------------------------------------------------
+// 6. Audio Preparation & Failed Audio Queue Contracts
+// --------------------------------------------------------------------------
+export interface FailedAudioChunkInfo {
+  chunkId: string;
+  itemNumber: number;
+  lessonId: string;
+  dayNumber?: number;
+  lessonTitle?: string;
+  textEn: string;
+  textVi?: string;
+  lang: 'en' | 'vi' | 'both';
+  error: string;
+  stage: 'tts_synthesis' | 'cloud_upload' | 'firestore_save';
+  timestamp: string;
+  retryCount?: number;
+}
+
+export type BatchPreparationMode = 'full' | 'missing_only' | 'failed_only';
+

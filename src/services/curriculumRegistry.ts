@@ -151,6 +151,17 @@ class CurriculumRegistryService {
     return null;
   }
 
+  public updateLesson(lesson: LessonDoc): void {
+    if (!lesson || !lesson.id) return;
+    this.individualLessonsMap.set(lesson.id, lesson);
+    this.lessonsMap.forEach((list) => {
+      const idx = list.findIndex(l => l.id === lesson.id);
+      if (idx >= 0) {
+        list[idx] = lesson;
+      }
+    });
+  }
+
   public getAllLessons(): LessonDoc[] {
     const unique = new Map<string, LessonDoc>();
     this.individualLessonsMap.forEach(l => unique.set(l.id, l));
