@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   CohortAudioSettings, 
   CourseLevel, 
@@ -14,11 +14,9 @@ import {
   AudioProvider, 
   AudioSourceType, 
   AudioBatchTarget,
-  GOOGLE_TTS_VOICES,
-  ALL_VOICES,
   sanitizeSpeechText 
 } from '../services/googleTtsService';
-import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
+import { modelRegistryService, PROVIDERS_META, getMinimalName } from '../services/modelRegistryService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { getAllLessons, addOrUpdateChunk, updateLessonChunks } from '../services/firestoreService';
 import { 
@@ -114,16 +112,40 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState<boolean>(false);
 
   const [voiceProfileEn, setVoiceProfileEn] = useState<string>(
-    cohortAudioSettings?.voice_profile_en || 'flux-cliff-en'
+    cohortAudioSettings?.voice_profile_en || modelRegistryService.getMainModelEn()
   );
   const [voiceProfileVi, setVoiceProfileVi] = useState<string>(
-    cohortAudioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
+    cohortAudioSettings?.voice_profile_vi || modelRegistryService.getMainModelVi()
   );
 
   // --------------------------------------------------------------------------
   // 3. Readiness Matrix & Lessons Status Cache
   // --------------------------------------------------------------------------
   const [statusList, setStatusList] = useState<LessonAudioStatus[]>([]);
+  const [registeredModels, setRegisteredModels] = useState(() => modelRegistryService.getAllModels());
+  const allowedModels = useMemo(() => {
+    return registeredModels.filter(m => m.focusEnabled && !(m.language === 'vi' && m.provider === 'DEEPGRAM'));
+  }, [registeredModels]);
+  const englishModels = useMemo(() => {
+    const list = allowedModels.filter(m => m.language === 'en');
+    return list.sort((a, b) => {
+      const isGeminiA = a.provider === 'GEMINI_AI_STUDIO';
+      const isGeminiB = b.provider === 'GEMINI_AI_STUDIO';
+      if (isGeminiA && !isGeminiB) return 1;
+      if (!isGeminiA && isGeminiB) return -1;
+      return 0;
+    });
+  }, [allowedModels]);
+  const vietnameseModels = useMemo(() => {
+    return allowedModels.filter(m => m.language === 'vi');
+  }, [allowedModels]);
+  useEffect(() => modelRegistryService.subscribe(() => setRegisteredModels(modelRegistryService.getAllModels())), []);
+  useEffect(() => {
+    const en = cohortAudioSettings?.voice_profile_en || modelRegistryService.getMainModelEn();
+    setVoiceProfileEn(en);
+    setVoiceProfileVi(cohortAudioSettings?.voice_profile_vi || modelRegistryService.getMainModelVi());
+    setActiveProvider(modelRegistryService.getModelById(en)?.provider === 'DEEPGRAM' ? 'DEEPGRAM_AURA' : 'GOOGLE_TTS');
+  }, [cohortAudioSettings?.voice_profile_en, cohortAudioSettings?.voice_profile_vi, registeredModels]);
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'missing' | 'has_gcs'>('all');
 
@@ -272,17 +294,19 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   }, [loadLessons]);
 
   // Recalculate readiness status map whenever lessons, voice profiles, or cache changes
-  const calculateReadinessStatus = useCallback(() => {
+  const readinessVersion = useRef(0);
+  const calculateReadinessStatus = useCallback(async () => {
+    const version = ++readinessVersion.current;
     if (!lessons || lessons.length === 0) {
       setStatusList([]);
       return;
     }
 
-    const calculated = lessons.map((lesson) => {
+    const calculated = await Promise.all(lessons.map(async (lesson) => {
       const chunks = lesson.chunks || [];
-      const status = audioPlayer.getLessonAudioStatus(chunks, voiceProfileEn, voiceProfileVi);
+      const status = await audioPlayer.checkLessonAudioStatus(chunks, voiceProfileEn, voiceProfileVi);
       const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
-      const isEnReady = status.enCached === chunks.length || gcsCount === chunks.length;
+      const isEnReady = chunks.length > 0 && status.enCached === chunks.length;
       const enPercent = chunks.length > 0 ? (isEnReady ? 100 : Math.round((status.enCached / chunks.length) * 100)) : 0;
       const viPercent = chunks.length > 0 ? Math.round((status.viCached / chunks.length) * 100) : 0;
 
@@ -296,11 +320,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         gcsCount,
         enPercent,
         viPercent,
-        isFullyCached: status.isFullyCached || isEnReady
+        isFullyCached: status.isFullyCached
       };
-    });
+    }));
 
-    setStatusList(calculated);
+    if (version === readinessVersion.current) setStatusList(calculated);
   }, [lessons, voiceProfileEn, voiceProfileVi]);
 
   useEffect(() => {
@@ -311,33 +335,13 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const handleSwitchProvider = (provider: AudioProvider) => {
     setActiveProvider(provider);
     audioPlayer.setAudioProvider(provider);
-    if (provider === 'DEEPGRAM_AURA') {
-      setVoiceProfileEn('flux-cliff-en');
-      onUpdateAudioSettings?.({
-        ...(cohortAudioSettings || {
-          language_mode: 'EN_THEN_VI',
-          auto_advance_delay_sec: 0,
-          default_speed: 1.0,
-          repeat_count: 1
-        }),
-        voice_profile_en: 'flux-cliff-en',
-        voice_profile_vi: voiceProfileVi,
-        provider_primary: 'DEEPGRAM_AURA'
-      });
-    } else {
-      setVoiceProfileEn('en-US-Journey-F');
-      onUpdateAudioSettings?.({
-        ...(cohortAudioSettings || {
-          language_mode: 'EN_THEN_VI',
-          auto_advance_delay_sec: 0,
-          default_speed: 1.0,
-          repeat_count: 1
-        }),
-        voice_profile_en: 'en-US-Journey-F',
-        voice_profile_vi: voiceProfileVi,
-        provider_primary: 'GOOGLE_TTS'
-      });
-    }
+    const model = englishModels.find(m => provider === 'DEEPGRAM_AURA' ? m.provider === 'DEEPGRAM' : m.provider !== 'DEEPGRAM');
+    if (!model) return;
+    setVoiceProfileEn(model.id);
+    onUpdateAudioSettings?.({
+      ...(cohortAudioSettings || { language_mode: 'EN_THEN_VI', auto_advance_delay_sec: 0, default_speed: 1, repeat_count: 1 }),
+      voice_profile_en: model.id, voice_profile_vi: voiceProfileVi, provider_primary: provider
+    });
   };
 
   // Helper log function for batch engine
@@ -355,19 +359,21 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     setPlayingChunkId(chunk.chunk_id);
     setPlayingLang(lang);
 
+    const selectedEn = chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
+    const selectedVi = chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
     try {
       if (lang === 'en') {
         await audioPlayer.playChunk(
           chunk.english,
           activeProvider === 'DEEPGRAM_AURA' ? null : chunk.audio_url,
-          voiceProfileEn,
+          selectedEn,
           1.0
         );
       } else if (lang === 'vi') {
         await audioPlayer.playChunk(
           chunk.vietnamese,
-          null,
-          voiceProfileVi,
+          chunk.audio_url_vi || null,
+          selectedVi,
           1.0
         );
       } else if (lang === 'sequence') {
@@ -376,8 +382,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           chunk.vietnamese,
           'EN_THEN_VI',
           activeProvider === 'DEEPGRAM_AURA' ? null : chunk.audio_url,
-          voiceProfileEn,
-          voiceProfileVi,
+          selectedEn,
+          selectedVi,
           1.0,
           1,
           undefined,
@@ -385,7 +391,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         );
       }
     } catch (e: any) {
-      console.error('Audio audition error:', e);
+      addLog('Audio playback failed: ' + (e?.message || String(e)), 'error');
     } finally {
       setPlayingChunkId(null);
       setPlayingLang(null);
@@ -408,10 +414,13 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       const enText = sanitizeSpeechText(textEnOverride || chunk.english);
       const viText = sanitizeSpeechText(textViOverride || chunk.vietnamese || '');
 
-      const effectiveVoiceEn = voiceEnOverride || voiceProfileEn;
-      const effectiveVoiceVi = voiceViOverride || voiceProfileVi;
+      const effectiveVoiceEn = voiceEnOverride || chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
+      const effectiveVoiceVi = voiceViOverride || chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
       const effectiveProvider: AudioProvider = (effectiveVoiceEn.startsWith('aura-') || effectiveVoiceEn.startsWith('flux-')) ? 'DEEPGRAM_AURA' : 'GOOGLE_TTS';
 
+      if ((targetLang !== 'vi' && !englishModels.some(m => m.id === effectiveVoiceEn)) || (targetLang !== 'en' && !vietnameseModels.some(m => m.id === effectiveVoiceVi))) throw new Error('Enable the selected model for Focus in Settings.');
+      const updatedChunk = { ...chunk };
+      let cloudFailed = false;
       const effectiveLesson = inspectingLesson || lessons.find(l => l.chunks?.some(c => c.chunk_id === chunk.chunk_id)) || lessons[0];
       const effectiveLessonId = effectiveLesson?.id || '';
 
@@ -424,6 +433,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             provider: effectiveProvider,
             forceRegenerate: true
           });
+          if (!synthRes?.base64) throw new Error('EN synthesis returned no audio.');
           if (synthRes?.base64) {
             try {
               const gcsUrl = await uploadBase64AudioToGcs({
@@ -433,8 +443,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 chunkId: chunk.chunk_id,
                 lang: 'en'
               });
-              chunk.audio_url = gcsUrl;
+              updatedChunk.audio_url = gcsUrl;
             } catch (uploadErr) {
+              cloudFailed = true;
               console.warn(`[Regenerate] Upload EN to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
             }
           }
@@ -450,6 +461,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             provider: 'GOOGLE_TTS',
             forceRegenerate: true
           });
+          if (!synthResVi?.base64) throw new Error('VI synthesis returned no audio.');
           if (synthResVi?.base64) {
             try {
               const gcsUrlVi = await uploadBase64AudioToGcs({
@@ -459,8 +471,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 chunkId: chunk.chunk_id,
                 lang: 'vi'
               });
-              chunk.audio_url_vi = gcsUrlVi;
+              updatedChunk.audio_url_vi = gcsUrlVi;
             } catch (uploadErr) {
+              cloudFailed = true;
               console.warn(`[Regenerate] Upload VI to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
             }
           }
@@ -469,7 +482,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
       // Persist to Firestore via addOrUpdateChunk
       if (effectiveLessonId) {
-        const updatedLesson = await addOrUpdateChunk(effectiveLessonId, chunk);
+        const updatedLesson = await addOrUpdateChunk(effectiveLessonId, updatedChunk);
         if (updatedLesson) {
           if (inspectingLesson && inspectingLesson.id === effectiveLessonId) {
             setInspectingLesson(updatedLesson);
@@ -478,6 +491,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         }
       }
 
+      if (cloudFailed) { addLog('Audio saved in this browser; Cloud upload failed. Retry Cloud sync before switching devices.', 'warning'); calculateReadinessStatus(); return; }
       const langLabel = targetLang === 'en' ? 'Tiếng Anh (EN)' : targetLang === 'vi' ? 'Tiếng Việt (VI)' : 'Cả 2 (EN + VI)';
       addLog(`Tạo lại audio (${langLabel}) thành công cho chunk #${chunk.item_number}: "${enText.slice(0, 24)}..."`, 'success');
       calculateReadinessStatus();
@@ -488,6 +502,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       setRegeneratingTarget(null);
     }
   };
+
+  const handleRegenerateSingleChunk = handleRegenerateChunkAudio;
 
   // Quick save edited text handler with optional immediate audio synthesis
   const handleSaveChunkText = async (
@@ -590,7 +606,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         : (batchTargetLessonId || lessons[0]?.id || '');
 
     const effectiveTarget: AudioBatchTarget = targetOverride || batchTarget;
-    const effectiveForceOverwrite: boolean = forceOverwriteOverride !== undefined ? forceOverwriteOverride : forceOverwrite;
+    const effectiveForceOverwrite: boolean = forceOverwriteOverride !== undefined ? forceOverwriteOverride : (forceOverwrite || modeOverride === 'full' || (!modeOverride && batchMode === 'full'));
     const effectiveMode: BatchPreparationMode = modeOverride || (effectiveForceOverwrite ? 'full' : batchMode);
 
     cancelBatchRef.current = false;
@@ -618,6 +634,20 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       scopeDesc = `Toàn bộ ${selectedCourseLevel} (${lessons.length} bài học) - ${candidateItems.length} chunks`;
     }
 
+    const invalidModel = candidateItems.some(({ chunk }) =>
+      (effectiveTarget !== 'VIETNAMESE' && !englishModels.some(m => m.id === (chunkVoiceEn[chunk.chunk_id] || voiceProfileEn))) ||
+      (effectiveTarget !== 'ENGLISH' && !!chunk.vietnamese && !vietnameseModels.some(m => m.id === (chunkVoiceVi[chunk.chunk_id] || voiceProfileVi)))
+    );
+    if (invalidModel) {
+      addLog('Enable the selected EN/VI models for Focus in Settings before preparing audio.', 'error');
+      setIsBatchRunning(false);
+      return;
+    }
+    // Hydrate the selected voice cache before deciding which sentences are missing.
+    await Promise.all(candidateItems.map(async ({ chunk }) => {
+      await audioPlayer.getCachedAudioAsync(chunk.english, chunkVoiceEn[chunk.chunk_id] || voiceProfileEn);
+      if (chunk.vietnamese) await audioPlayer.getCachedAudioAsync(chunk.vietnamese, chunkVoiceVi[chunk.chunk_id] || voiceProfileVi);
+    }));
     let targetItems: BatchItem[] = [];
     let initialSkippedCount = 0;
 
@@ -645,11 +675,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         const targetVoiceVi = chunkVoiceVi[c.chunk_id] || voiceProfileVi;
         const hasGcsEn = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
         const isCachedEn = audioPlayer.hasCachedAudio(c.english, targetVoiceEn);
-        const needsEn = shouldCheckEn && !hasGcsEn && !isCachedEn;
+        const needsEn = shouldCheckEn && !isCachedEn;
 
         const hasGcsVi = Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'));
         const isCachedVi = c.vietnamese ? audioPlayer.hasCachedAudio(c.vietnamese, targetVoiceVi) : true;
-        const needsVi = shouldCheckVi && Boolean(c.vietnamese) && !hasGcsVi && !isCachedVi;
+        const needsVi = shouldCheckVi && Boolean(c.vietnamese) && !isCachedVi;
 
         return needsEn || needsVi;
       });
@@ -719,8 +749,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
           const isCachedEn = audioPlayer.hasCachedAudio(cleanEn, targetVoiceEn);
 
-          // If not forceOverwrite and already has permanent GCS audio or cached in missing_only mode
-          if (!effectiveForceOverwrite && (hasGcsEn || (effectiveMode === 'missing_only' && isCachedEn))) {
+          // Reuse only the selected model cache in missing-only mode
+          if (!effectiveForceOverwrite && (effectiveMode === 'missing_only' && isCachedEn)) {
             skippedCount++;
             processedCount++;
             addLog(`[Worker ${workerId}] Bỏ qua EN #${chunk.item_number} do đã có audio GCS cũ. (Bật 'Ghi đè' để đổi model sang ${targetVoiceEn})`, 'info');
@@ -832,7 +862,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           const hasGcsVi = Boolean(chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http'));
           const isCachedVi = audioPlayer.hasCachedAudio(cleanVi, targetVoiceVi);
 
-          if (!effectiveForceOverwrite && (hasGcsVi || (effectiveMode === 'missing_only' && isCachedVi))) {
+          if (!effectiveForceOverwrite && (effectiveMode === 'missing_only' && isCachedVi)) {
             skippedCount++;
             processedCount++;
             addLog(`[Worker ${workerId}] Bỏ qua VI #${chunk.item_number} do đã có audio GCS cũ. (Bật 'Ghi đè' để đổi model sang ${targetVoiceVi})`, 'info');
@@ -1034,6 +1064,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     }
   };
 
+  const handlePrepareAllLessons = (mode: BatchPreparationMode = 'missing_only') => {
+    setBatchScope('entire_course');
+    return handleStartBatchGeneration('entire_course', undefined, mode);
+  };
+
   const handleStopBatchGeneration = () => {
     cancelBatchRef.current = true;
     addLog('Đang gửi lệnh dừng đến các luồng worker...', 'warning');
@@ -1144,6 +1179,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans animate-fade-in text-zinc-900">
+      {(!englishModels.some(m => m.id === voiceProfileEn) || !vietnameseModels.some(m => m.id === voiceProfileVi)) && (
+        <p role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">Selected model unavailable. Enable it for Focus in Settings or choose an allowed EN/VI model below.</p>
+      )}
       {/* ------------------------------------------------------------------ */}
       {/* 1. Header & Live Engine Status                                     */}
       {/* ------------------------------------------------------------------ */}
@@ -1465,7 +1503,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           <div className="flex items-center gap-2 text-xs font-bold font-mono">
             <span className="text-base">🎙️</span>
             <span>
-              Model áp dụng đồng nhất cho toàn bộ Workers: <span className="underline decoration-amber-500 font-black">[{voiceProfileEn}]</span> ({activeProvider === 'DEEPGRAM_AURA' ? 'Deepgram' : 'Google Cloud'})
+              Model áp dụng đồng nhất cho toàn bộ Workers: <span className="underline decoration-amber-500 font-black">[{voiceProfileEn}]</span> ({modelRegistryService.getModelById(voiceProfileEn)?.provider || activeProvider})
             </span>
           </div>
           {!isBatchRunning && (
@@ -1552,13 +1590,15 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           {/* English Voice Profile */}
           <div>
             <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
-              3. Giọng Tiếng Anh ({activeProvider === 'DEEPGRAM_AURA' ? 'Deepgram' : 'Google'})
+              3. Giọng Tiếng Anh ({modelRegistryService.getModelById(voiceProfileEn)?.provider || activeProvider})
             </label>
             <select
               value={voiceProfileEn}
               disabled={isBatchRunning}
               onChange={(e) => {
                 setVoiceProfileEn(e.target.value);
+                setActiveProvider(modelRegistryService.getModelById(e.target.value)?.provider === 'DEEPGRAM' ? 'DEEPGRAM_AURA' : 'GOOGLE_TTS');
+                modelRegistryService.setMainModelEn(e.target.value);
                 onUpdateAudioSettings?.({
                   ...(cohortAudioSettings || {
                     language_mode: 'EN_THEN_VI',
@@ -1571,19 +1611,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               }}
               className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-900 cursor-pointer focus:outline-none focus:border-[#DC2626]"
             >
-              {activeProvider === 'DEEPGRAM_AURA' ? (
-                DEEPGRAM_AURA_VOICES.map(v => (
-                  <option key={v.id} value={v.id}>
-                    {v.name} ({v.gender})
-                  </option>
-                ))
-              ) : (
-                GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))
-              )}
+              {!englishModels.some(m => m.id === voiceProfileEn) && <option value={voiceProfileEn} disabled>{voiceProfileEn} (unavailable)</option>}
+              {englishModels.map(v => (
+                <option key={v.id} value={v.id}>
+                  {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}]
+                </option>
+              ))}
             </select>
             <div className="mt-2 text-[11px] text-zinc-400 font-mono truncate">
               ID: {voiceProfileEn}
@@ -1593,13 +1626,14 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           {/* Vietnamese Voice Profile */}
           <div>
             <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
-              4. Giọng Tiếng Việt (Google Cloud)
+              4. Giọng Tiếng Việt ({modelRegistryService.getModelById(voiceProfileVi)?.provider || 'Google Cloud'})
             </label>
             <select
               value={voiceProfileVi}
               disabled={isBatchRunning}
               onChange={(e) => {
                 setVoiceProfileVi(e.target.value);
+                modelRegistryService.setMainModelVi(e.target.value);
                 onUpdateAudioSettings?.({
                   ...(cohortAudioSettings || {
                     language_mode: 'EN_THEN_VI',
@@ -1612,9 +1646,10 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               }}
               className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-900 cursor-pointer focus:outline-none focus:border-[#DC2626]"
             >
-              {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN').map(v => (
+              {!vietnameseModels.some(m => m.id === voiceProfileVi) && <option value={voiceProfileVi} disabled>{voiceProfileVi} (unavailable)</option>}
+              {vietnameseModels.map(v => (
                 <option key={v.id} value={v.id}>
-                  {v.name}
+                  {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}]
                 </option>
               ))}
             </select>
@@ -2360,17 +2395,39 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                {/* 1-Click Prepare Missing Audio for This Lesson */}
+                <button
+                  type="button"
+                  disabled={isBatchRunning}
+                  onClick={() => {
+                    handleStartBatchGeneration(
+                      'current_lesson',
+                      inspectingLesson.id,
+                      'missing_only',
+                      undefined,
+                      'BOTH',
+                      false
+                    );
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  title="Chuẩn bị nhanh các câu còn thiếu audio cho bài học này"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Chuẩn Bị Audio Bài Này</span>
+                </button>
+
+                {/* Open Custom Regeneration & Voice Selection Drawer */}
                 <button
                   type="button"
                   disabled={isBatchRunning}
                   onClick={() => {
                     setShowModalRegenReview(prev => !prev);
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-                  title="Tạo lại audio cho riêng bài học này"
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  title="Tùy chọn giọng đọc và tạo lại bài này"
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Tạo Lại Audio (Day {inspectingLesson.day_number})</span>
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Tạo Lại Bài Này</span>
                 </button>
 
                 <button
@@ -2415,7 +2472,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="text-base">🎙️</span>
                     <h4 className="font-bold text-sm text-zinc-100">
-                      Xác Nhận Tạo Lại Audio Cho Day {inspectingLesson.day_number}: {inspectingLesson.lesson_title}
+                      Cấu Hình & Tạo Audio Cho Day {inspectingLesson.day_number}: {inspectingLesson.lesson_title}
                     </h4>
                   </div>
                   <button
@@ -2451,19 +2508,63 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Model Review Badges */}
+                  {/* Dynamic Model Selectors */}
                   <div>
                     <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
-                      Giọng Model Áp Dụng
+                      Giọng Model Cho Bài Này
                     </label>
-                    <div className="space-y-1 text-xs font-mono">
-                      <div className="flex items-center gap-1 text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40">
-                        <span className="font-bold">EN:</span>
-                        <span className="truncate">[{voiceProfileEn}] ({activeProvider === 'DEEPGRAM_AURA' ? 'Deepgram' : 'Google'})</span>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-mono font-bold text-emerald-400 shrink-0 w-6">EN:</span>
+                        <select
+                          value={voiceProfileEn}
+                          onChange={(e) => {
+                            setVoiceProfileEn(e.target.value);
+                            modelRegistryService.setMainModelEn(e.target.value);
+                            onUpdateAudioSettings?.({
+                              ...(cohortAudioSettings || {
+                                language_mode: 'EN_THEN_VI',
+                                auto_advance_delay_sec: 0,
+                                default_speed: 1.0,
+                                repeat_count: 1
+                              }),
+                              voice_profile_en: e.target.value
+                            });
+                          }}
+                          className="flex-1 text-xs font-semibold bg-zinc-800 border border-zinc-700 text-zinc-100 rounded-lg px-2 py-1 focus:outline-none focus:border-[#DC2626] cursor-pointer"
+                        >
+                          {englishModels.map(v => (
+                            <option key={v.id} value={v.id} className="bg-zinc-800 text-white">
+                              {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}]
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                      <div className="flex items-center gap-1 text-blue-400 bg-blue-950/50 px-2 py-0.5 rounded border border-blue-800/40">
-                        <span className="font-bold">VI:</span>
-                        <span className="truncate">[{voiceProfileVi}] (Google Cloud)</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-mono font-bold text-blue-400 shrink-0 w-6">VI:</span>
+                        <select
+                          value={voiceProfileVi}
+                          onChange={(e) => {
+                            setVoiceProfileVi(e.target.value);
+                            modelRegistryService.setMainModelVi(e.target.value);
+                            onUpdateAudioSettings?.({
+                              ...(cohortAudioSettings || {
+                                language_mode: 'EN_THEN_VI',
+                                auto_advance_delay_sec: 0,
+                                default_speed: 1.0,
+                                repeat_count: 1
+                              }),
+                              voice_profile_vi: e.target.value
+                            });
+                          }}
+                          className="flex-1 text-xs font-semibold bg-zinc-800 border border-zinc-700 text-zinc-100 rounded-lg px-2 py-1 focus:outline-none focus:border-emerald-600 cursor-pointer"
+                        >
+                          {vietnameseModels.map(v => (
+                            <option key={v.id} value={v.id} className="bg-zinc-800 text-white">
+                              {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}]
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </div>
@@ -2578,11 +2679,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   const isPlayingThis = playingChunkId === chunk.chunk_id;
                   const isRegeneratingThis = regeneratingChunkId === chunk.chunk_id;
                   const isEditingThis = editingChunkId === chunk.chunk_id;
-                  const isEnCached = audioPlayer.getLessonAudioStatus([chunk], voiceProfileEn, voiceProfileVi).enCached > 0;
-                  const isViCached = audioPlayer.getLessonAudioStatus([chunk], voiceProfileEn, voiceProfileVi).viCached > 0;
                   const isVoiceConfigOpen = Boolean(expandedChunkVoiceConfig[chunk.chunk_id]);
                   const selectedVoiceEn = chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
                   const selectedVoiceVi = chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
+                  const isEnCached = audioPlayer.hasCachedAudio(chunk.english, selectedVoiceEn);
+                  const isViCached = !!chunk.vietnamese && audioPlayer.hasCachedAudio(chunk.vietnamese, selectedVoiceVi);
 
                   if (isEditingThis) {
                     return (
@@ -2892,16 +2993,24 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                                 onChange={(e) => setChunkVoiceEn(prev => ({ ...prev, [chunk.chunk_id]: e.target.value }))}
                                 className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#DC2626] cursor-pointer"
                               >
-                                <optgroup label="Deepgram Aura">
-                                  {DEEPGRAM_AURA_VOICES.map(v => (
-                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                {!englishModels.some(m => m.id === selectedVoiceEn) && <option value={selectedVoiceEn} disabled>{selectedVoiceEn} (unavailable)</option>}
+                                <optgroup label="Deepgram Aura & Flux">
+                                  {englishModels.filter(v => v.provider === 'DEEPGRAM').map(v => (
+                                    <option key={v.id} value={v.id}>{getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}]</option>
                                   ))}
                                 </optgroup>
-                                <optgroup label="Google Cloud TTS (en-US)">
-                                  {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'en-US').map(v => (
-                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                <optgroup label="Google Cloud & Custom (EN)">
+                                  {englishModels.filter(v => v.provider !== 'DEEPGRAM' && v.provider !== 'GEMINI_AI_STUDIO').map(v => (
+                                    <option key={v.id} value={v.id}>{getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}]</option>
                                   ))}
                                 </optgroup>
+                                {englishModels.some(v => v.provider === 'GEMINI_AI_STUDIO') && (
+                                  <optgroup label="Gemini Flash (Preview)">
+                                    {englishModels.filter(v => v.provider === 'GEMINI_AI_STUDIO').map(v => (
+                                      <option key={v.id} value={v.id}>{getMinimalName(v)} • [Gemini Flash Preview]</option>
+                                    ))}
+                                  </optgroup>
+                                )}
                               </select>
                             </div>
 
@@ -2913,14 +3022,15 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                                 onChange={(e) => setChunkVoiceVi(prev => ({ ...prev, [chunk.chunk_id]: e.target.value }))}
                                 className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-emerald-600 cursor-pointer"
                               >
-                                <optgroup label="Google Neural2 & WaveNet (vi-VN)">
-                                  {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && !v.id.includes('Chirp')).map(v => (
-                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                {!vietnameseModels.some(m => m.id === selectedVoiceVi) && <option value={selectedVoiceVi} disabled>{selectedVoiceVi} (unavailable)</option>}
+                                <optgroup label="Google Neural2, WaveNet & Standard (vi-VN)">
+                                  {vietnameseModels.filter(v => !v.id.includes('Chirp')).map(v => (
+                                    <option key={v.id} value={v.id}>{getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}]</option>
                                   ))}
                                 </optgroup>
-                                <optgroup label="Google Chirp3-HD (vi-VN)">
-                                  {GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN' && v.id.includes('Chirp')).map(v => (
-                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                <optgroup label="Google Chirp3-HD Studio (vi-VN)">
+                                  {vietnameseModels.filter(v => v.id.includes('Chirp')).map(v => (
+                                    <option key={v.id} value={v.id}>{getMinimalName(v)} • [Chirp3-HD Studio]</option>
                                   ))}
                                 </optgroup>
                               </select>
