@@ -67,6 +67,7 @@ import {
 
 interface AudioManagerViewProps {
   cohortAudioSettings?: CohortAudioSettings;
+  defaultCourseLevel?: CourseLevel;
   onUpdateAudioSettings?: (settings: CohortAudioSettings) => void;
   onLaunchProjectorForLesson?: (lessonId: string, sessionNumber: number) => void;
 }
@@ -84,6 +85,25 @@ interface LessonAudioStatus {
   isFullyCached: boolean;
 }
 
+const createBaselineStatuses = (lessonList: LessonDoc[]): LessonAudioStatus[] => {
+  return lessonList.map(lesson => {
+    const chunks = lesson.chunks || [];
+    const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+    return {
+      lessonId: lesson.id,
+      dayNumber: lesson.day_number,
+      title: lesson.lesson_title || `Day ${lesson.day_number}`,
+      totalChunks: chunks.length,
+      enCached: gcsCount, // Baseline estimation
+      viCached: 0,
+      gcsCount,
+      enPercent: chunks.length > 0 ? Math.round((gcsCount / chunks.length) * 100) : 0,
+      viPercent: 0,
+      isFullyCached: chunks.length > 0 && gcsCount === chunks.length
+    };
+  });
+};
+
 interface BatchLogItem {
   id: string;
   timestamp: string;
@@ -93,6 +113,7 @@ interface BatchLogItem {
 
 export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   cohortAudioSettings,
+  defaultCourseLevel,
   onUpdateAudioSettings,
   onLaunchProjectorForLesson
 }) => {
@@ -100,9 +121,19 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   // 1. Courses & Level Tab State
   // --------------------------------------------------------------------------
   const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedCourseLevel, setSelectedCourseLevel] = useState<CourseLevel>('LEVEL_B_ERES');
-  const [lessons, setLessons] = useState<LessonDoc[]>([]);
-  const [isLoadingLessons, setIsLoadingLessons] = useState<boolean>(true);
+  const [selectedCourseLevel, setSelectedCourseLevel] = useState<CourseLevel>(
+    defaultCourseLevel || 'LEVEL_B_ERES'
+  );
+  const [lessons, setLessons] = useState<LessonDoc[]>(() => {
+    return curriculumRegistry.getLessons(defaultCourseLevel || 'LEVEL_B_ERES');
+  });
+  const [isLoadingLessons, setIsLoadingLessons] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (defaultCourseLevel && defaultCourseLevel !== selectedCourseLevel) {
+      setSelectedCourseLevel(defaultCourseLevel);
+    }
+  }, [defaultCourseLevel]);
 
   // --------------------------------------------------------------------------
   // 2. Audio Engine & Provider Configuration
@@ -118,10 +149,29 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     cohortAudioSettings?.voice_profile_vi || modelRegistryService.getMainModelVi()
   );
 
-  // --------------------------------------------------------------------------
-  // 3. Readiness Matrix & Lessons Status Cache
-  // --------------------------------------------------------------------------
-  const [statusList, setStatusList] = useState<LessonAudioStatus[]>([]);
+  const [statusList, setStatusList] = useState<LessonAudioStatus[]>(() => {
+    return createBaselineStatuses(curriculumRegistry.getLessons(defaultCourseLevel || 'LEVEL_B_ERES'));
+  });
+
+  // Synchronously initialize statusList baseline data whenever lessons change
+  useEffect(() => {
+    if (!lessons || lessons.length === 0) {
+      setStatusList([]);
+      return;
+    }
+    const initialStatuses = createBaselineStatuses(lessons);
+    setStatusList((prev: LessonAudioStatus[]) => {
+      if (prev.length === 0) return initialStatuses;
+      const prevMap: Map<string, LessonAudioStatus> = new Map<string, LessonAudioStatus>(prev.map(s => [s.lessonId, s]));
+      return initialStatuses.map(init => {
+        const existing = prevMap.get(init.lessonId);
+        if (existing && existing.totalChunks === init.totalChunks) {
+          return existing;
+        }
+        return init;
+      });
+    });
+  }, [lessons]);
   const [registeredModels, setRegisteredModels] = useState(() => modelRegistryService.getAllModels());
   const allowedModels = useMemo(() => {
     return registeredModels.filter(m => m.focusEnabled && !(m.language === 'vi' && m.provider === 'DEEPGRAM'));
@@ -267,23 +317,28 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
   // Fetch all lessons for the selected course level
   const loadLessons = useCallback(async () => {
-    setIsLoadingLessons(true);
+    // 1. Synchronously pre-seed lessons with curriculumRegistry so lessons is IMMEDIATELY available on mount
+    const defaultLessons = curriculumRegistry.getLessons(selectedCourseLevel);
+    if (defaultLessons && defaultLessons.length > 0) {
+      setLessons(defaultLessons);
+      setBatchTargetLessonId(prev => (!prev || !defaultLessons.some(l => l.id === prev)) ? defaultLessons[0].id : prev);
+      setIsLoadingLessons(false);
+    } else {
+      setIsLoadingLessons(true);
+    }
+
     try {
       const fetched = await getAllLessons(selectedCourseLevel);
       if (fetched && fetched.length > 0) {
         setLessons(fetched);
         setBatchTargetLessonId(prev => (!prev || !fetched.some(l => l.id === prev)) ? fetched[0].id : prev);
-      } else {
-        const defaultLessons = curriculumRegistry.getLessons(selectedCourseLevel);
-        setLessons(defaultLessons);
-        if (defaultLessons.length > 0) {
-          setBatchTargetLessonId(prev => (!prev || !defaultLessons.some(l => l.id === prev)) ? defaultLessons[0].id : prev);
-        }
       }
     } catch (e: any) {
-      console.error('Failed to load lessons for AudioManager:', e);
-      const fallback = curriculumRegistry.getLessons(selectedCourseLevel);
-      setLessons(fallback);
+      console.error('Failed to load lessons for AudioManager from Firestore:', e);
+      if (!defaultLessons || defaultLessons.length === 0) {
+        const fallback = curriculumRegistry.getLessons(selectedCourseLevel);
+        setLessons(fallback);
+      }
     } finally {
       setIsLoadingLessons(false);
     }
@@ -295,6 +350,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
   // Recalculate readiness status map whenever lessons, voice profiles, or cache changes
   const readinessVersion = useRef(0);
+  const latestAppliedVersion = useRef(0);
   const calculateReadinessStatus = useCallback(async () => {
     const version = ++readinessVersion.current;
     if (!lessons || lessons.length === 0) {
@@ -302,29 +358,54 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       return;
     }
 
-    const calculated = await Promise.all(lessons.map(async (lesson) => {
-      const chunks = lesson.chunks || [];
-      const status = await audioPlayer.checkLessonAudioStatus(chunks, voiceProfileEn, voiceProfileVi);
-      const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
-      const isEnReady = chunks.length > 0 && status.enCached === chunks.length;
-      const enPercent = chunks.length > 0 ? (isEnReady ? 100 : Math.round((status.enCached / chunks.length) * 100)) : 0;
-      const viPercent = chunks.length > 0 ? Math.round((status.viCached / chunks.length) * 100) : 0;
+    try {
+      const calculated = await Promise.all(lessons.map(async (lesson) => {
+        const chunks = lesson.chunks || [];
+        const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
 
-      return {
-        lessonId: lesson.id,
-        dayNumber: lesson.day_number,
-        title: lesson.lesson_title || `Day ${lesson.day_number}`,
-        totalChunks: chunks.length,
-        enCached: isEnReady ? chunks.length : status.enCached,
-        viCached: status.viCached,
-        gcsCount,
-        enPercent,
-        viPercent,
-        isFullyCached: status.isFullyCached
-      };
-    }));
+        try {
+          const status = await audioPlayer.checkLessonAudioStatus(chunks, voiceProfileEn, voiceProfileVi);
+          const isEnReady = chunks.length > 0 && status.enCached === chunks.length;
+          const enPercent = chunks.length > 0 ? (isEnReady ? 100 : Math.round((status.enCached / chunks.length) * 100)) : 0;
+          const viPercent = chunks.length > 0 ? Math.round((status.viCached / chunks.length) * 100) : 0;
 
-    if (version === readinessVersion.current) setStatusList(calculated);
+          return {
+            lessonId: lesson.id,
+            dayNumber: lesson.day_number,
+            title: lesson.lesson_title || `Day ${lesson.day_number}`,
+            totalChunks: chunks.length,
+            enCached: isEnReady ? chunks.length : status.enCached,
+            viCached: status.viCached,
+            gcsCount,
+            enPercent,
+            viPercent,
+            isFullyCached: status.isFullyCached
+          };
+        } catch (lessonErr) {
+          console.warn(`[calculateReadinessStatus] Error checking status for lesson ${lesson.id}:`, lessonErr);
+          return {
+            lessonId: lesson.id,
+            dayNumber: lesson.day_number,
+            title: lesson.lesson_title || `Day ${lesson.day_number}`,
+            totalChunks: chunks.length,
+            enCached: gcsCount,
+            viCached: 0,
+            gcsCount,
+            enPercent: chunks.length > 0 ? Math.round((gcsCount / chunks.length) * 100) : 0,
+            viPercent: 0,
+            isFullyCached: chunks.length > 0 && gcsCount === chunks.length
+          };
+        }
+      }));
+
+      // Update statusList reliably without race condition discard bugs
+      if (version >= latestAppliedVersion.current) {
+        latestAppliedVersion.current = version;
+        setStatusList(calculated);
+      }
+    } catch (err) {
+      console.error('[calculateReadinessStatus] Unhandled error during readiness check:', err);
+    }
   }, [lessons, voiceProfileEn, voiceProfileVi]);
 
   useEffect(() => {
@@ -1134,30 +1215,58 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   // --------------------------------------------------------------------------
   // Summary Metrics Computation
   // --------------------------------------------------------------------------
-  const totalChunksInLevel = statusList.reduce((sum, s) => sum + s.totalChunks, 0);
-  const totalEnCached = statusList.reduce((sum, s) => sum + s.enCached, 0);
-  const totalViCached = statusList.reduce((sum, s) => sum + s.viCached, 0);
-  const totalGcsMaster = statusList.reduce((sum, s) => sum + s.gcsCount, 0);
+  const statusMap = useMemo(() => new Map<string, LessonAudioStatus>(statusList.map(s => [s.lessonId, s])), [statusList]);
+
+  const totalChunksInLevel = useMemo(() => {
+    if (statusList.length > 0) return statusList.reduce((sum, s) => sum + s.totalChunks, 0);
+    return lessons.reduce((sum, l) => sum + (l.chunks?.length || 0), 0);
+  }, [statusList, lessons]);
+
+  const totalEnCached = useMemo(() => {
+    if (statusList.length > 0) return statusList.reduce((sum, s) => sum + s.enCached, 0);
+    return lessons.reduce((sum, l) => {
+      const gcs = (l.chunks || []).filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+      return sum + gcs;
+    }, 0);
+  }, [statusList, lessons]);
+
+  const totalViCached = useMemo(() => {
+    if (statusList.length > 0) return statusList.reduce((sum, s) => sum + s.viCached, 0);
+    return 0;
+  }, [statusList]);
+
+  const totalGcsMaster = useMemo(() => {
+    if (statusList.length > 0) return statusList.reduce((sum, s) => sum + s.gcsCount, 0);
+    return lessons.reduce((sum, l) => {
+      const gcs = (l.chunks || []).filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+      return sum + gcs;
+    }, 0);
+  }, [statusList, lessons]);
 
   const overallEnPercent = totalChunksInLevel > 0 ? Math.round((totalEnCached / totalChunksInLevel) * 100) : 0;
   const overallViPercent = totalChunksInLevel > 0 ? Math.round((totalViCached / totalChunksInLevel) * 100) : 0;
   const overallGcsPercent = totalChunksInLevel > 0 ? Math.round((totalGcsMaster / totalChunksInLevel) * 100) : 0;
 
   // Filter lessons in table
-  const filteredLessons = statusList.filter(l => {
-    const matchesSearch = 
-      searchFilter === '' ||
-      l.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
-      `day ${l.dayNumber}`.includes(searchFilter.toLowerCase()) ||
-      l.lessonId.toLowerCase().includes(searchFilter.toLowerCase());
+  const filteredLessons = useMemo(() => {
+    return lessons.filter(l => {
+      const matchesSearch = 
+        searchFilter === '' ||
+        (l.lesson_title || '').toLowerCase().includes(searchFilter.toLowerCase()) ||
+        `day ${l.day_number}`.includes(searchFilter.toLowerCase()) ||
+        l.id.toLowerCase().includes(searchFilter.toLowerCase());
 
-    if (!matchesSearch) return false;
+      if (!matchesSearch) return false;
 
-    if (statusFilter === 'ready') return l.isFullyCached;
-    if (statusFilter === 'missing') return !l.isFullyCached;
-    if (statusFilter === 'has_gcs') return l.gcsCount > 0;
-    return true;
-  });
+      const st = statusMap.get(l.id);
+      if (!st) return true;
+
+      if (statusFilter === 'ready') return st.isFullyCached;
+      if (statusFilter === 'missing') return !st.isFullyCached;
+      if (statusFilter === 'has_gcs') return st.gcsCount > 0;
+      return true;
+    });
+  }, [lessons, statusMap, searchFilter, statusFilter]);
 
   // Filter chunks in inspector
   const filteredChunks = (inspectingLesson?.chunks || []).filter(c => {
@@ -2159,16 +2268,30 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredLessons.map((item) => {
-                  const lessonDoc = lessons.find(l => l.id === item.lessonId);
+                filteredLessons.map((lesson) => {
+                  const lessonDoc = lesson;
+                  const chunks = lesson.chunks || [];
+                  const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+                  const item = statusMap.get(lesson.id) || {
+                    lessonId: lesson.id,
+                    dayNumber: lesson.day_number,
+                    title: lesson.lesson_title || `Day ${lesson.day_number}`,
+                    totalChunks: chunks.length,
+                    enCached: gcsCount,
+                    viCached: 0,
+                    gcsCount,
+                    enPercent: chunks.length > 0 ? Math.round((gcsCount / chunks.length) * 100) : 0,
+                    viPercent: 0,
+                    isFullyCached: chunks.length > 0 && gcsCount === chunks.length
+                  };
                   const isEn100 = item.enPercent === 100 && item.totalChunks > 0;
                   const isVi100 = item.viPercent === 100 && item.totalChunks > 0;
 
                   return (
                     <tr
-                      key={item.lessonId}
+                      key={lesson.id}
                       className="hover:bg-zinc-50/80 transition-colors group cursor-pointer"
-                      onClick={() => lessonDoc && setInspectingLesson(lessonDoc)}
+                      onClick={() => setInspectingLesson(lesson)}
                     >
                       {/* Day Number */}
                       <td className="py-3.5 px-4 text-center font-mono font-bold text-zinc-900">
@@ -2255,8 +2378,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              if (lessonDoc && lessonDoc.chunks?.[0]) {
-                                handlePlayChunk(lessonDoc.chunks[0], 'en');
+                              if (lesson.chunks?.[0]) {
+                                handlePlayChunk(lesson.chunks[0], 'en');
                               }
                             }}
                             className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
@@ -2268,7 +2391,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
                           {/* Quick Retry If Lesson Has Failed Chunks */}
                           {(() => {
-                            const lessonFailedChunks = failedChunks.filter(f => f.lessonId === item.lessonId);
+                            const lessonFailedChunks = failedChunks.filter(f => f.lessonId === lesson.id);
                             if (lessonFailedChunks.length === 0) return null;
                             return (
                               <button
@@ -2276,8 +2399,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                                 disabled={isBatchRunning}
                                 onClick={() => {
                                   setBatchScope('current_lesson');
-                                  setBatchTargetLessonId(item.lessonId);
-                                  handleStartBatchGeneration('current_lesson', item.lessonId, 'failed_only', lessonFailedChunks.map(f => f.chunkId));
+                                  setBatchTargetLessonId(lesson.id);
+                                  handleStartBatchGeneration('current_lesson', lesson.id, 'failed_only', lessonFailedChunks.map(f => f.chunkId));
                                 }}
                                 className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 border border-rose-200 shadow-2xs"
                                 title={`Thử lại ${lessonFailedChunks.length} câu bị lỗi trong bài này`}
@@ -2295,8 +2418,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                               disabled={isBatchRunning}
                               onClick={() => {
                                 setBatchScope('current_lesson');
-                                setBatchTargetLessonId(item.lessonId);
-                                handleStartBatchGeneration('current_lesson', item.lessonId, 'missing_only');
+                                setBatchTargetLessonId(lesson.id);
+                                handleStartBatchGeneration('current_lesson', lesson.id, 'missing_only');
                               }}
                               className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 border border-emerald-200 shadow-2xs"
                               title="Tạo các câu còn thiếu cho bài này"
@@ -2312,8 +2435,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                             disabled={isBatchRunning}
                             onClick={() => {
                               setBatchScope('current_lesson');
-                              setBatchTargetLessonId(item.lessonId);
-                              handleStartBatchGeneration('current_lesson', item.lessonId, 'full');
+                              setBatchTargetLessonId(lesson.id);
+                              handleStartBatchGeneration('current_lesson', lesson.id, 'full');
                             }}
                             className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
                             title="Tạo lại toàn bộ audio cho bài này"
@@ -2326,7 +2449,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                           <button
                             type="button"
                             disabled={isBatchRunning || isResettingAudio}
-                            onClick={() => handleResetAudioUrls(item.lessonId)}
+                            onClick={() => handleResetAudioUrls(lesson.id)}
                             className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-[11px] font-bold transition-all cursor-pointer inline-flex items-center"
                             title="Xóa link audio cũ của bài này để tạo lại từ đầu"
                           >
@@ -2336,7 +2459,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                           {/* Inspect Chunks Drawer */}
                           <button
                             type="button"
-                            onClick={() => lessonDoc && setInspectingLesson(lessonDoc)}
+                            onClick={() => setInspectingLesson(lesson)}
                             className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                             title="Xem chi tiết từng chunk"
                           >
