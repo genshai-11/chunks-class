@@ -856,6 +856,15 @@ class ModelRegistryService {
           const filteredKeys: ProviderApiKey[] = parsed.filter(
             (k: ProviderApiKey) => k && k.key && !KNOWN_DEAD_KEYS.has(k.key.trim())
           );
+          if (!filteredKeys.some(k => k.provider === 'GOOGLE_TTS')) {
+            filteredKeys.push({
+              id: 'key_google_default',
+              provider: 'GOOGLE_TTS',
+              key: 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4',
+              label: 'Google Cloud TTS Built-in Primary',
+              status: 'READY'
+            });
+          }
           if (!filteredKeys.some(k => k.provider === 'DEEPGRAM')) {
             filteredKeys.push({
               id: 'key_deepgram_default',
@@ -1116,6 +1125,15 @@ class ModelRegistryService {
         const filteredKeys: ProviderApiKey[] = data.keys.filter(
           (k: ProviderApiKey) => k && k.key && !KNOWN_DEAD_KEYS.has(k.key.trim())
         );
+        if (!filteredKeys.some(k => k.provider === 'GOOGLE_TTS')) {
+          filteredKeys.push({
+            id: 'key_google_default',
+            provider: 'GOOGLE_TTS',
+            key: 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4',
+            label: 'Google Cloud TTS Built-in Primary',
+            status: 'READY'
+          });
+        }
         if (!filteredKeys.some(k => k.provider === 'DEEPGRAM')) {
           filteredKeys.push({
             id: 'key_deepgram_default',
@@ -1277,13 +1295,13 @@ class ModelRegistryService {
    */
   public rotateKeyOn429(provider: TtsProviderType, currentKey: string): string | null {
     const keyItem = this.keys.find(k => k.provider === provider && k.key.trim() === currentKey.trim());
-    const cooldownMs = 60000; // 60 seconds cooldown
+    const cooldownMs = 5000; // 5 seconds cooldown (transient burst safety)
 
     if (keyItem) {
       keyItem.status = 'RATE_LIMITED';
       keyItem.rateLimitedUntil = Date.now() + cooldownMs;
       keyItem.lastError = 'HTTP 429: Quota / Rate Limit Exceeded';
-      console.warn(`[ModelRegistry] Provider ${provider} key (${this.maskKey(keyItem.key)}) hit 429. Cooldown set for 60s.`);
+      console.warn(`[ModelRegistry] Provider ${provider} key (${this.maskKey(keyItem.key)}) hit 429. Cooldown set for 5s.`);
     }
 
     this.saveKeys();
@@ -1414,7 +1432,7 @@ class ModelRegistryService {
           const errText = await resp.text();
           if (resp.status === 429) {
             item.status = 'RATE_LIMITED';
-            item.rateLimitedUntil = Date.now() + 60000;
+            item.rateLimitedUntil = Date.now() + 5000;
             item.lastError = '429 Rate Limit Exceeded';
           } else {
             item.status = 'ERROR';
@@ -1456,7 +1474,7 @@ class ModelRegistryService {
           const errText = await resp.text();
           if (resp.status === 429) {
             item.status = 'RATE_LIMITED';
-            item.rateLimitedUntil = Date.now() + 60000;
+            item.rateLimitedUntil = Date.now() + 5000;
             item.lastError = '429 Rate Limit Exceeded';
           } else {
             item.status = 'ERROR';
@@ -1493,7 +1511,7 @@ class ModelRegistryService {
           const errText = await resp.text();
           if (resp.status === 429) {
             item.status = 'RATE_LIMITED';
-            item.rateLimitedUntil = Date.now() + 60000;
+            item.rateLimitedUntil = Date.now() + 5000;
             item.lastError = '429 Rate Limit Exceeded';
           } else {
             item.status = 'ERROR';
@@ -1534,7 +1552,7 @@ class ModelRegistryService {
           const errText = await resp.text();
           if (resp.status === 429) {
             item.status = 'RATE_LIMITED';
-            item.rateLimitedUntil = Date.now() + 60000;
+            item.rateLimitedUntil = Date.now() + 5000;
             item.lastError = '429 Rate Limit Exceeded';
           } else {
             item.status = 'ERROR';

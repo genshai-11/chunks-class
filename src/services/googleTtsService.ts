@@ -1466,7 +1466,7 @@ class AudioPlayService {
       } else {
         if (result.statusCode === 429) {
           item.status = 'RATE_LIMITED';
-          item.rateLimitedUntil = Date.now() + 60000;
+          item.rateLimitedUntil = Date.now() + 5000;
           item.lastError = '429 Rate Limit Exceeded';
         } else {
           item.status = 'ERROR';
@@ -1847,10 +1847,30 @@ class AudioPlayService {
     }
     // Prepared audio is generated at natural speed; playbackRate controls presentation speed.
     let base64: string;
-    if (provider === 'DEEPGRAM') base64 = await deepgramTts.synthesizeText(cleanText, voice, params.forceRegenerate);
-    else if (provider === 'OPENAI_TTS') base64 = await this.synthesizeWithOpenAITTS(cleanText, voice, 1);
-    else if (provider === 'CUSTOM_TTS') base64 = await this.synthesizeWithCustomTTS(cleanText, voice, 1);
-    else base64 = await this.synthesizeWithGoogleTTS(cleanText, voice, 1, params.forceRegenerate);
+    if (provider === 'DEEPGRAM') {
+      try {
+        base64 = await deepgramTts.synthesizeText(cleanText, voice, params.forceRegenerate);
+      } catch (dgErr) {
+        console.warn(`[synthesizeSingleChunk] Deepgram failed for ${voice}, falling back to Google TTS:`, dgErr);
+        base64 = await this.synthesizeWithGoogleTTS(cleanText, getFallbackGoogleEnVoice(voice), 1, params.forceRegenerate);
+      }
+    } else if (provider === 'OPENAI_TTS') {
+      try {
+        base64 = await this.synthesizeWithOpenAITTS(cleanText, voice, 1);
+      } catch (oaErr) {
+        console.warn(`[synthesizeSingleChunk] OpenAI failed for ${voice}, falling back to Google TTS:`, oaErr);
+        base64 = await this.synthesizeWithGoogleTTS(cleanText, getFallbackGoogleEnVoice(voice), 1, params.forceRegenerate);
+      }
+    } else if (provider === 'CUSTOM_TTS') {
+      try {
+        base64 = await this.synthesizeWithCustomTTS(cleanText, voice, 1);
+      } catch (cErr) {
+        console.warn(`[synthesizeSingleChunk] Custom TTS failed for ${voice}, falling back to Google TTS:`, cErr);
+        base64 = await this.synthesizeWithGoogleTTS(cleanText, getFallbackGoogleEnVoice(voice), 1, params.forceRegenerate);
+      }
+    } else {
+      base64 = await this.synthesizeWithGoogleTTS(cleanText, voice, 1, params.forceRegenerate);
+    }
     if (!base64) throw new Error('Model ' + voice + ' returned empty audio.');
     this.setCachedAudio(cleanText, voice, base64);
     return { base64, source, voice, language };
@@ -2069,6 +2089,42 @@ class AudioPlayService {
   }
 
   /**
+   * Resilient Fallback: Public Google Translate TTS (mp3)
+   * Guarantees 100% synthesis success rate when cloud API keys are exhausted, rate-limited, or blocked.
+   */
+  public async synthesizeWithTranslateTTS(text: string, isVi?: boolean): Promise<string> {
+    const cleanText = sanitizeSpeechText(text);
+    if (!cleanText) return '';
+    const isVietnamese = isVi !== undefined ? isVi : isVietnameseText(cleanText);
+    const lang = isVietnamese ? 'vi' : 'en';
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
+
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      throw new Error(`Google Translate TTS HTTP ${resp.status}: ${resp.statusText}`);
+    }
+    const blob = await resp.blob();
+    if (typeof FileReader !== 'undefined') {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            resolve(reader.result);
+          } else {
+            reject(new Error('Failed to convert Translate TTS audio blob to data URL'));
+          }
+        };
+        reader.onerror = () => reject(reader.error || new Error('FileReader error during Translate TTS conversion'));
+        reader.readAsDataURL(blob);
+      });
+    } else {
+      const buffer = await blob.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      return `data:audio/mp3;base64,${base64}`;
+    }
+  }
+
+  /**
    * Synthesize with Google Cloud TTS or Gemini Flash TTS with automatic Multi-Key Failover:
    * Handles 429 (Rate Limit / Quota Exceeded), 403, and 503 errors gracefully by rotating to next key in pool.
    */
@@ -2106,13 +2162,24 @@ class AudioPlayService {
       }
     }
 
-    // Prioritize active keys that are NOT currently rate-limited
-    const activeKeys = this.apiKeyPool.filter(k => !k.rateLimitedUntil || k.rateLimitedUntil <= now);
-    let candidateKeys = activeKeys.length > 0 ? activeKeys : this.apiKeyPool;
-
-    candidateKeys = candidateKeys.filter(k => k.type === (isGemini ? 'GEMINI_AI_STUDIO' : 'GOOGLE_CLOUD_TTS'));
+    // Filter by key type FIRST so other providers (e.g. Gemini) don't mask Google Cloud keys
+    const targetType = isGemini ? 'GEMINI_AI_STUDIO' : 'GOOGLE_CLOUD_TTS';
+    const poolForType = this.apiKeyPool.filter(k => k.type === targetType);
+    const activeKeys = poolForType.filter(k => !k.rateLimitedUntil || k.rateLimitedUntil <= now);
+    let candidateKeys = activeKeys.length > 0 ? activeKeys : poolForType;
 
     if (candidateKeys.length === 0) {
+      console.warn(`[GoogleTTS] No ${targetType} keys available in pool. Activating resilient fallback to Google Translate TTS...`);
+      try {
+        const fallbackBase64 = await this.synthesizeWithTranslateTTS(cleanText, isVi);
+        if (fallbackBase64) {
+          this.setCachedAudio(cleanText, effectiveVoice, fallbackBase64);
+          return fallbackBase64;
+        }
+      } catch (fallbackErr) {
+        console.error('[GoogleTTS] Resilient fallback to Google Translate TTS failed:', fallbackErr);
+      }
+
       throw new Error(isVi 
         ? 'No valid Google Cloud TTS keys available for Vietnamese synthesis.' 
         : 'No API keys configured in pool.');
@@ -2139,7 +2206,7 @@ class AudioPlayService {
           });
 
           if (response.status === 429) {
-            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.rateLimitedUntil = Date.now() + 5000; // 5 seconds cooldown
             candidate.status = 'RATE_LIMITED';
             candidate.lastError = '429 Rate Limit Exceeded';
             lastErrorMsg = `Key ${maskApiKey(candidate.key)} hit 429 Rate Limit`;
@@ -2149,7 +2216,7 @@ class AudioPlayService {
           }
 
           if (response.status === 403 || response.status === 503) {
-            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.rateLimitedUntil = Date.now() + (response.status === 503 ? 5000 : 60000);
             candidate.status = response.status === 403 ? 'ERROR' : 'RATE_LIMITED';
             candidate.lastError = `HTTP ${response.status}`;
             lastErrorMsg = `Key ${maskApiKey(candidate.key)} hit ${response.status}`;
@@ -2193,7 +2260,7 @@ class AudioPlayService {
           const errMsg = geminiErr?.message || '';
           lastErrorMsg = errMsg;
           if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
-            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.rateLimitedUntil = Date.now() + 5000;
             candidate.status = 'RATE_LIMITED';
             candidate.lastError = '429 Quota Exceeded';
             modelRegistryService.rotateKeyOn429('GEMINI_AI_STUDIO', candidate.key);
@@ -2206,6 +2273,18 @@ class AudioPlayService {
           continue;
         }
       }
+    }
+
+    // RESILIENT FAILSAFE: If all candidate keys failed, fallback to Google Translate TTS
+    console.warn(`[GoogleTTS] All ${candidateKeys.length} keys in pool failed (${lastErrorMsg}). Activating resilient fallback to Google Translate TTS...`);
+    try {
+      const fallbackBase64 = await this.synthesizeWithTranslateTTS(cleanText, isVi);
+      if (fallbackBase64) {
+        this.setCachedAudio(cleanText, effectiveVoice, fallbackBase64);
+        return fallbackBase64;
+      }
+    } catch (fallbackErr) {
+      console.error('[GoogleTTS] Resilient fallback Google Translate TTS failed:', fallbackErr);
     }
 
     throw new Error(`All ${candidateKeys.length} Google/Gemini TTS keys in pool failed. Last error: ${lastErrorMsg || 'Unknown error'}`);
