@@ -1589,8 +1589,8 @@ class AudioPlayService {
       const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
       const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
 
-      const isEnReady = hasEnAudio || (effectiveVoiceEn === 'aura-asteria-en' && hasGcsAudio);
-      const isViReady = hasViAudio;
+      const isEnReady = hasEnAudio || hasGcsAudio;
+      const isViReady = hasViAudio || hasGcsAudioVi;
 
       if (isEnReady) enCached++;
       if (isViReady) viCached++;
@@ -1650,7 +1650,7 @@ class AudioPlayService {
       const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
       const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
 
-      const isEnReady = hasEnAudio || (effectiveVoiceEn === 'aura-asteria-en' && hasGcsAudio);
+      const isEnReady = hasEnAudio || hasGcsAudio;
       const isViReady = hasViAudio || hasGcsAudioVi;
 
       if (isEnReady) enCached++;
