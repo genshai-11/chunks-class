@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Cohort, ClassSession, CohortAudioSettings } from '../types';
+import { Cohort, ClassSession, CohortAudioSettings, ChunkItem, LessonDoc } from '../types';
 import { exportScheduleAsICS, calculate15Sessions } from '../utils/scheduler';
 import { curriculumRegistry } from '../services/curriculumRegistry';
+import { getAllLessons } from '../services/firestoreService';
 import { audioPlayer, AudioProvider } from '../services/googleTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
 import { sanitizeSpeechText } from '../services/deepgramTtsService';
@@ -42,6 +43,37 @@ export interface SessionAudioStatus {
   percent: number;
 }
 
+/**
+ * Synchronously compute audio baseline status without blocking IndexedDB.
+ * Checks for permanent GCS audio URLs or already cached audio in audioPlayer memory.
+ */
+export const computeBaselineStatus = (
+  session: ClassSession,
+  chunks: ChunkItem[],
+  voiceEn: string
+): SessionAudioStatus => {
+  const total = chunks.length;
+  if (total === 0) {
+    return { isReady: false, total: 0, cached: 0, percent: 0 };
+  }
+  let readyCount = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    const c = chunks[i];
+    const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
+    const isCached = audioPlayer.hasCachedAudio(c.english, voiceEn);
+    if (hasGcs || isCached) {
+      readyCount++;
+    }
+  }
+  const percent = Math.round((readyCount / total) * 100);
+  return {
+    isReady: readyCount === total,
+    total,
+    cached: readyCount,
+    percent
+  };
+};
+
 export const ScheduleView: React.FC<ScheduleViewProps> = ({
   cohort,
   onUpdateCohort,
@@ -62,8 +94,31 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
   // Audio Settings Modal & Audio Readiness State
   const [isAudioSettingsOpen, setIsAudioSettingsOpen] = useState<boolean>(false);
-  const [sessionAudioStatus, setSessionAudioStatus] = useState<Record<number, SessionAudioStatus>>({});
   const [isLoadingAudioStatus, setIsLoadingAudioStatus] = useState<boolean>(false);
+  const [liveLessons, setLiveLessons] = useState<Record<string, LessonDoc>>({});
+  const progressiveCheckRef = useRef<number>(0);
+
+  const getVoiceEn = useCallback(() => {
+    return cohort.audio_settings?.voice_profile_en || 
+      cohort.audio_settings?.voice_profile_primary || 
+      modelRegistryService.getMainModelEn() || 
+      'flux-cliff-en';
+  }, [cohort.audio_settings]);
+
+  // Synchronous zero-latency baseline initialization on mount
+  const [sessionAudioStatus, setSessionAudioStatus] = useState<Record<number, SessionAudioStatus>>(() => {
+    const initial: Record<number, SessionAudioStatus> = {};
+    const voiceEn = cohort.audio_settings?.voice_profile_en || 
+      cohort.audio_settings?.voice_profile_primary || 
+      modelRegistryService.getMainModelEn() || 
+      'flux-cliff-en';
+    for (const session of cohort?.sessions || []) {
+      const lesson = curriculumRegistry.getLessonById(session.lesson_id);
+      const chunks = lesson?.chunks || [];
+      initial[session.session_number] = computeBaselineStatus(session, chunks, voiceEn);
+    }
+    return initial;
+  });
 
   // Quick Action Generation & Progress State
   const [generatingSessionNumber, setGeneratingSessionNumber] = useState<number | null>(null);
@@ -89,93 +144,150 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Calculate audio readiness for all sessions
-  const refreshAudioStatuses = useCallback(async () => {
+  // Bounded & progressive audio checking across sessions (does not lock IndexedDB)
+  const runProgressiveAudioCheck = useCallback(async (
+    checkId: number,
+    customLessons?: Record<string, LessonDoc>
+  ) => {
     const sessionsList = cohort?.sessions || [];
     if (sessionsList.length === 0) return;
 
     setIsLoadingAudioStatus(true);
-    const voiceEn = cohort.audio_settings?.voice_profile_en || 
-      cohort.audio_settings?.voice_profile_primary || 
-      modelRegistryService.getMainModelEn() || 
-      'flux-cliff-en';
-    const voiceVi = cohort.audio_settings?.voice_profile_vi || 
-      cohort.audio_settings?.voice_profile_secondary || 
-      modelRegistryService.getMainModelVi() || 
-      'vi-VN-Neural2-A';
+    const voiceEn = getVoiceEn();
 
-    const newStatuses: Record<number, SessionAudioStatus> = {};
+    try {
+      for (const session of sessionsList) {
+        if (progressiveCheckRef.current !== checkId) return;
 
-    await Promise.all(sessionsList.map(async (session) => {
-      const lesson = curriculumRegistry.getLessonById(session.lesson_id);
-      const chunks = lesson?.chunks || [];
-      const total = chunks.length;
+        const lesson = (customLessons && customLessons[session.lesson_id]) || 
+          liveLessons[session.lesson_id] || 
+          curriculumRegistry.getLessonById(session.lesson_id);
+        const chunks = lesson?.chunks || [];
+        const total = chunks.length;
 
-      if (total === 0) {
-        newStatuses[session.session_number] = { isReady: false, total: 0, cached: 0, percent: 0 };
-        return;
-      }
+        if (total === 0) {
+          setSessionAudioStatus(prev => ({
+            ...prev,
+            [session.session_number]: { isReady: false, total: 0, cached: 0, percent: 0 }
+          }));
+          continue;
+        }
 
-      try {
-        const status = await audioPlayer.checkLessonAudioStatus(chunks, voiceEn, voiceVi);
         let readyCount = 0;
         for (let i = 0; i < chunks.length; i++) {
+          if (progressiveCheckRef.current !== checkId) return;
+
           const c = chunks[i];
-          const detail = status.details[i];
           const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-          const hasAudio = detail?.hasEnAudio || hasGcs;
-          if (hasAudio) {
+          if (hasGcs || audioPlayer.hasCachedAudio(c.english, voiceEn)) {
+            readyCount++;
+            continue;
+          }
+
+          const cached = await audioPlayer.getCachedAudioAsync(c.english, voiceEn);
+          if (cached) {
             readyCount++;
           }
         }
 
         const percent = Math.round((readyCount / total) * 100);
-        newStatuses[session.session_number] = {
-          isReady: readyCount === total,
-          total,
-          cached: readyCount,
-          percent
-        };
-      } catch (err) {
-        console.warn(`Failed to check audio status for session ${session.session_number}:`, err);
-        newStatuses[session.session_number] = { isReady: false, total, cached: 0, percent: 0 };
+        setSessionAudioStatus(prev => ({
+          ...prev,
+          [session.session_number]: {
+            isReady: readyCount === total,
+            total,
+            cached: readyCount,
+            percent
+          }
+        }));
       }
-    }));
+    } catch (err) {
+      console.warn('[ScheduleView] Progressive audio check error:', err);
+    } finally {
+      if (progressiveCheckRef.current === checkId) {
+        setIsLoadingAudioStatus(false);
+      }
+    }
+  }, [cohort.sessions, getVoiceEn, liveLessons]);
 
-    setSessionAudioStatus(newStatuses);
-    setIsLoadingAudioStatus(false);
-  }, [cohort.sessions, cohort.audio_settings]);
+  const refreshAudioStatuses = useCallback(() => {
+    progressiveCheckRef.current++;
+    runProgressiveAudioCheck(progressiveCheckRef.current);
+  }, [runProgressiveAudioCheck]);
 
-  // Recalculate audio readiness on mount and when cohort sessions or audio settings change
+  // Recalculate baseline immediately when cohort sessions or audio settings change, then run progressive check
   useEffect(() => {
-    refreshAudioStatuses();
-  }, [refreshAudioStatuses]);
+    const voiceEn = getVoiceEn();
+    const baseline: Record<number, SessionAudioStatus> = {};
+    for (const session of cohort?.sessions || []) {
+      const lesson = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
+      const chunks = lesson?.chunks || [];
+      baseline[session.session_number] = computeBaselineStatus(session, chunks, voiceEn);
+    }
+    setSessionAudioStatus(baseline);
+
+    progressiveCheckRef.current++;
+    runProgressiveAudioCheck(progressiveCheckRef.current);
+  }, [cohort.id, cohort.sessions, cohort.audio_settings, getVoiceEn, runProgressiveAudioCheck]);
+
+  // Fetch live lessons from Firestore for the cohort's level
+  useEffect(() => {
+    let cancelled = false;
+    const fetchLiveLessons = async () => {
+      if (!cohort?.level_code) return;
+      try {
+        const firestoreLessons = await getAllLessons(cohort.level_code);
+        if (cancelled || !firestoreLessons?.length) return;
+
+        const lessonMap: Record<string, LessonDoc> = {};
+        for (const l of firestoreLessons) {
+          lessonMap[l.id] = l;
+          curriculumRegistry.updateLesson(l);
+        }
+        setLiveLessons(prev => ({ ...prev, ...lessonMap }));
+
+        const voiceEn = getVoiceEn();
+        setSessionAudioStatus(prev => {
+          const updated = { ...prev };
+          for (const session of cohort.sessions || []) {
+            const lesson = lessonMap[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
+            const chunks = lesson?.chunks || [];
+            updated[session.session_number] = computeBaselineStatus(session, chunks, voiceEn);
+          }
+          return updated;
+        });
+
+        progressiveCheckRef.current++;
+        runProgressiveAudioCheck(progressiveCheckRef.current, lessonMap);
+      } catch (err) {
+        console.warn('[ScheduleView] Failed to fetch live lessons from Firestore:', err);
+      }
+    };
+
+    fetchLiveLessons();
+    return () => { cancelled = true; };
+  }, [cohort.level_code, cohort.id, cohort.sessions, getVoiceEn, runProgressiveAudioCheck]);
 
   // Check single session audio status after quick batch generation
   const checkSingleSessionAudio = async (session: ClassSession) => {
-    const lesson = curriculumRegistry.getLessonById(session.lesson_id);
+    const lesson = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
     const chunks = lesson?.chunks || [];
     const total = chunks.length;
     if (total === 0) return;
 
-    const voiceEn = cohort.audio_settings?.voice_profile_en || 
-      cohort.audio_settings?.voice_profile_primary || 
-      modelRegistryService.getMainModelEn() || 
-      'flux-cliff-en';
-    const voiceVi = cohort.audio_settings?.voice_profile_vi || 
-      cohort.audio_settings?.voice_profile_secondary || 
-      modelRegistryService.getMainModelVi() || 
-      'vi-VN-Neural2-A';
+    const voiceEn = getVoiceEn();
 
     try {
-      const status = await audioPlayer.checkLessonAudioStatus(chunks, voiceEn, voiceVi);
       let readyCount = 0;
       for (let i = 0; i < chunks.length; i++) {
         const c = chunks[i];
-        const detail = status.details[i];
         const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-        const hasAudio = detail?.hasEnAudio || hasGcs;
-        if (hasAudio) {
+        if (hasGcs || audioPlayer.hasCachedAudio(c.english, voiceEn)) {
+          readyCount++;
+          continue;
+        }
+        const cached = await audioPlayer.getCachedAudioAsync(c.english, voiceEn);
+        if (cached) {
           readyCount++;
         }
       }
@@ -200,17 +312,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     session: ClassSession,
     mode: 'missing_only' | 'en_only' | 'force_overwrite'
   ) => {
-    const lesson = curriculumRegistry.getLessonById(session.lesson_id);
+    const lesson = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
     const chunks = lesson?.chunks || [];
     if (chunks.length === 0) {
       showToast('error', `Bài học "${session.lesson_title}" không có câu nào.`);
       return;
     }
 
-    const voiceEn = cohort.audio_settings?.voice_profile_en || 
-      cohort.audio_settings?.voice_profile_primary || 
-      modelRegistryService.getMainModelEn() || 
-      'flux-cliff-en';
+    const voiceEn = getVoiceEn();
     const voiceVi = cohort.audio_settings?.voice_profile_vi || 
       cohort.audio_settings?.voice_profile_secondary || 
       modelRegistryService.getMainModelVi() || 
@@ -223,11 +332,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     let targetChunks = chunks;
 
     if (mode === 'missing_only') {
-      const status = await audioPlayer.checkLessonAudioStatus(chunks, voiceEn, voiceVi);
-      targetChunks = chunks.filter((c, idx) => {
-        const detail = status.details[idx];
+      targetChunks = chunks.filter((c) => {
         const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-        const isReady = detail?.hasEnAudio || hasGcs;
+        const isReady = hasGcs || audioPlayer.hasCachedAudio(c.english, voiceEn);
         return !isReady;
       });
 
@@ -418,7 +525,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       );
     }
 
-    const status = sessionAudioStatus[sessionNumber];
+    const session = sessions.find(s => s.session_number === sessionNumber);
+    const lesson = session ? (liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id)) : null;
+    const chunks = lesson?.chunks || [];
+    const voiceEn = getVoiceEn();
+
+    // Fall back to synchronous baseline if async check is pending or status not yet recorded
+    const status = sessionAudioStatus[sessionNumber] || (session ? computeBaselineStatus(session, chunks, voiceEn) : null);
+
     if (!status) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-100 text-zinc-400">
@@ -798,7 +912,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       {viewMode === 'GRID' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredSessions.map((session) => {
-            const lessonMeta = curriculumRegistry.getLessonById(session.lesson_id);
+            const lessonMeta = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
             const chunkCount = lessonMeta?.total_chunks || lessonMeta?.chunks?.length || 0;
             const isCompleted = session.status === 'completed';
             const isInProgress = session.status === 'in_progress';

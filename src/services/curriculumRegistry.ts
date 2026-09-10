@@ -154,12 +154,44 @@ class CurriculumRegistryService {
   public updateLesson(lesson: LessonDoc): void {
     if (!lesson || !lesson.id) return;
     this.individualLessonsMap.set(lesson.id, lesson);
+
+    // Also handle legacy aliases for individual lookup
+    if (lesson.id.startsWith('level_b_eres_day_')) {
+      const aliasId = lesson.id.replace('level_b_eres_day_', 'level_b_day_');
+      this.individualLessonsMap.set(aliasId, lesson);
+    } else if (lesson.id.startsWith('level_b_day_')) {
+      const aliasId = lesson.id.replace('level_b_day_', 'level_b_eres_day_');
+      this.individualLessonsMap.set(aliasId, lesson);
+    }
+    if (lesson.id === 'level_a_word_list') {
+      this.individualLessonsMap.set('level_a_day_0', lesson);
+      this.individualLessonsMap.set('level_a_0', lesson);
+    }
+
+    let foundInAnyList = false;
     this.lessonsMap.forEach((list) => {
-      const idx = list.findIndex(l => l.id === lesson.id);
+      const idx = list.findIndex(l => 
+        l.id === lesson.id ||
+        (lesson.id.startsWith('level_b_eres_day_') && l.id === lesson.id.replace('level_b_eres_day_', 'level_b_day_')) ||
+        (lesson.id.startsWith('level_b_day_') && l.id === lesson.id.replace('level_b_day_', 'level_b_eres_day_')) ||
+        (lesson.id === 'level_a_word_list' && (l.id === 'level_a_day_0' || l.id === 'level_a_0'))
+      );
       if (idx >= 0) {
         list[idx] = lesson;
+        foundInAnyList = true;
       }
     });
+
+    if (!foundInAnyList) {
+      const targetKeys = [lesson.course_id, lesson.level_code, lesson.level_code?.toUpperCase()].filter(Boolean);
+      targetKeys.forEach(k => {
+        const list = this.lessonsMap.get(k as string);
+        if (list) {
+          list.push(lesson);
+          list.sort((a, b) => a.day_number - b.day_number);
+        }
+      });
+    }
   }
 
   public getAllLessons(): LessonDoc[] {

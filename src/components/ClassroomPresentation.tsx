@@ -321,6 +321,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   useEffect(() => {
     if (providedLesson && providedLesson.id === currentLessonId) {
       setFetchedLessonDoc(providedLesson);
+      curriculumRegistry.updateLesson(providedLesson);
       return;
     }
 
@@ -335,6 +336,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         if (isMounted) {
           if (doc) {
             setFetchedLessonDoc(doc);
+            curriculumRegistry.updateLesson(doc);
           } else {
             const fallbackDoc = curriculumRegistry.getLessonById(targetId);
             if (fallbackDoc) setFetchedLessonDoc(fallbackDoc);
@@ -378,18 +380,18 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       if (!activeLesson?.chunks?.length) return;
       for (const chunk of activeLesson.chunks) {
         const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
-        const hasGcsVi = Boolean(chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http'));
-        for (const [text, voice] of requiredAudio(chunk)) {
-          const isVi = voice.startsWith('vi-');
-          if (isVi ? hasGcsVi : hasGcsEn) continue;
-          if (!text.trim() || !await audioPlayer.getCachedAudioAsync(text, voice)) return;
-        }
+        if (hasGcsEn) continue;
+        const text = chunk.english?.trim();
+        if (!text) continue;
+        if (audioPlayer.hasCachedAudio(text, selectedVoice)) continue;
+        const cached = await audioPlayer.getCachedAudioAsync(text, selectedVoice);
+        if (!cached) return;
       }
       if (!cancelled) setIsCurrentLessonFullyCached(true);
     };
     scan().catch(() => {});
     return () => { cancelled = true; ++playbackSequenceRef.current; audioPlayer.stop(); };
-  }, [activeLesson, selectedVoice, selectedVoiceVi, languageMode, audioProvider, isPreparingAudio]);
+  }, [activeLesson, selectedVoice, isPreparingAudio]);
   const isCurrentLessonAudioReady = isCurrentLessonFullyCached;
 
   const rawChunks: ChunkItem[] = activeLesson?.chunks || [];
@@ -401,13 +403,10 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
   const checkAudioReady = useCallback((chunk: ChunkItem) => {
     const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
-    const hasGcsVi = Boolean(chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http'));
-    return requiredAudio(chunk).every(([text, voice]) => {
-      const isVi = voice.startsWith('vi-');
-      if (isVi ? hasGcsVi : hasGcsEn) return true;
-      return Boolean(text.trim()) && audioPlayer.hasCachedAudio(text, voice);
-    });
-  }, [selectedVoice, selectedVoiceVi, languageMode, isCurrentLessonFullyCached]);
+    if (hasGcsEn) return true;
+    if (isCurrentLessonFullyCached) return true;
+    return Boolean(chunk.english?.trim()) && audioPlayer.hasCachedAudio(chunk.english, selectedVoice);
+  }, [selectedVoice, isCurrentLessonFullyCached]);
 
   const parts: LessonPart[] = useMemo(() => {
     return groupChunksIntoParts(chunks, activeLesson?.lesson_title, checkAudioReady);
@@ -502,11 +501,18 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     const scan = async () => {
       const result: Record<string, boolean> = {};
       for (const lesson of groupedCourses.flatMap(g => g.lessons)) {
-        let ready = Boolean(lesson.chunks?.length);
-        for (const chunk of lesson.chunks || []) {
-          for (const [text, voice] of requiredAudio(chunk)) {
-            if (!text.trim() || !await audioPlayer.getCachedAudioAsync(text, voice)) ready = false;
+        if (!lesson.chunks?.length) {
+          result[lesson.id] = false;
+          continue;
+        }
+        let ready = true;
+        for (const chunk of lesson.chunks) {
+          const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
+          if (hasGcsEn || audioPlayer.hasCachedAudio(chunk.english, selectedVoice)) {
+            continue;
           }
+          ready = false;
+          break;
         }
         result[lesson.id] = ready;
       }
@@ -514,7 +520,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     };
     scan().catch(() => {});
     return () => { cancelled = true; };
-  }, [groupedCourses, selectedVoice, selectedVoiceVi, languageMode, isPreparingAudio]);
+  }, [groupedCourses, selectedVoice, isPreparingAudio]);
 
   const handleSwitchLesson = (newLessonId: string) => {
     let cleanId = newLessonId;

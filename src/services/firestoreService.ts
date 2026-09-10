@@ -115,7 +115,7 @@ export async function getLessonById(lessonId: string): Promise<LessonDoc | null>
       const data = snapshot.data();
       const chunksArray: ChunkItem[] = Array.isArray(data.chunks) ? data.chunks : [];
 
-      return {
+      const lessonDoc: LessonDoc = {
         id: snapshot.id,
         course_id: data.course_id,
         level_code: data.level_code || 'CUSTOM',
@@ -127,6 +127,11 @@ export async function getLessonById(lessonId: string): Promise<LessonDoc | null>
         chunks: chunksArray,
         created_at: data.created_at || new Date().toISOString()
       };
+
+      // Always update registry so in-memory store is synchronized with Firestore permanent audio URLs
+      curriculumRegistry.updateLesson(lessonDoc);
+
+      return lessonDoc;
     }
   } catch (err) {
     console.warn(`[Firestore] getLessonById notice for ${lessonId}:`, err);
@@ -178,7 +183,7 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string): 
     }
     
     if (!snapshot.empty) {
-      return snapshot.docs.map(d => {
+      const lessons = snapshot.docs.map(d => {
         const data = d.data();
         const chunks = Array.isArray(data.chunks) ? data.chunks : [];
         return {
@@ -192,8 +197,13 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string): 
           categories: data.categories || [],
           chunks: chunks,
           created_at: data.created_at || new Date().toISOString()
-        };
+        } as LessonDoc;
       }).sort((a, b) => a.day_number - b.day_number);
+
+      // Iterate and call curriculumRegistry.updateLesson for each doc before returning
+      lessons.forEach(lesson => curriculumRegistry.updateLesson(lesson));
+
+      return lessons;
     }
   } catch (err) {
     console.warn(`[Firestore] getLessonsByLevel notice for ${courseIdOrLevel}:`, err);
@@ -210,10 +220,91 @@ export async function getAllLessons(courseIdOrLevel?: CourseLevel | string): Pro
   try {
     const snapshot = await getDocs(collection(db, 'lessons'));
     if (!snapshot.empty) {
-      return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LessonDoc));
+      const lessons = snapshot.docs.map(d => {
+        const data = d.data();
+        const chunks = Array.isArray(data.chunks) ? data.chunks : [];
+        return {
+          id: d.id,
+          course_id: data.course_id,
+          level_code: data.level_code || 'CUSTOM',
+          day_number: data.day_number ?? 0,
+          lesson_title: data.lesson_title || d.id,
+          lesson_type: data.lesson_type || 'Standard Lesson',
+          total_chunks: chunks.length,
+          categories: Array.isArray(data.categories) ? data.categories : [],
+          chunks: chunks,
+          created_at: data.created_at || new Date().toISOString()
+        } as LessonDoc;
+      }).sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+
+      lessons.forEach(lesson => curriculumRegistry.updateLesson(lesson));
+      return lessons;
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[Firestore] getAllLessons notice:', err);
+  }
   return curriculumRegistry.getAllLessons();
+}
+
+/**
+ * Dedicated helper to synchronize Firestore /lessons into in-memory curriculumRegistry.
+ * Fetches the latest lessons from Firestore /lessons, updates curriculumRegistry for each lesson,
+ * and returns counts of total lessons, total chunks, and chunks with valid permanent audio_url.
+ */
+export async function syncFirestoreLessonsToRegistry(
+  courseIdOrLevel?: CourseLevel | string
+): Promise<{ totalLessons: number; totalChunks: number; chunksWithAudio: number }> {
+  try {
+    let lessons: LessonDoc[] = [];
+    if (courseIdOrLevel) {
+      lessons = await getLessonsByLevel(courseIdOrLevel);
+    } else {
+      const snapshot = await getDocs(collection(db, 'lessons'));
+      if (!snapshot.empty) {
+        lessons = snapshot.docs.map(d => {
+          const data = d.data();
+          const chunks = Array.isArray(data.chunks) ? data.chunks : [];
+          return {
+            id: d.id,
+            course_id: data.course_id,
+            level_code: data.level_code || 'CUSTOM',
+            day_number: data.day_number ?? 0,
+            lesson_title: data.lesson_title || d.id,
+            lesson_type: data.lesson_type || 'Standard Lesson',
+            total_chunks: chunks.length,
+            categories: Array.isArray(data.categories) ? data.categories : [],
+            chunks: chunks,
+            created_at: data.created_at || new Date().toISOString()
+          } as LessonDoc;
+        }).sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+
+        lessons.forEach(l => curriculumRegistry.updateLesson(l));
+      } else {
+        lessons = curriculumRegistry.getAllLessons();
+      }
+    }
+
+    let totalChunks = 0;
+    let chunksWithAudio = 0;
+
+    for (const lesson of lessons) {
+      if (Array.isArray(lesson.chunks)) {
+        totalChunks += lesson.chunks.length;
+        chunksWithAudio += lesson.chunks.filter(c =>
+          Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))
+        ).length;
+      }
+    }
+
+    return {
+      totalLessons: lessons.length,
+      totalChunks,
+      chunksWithAudio
+    };
+  } catch (err) {
+    console.error('[Firestore] syncFirestoreLessonsToRegistry error:', err);
+    throw err;
+  }
 }
 
 // --------------------------------------------------------------------------
