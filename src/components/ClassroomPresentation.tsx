@@ -65,21 +65,17 @@ interface ClassroomPresentationProps {
 
 export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   lesson: providedLesson,
-  initialLessonId = "level_b_eres_day_1",
+  initialLessonId = "level_b_day_1",
   sessionNumber = 1,
   onExit,
   audioSettings,
-  courseLevel = 'LEVEL_B_ERES',
+  courseLevel = 'LEVEL_B',
   onSelectLesson,
   onUpdateAudioSettings
 }) => {
   const [currentLessonId, setCurrentLessonId] = useState<string>(() => {
     if (providedLesson?.id) return providedLesson.id;
-    let initial = initialLessonId || 'level_b_eres_day_1';
-    if (initial.startsWith('level_b_day_')) {
-      initial = initial.replace('level_b_day_', 'level_b_eres_day_');
-    }
-    return initial;
+    return initialLessonId || 'level_b_day_1';
   });
   const [fetchedLessonDoc, setFetchedLessonDoc] = useState<LessonDoc | null>(providedLesson || null);
   const [currentChunkIndex, setCurrentChunkIndex] = useState<number>(0);
@@ -171,10 +167,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   // Synchronize when initialLessonId changes
   useEffect(() => {
     if (initialLessonId) {
-      let cleanId = initialLessonId;
-      if (cleanId.startsWith('level_b_day_')) {
-        cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
-      }
+      const cleanId = initialLessonId;
       if (cleanId !== currentLessonId) {
         setIsTopicCompleteGate(false);
         setIsLessonCompleteGate(false);
@@ -326,10 +319,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     }
 
     let isMounted = true;
-    let targetId = currentLessonId;
-    if (targetId.startsWith('level_b_day_')) {
-      targetId = targetId.replace('level_b_day_', 'level_b_eres_day_');
-    }
+    const targetId = currentLessonId;
 
     getFirestoreLessonById(targetId)
       .then(doc => {
@@ -354,12 +344,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     return () => { isMounted = false; };
   }, [currentLessonId, providedLesson]);
 
-  const normalizedId = currentLessonId.startsWith('level_b_day_') 
-    ? currentLessonId.replace('level_b_day_', 'level_b_eres_day_') 
-    : currentLessonId;
-
   const activeLesson: LessonDoc = fetchedLessonDoc || 
-    curriculumRegistry.getLessonById(normalizedId) || 
     curriculumRegistry.getLessonById(currentLessonId) || 
     curriculumRegistry.getAllLessons()[0];
 
@@ -523,10 +508,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   }, [groupedCourses, selectedVoice, isPreparingAudio]);
 
   const handleSwitchLesson = (newLessonId: string) => {
-    let cleanId = newLessonId;
-    if (cleanId.startsWith('level_b_day_')) {
-      cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
-    }
+    const cleanId = newLessonId;
     audioPlayer.stop();
     setIsTopicCompleteGate(false);
     setIsLessonCompleteGate(false);
@@ -1038,7 +1020,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                         {/* Lesson Items */}
                         <div className="mt-1 space-y-1">
                           {lessons.map(l => {
-                            const isCurrent = l.id === normalizedId || l.id === currentLessonId;
+                            const isCurrent = l.id === currentLessonId || 
+                              (l.id.startsWith('level_b_day_') && currentLessonId === l.id.replace('level_b_day_', 'level_b_ere_day_')) ||
+                              (l.id.startsWith('level_b_ere_day_') && currentLessonId === l.id.replace('level_b_ere_day_', 'level_b_day_'));
                             const isLessonReady = Boolean(
                               lessonReadyMap[l.id] ||
                               audioPlayer.isLessonAudioReady(l) ||

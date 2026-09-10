@@ -32,17 +32,17 @@ export interface CalculateSessionParams {
 }
 
 export function resolveCourseIdFromLevel(levelCode: CourseLevel | string): string {
-  if (levelCode === 'LEVEL_B_ERE' || levelCode === 'course_level_b_ere') {
-    return 'course_level_b_ere';
+  if (levelCode === 'LEVEL_B' || levelCode === 'course_level_b' || levelCode === 'LEVEL_B_ERE' || levelCode === 'course_level_b_ere') {
+    return 'course_level_b';
+  }
+  if (levelCode === 'LEVEL_A' || levelCode === 'course_level_a') {
+    return 'course_level_a';
   }
   if (levelCode === 'LEVEL_B_EREL' || levelCode === 'course_level_b_erel') {
     return 'course_level_b_erel';
   }
-  if (levelCode === 'LEVEL_B_ERES' || levelCode === 'LEVEL_B' || levelCode === 'course_level_b_eres' || levelCode === 'course_level_b') {
+  if (levelCode === 'LEVEL_B_ERES' || levelCode === 'course_level_b_eres') {
     return 'course_level_b_eres';
-  }
-  if (levelCode === 'LEVEL_A' || levelCode === 'course_level_a') {
-    return 'course_level_a';
   }
   return String(levelCode).toLowerCase();
 }
@@ -127,17 +127,19 @@ export async function calculateSessions(params: CalculateSessionParams): Promise
 
 /**
  * Synchronous session recurrence generator with dynamic registry lookup.
- * - LEVEL_B_EREL -> pulls 15 lessons of EREL (level_b_erel_day_1 .. 15)
- * - LEVEL_B_ERES (or legacy LEVEL_B) -> pulls 15 lessons of ERES (level_b_eres_day_1 .. 15)
+ * - LEVEL_B (or course_level_b / LEVEL_B_ERE) -> pulls 30 lessons of ERE (level_b_day_1 .. 30)
  * - LEVEL_A -> pulls 16 lessons of Level A (level_a_day_0 .. 15)
+ * - LEVEL_B_EREL -> pulls 15 lessons of EREL (level_b_erel_day_1 .. 15)
+ * - LEVEL_B_ERES -> pulls 15 lessons of ERES (level_b_eres_day_1 .. 15)
  */
 export function calculate15Sessions(
-  levelCode: CourseLevel = "LEVEL_B_ERES",
+  levelCode: CourseLevel | string = "LEVEL_B",
   startDateStr: string = "",
   daysOfWeek: string[] = ["Mon", "Wed", "Fri"],
   startTime: string = "19:30",
   endTime: string = "21:00",
-  holidays: string[] = []
+  holidays: string[] = [],
+  totalSessionsOverride?: number
 ): ClassSession[] {
   if (!daysOfWeek || daysOfWeek.length === 0) {
     daysOfWeek = ["Mon", "Wed", "Fri"];
@@ -161,10 +163,11 @@ export function calculate15Sessions(
   const sessions: ClassSession[] = [];
   let count = 1;
   let safetyLoop = 0;
-  const maxSafetyLoop = 365;
+  const maxSafetyLoop = 730;
 
   const catalog = curriculumRegistry.getLessons(levelCode);
-  const targetSessionsCount = catalog.length > 0 ? catalog.length : 15;
+  const defaultCountForLevel = (levelCode === 'LEVEL_B' || levelCode === 'course_level_b' || levelCode === 'LEVEL_B_ERE') ? 30 : (levelCode === 'LEVEL_A' || levelCode === 'course_level_a' ? 16 : 15);
+  const targetSessionsCount = totalSessionsOverride || (catalog.length > 0 ? catalog.length : defaultCountForLevel);
 
   while (count <= targetSessionsCount && safetyLoop < maxSafetyLoop) {
     safetyLoop++;
@@ -203,18 +206,19 @@ export function calculate15Sessions(
 }
 
 export function createDefaultCohort(
-  title: string = "Level B - ERES Speaking Masterclass K24",
-  levelCode: CourseLevel = "LEVEL_B_ERES"
+  title: string = "Level B - ERE Spoken Reflexes K30",
+  levelCode: CourseLevel = "LEVEL_B"
 ): Cohort {
   const today = new Date();
   const y = today.getFullYear();
   const m = String(today.getMonth() + 1).padStart(2, '0');
   const d = String(today.getDate()).padStart(2, '0');
   const startDate = `${y}-${m}-${d}`;
-  const sessions = calculate15Sessions(levelCode, startDate, ["Mon", "Wed", "Fri"], "19:30", "21:00");
   const course = curriculumRegistry.getCourse(levelCode);
   const courseId = course?.id || resolveCourseIdFromLevel(levelCode);
-  const totalSessions = levelCode === 'LEVEL_B_ERE' ? 30 : (course?.default_sessions_count || sessions.length || 15);
+  const defaultTotal = (levelCode === 'LEVEL_B' || levelCode === 'LEVEL_B_ERE') ? 30 : (course?.default_sessions_count || 15);
+  const sessions = calculate15Sessions(levelCode, startDate, ["Mon", "Wed", "Fri"], "19:30", "21:00", [], defaultTotal);
+  const totalSessions = sessions.length || defaultTotal;
 
   return {
     id: "cohort_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
@@ -263,7 +267,7 @@ export function exportScheduleAsICS(cohort: Cohort): string {
 
     icsContent.push(
       "BEGIN:VEVENT",
-      `SUMMARY:[CHUNKS Session ${s.session_number}/${cohort.total_sessions || 15}] ${s.lesson_title}`,
+      `SUMMARY:[CHUNKS Session ${s.session_number}/${cohort.total_sessions || cohort.sessions.length || 30}] ${s.lesson_title}`,
       `DESCRIPTION:Cohort: ${cohort.title}\\nLesson: ${s.lesson_title}\\nType: ${s.lesson_type}`,
       `DTSTART:${cleanDate}T${cleanStart}`,
       `DTEND:${cleanDate}T${cleanEnd}`,

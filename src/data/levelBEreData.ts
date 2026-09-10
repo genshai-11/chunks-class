@@ -2,10 +2,10 @@ import { LessonDoc } from "../types";
 
 export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
   {
-    "id": "level_b_ere_day_1",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_1",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 1,
     "lesson_title": "Day 1 - First Day Of Work",
     "lesson_type": "Reflex & Business Drill",
@@ -1848,10 +1848,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_2",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_2",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 2,
     "lesson_title": "Day 2 - Viettel",
     "lesson_type": "Reflex & Business Drill",
@@ -3687,10 +3687,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_3",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_3",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 3,
     "lesson_title": "Day 3 - Tell me about yourself",
     "lesson_type": "Reflex & Business Drill",
@@ -5529,10 +5529,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_4",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_4",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 4,
     "lesson_title": "Day 4 - Smarketing",
     "lesson_type": "Reflex & Business Drill",
@@ -7372,10 +7372,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_5",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_5",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 5,
     "lesson_title": "Day 5 - Office Romance",
     "lesson_type": "Reflex & Business Drill",
@@ -9204,10 +9204,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_6",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_6",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 6,
     "lesson_title": "Day 6 - Gossipy",
     "lesson_type": "Reflex & Business Drill",
@@ -11039,10 +11039,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_7",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_7",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 7,
     "lesson_title": "Day 7 - Electronic mail",
     "lesson_type": "Reflex & Business Drill",
@@ -12872,10 +12872,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_8",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_8",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 8,
     "lesson_title": "Day 8 - COVID-19",
     "lesson_type": "Reflex & Business Drill",
@@ -14696,10 +14696,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_9",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_9",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 9,
     "lesson_title": "Day 9 - Business trip",
     "lesson_type": "Reflex & Business Drill",
@@ -16534,10 +16534,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_10",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_10",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 10,
     "lesson_title": "Day 10 - Project management",
     "lesson_type": "Reflex & Business Drill",
@@ -18376,10 +18376,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_11",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_11",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 11,
     "lesson_title": "Day 11 - Stand up meeting",
     "lesson_type": "Reflex & Business Drill",
@@ -20220,10 +20220,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_12",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_12",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 12,
     "lesson_title": "Day 12 - Electronic mail (Advanced)",
     "lesson_type": "Reflex & Business Drill",
@@ -22063,10 +22063,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_13",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_13",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 13,
     "lesson_title": "Day 13 - Chart analysis",
     "lesson_type": "Reflex & Business Drill",
@@ -23904,10 +23904,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_14",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_14",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 14,
     "lesson_title": "Day 14 - Customer complaint",
     "lesson_type": "Reflex & Business Drill",
@@ -25745,10 +25745,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_15",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_15",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 15,
     "lesson_title": "Day 15 - Close the deal!",
     "lesson_type": "Reflex & Business Drill",
@@ -27579,10 +27579,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_16",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_16",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 16,
     "lesson_title": "Day 16 - Social media",
     "lesson_type": "Reflex & Business Drill",
@@ -29411,10 +29411,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_17",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_17",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 17,
     "lesson_title": "Day 17 - Teamwork",
     "lesson_type": "Reflex & Business Drill",
@@ -31246,10 +31246,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_18",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_18",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 18,
     "lesson_title": "Day 18 - Salary negotiation",
     "lesson_type": "Reflex & Business Drill",
@@ -33085,10 +33085,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_19",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_19",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 19,
     "lesson_title": "Day 19 - EXCEL",
     "lesson_type": "Reflex & Business Drill",
@@ -34921,10 +34921,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_20",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_20",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 20,
     "lesson_title": "Day 20 - Year-end party",
     "lesson_type": "Reflex & Business Drill",
@@ -36758,10 +36758,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_21",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_21",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 21,
     "lesson_title": "Day 21 - Compensation and benefits",
     "lesson_type": "Reflex & Business Drill",
@@ -38599,10 +38599,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_22",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_22",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 22,
     "lesson_title": "Day 22 - Nepotism",
     "lesson_type": "Reflex & Business Drill",
@@ -40433,10 +40433,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_23",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_23",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 23,
     "lesson_title": "Day 23 - What KPI stands for?",
     "lesson_type": "Reflex & Business Drill",
@@ -42265,10 +42265,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_24",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_24",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 24,
     "lesson_title": "Day 24 - How to write a CV?",
     "lesson_type": "Reflex & Business Drill",
@@ -44100,10 +44100,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_25",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_25",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 25,
     "lesson_title": "Day 25 - Small talk",
     "lesson_type": "Reflex & Business Drill",
@@ -45936,10 +45936,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_26",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_26",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 26,
     "lesson_title": "Day 26 - Financial picture",
     "lesson_type": "Reflex & Business Drill",
@@ -47769,10 +47769,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_27",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_27",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 27,
     "lesson_title": "Day 27 - Shark Tank",
     "lesson_type": "Reflex & Business Drill",
@@ -49602,10 +49602,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_28",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_28",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 28,
     "lesson_title": "Day 28 - Never eat alone",
     "lesson_type": "Reflex & Business Drill",
@@ -51440,10 +51440,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_29",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_29",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 29,
     "lesson_title": "Day 29 - LinkedIn",
     "lesson_type": "Reflex & Business Drill",
@@ -53281,10 +53281,10 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     ]
   },
   {
-    "id": "level_b_ere_day_30",
-    "course_id": "course_level_b_ere",
-    "level_code": "LEVEL_B_ERE",
-    "course_title": "Level B - ERE (English Reflexes Enhancement)",
+    "id": "level_b_day_30",
+    "course_id": "course_level_b",
+    "level_code": "LEVEL_B",
+    "course_title": "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
     "day_number": 30,
     "lesson_title": "Day 30 - Farewell party",
     "lesson_type": "Reflex & Business Drill",
