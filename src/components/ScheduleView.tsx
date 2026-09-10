@@ -1,21 +1,32 @@
-import React, { useState } from 'react';
-import { Cohort, ClassSession } from '../types';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Cohort, ClassSession, CohortAudioSettings, ChunkItem, LessonDoc } from '../types';
 import { exportScheduleAsICS, calculate15Sessions } from '../utils/scheduler';
 import { curriculumRegistry } from '../services/curriculumRegistry';
+import { getAllLessons } from '../services/firestoreService';
+import { audioPlayer, AudioProvider } from '../services/googleTtsService';
+import { modelRegistryService } from '../services/modelRegistryService';
+import { sanitizeSpeechText } from '../services/deepgramTtsService';
+import { ScheduleAudioSettingsModal } from './ScheduleAudioSettingsModal';
 import { 
   Play, 
   Calendar, 
   Clock, 
   Download, 
-  ArrowUpRight,
-  Sparkles,
-  Layers,
-  CheckCircle2,
-  CalendarCheck,
-  Settings,
-  Edit3,
-  X,
-  Check
+  ArrowUpRight, 
+  CheckCircle2, 
+  Edit3, 
+  X, 
+  Check, 
+  Volume2, 
+  VolumeX, 
+  Zap, 
+  RotateCcw, 
+  Settings, 
+  ChevronDown, 
+  Loader2, 
+  AlertCircle,
+  Activity,
+  Headphones
 } from 'lucide-react';
 
 interface ScheduleViewProps {
@@ -24,6 +35,44 @@ interface ScheduleViewProps {
   onLaunchProjectorForLesson: (lessonId: string, sessionNumber: number) => void;
   onOpenCreateCohort: () => void;
 }
+
+export interface SessionAudioStatus {
+  isReady: boolean;
+  total: number;
+  cached: number;
+  percent: number;
+}
+
+/**
+ * Synchronously compute audio baseline status without blocking IndexedDB.
+ * Checks for permanent GCS audio URLs or already cached audio in audioPlayer memory.
+ */
+export const computeBaselineStatus = (
+  session: ClassSession,
+  chunks: ChunkItem[],
+  voiceEn: string
+): SessionAudioStatus => {
+  const total = chunks.length;
+  if (total === 0) {
+    return { isReady: false, total: 0, cached: 0, percent: 0 };
+  }
+  let readyCount = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    const c = chunks[i];
+    const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
+    const isCached = audioPlayer.hasCachedAudio(c.english, voiceEn);
+    if (hasGcs || isCached) {
+      readyCount++;
+    }
+  }
+  const percent = Math.round((readyCount / total) * 100);
+  return {
+    isReady: readyCount === total,
+    total,
+    cached: readyCount,
+    percent
+  };
+};
 
 export const ScheduleView: React.FC<ScheduleViewProps> = ({
   cohort,
@@ -42,6 +91,316 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const [editDays, setEditDays] = useState<string[]>(cohort.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri']);
   const [editStartTime, setEditStartTime] = useState<string>(cohort.schedule_pattern?.start_time || '19:30');
   const [editEndTime, setEditEndTime] = useState<string>(cohort.schedule_pattern?.end_time || '21:00');
+
+  // Audio Settings Modal & Audio Readiness State
+  const [isAudioSettingsOpen, setIsAudioSettingsOpen] = useState<boolean>(false);
+  const [isLoadingAudioStatus, setIsLoadingAudioStatus] = useState<boolean>(false);
+  const [liveLessons, setLiveLessons] = useState<Record<string, LessonDoc>>({});
+  const progressiveCheckRef = useRef<number>(0);
+
+  const getVoiceEn = useCallback(() => {
+    return cohort.audio_settings?.voice_profile_en || 
+      cohort.audio_settings?.voice_profile_primary || 
+      modelRegistryService.getMainModelEn() || 
+      'flux-cliff-en';
+  }, [cohort.audio_settings]);
+
+  // Synchronous zero-latency baseline initialization on mount
+  const [sessionAudioStatus, setSessionAudioStatus] = useState<Record<number, SessionAudioStatus>>(() => {
+    const initial: Record<number, SessionAudioStatus> = {};
+    const voiceEn = cohort.audio_settings?.voice_profile_en || 
+      cohort.audio_settings?.voice_profile_primary || 
+      modelRegistryService.getMainModelEn() || 
+      'flux-cliff-en';
+    for (const session of cohort?.sessions || []) {
+      const lesson = curriculumRegistry.getLessonById(session.lesson_id);
+      const chunks = lesson?.chunks || [];
+      initial[session.session_number] = computeBaselineStatus(session, chunks, voiceEn);
+    }
+    return initial;
+  });
+
+  // Quick Action Generation & Progress State
+  const [generatingSessionNumber, setGeneratingSessionNumber] = useState<number | null>(null);
+  const [generationProgress, setGenerationProgress] = useState<{ current: number; total: number; percentage: number }>({
+    current: 0,
+    total: 0,
+    percentage: 0
+  });
+  const cancelGenerationRef = useRef<boolean>(false);
+  const [activeActionMenuSession, setActiveActionMenuSession] = useState<number | null>(null);
+
+  // Toast notifications
+  const [toast, setToast] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
+  const showToast = useCallback((type: 'success' | 'info' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+
+  // Close quick action dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = () => setActiveActionMenuSession(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // Bounded & progressive audio checking across sessions (does not lock IndexedDB)
+  const runProgressiveAudioCheck = useCallback(async (
+    checkId: number,
+    customLessons?: Record<string, LessonDoc>
+  ) => {
+    const sessionsList = cohort?.sessions || [];
+    if (sessionsList.length === 0) return;
+
+    setIsLoadingAudioStatus(true);
+    const voiceEn = getVoiceEn();
+
+    try {
+      for (const session of sessionsList) {
+        if (progressiveCheckRef.current !== checkId) return;
+
+        const lesson = (customLessons && customLessons[session.lesson_id]) || 
+          liveLessons[session.lesson_id] || 
+          curriculumRegistry.getLessonById(session.lesson_id);
+        const chunks = lesson?.chunks || [];
+        const total = chunks.length;
+
+        if (total === 0) {
+          setSessionAudioStatus(prev => ({
+            ...prev,
+            [session.session_number]: { isReady: false, total: 0, cached: 0, percent: 0 }
+          }));
+          continue;
+        }
+
+        let readyCount = 0;
+        for (let i = 0; i < chunks.length; i++) {
+          if (progressiveCheckRef.current !== checkId) return;
+
+          const c = chunks[i];
+          const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
+          if (hasGcs || audioPlayer.hasCachedAudio(c.english, voiceEn)) {
+            readyCount++;
+            continue;
+          }
+
+          const cached = await audioPlayer.getCachedAudioAsync(c.english, voiceEn);
+          if (cached) {
+            readyCount++;
+          }
+        }
+
+        const percent = Math.round((readyCount / total) * 100);
+        setSessionAudioStatus(prev => ({
+          ...prev,
+          [session.session_number]: {
+            isReady: readyCount === total,
+            total,
+            cached: readyCount,
+            percent
+          }
+        }));
+      }
+    } catch (err) {
+      console.warn('[ScheduleView] Progressive audio check error:', err);
+    } finally {
+      if (progressiveCheckRef.current === checkId) {
+        setIsLoadingAudioStatus(false);
+      }
+    }
+  }, [cohort.sessions, getVoiceEn, liveLessons]);
+
+  const refreshAudioStatuses = useCallback(() => {
+    progressiveCheckRef.current++;
+    runProgressiveAudioCheck(progressiveCheckRef.current);
+  }, [runProgressiveAudioCheck]);
+
+  // Recalculate baseline immediately when cohort sessions or audio settings change, then run progressive check
+  useEffect(() => {
+    const voiceEn = getVoiceEn();
+    const baseline: Record<number, SessionAudioStatus> = {};
+    for (const session of cohort?.sessions || []) {
+      const lesson = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
+      const chunks = lesson?.chunks || [];
+      baseline[session.session_number] = computeBaselineStatus(session, chunks, voiceEn);
+    }
+    setSessionAudioStatus(baseline);
+
+    progressiveCheckRef.current++;
+    runProgressiveAudioCheck(progressiveCheckRef.current);
+  }, [cohort.id, cohort.sessions, cohort.audio_settings, getVoiceEn, runProgressiveAudioCheck]);
+
+  // Fetch live lessons from Firestore for the cohort's level
+  useEffect(() => {
+    let cancelled = false;
+    const fetchLiveLessons = async () => {
+      if (!cohort?.level_code) return;
+      try {
+        const firestoreLessons = await getAllLessons(cohort.level_code);
+        if (cancelled || !firestoreLessons?.length) return;
+
+        const lessonMap: Record<string, LessonDoc> = {};
+        for (const l of firestoreLessons) {
+          lessonMap[l.id] = l;
+          curriculumRegistry.updateLesson(l);
+        }
+        setLiveLessons(prev => ({ ...prev, ...lessonMap }));
+
+        const voiceEn = getVoiceEn();
+        setSessionAudioStatus(prev => {
+          const updated = { ...prev };
+          for (const session of cohort.sessions || []) {
+            const lesson = lessonMap[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
+            const chunks = lesson?.chunks || [];
+            updated[session.session_number] = computeBaselineStatus(session, chunks, voiceEn);
+          }
+          return updated;
+        });
+
+        progressiveCheckRef.current++;
+        runProgressiveAudioCheck(progressiveCheckRef.current, lessonMap);
+      } catch (err) {
+        console.warn('[ScheduleView] Failed to fetch live lessons from Firestore:', err);
+      }
+    };
+
+    fetchLiveLessons();
+    return () => { cancelled = true; };
+  }, [cohort.level_code, cohort.id, cohort.sessions, getVoiceEn, runProgressiveAudioCheck]);
+
+  // Check single session audio status after quick batch generation
+  const checkSingleSessionAudio = async (session: ClassSession) => {
+    const lesson = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
+    const chunks = lesson?.chunks || [];
+    const total = chunks.length;
+    if (total === 0) return;
+
+    const voiceEn = getVoiceEn();
+
+    try {
+      let readyCount = 0;
+      for (let i = 0; i < chunks.length; i++) {
+        const c = chunks[i];
+        const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
+        if (hasGcs || audioPlayer.hasCachedAudio(c.english, voiceEn)) {
+          readyCount++;
+          continue;
+        }
+        const cached = await audioPlayer.getCachedAudioAsync(c.english, voiceEn);
+        if (cached) {
+          readyCount++;
+        }
+      }
+
+      const percent = Math.round((readyCount / total) * 100);
+      setSessionAudioStatus(prev => ({
+        ...prev,
+        [session.session_number]: {
+          isReady: readyCount === total,
+          total,
+          cached: readyCount,
+          percent
+        }
+      }));
+    } catch (err) {
+      console.warn(`Failed to check audio for single session ${session.session_number}:`, err);
+    }
+  };
+
+  // Quick Action Synthesis Handler with concurrent worker pool (4 workers)
+  const handleQuickGenerateAudio = async (
+    session: ClassSession,
+    mode: 'missing_only' | 'en_only' | 'force_overwrite'
+  ) => {
+    const lesson = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
+    const chunks = lesson?.chunks || [];
+    if (chunks.length === 0) {
+      showToast('error', `Bài học "${session.lesson_title}" không có câu nào.`);
+      return;
+    }
+
+    const voiceEn = getVoiceEn();
+    const voiceVi = cohort.audio_settings?.voice_profile_vi || 
+      cohort.audio_settings?.voice_profile_secondary || 
+      modelRegistryService.getMainModelVi() || 
+      'vi-VN-Neural2-A';
+
+    const provider: AudioProvider = (voiceEn.startsWith('aura-') || voiceEn.startsWith('flux-')) 
+      ? 'DEEPGRAM_AURA' 
+      : 'GOOGLE_TTS';
+
+    let targetChunks = chunks;
+
+    if (mode === 'missing_only') {
+      targetChunks = chunks.filter((c) => {
+        const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
+        const isReady = hasGcs || audioPlayer.hasCachedAudio(c.english, voiceEn);
+        return !isReady;
+      });
+
+      if (targetChunks.length === 0) {
+        showToast('success', `Session ${session.session_number}: Tất cả ${chunks.length} câu đều đã có audio sẵn sàng!`);
+        return;
+      }
+    }
+
+    const total = targetChunks.length;
+    setGeneratingSessionNumber(session.session_number);
+    setGenerationProgress({ current: 0, total, percentage: 0 });
+    cancelGenerationRef.current = false;
+
+    const forceRegenerate = mode === 'force_overwrite';
+    const concurrency = 4;
+    let nextIdx = 0;
+    let completed = 0;
+
+    const worker = async () => {
+      while (nextIdx < targetChunks.length) {
+        if (cancelGenerationRef.current) break;
+        const chunk = targetChunks[nextIdx++];
+        const cleanEn = sanitizeSpeechText(chunk.english);
+        if (cleanEn) {
+          try {
+            await audioPlayer.synthesizeSingleChunk({
+              text: cleanEn,
+              language: 'en',
+              voiceName: voiceEn,
+              forceRegenerate,
+              provider
+            });
+          } catch (err) {
+            console.warn(`[QuickAudio] Lỗi phát âm "${cleanEn.slice(0, 25)}":`, err);
+          }
+        }
+        completed++;
+        const pct = Math.round((completed / total) * 100);
+        setGenerationProgress({ current: completed, total, percentage: pct });
+      }
+    };
+
+    const workers = Array.from({ length: Math.min(total, concurrency) }, () => worker());
+    await Promise.all(workers);
+
+    if (cancelGenerationRef.current) {
+      showToast('info', `Đã hủy tạo audio cho Session ${session.session_number}.`);
+    } else {
+      showToast('success', `✓ Đã tạo xong audio cho Session ${session.session_number} (${completed}/${total} câu)!`);
+    }
+
+    await checkSingleSessionAudio(session);
+    setGeneratingSessionNumber(null);
+  };
+
+  const handleSaveAudioSettings = (newSettings: CohortAudioSettings) => {
+    const updatedCohort: Cohort = {
+      ...cohort,
+      audio_settings: newSettings,
+      updated_at: new Date().toISOString()
+    };
+    onUpdateCohort(updatedCohort);
+    showToast('success', '✓ Đã cập nhật cấu hình Audio thành công!');
+    refreshAudioStatuses();
+  };
 
   const toggleEditDay = (day: string) => {
     if (editDays.includes(day)) {
@@ -99,6 +458,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const inProgressSession = sessions.find(s => s.status === 'in_progress') || sessions.find(s => s.status === 'scheduled') || sessions[0];
   const progressPercent = totalSessions > 0 ? Math.round((completedCount / totalSessions) * 100) : 0;
 
+  // Aggregate audio readiness summary
+  const readySessionsCount = sessions.filter(s => sessionAudioStatus[s.session_number]?.isReady).length;
+
   const handleStatusChange = (sessionNumber: number, newStatus: ClassSession['status']) => {
     const updatedSessions = sessions.map(s => {
       if (s.session_number === sessionNumber) {
@@ -152,18 +514,208 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const startTimeText = cohort?.schedule_pattern?.start_time || '19:30';
   const endTimeText = cohort?.schedule_pattern?.end_time || '21:00';
 
+  // Render Audio Readiness Badge for a session
+  const renderAudioBadge = (sessionNumber: number) => {
+    if (generatingSessionNumber === sessionNumber) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
+          <Loader2 className="w-3 h-3 animate-spin text-blue-600 shrink-0" />
+          <span>Đang tạo {generationProgress.percentage}%</span>
+        </span>
+      );
+    }
+
+    const session = sessions.find(s => s.session_number === sessionNumber);
+    const lesson = session ? (liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id)) : null;
+    const chunks = lesson?.chunks || [];
+    const voiceEn = getVoiceEn();
+
+    // Fall back to synchronous baseline if async check is pending or status not yet recorded
+    const status = sessionAudioStatus[sessionNumber] || (session ? computeBaselineStatus(session, chunks, voiceEn) : null);
+
+    if (!status) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-100 text-zinc-400">
+          <Loader2 className="w-2.5 h-2.5 animate-spin shrink-0" />
+          <span>Kiểm tra...</span>
+        </span>
+      );
+    }
+
+    if (status.total === 0) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-100 text-zinc-500">
+          Trống
+        </span>
+      );
+    }
+
+    if (status.isReady) {
+      return (
+        <span 
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs"
+          title={`Tất cả ${status.total}/${status.total} câu đã sẵn sàng audio (100%)`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          <span>✓ Audio 100% Sẵn sàng</span>
+        </span>
+      );
+    }
+
+    if (status.cached > 0) {
+      const missing = status.total - status.cached;
+      return (
+        <span 
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs"
+          title={`Đã có ${status.cached}/${status.total} câu (${status.percent}%). Thiếu ${missing} câu.`}
+        >
+          <Volume2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+          <span>Thiếu {missing}/{status.total} câu</span>
+        </span>
+      );
+    }
+
+    return (
+      <span 
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono font-medium bg-zinc-100 text-zinc-600 border border-zinc-200"
+        title="Chưa có câu nào có audio"
+      >
+        <VolumeX className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+        <span>Chưa có audio</span>
+      </span>
+    );
+  };
+
+  // Render Quick Action Menu / Progress Controls
+  const renderQuickActionMenu = (session: ClassSession) => {
+    const isGenerating = generatingSessionNumber === session.session_number;
+
+    if (isGenerating) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono font-bold text-blue-700">
+            {generationProgress.current}/{generationProgress.total}
+          </span>
+          <button
+            type="button"
+            onClick={() => { cancelGenerationRef.current = true; }}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-bold cursor-pointer transition-colors"
+            title="Hủy quá trình tạo audio"
+          >
+            <X className="w-3 h-3" />
+            <span>Hủy</span>
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setActiveActionMenuSession(activeActionMenuSession === session.session_number ? null : session.session_number);
+          }}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-zinc-900 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+          title="Thao tác nhanh Audio"
+        >
+          <Zap className="w-3 h-3 text-amber-500" />
+          <span>Tạo Audio</span>
+          <ChevronDown className="w-3 h-3 text-zinc-400" />
+        </button>
+
+        {activeActionMenuSession === session.session_number && (
+          <div 
+            className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-[#E8E8EC] py-1 z-30 font-sans animate-in fade-in zoom-in-95 duration-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100">
+              Audio Session {session.session_number}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveActionMenuSession(null);
+                handleQuickGenerateAudio(session, 'missing_only');
+              }}
+              className="w-full text-left px-3 py-2 text-xs text-zinc-700 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <Zap className="w-4 h-4 text-amber-500 shrink-0" />
+              <div>
+                <div className="font-bold">⚡ Tạo thiếu</div>
+                <div className="text-[10px] text-zinc-400">Chỉ tạo các câu chưa có audio</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveActionMenuSession(null);
+                handleQuickGenerateAudio(session, 'en_only');
+              }}
+              className="w-full text-left px-3 py-2 text-xs text-zinc-700 hover:bg-blue-50 hover:text-blue-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <Volume2 className="w-4 h-4 text-blue-500 shrink-0" />
+              <div>
+                <div className="font-bold">🎙️ Tạo EN</div>
+                <div className="text-[10px] text-zinc-400">Tạo tiếng Anh cho toàn bộ bài</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveActionMenuSession(null);
+                handleQuickGenerateAudio(session, 'force_overwrite');
+              }}
+              className="w-full text-left px-3 py-2 text-xs text-zinc-700 hover:bg-red-50 hover:text-red-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4 text-red-500 shrink-0" />
+              <div>
+                <div className="font-bold">🔁 Ghi đè</div>
+                <div className="text-[10px] text-zinc-400">Tạo mới toàn bộ 100% audio</div>
+              </div>
+            </button>
+
+            <div className="my-1 border-t border-zinc-100" />
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveActionMenuSession(null);
+                setIsAudioSettingsOpen(true);
+              }}
+              className="w-full text-left px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-100 flex items-center gap-2.5 transition-colors cursor-pointer"
+            >
+              <Settings className="w-4 h-4 text-zinc-500 shrink-0" />
+              <div>
+                <div className="font-bold">⚙️ Cài đặt âm thanh</div>
+                <div className="text-[10px] text-zinc-400">Cấu hình giọng đọc & tốc độ</div>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans">
       {/* 1. Header Banner & Actions */}
       <div className="bg-white rounded-xl border border-[#E8E8EC] p-6 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626] uppercase">
                 Standard 15-Session Cohort
               </span>
               <span className="text-xs text-[#6B6B6B] font-mono">
                 • Start Date: {cohort.start_date}
+              </span>
+              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Audio: {readySessionsCount}/{totalSessions} Ready
               </span>
             </div>
             <h1 className="font-display font-bold text-2xl text-[#0A0A0A] tracking-tight">
@@ -175,6 +727,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {/* Audio Settings Button */}
+            <button
+              onClick={() => setIsAudioSettingsOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E8E8EC] bg-white text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all cursor-pointer shadow-xs"
+              title="Cấu hình giọng đọc Deepgram / Google Cloud, tốc độ & chế độ phát"
+            >
+              <Volume2 className="w-3.5 h-3.5 text-[#DC2626]" />
+              <span>Cài Đặt Audio</span>
+            </button>
+
+            {/* Edit Cohort Schedule */}
             <button
               onClick={() => {
                 setEditTitle(cohort.title);
@@ -185,21 +748,23 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 setIsEditModalOpen(true);
               }}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E8E8EC] bg-white text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all cursor-pointer shadow-xs"
-              title="Change start date, times, and recalculate 15 sessions"
+              title="Thay đổi ngày bắt đầu, giờ học và tính lại 15 buổi"
             >
               <Edit3 className="w-3.5 h-3.5 text-[#DC2626]" />
               <span>Edit Schedule</span>
             </button>
 
+            {/* Export iCal */}
             <button
               onClick={handleExportICS}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E8E8EC] bg-white text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all cursor-pointer shadow-xs"
-              title="Export calendar sync (.ics) for Google Calendar, Apple Calendar, or Outlook"
+              title="Xuất file đồng bộ lịch (.ics) cho Google Calendar hoặc Apple Calendar"
             >
               <Download className="w-3.5 h-3.5 text-[#6B6B6B]" />
               <span>Export iCal (.ics)</span>
             </button>
 
+            {/* Launch Presenter */}
             {inProgressSession && (
               <button
                 onClick={() => handleLaunchSession(inProgressSession.lesson_id, inProgressSession.session_number)}
@@ -244,6 +809,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               <span className="text-xs font-mono font-bold uppercase text-[#DC2626] tracking-wider">
                 {inProgressSession.status === 'in_progress' ? 'Session In Progress' : 'Next Scheduled Session'}
               </span>
+              <div className="ml-2">
+                {renderAudioBadge(inProgressSession.session_number)}
+              </div>
             </div>
             <h2 className="font-display font-bold text-lg text-[#0A0A0A]">
               Session {inProgressSession.session_number}: {inProgressSession.lesson_title}
@@ -261,13 +829,16 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={() => handleLaunchSession(inProgressSession.lesson_id, inProgressSession.session_number)}
-            className="w-full md:w-auto px-5 py-2.5 bg-[#0A0A0A] hover:bg-[#262626] text-white text-xs font-bold rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer group"
-          >
-            <span>Launch Presenter Drill</span>
-            <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" />
-          </button>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            {renderQuickActionMenu(inProgressSession)}
+            <button
+              onClick={() => handleLaunchSession(inProgressSession.lesson_id, inProgressSession.session_number)}
+              className="flex-1 md:flex-none px-5 py-2.5 bg-[#0A0A0A] hover:bg-[#262626] text-white text-xs font-bold rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer group"
+            >
+              <span>Launch Presenter Drill</span>
+              <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -341,10 +912,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       {viewMode === 'GRID' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredSessions.map((session) => {
-            const lessonMeta = curriculumRegistry.getLessonById(session.lesson_id);
+            const lessonMeta = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
             const chunkCount = lessonMeta?.total_chunks || lessonMeta?.chunks?.length || 0;
             const isCompleted = session.status === 'completed';
             const isInProgress = session.status === 'in_progress';
+            const isGenerating = generatingSessionNumber === session.session_number;
 
             return (
               <div
@@ -359,7 +931,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               >
                 <div>
                   {/* Card Header */}
-                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-1.5">
                       <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs ${
                         isInProgress 
@@ -392,6 +964,28 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                       <option value="cancelled">🚫 Postponed</option>
                     </select>
                   </div>
+
+                  {/* Audio Readiness & Quick Action Bar */}
+                  <div className="my-2 p-2 rounded-xl bg-[#FAFAFA] border border-[#E8E8EC] flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {renderAudioBadge(session.session_number)}
+                    </div>
+                    <div className="shrink-0">
+                      {renderQuickActionMenu(session)}
+                    </div>
+                  </div>
+
+                  {/* Real-time Progress Bar for Generating Session */}
+                  {isGenerating && (
+                    <div className="mb-2">
+                      <div className="w-full h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-600 rounded-full transition-all duration-300"
+                          style={{ width: `${generationProgress.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Lesson Title */}
                   <h3 className="font-display font-bold text-sm text-[#0A0A0A] leading-snug line-clamp-2 min-h-[2.5rem]">
@@ -465,9 +1059,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               <thead className="bg-zinc-100 text-zinc-700 font-bold border-b border-zinc-200">
                 <tr>
                   <th className="p-3 w-16 text-center">Session</th>
-                  <th className="p-3 w-40">Lịch Học</th>
+                  <th className="p-3 w-36">Lịch Học</th>
                   <th className="p-3">Bài Học</th>
-                  <th className="p-3 w-32">Trạng Thái</th>
+                  <th className="p-3 w-52">Trạng Thái Audio</th>
+                  <th className="p-3 w-32">Trạng Thái Buổi</th>
                   <th className="p-3 w-28 text-center">Thao Tác</th>
                 </tr>
               </thead>
@@ -514,6 +1109,12 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         <div className="text-[10px] font-mono text-zinc-500 uppercase mt-0.5">{session.lesson_type}</div>
                       </td>
                       <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          {renderAudioBadge(session.session_number)}
+                          {renderQuickActionMenu(session)}
+                        </div>
+                      </td>
+                      <td className="p-3">
                         <select
                           value={session.status}
                           onChange={(e) => handleStatusChange(session.session_number, e.target.value as any)}
@@ -547,7 +1148,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         </div>
       )}
 
-      {/* 4. EDIT COHORT & SCHEDULE SETTINGS MODAL */}
+      {/* 5. EDIT COHORT & SCHEDULE SETTINGS MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
           <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-150">
@@ -673,6 +1274,43 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. AUDIO SETTINGS MODAL */}
+      <ScheduleAudioSettingsModal
+        isOpen={isAudioSettingsOpen}
+        onClose={() => setIsAudioSettingsOpen(false)}
+        audioSettings={cohort.audio_settings}
+        onSave={handleSaveAudioSettings}
+      />
+
+      {/* 7. FLOATING TOAST NOTIFICATION */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 duration-200">
+          <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-xs font-bold ${
+            toast.type === 'success' 
+              ? 'bg-emerald-900 text-white border-emerald-700' 
+              : toast.type === 'error'
+                ? 'bg-red-900 text-white border-red-700'
+                : 'bg-zinc-900 text-white border-zinc-700'
+          }`}>
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : toast.type === 'error' ? (
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-blue-400 shrink-0" />
+            )}
+            <span>{toast.message}</span>
+            <button 
+              type="button" 
+              onClick={() => setToast(null)}
+              className="ml-2 p-0.5 hover:bg-white/20 rounded cursor-pointer transition-colors"
+            >
+              <X className="w-3 h-3 text-white/80" />
+            </button>
           </div>
         </div>
       )}

@@ -281,6 +281,7 @@ export const App: React.FC = () => {
       {activeTab === 'audio-manager' && (
         <AudioManagerView
           cohortAudioSettings={activeCohort.audio_settings}
+          defaultCourseLevel={activeCohort.level_code}
           onUpdateAudioSettings={handleUpdateAudioSettings}
           onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
         />

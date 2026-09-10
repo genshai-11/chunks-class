@@ -21,6 +21,7 @@ import {
   ProviderApiKey, 
   TtsProviderType, 
   ActiveTtsProviderType,
+  ACTIVE_TTS_PROVIDERS,
   PROVIDERS_META,
   DEFAULT_REGISTERED_MODELS,
   getMinimalName,
@@ -1316,7 +1317,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {/* Provider Cards Selection */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {(['GOOGLE_TTS', 'GEMINI_AI_STUDIO', 'DEEPGRAM', 'CUSTOM_TTS'] as ActiveTtsProviderType[]).map((provKey) => {
+            {ACTIVE_TTS_PROVIDERS.map((provKey) => {
               const meta = PROVIDERS_META[provKey];
               const provKeys = keys.filter(k => k.provider === provKey);
               const readyCount = provKeys.filter(k => k.status === 'READY' && (!k.rateLimitedUntil || k.rateLimitedUntil <= now)).length;
@@ -2218,7 +2219,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-700 cursor-pointer focus:bg-white focus:outline-none focus:border-[#DC2626]"
                 >
                   <option value="all">Tất Cả Nhà Cung Cấp</option>
-                  {(['GOOGLE_TTS', 'GEMINI_AI_STUDIO', 'DEEPGRAM', 'CUSTOM_TTS'] as ActiveTtsProviderType[]).map(p => (
+                  {ACTIVE_TTS_PROVIDERS.map(p => (
                     <option key={p} value={p}>{PROVIDERS_META[p]?.shortName || p}</option>
                   ))}
                 </select>

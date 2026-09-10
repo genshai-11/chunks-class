@@ -6,13 +6,12 @@ import {
   AudioProvider, 
   AudioBatchTarget,
   sanitizeSpeechText,
-  GOOGLE_TTS_VOICES,
   exportAllAudioBlobs,
   importAudioBlobs,
   getStoredAudioBlobsCount,
   AudioCacheExportData
 } from '../services/googleTtsService';
-import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
+import { modelRegistryService, PROVIDERS_META, getMinimalName } from '../services/modelRegistryService';
 import { getAllLessons } from '../services/firestoreService';
 import { syncLessonCachedAudioToCloud, syncAllImprovPackagesCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
@@ -63,8 +62,14 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
 }) => {
   const currentSettings: CohortAudioSettings = {
     ...DEFAULT_AUDIO_SETTINGS,
+    voice_profile_en: modelRegistryService.getMainModelEn(),
+    voice_profile_vi: modelRegistryService.getMainModelVi(),
     ...(settings || {})
   };
+
+  const [registeredModels, setRegisteredModels] = useState(() => modelRegistryService.getAllModels());
+  const allowedModels = registeredModels.filter(m => m.focusEnabled && !(m.language === 'vi' && m.provider === 'DEEPGRAM'));
+  useEffect(() => modelRegistryService.subscribe(() => setRegisteredModels(modelRegistryService.getAllModels())), []);
 
   // 1. Audio Presets & Audition State
   const [testEnglishText, setTestEnglishText] = useState<string>(
@@ -123,7 +128,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
 
       const statusMap: Record<string, { en: number; vi: number; total: number }> = {};
       for (const l of lessons) {
-        const status = audioPlayer.getLessonAudioStatus(
+        const status = await audioPlayer.checkLessonAudioStatus(
           l.chunks,
           currentSettings.voice_profile_en,
           currentSettings.voice_profile_vi
@@ -149,21 +154,31 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
     return unsub;
   }, []);
 
-  const voiceProfilesDeepgram = [
-    { id: 'flux-cliff-en', name: 'Deepgram Flux Cliff (Nam Mỹ - Chuẩn)', desc: 'Next-generation conversational English male voice với ngữ điệu tự nhiên và ngắt nghỉ vượt trội', tag: 'MẶC ĐỊNH / KHUYÊN DÙNG' },
-    { id: 'aura-asteria-en', name: 'Deepgram Asteria (Nữ Mỹ)', desc: 'Tự nhiên, sắc nét, truyền cảm — Chuẩn phát âm phản xạ lớp học', tag: 'AURA NỮ' },
-    { id: 'aura-luna-en', name: 'Deepgram Luna (Nữ Mỹ)', desc: 'Ấm áp, gần gũi, ngữ điệu giao tiếp đời thường', tag: 'GIAO TIẾP' },
-    { id: 'aura-stella-en', name: 'Deepgram Stella (Nữ Mỹ)', desc: 'Rõ ràng, chuyên nghiệp cho các bài phát âm chính xác', tag: 'CHUẨN MỰC' },
-    { id: 'aura-orion-en', name: 'Deepgram Orion (Nam Mỹ)', desc: 'Trầm ấm, nội lực, phù hợp luyện ngữ điệu nam giới', tag: 'NAM MỸ' },
-    { id: 'aura-arcas-en', name: 'Deepgram Arcas (Nam Mỹ)', desc: 'Năng động, nhanh nhẹn, ngữ điệu thanh niên Mỹ', tag: 'NĂNG ĐỘNG' },
-    { id: 'aura-helios-en', name: 'Deepgram Helios (Nam Anh)', desc: 'Giọng Anh - Anh chuẩn mực, rõ trọng âm từng âm tiết', tag: 'BRITISH' }
-  ];
+  // English Voices sorted: Deepgram, Google Cloud, Custom TTS first; Gemini Flash TTS deprioritized at bottom
+  const voiceProfiles = useMemo(() => {
+    const list = allowedModels.filter(m => m.language === 'en').map(m => ({
+      ...m,
+      desc: m.description || '',
+      tag: PROVIDERS_META[m.provider]?.shortName || m.provider
+    }));
+    return list.sort((a, b) => {
+      const isGeminiA = a.provider === 'GEMINI_AI_STUDIO';
+      const isGeminiB = b.provider === 'GEMINI_AI_STUDIO';
+      if (isGeminiA && !isGeminiB) return 1;
+      if (!isGeminiA && isGeminiB) return -1;
+      return 0;
+    });
+  }, [allowedModels]);
 
-  const voiceProfilesGoogle = [
-    { id: 'en-US-Journey-F', name: 'Google Journey Female', desc: 'Ngữ điệu tự nhiên cao cấp với biến thiên âm điệu linh hoạt', tag: 'JOURNEY AI' },
-    { id: 'en-US-Journey-M', name: 'Google Journey Male', desc: 'Giọng nam trầm ấm, phát âm rõ ràng', tag: 'JOURNEY AI' },
-    { id: 'en-US-Studio-O', name: 'Google Studio Narrator', desc: 'Giọng đọc chuẩn phòng thu cho tài liệu học thuật', tag: 'STUDIO' }
-  ];
+  const [enProviderFilter, setEnProviderFilter] = useState<'ALL' | 'DEEPGRAM' | 'GOOGLE_TTS' | 'CUSTOM_TTS' | 'GEMINI_AI_STUDIO'>('ALL');
+
+  const filteredEnVoices = useMemo(() => {
+    return voiceProfiles.filter(voice => {
+      if (enProviderFilter === 'ALL') return true;
+      if (enProviderFilter === 'CUSTOM_TTS') return voice.provider === 'CUSTOM_TTS' || (voice.provider as any) === 'OPENAI_TTS';
+      return voice.provider === enProviderFilter;
+    });
+  }, [voiceProfiles, enProviderFilter]);
 
   // Vietnamese Voice Category Filter & Dynamic List
   const [viCategoryFilter, setViCategoryFilter] = useState<'ALL' | 'CHIRP3_HD' | 'NEURAL2' | 'WAVENET' | 'STANDARD'>('ALL');
@@ -171,8 +186,8 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
   const [viSearchQuery, setViSearchQuery] = useState<string>('');
 
   const allViVoices = useMemo(() => {
-    return GOOGLE_TTS_VOICES.filter(v => v.languageCode === 'vi-VN');
-  }, []);
+    return allowedModels.filter(v => v.language === 'vi');
+  }, [registeredModels]);
 
   const filteredViVoices = useMemo(() => {
     return allViVoices.filter(voice => {
@@ -268,6 +283,7 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
     setBatchSummary(null);
 
     try {
+      if ((batchTarget !== 'VIETNAMESE' && !allowedModels.some(m => m.language === 'en' && m.id === currentSettings.voice_profile_en)) || (batchTarget !== 'ENGLISH' && !allowedModels.some(m => m.language === 'vi' && m.id === currentSettings.voice_profile_vi))) throw new Error('Enable the selected model for Focus in Settings.');
       const lessons = await getAllLessons(selectedCourseLevel);
       const targetLesson = lessons.find(l => l.day_number === targetDay);
       
@@ -466,64 +482,115 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                 </h2>
               </div>
 
-              {/* Audio Engine Selector */}
-              <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200">
+              {/* Audio Engine / Provider Filter Bar */}
+              <div className="flex flex-wrap items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200 gap-1">
                 <button
-                  onClick={() => {
-                    setAudioProvider('DEEPGRAM_AURA');
-                    audioPlayer.setAudioProvider('DEEPGRAM_AURA');
-                    onUpdateSettings({ ...currentSettings, voice_profile_en: 'flux-cliff-en' });
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
-                    audioProvider === 'DEEPGRAM_AURA' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                  type="button"
+                  onClick={() => setEnProviderFilter('ALL')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
+                    enProviderFilter === 'ALL' ? 'bg-white text-zinc-900 shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                   }`}
                 >
-                  Deepgram Flux & Aura (0ms)
+                  Tất cả ({voiceProfiles.length})
                 </button>
                 <button
-                  onClick={() => {
-                    setAudioProvider('GOOGLE_TTS');
-                    audioPlayer.setAudioProvider('GOOGLE_TTS');
-                    onUpdateSettings({ ...currentSettings, voice_profile_en: 'en-US-Journey-F' });
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
-                    audioProvider === 'GOOGLE_TTS' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                  type="button"
+                  onClick={() => setEnProviderFilter('DEEPGRAM')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
+                    enProviderFilter === 'DEEPGRAM' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
                   }`}
                 >
-                  Google Cloud AI
+                  Deepgram ({voiceProfiles.filter(v => v.provider === 'DEEPGRAM').length})
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setEnProviderFilter('GOOGLE_TTS')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
+                    enProviderFilter === 'GOOGLE_TTS' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                  }`}
+                >
+                  Google Cloud ({voiceProfiles.filter(v => v.provider === 'GOOGLE_TTS').length})
+                </button>
+                {voiceProfiles.some(v => v.provider === 'CUSTOM_TTS' || (v.provider as any) === 'OPENAI_TTS') && (
+                  <button
+                    type="button"
+                    onClick={() => setEnProviderFilter('CUSTOM_TTS')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
+                      enProviderFilter === 'CUSTOM_TTS' ? 'bg-white text-amber-600 shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    Custom TTS ({voiceProfiles.filter(v => v.provider === 'CUSTOM_TTS' || (v.provider as any) === 'OPENAI_TTS').length})
+                  </button>
+                )}
+                {voiceProfiles.some(v => v.provider === 'GEMINI_AI_STUDIO') && (
+                  <button
+                    type="button"
+                    onClick={() => setEnProviderFilter('GEMINI_AI_STUDIO')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
+                      enProviderFilter === 'GEMINI_AI_STUDIO' ? 'bg-white text-purple-600 shadow-xs' : 'text-zinc-400 hover:text-zinc-600'
+                    }`}
+                    title="Gemini Flash TTS Preview (Được xếp cuối cùng để dự phòng)"
+                  >
+                    Gemini Flash ({voiceProfiles.filter(v => v.provider === 'GEMINI_AI_STUDIO').length})
+                  </button>
+                )}
               </div>
             </div>
 
             {/* Voice Profile List */}
             <div className="space-y-2.5">
-              <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider">
-                Giọng Tiếng Anh ({audioProvider === 'DEEPGRAM_AURA' ? 'Deepgram Aura AI' : 'Google Cloud AI'})
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider">
+                  Giọng Tiếng Anh ({PROVIDERS_META[modelRegistryService.getModelById(currentSettings.voice_profile_en)?.provider || 'GOOGLE_TTS']?.shortName || 'Tùy chọn'})
+                </label>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-800">
+                  {filteredEnVoices.length} / {voiceProfiles.length}
+                </span>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {(audioProvider === 'DEEPGRAM_AURA' ? voiceProfilesDeepgram : voiceProfilesGoogle).map((voice) => {
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                {filteredEnVoices.map((voice) => {
                   const isSelected = currentSettings.voice_profile_en === voice.id;
+                  const isGemini = voice.provider === 'GEMINI_AI_STUDIO';
+                  const minName = getMinimalName(voice);
                   return (
                     <div
                       key={voice.id}
-                      onClick={() => onUpdateSettings({ ...currentSettings, voice_profile_en: voice.id })}
+                      onClick={() => {
+                        const isDeepgram = voice.provider === 'DEEPGRAM';
+                        const provider: AudioProvider = isDeepgram ? 'DEEPGRAM_AURA' : 'GOOGLE_TTS';
+                        setAudioProvider(provider);
+                        audioPlayer.setAudioProvider(provider);
+                        modelRegistryService.setMainModelEn(voice.id);
+                        onUpdateSettings({ ...currentSettings, voice_profile_en: voice.id, provider_primary: provider });
+                      }}
                       className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
                           ? 'bg-[#DC2626]/[0.03] border-[#DC2626] shadow-xs ring-1 ring-[#DC2626]'
+                          : isGemini 
+                          ? 'bg-purple-50/30 border-purple-200/60 hover:bg-purple-50/50'
                           : 'bg-zinc-50/60 border-zinc-200 hover:bg-zinc-50'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-xs text-zinc-900">{voice.name}</span>
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-700">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-xs text-zinc-900">{minName || voice.name}</span>
+                            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                              voice.provider === 'DEEPGRAM' ? 'bg-emerald-100 text-emerald-800' :
+                              voice.provider === 'GOOGLE_TTS' ? 'bg-blue-100 text-blue-800' :
+                              isGemini ? 'bg-purple-100 text-purple-800' : 'bg-amber-100 text-amber-800'
+                            }`}>
                               {voice.tag}
                             </span>
+                            {isGemini && (
+                              <span className="text-[9px] font-mono font-bold px-1 rounded bg-purple-200 text-purple-900">
+                                Preview
+                              </span>
+                            )}
                           </div>
                           <p className="text-[11px] text-zinc-500 mt-1 leading-snug">
-                            {voice.desc}
+                            {voice.desc || voice.name}
                           </p>
                         </div>
                       </div>
@@ -714,7 +781,10 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
                     return (
                       <div
                         key={voice.id}
-                        onClick={() => onUpdateSettings({ ...currentSettings, voice_profile_vi: voice.id })}
+                        onClick={() => {
+                          modelRegistryService.setMainModelVi(voice.id);
+                          onUpdateSettings({ ...currentSettings, voice_profile_vi: voice.id });
+                        }}
                         className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
                             ? 'bg-emerald-50/50 border-emerald-600 ring-1 ring-emerald-600 shadow-xs'

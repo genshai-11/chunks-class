@@ -104,7 +104,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   // Audio parameters & Real Google Cloud TTS Models
   const [selectedVoice, setSelectedVoice] = useState<string>(() => {
     const v = audioSettings?.voice_profile_en;
-    return (v && v !== 'aura-theia-en') ? v : 'flux-cliff-en';
+    return v || 'flux-cliff-en';
   });
   const [selectedVoiceVi, setSelectedVoiceVi] = useState<string>(
     audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
@@ -114,6 +114,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [languageMode, setLanguageMode] = useState<LanguageMode>(
     audioSettings?.language_mode || 'EN_ONLY'
   );
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const playbackSequenceRef = useRef(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const [gcsConnectionStatus, setGcsConnectionStatus] = useState<'Connected' | 'Reconnecting'>('Connected');
@@ -197,7 +199,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   useEffect(() => {
     if (audioSettings) {
       if (audioSettings.voice_profile_en && audioSettings.voice_profile_en !== selectedVoice) {
-        const cleanEn = audioSettings.voice_profile_en === 'aura-theia-en' ? 'flux-cliff-en' : audioSettings.voice_profile_en;
+        const cleanEn = audioSettings.voice_profile_en;
         setSelectedVoice(cleanEn);
       }
       if (audioSettings.voice_profile_vi && audioSettings.voice_profile_vi !== selectedVoiceVi) {
@@ -251,6 +253,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
   const handleStartPrepareAudio = async () => {
     if (chunks.length === 0) return;
+    setAudioError(null);
     setIsPreparingAudio(true);
     setPrepSummary(null);
     setPrepProgress({ current: 0, total: chunks.length, text: 'Starting synthesis...' });
@@ -261,7 +264,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         voiceVi: selectedVoiceVi,
         provider: audioProvider,
         target: prepTarget,
-        forceRegenerate: true,
+        forceRegenerate: false,
         concurrency: 4,
         onProgress: (curr, tot, text) => {
           setPrepProgress({ current: curr, total: tot, text });
@@ -284,7 +287,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         }
       }
     } catch (e: any) {
-      console.error('Audio preparation failed:', e);
+      setAudioError(e instanceof Error ? e.message : 'Audio preparation failed.');
     } finally {
       setIsPreparingAudio(false);
     }
@@ -318,6 +321,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   useEffect(() => {
     if (providedLesson && providedLesson.id === currentLessonId) {
       setFetchedLessonDoc(providedLesson);
+      curriculumRegistry.updateLesson(providedLesson);
       return;
     }
 
@@ -332,6 +336,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         if (isMounted) {
           if (doc) {
             setFetchedLessonDoc(doc);
+            curriculumRegistry.updateLesson(doc);
           } else {
             const fallbackDoc = curriculumRegistry.getLessonById(targetId);
             if (fallbackDoc) setFetchedLessonDoc(fallbackDoc);
@@ -358,41 +363,36 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     curriculumRegistry.getLessonById(currentLessonId) || 
     curriculumRegistry.getAllLessons()[0];
 
-  // Check whether the active lesson has audio ready (GCS master or IndexedDB cached)
-  const isCurrentLessonGcsReady = useMemo(() => {
-    return (
-      audioPlayer.isLessonAudioReady(activeLesson) ||
-      Boolean(
-        activeLesson?.chunks &&
-        activeLesson.chunks.length > 0 &&
-        activeLesson.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http')))
-      )
-    );
-  }, [activeLesson]);
-
-  const [isCurrentLessonFullyCached, setIsCurrentLessonFullyCached] = useState<boolean>(false);
-
+  const [isCurrentLessonFullyCached, setIsCurrentLessonFullyCached] = useState(false);
+  const requiredAudio = (chunk: ChunkItem, mode: LanguageMode = languageMode): [string, string][] => {
+    if (mode === 'VI_ONLY') return [[chunk.vietnamese || '', selectedVoiceVi]];
+    if (mode === 'EN_ONLY') return [[chunk.english || '', selectedVoice]];
+    return [[chunk.english || '', selectedVoice], [chunk.vietnamese || '', selectedVoiceVi]];
+  };
   useEffect(() => {
-    if (isCurrentLessonGcsReady) {
-      setIsCurrentLessonFullyCached(true);
-      return;
-    }
-    let isCancelled = false;
-    if (activeLesson?.chunks && activeLesson.chunks.length > 0) {
-      audioPlayer.checkLessonAudioStatus(activeLesson.chunks).then(status => {
-        if (!isCancelled) {
-          setIsCurrentLessonFullyCached(status.isFullyCached);
-        }
-      }).catch(() => {});
-    } else {
-      setIsCurrentLessonFullyCached(false);
-    }
-    return () => {
-      isCancelled = true;
+    let cancelled = false;
+    setIsCurrentLessonFullyCached(false);
+    ++playbackSequenceRef.current;
+    audioPlayer.stop();
+    setIsPlayingAudio(false);
+    setAudioError(null);
+    const scan = async () => {
+      if (!activeLesson?.chunks?.length) return;
+      for (const chunk of activeLesson.chunks) {
+        const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
+        if (hasGcsEn) continue;
+        const text = chunk.english?.trim();
+        if (!text) continue;
+        if (audioPlayer.hasCachedAudio(text, selectedVoice)) continue;
+        const cached = await audioPlayer.getCachedAudioAsync(text, selectedVoice);
+        if (!cached) return;
+      }
+      if (!cancelled) setIsCurrentLessonFullyCached(true);
     };
-  }, [activeLesson, isCurrentLessonGcsReady, isSoundSettingsOpen]);
-
-  const isCurrentLessonAudioReady = isCurrentLessonGcsReady || isCurrentLessonFullyCached;
+    scan().catch(() => {});
+    return () => { cancelled = true; ++playbackSequenceRef.current; audioPlayer.stop(); };
+  }, [activeLesson, selectedVoice, isPreparingAudio]);
+  const isCurrentLessonAudioReady = isCurrentLessonFullyCached;
 
   const rawChunks: ChunkItem[] = activeLesson?.chunks || [];
   const chunks: ChunkItem[] = rawChunks.length > 0 
@@ -402,9 +402,11 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const currentChunk: ChunkItem = chunks[currentChunkIndex] || chunks[0];
 
   const checkAudioReady = useCallback((chunk: ChunkItem) => {
-    if (chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder')) return true;
-    return audioPlayer.hasCachedAudio(chunk.english, selectedVoice);
-  }, [selectedVoice]);
+    const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
+    if (hasGcsEn) return true;
+    if (isCurrentLessonFullyCached) return true;
+    return Boolean(chunk.english?.trim()) && audioPlayer.hasCachedAudio(chunk.english, selectedVoice);
+  }, [selectedVoice, isCurrentLessonFullyCached]);
 
   const parts: LessonPart[] = useMemo(() => {
     return groupChunksIntoParts(chunks, activeLesson?.lesson_title, checkAudioReady);
@@ -492,62 +494,33 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       .filter(group => group.lessons.length > 0);
   }, [groupedCourses, lessonSearchQuery]);
 
-  // Track audio readiness for all lessons in the popover (both GCS and IndexedDB cache)
   const [lessonReadyMap, setLessonReadyMap] = useState<Record<string, boolean>>({});
-
   useEffect(() => {
-    let isCancelled = false;
-    const allLessons = groupedCourses.flatMap(g => g.lessons);
-
-    const initialMap: Record<string, boolean> = {};
-    const pendingLessons: LessonDoc[] = [];
-
-    for (const l of allLessons) {
-      const isGcs = audioPlayer.isLessonAudioReady(l) || Boolean(l.chunks && l.chunks.length > 0 && l.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http'))));
-      if (isGcs) {
-        initialMap[l.id] = true;
-      } else if (l.chunks && l.chunks.length > 0) {
-        pendingLessons.push(l);
-      }
-    }
-
-    setLessonReadyMap(prev => ({ ...prev, ...initialMap }));
-
-    if (pendingLessons.length > 0) {
-      Promise.all(
-        pendingLessons.map(async (l) => {
-          try {
-            const status = await audioPlayer.checkLessonAudioStatus(l.chunks!);
-            return { id: l.id, isReady: status.isFullyCached };
-          } catch {
-            return { id: l.id, isReady: false };
-          }
-        })
-      ).then(results => {
-        if (!isCancelled) {
-          setLessonReadyMap(prev => {
-            const updated = { ...prev };
-            for (const res of results) {
-              if (res.isReady) {
-                updated[res.id] = true;
-              }
-            }
-            return updated;
-          });
+    let cancelled = false;
+    setLessonReadyMap({});
+    const scan = async () => {
+      const result: Record<string, boolean> = {};
+      for (const lesson of groupedCourses.flatMap(g => g.lessons)) {
+        if (!lesson.chunks?.length) {
+          result[lesson.id] = false;
+          continue;
         }
-      });
-    }
-
-    return () => {
-      isCancelled = true;
+        let ready = true;
+        for (const chunk of lesson.chunks) {
+          const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
+          if (hasGcsEn || audioPlayer.hasCachedAudio(chunk.english, selectedVoice)) {
+            continue;
+          }
+          ready = false;
+          break;
+        }
+        result[lesson.id] = ready;
+      }
+      if (!cancelled) setLessonReadyMap(result);
     };
-  }, [groupedCourses, activeLesson?.id, isLessonSwitcherOpen, isSoundSettingsOpen]);
-
-  useEffect(() => {
-    if (isCurrentLessonAudioReady && activeLesson?.id) {
-      setLessonReadyMap(prev => prev[activeLesson.id] ? prev : { ...prev, [activeLesson.id]: true });
-    }
-  }, [isCurrentLessonAudioReady, activeLesson?.id]);
+    scan().catch(() => {});
+    return () => { cancelled = true; };
+  }, [groupedCourses, selectedVoice, isPreparingAudio]);
 
   const handleSwitchLesson = (newLessonId: string) => {
     let cleanId = newLessonId;
@@ -641,6 +614,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     overrideRepeat?: number
   ) => {
     if (!targetChunk) return;
+    const seqId = ++playbackSequenceRef.current;
+    audioPlayer.stop();
+    setAudioError(null);
     setIsPlayingAudio(true);
 
     const s = overrideSpeed !== undefined ? overrideSpeed : speed;
@@ -648,25 +624,33 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     const r = overrideRepeat !== undefined ? overrideRepeat : repeatCount;
 
     try {
+      if (playbackSequenceRef.current !== seqId) return;
       await audioPlayer.playBilingualSequence(
         targetChunk.english,
         targetChunk.vietnamese,
         m,
         targetChunk.audio_url || null,
-        selectedVoice === 'aura-theia-en' ? 'flux-cliff-en' : (selectedVoice || 'flux-cliff-en'),
+        selectedVoice || 'flux-cliff-en',
         selectedVoiceVi,
         s,
         r,
         (step) => {
-          setActiveSpeechStep(step);
+          if (playbackSequenceRef.current === seqId) {
+            setActiveSpeechStep(step);
+          }
         },
         targetChunk.audio_url_vi || null
       );
     } catch (err) {
-      console.error('[Presenter Audio] Playback notice:', err);
+      console.warn('[ClassroomPresentation] Audio playback error:', err);
+      if (playbackSequenceRef.current === seqId) {
+        setAudioError(err instanceof Error ? err.message : 'Audio playback notice. Click to retry.');
+      }
     } finally {
-      setIsPlayingAudio(false);
-      setActiveSpeechStep('idle');
+      if (playbackSequenceRef.current === seqId) {
+        setIsPlayingAudio(false);
+        setActiveSpeechStep('idle');
+      }
     }
   };
 
@@ -877,6 +861,14 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           : 'bg-white text-[#0A0A0A] border-[#E8E8EC]'
       }`}
     >
+      {audioError && (
+        <div role="alert" className="z-30 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 px-4 py-2.5 flex flex-wrap gap-3 items-center text-xs border-b border-amber-200 dark:border-amber-800">
+          <span className="flex-1">{audioError}</span>
+          <button onClick={() => { setPrepTarget(languageMode === 'EN_ONLY' ? 'ENGLISH' : languageMode === 'VI_ONLY' ? 'VIETNAMESE' : 'BOTH'); setIsSoundSettingsOpen(true); }} className="text-xs underline text-amber-900 dark:text-amber-100 cursor-pointer">Cài đặt âm thanh</button>
+          <button onClick={() => playCurrentChunkAudio()} className="text-xs underline font-semibold text-amber-900 dark:text-amber-100 cursor-pointer">Thử phát lại</button>
+          <button onClick={() => setAudioError(null)} className="p-1 text-amber-700 hover:text-amber-900 dark:text-amber-300 cursor-pointer" title="Đóng"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
       {/* 1. PROGRESS BAR AT THE TOP OF PRESENTATION */}
       <PresentationProgressBar
         currentIndex={currentChunkIndex}

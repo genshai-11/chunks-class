@@ -3,9 +3,16 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export type ActiveTtsProviderType = 
   | 'GOOGLE_TTS' 
-  | 'GEMINI_AI_STUDIO' 
   | 'DEEPGRAM' 
-  | 'CUSTOM_TTS';
+  | 'CUSTOM_TTS'
+  | 'GEMINI_AI_STUDIO';
+
+export const ACTIVE_TTS_PROVIDERS: ActiveTtsProviderType[] = [
+  'GOOGLE_TTS',
+  'DEEPGRAM',
+  'CUSTOM_TTS',
+  'GEMINI_AI_STUDIO'
+];
 
 export type TtsProviderType = ActiveTtsProviderType | 'OPENAI_TTS';
 
@@ -89,17 +96,9 @@ export const PROVIDERS_META: Record<ActiveTtsProviderType, ProviderMeta> & Recor
     id: 'GOOGLE_TTS',
     name: 'Google Cloud Text-to-Speech',
     shortName: 'Google Cloud',
-    description: 'Giọng đọc chuẩn phòng thu Chirp3-HD, Neural2, WaveNet và Journey của Google Cloud.',
+    description: 'Giọng đọc chuẩn phòng thu Chirp3-HD, Neural2, WaveNet và Journey của Google Cloud (Ưu tiên số 1).',
     color: '#4285F4',
     docUrl: 'https://cloud.google.com/text-to-speech'
-  },
-  GEMINI_AI_STUDIO: {
-    id: 'GEMINI_AI_STUDIO',
-    name: 'Google Gemini AI Studio (TTS Preview)',
-    shortName: 'Gemini Flash',
-    description: 'Giọng đọc AI thế hệ mới từ Gemini 3.1 Flash TTS Preview thông qua Google AI Studio API.',
-    color: '#8E24AA',
-    docUrl: 'https://aistudio.google.com'
   },
   DEEPGRAM: {
     id: 'DEEPGRAM',
@@ -115,6 +114,14 @@ export const PROVIDERS_META: Record<ActiveTtsProviderType, ProviderMeta> & Recor
     shortName: 'Custom Endpoint',
     description: 'Kết nối máy chủ phát âm tùy chỉnh hoặc self-hosted TTS tuân thủ giao thức OpenAI.',
     color: '#F59E0B'
+  },
+  GEMINI_AI_STUDIO: {
+    id: 'GEMINI_AI_STUDIO',
+    name: 'Google Gemini AI Studio (TTS Preview - Đã hạ ưu tiên)',
+    shortName: 'Gemini Flash (Dự phòng)',
+    description: 'Giọng đọc AI thử nghiệm từ Gemini 3.1 Flash TTS Preview (Đã hạ ưu tiên, hệ thống ưu tiên Google Cloud TTS).',
+    color: '#8E24AA',
+    docUrl: 'https://aistudio.google.com'
   }
 };
 
@@ -849,6 +856,15 @@ class ModelRegistryService {
           const filteredKeys: ProviderApiKey[] = parsed.filter(
             (k: ProviderApiKey) => k && k.key && !KNOWN_DEAD_KEYS.has(k.key.trim())
           );
+          if (!filteredKeys.some(k => k.provider === 'GOOGLE_TTS')) {
+            filteredKeys.push({
+              id: 'key_google_default',
+              provider: 'GOOGLE_TTS',
+              key: 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4',
+              label: 'Google Cloud TTS Built-in Primary',
+              status: 'READY'
+            });
+          }
           if (!filteredKeys.some(k => k.provider === 'DEEPGRAM')) {
             filteredKeys.push({
               id: 'key_deepgram_default',
@@ -928,34 +944,7 @@ class ModelRegistryService {
       status: 'READY'
     });
 
-    // Seed Gemini Flash TTS Keys
-    try {
-      const geminiKey1 = typeof atob !== 'undefined' 
-        ? atob('QVEuQWI4Uk42Smd3UVhxWVFTSTkxRXdYc1BVWlpEaWhBLWJrR0ZEcWxoUy1kOUJXSU5Gc0E=') 
-        : '';
-      if (geminiKey1) {
-        keys.push({
-          id: 'key_gemini_1',
-          provider: 'GEMINI_AI_STUDIO',
-          key: geminiKey1,
-          label: 'Gemini Flash AI Studio #1',
-          status: 'READY'
-        });
-      }
-
-      const envGemini = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || getSafeGeminiKey();
-      if (envGemini && envGemini !== geminiKey1) {
-        keys.push({
-          id: 'key_gemini_2',
-          provider: 'GEMINI_AI_STUDIO',
-          key: envGemini,
-          label: 'Gemini Flash AI Studio #2',
-          status: 'READY'
-        });
-      }
-    } catch {}
-
-    // Seed Deepgram Key
+    // Seed Deepgram Key (Prioritized)
     const envDeepgram = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEEPGRAM_API_KEY) || '51d7d8b230bf742178e681e7836a3dc1571b1c11';
     const legacyDg = typeof localStorage !== 'undefined' ? localStorage.getItem('chunks_deepgram_api_key') : null;
     let effectiveDgKey = (legacyDg && legacyDg.trim() && !KNOWN_DEAD_KEYS.has(legacyDg.trim())) 
@@ -973,6 +962,33 @@ class ModelRegistryService {
       label: 'Deepgram Aura/Flux Production Key',
       status: 'READY'
     });
+
+    // Seed Gemini Flash TTS Keys (Deprioritized fallback)
+    try {
+      const geminiKey1 = typeof atob !== 'undefined' 
+        ? atob('QVEuQWI4Uk42Smd3UVhxWVFTSTkxRXdYc1BVWlpEaWhBLWJrR0ZEcWxoUy1kOUJXSU5Gc0E=') 
+        : '';
+      if (geminiKey1) {
+        keys.push({
+          id: 'key_gemini_1',
+          provider: 'GEMINI_AI_STUDIO',
+          key: geminiKey1,
+          label: 'Gemini Flash AI Studio #1 (Fallback)',
+          status: 'READY'
+        });
+      }
+
+      const envGemini = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || getSafeGeminiKey();
+      if (envGemini && envGemini !== geminiKey1) {
+        keys.push({
+          id: 'key_gemini_2',
+          provider: 'GEMINI_AI_STUDIO',
+          key: envGemini,
+          label: 'Gemini Flash AI Studio #2 (Fallback)',
+          status: 'READY'
+        });
+      }
+    } catch {}
 
     // Migrate any legacy custom keys
     if (typeof localStorage !== 'undefined') {
@@ -1109,6 +1125,15 @@ class ModelRegistryService {
         const filteredKeys: ProviderApiKey[] = data.keys.filter(
           (k: ProviderApiKey) => k && k.key && !KNOWN_DEAD_KEYS.has(k.key.trim())
         );
+        if (!filteredKeys.some(k => k.provider === 'GOOGLE_TTS')) {
+          filteredKeys.push({
+            id: 'key_google_default',
+            provider: 'GOOGLE_TTS',
+            key: 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4',
+            label: 'Google Cloud TTS Built-in Primary',
+            status: 'READY'
+          });
+        }
         if (!filteredKeys.some(k => k.provider === 'DEEPGRAM')) {
           filteredKeys.push({
             id: 'key_deepgram_default',
@@ -1270,13 +1295,13 @@ class ModelRegistryService {
    */
   public rotateKeyOn429(provider: TtsProviderType, currentKey: string): string | null {
     const keyItem = this.keys.find(k => k.provider === provider && k.key.trim() === currentKey.trim());
-    const cooldownMs = 60000; // 60 seconds cooldown
+    const cooldownMs = 5000; // 5 seconds cooldown (transient burst safety)
 
     if (keyItem) {
       keyItem.status = 'RATE_LIMITED';
       keyItem.rateLimitedUntil = Date.now() + cooldownMs;
       keyItem.lastError = 'HTTP 429: Quota / Rate Limit Exceeded';
-      console.warn(`[ModelRegistry] Provider ${provider} key (${this.maskKey(keyItem.key)}) hit 429. Cooldown set for 60s.`);
+      console.warn(`[ModelRegistry] Provider ${provider} key (${this.maskKey(keyItem.key)}) hit 429. Cooldown set for 5s.`);
     }
 
     this.saveKeys();
@@ -1407,7 +1432,7 @@ class ModelRegistryService {
           const errText = await resp.text();
           if (resp.status === 429) {
             item.status = 'RATE_LIMITED';
-            item.rateLimitedUntil = Date.now() + 60000;
+            item.rateLimitedUntil = Date.now() + 5000;
             item.lastError = '429 Rate Limit Exceeded';
           } else {
             item.status = 'ERROR';
@@ -1449,7 +1474,7 @@ class ModelRegistryService {
           const errText = await resp.text();
           if (resp.status === 429) {
             item.status = 'RATE_LIMITED';
-            item.rateLimitedUntil = Date.now() + 60000;
+            item.rateLimitedUntil = Date.now() + 5000;
             item.lastError = '429 Rate Limit Exceeded';
           } else {
             item.status = 'ERROR';
@@ -1486,7 +1511,7 @@ class ModelRegistryService {
           const errText = await resp.text();
           if (resp.status === 429) {
             item.status = 'RATE_LIMITED';
-            item.rateLimitedUntil = Date.now() + 60000;
+            item.rateLimitedUntil = Date.now() + 5000;
             item.lastError = '429 Rate Limit Exceeded';
           } else {
             item.status = 'ERROR';
@@ -1527,7 +1552,7 @@ class ModelRegistryService {
           const errText = await resp.text();
           if (resp.status === 429) {
             item.status = 'RATE_LIMITED';
-            item.rateLimitedUntil = Date.now() + 60000;
+            item.rateLimitedUntil = Date.now() + 5000;
             item.lastError = '429 Rate Limit Exceeded';
           } else {
             item.status = 'ERROR';

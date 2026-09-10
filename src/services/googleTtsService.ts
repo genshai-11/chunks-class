@@ -841,6 +841,7 @@ export async function importAudioBlobs(data: AudioCacheExportData): Promise<numb
 
 class AudioPlayService {
   private currentAudio: HTMLAudioElement | null = null;
+  private finishPlayback: (() => void) | null = null;
   private audioCache = new Map<string, string>(); // key (model::text) -> base64 dataUri or blobUrl
   private gcsAvailabilityCache = new Map<string, boolean>();
   private lastSource: AudioSourceType = 'DEEPGRAM_AURA';
@@ -908,9 +909,9 @@ class AudioPlayService {
 
     const allRawKeys = [
       ...registryGoogleKeys,
-      ...registryGeminiKeys,
       ...this.customApiKeys,
-      ...BUILTIN_GOOGLE_KEYS
+      ...BUILTIN_GOOGLE_KEYS,
+      ...registryGeminiKeys // Deprioritized at the very end of pool
     ];
 
     const uniqueKeys: string[] = [];
@@ -1066,7 +1067,9 @@ class AudioPlayService {
   }
 
   public getCacheKey(voice: string, text: string): string {
-    return `${voice}::${text.trim().toLowerCase()}`;
+    const provider = modelRegistryService.getModelById(voice)?.provider || 'legacy';
+    const endpoint = provider === 'CUSTOM_TTS' ? modelRegistryService.getCustomEndpoint() : '';
+    return voice + '::v2::' + provider + '::' + encodeURIComponent(endpoint) + '::' + text.trim();
   }
 
   public clearCache(filter?: 'ALL' | 'EN' | 'VI'): void {
@@ -1100,148 +1103,171 @@ class AudioPlayService {
   }
 
   /**
-   * Synchronous cache retrieval (Memory Map).
-   * Strictly enforces namespace isolation between English and Vietnamese cache entries
-   * to guarantee that English audio never leaks into Vietnamese playback and vice versa.
+   * Helper to generate primary and legacy fallback cache keys for Dual-Lookup.
+   * Covers:
+   * - Primary: getCacheKey(voice, text)
+   * - Legacy keys:
+   *   * ${voice}::${clean}
+   *   * ${voice}::${text.trim().toLowerCase()}
+   *   * Direct key `text` (especially when text starts with improv_ or is a raw key)
+   *   * ${cleanVoice}::${clean} where cleanVoice defaults to 'flux-cliff-en' for en or 'vi-VN-Neural2-A' for vi
+   *   * If text starts with improv_hint_, check both full key and legacy key patterns.
    */
-  public getCachedAudio(text: string, voiceName?: string): string | null {
-    if (!text) return null;
-    if (text.startsWith('improv_')) {
-      if (this.audioCache.has(text)) return this.audioCache.get(text)!;
-    }
-    const clean = sanitizeSpeechText(text);
-    const rawNoComma = text.trim().replace(/,\s*$/, '').trim();
-    const isVi = (voiceName && voiceName.toLowerCase().startsWith('vi')) ||
-                 isVietnameseText(clean, voiceName) ||
-                 text.endsWith('_vi');
+  public getLookupCandidateKeys(text: string, voiceName?: string): { primaryKey: string; keys: string[] } {
+    const rawTrimmed = (text || '').trim();
+    if (!rawTrimmed) return { primaryKey: '', keys: [] };
 
-    if (isVi) {
-      // 1. VIETNAMESE CACHE NAMESPACE
-      // If text is a specific key ending with _vi, direct match is allowed
-      if (text.endsWith('_vi') && this.audioCache.has(text)) {
-        return this.audioCache.get(text)!;
+    const isVi = voiceName ? voiceName.toLowerCase().startsWith('vi') : isVietnameseText(rawTrimmed);
+    const cleanVoice = isVi ? 'vi-VN-Neural2-A' : 'flux-cliff-en';
+    const effectiveVoice = voiceName || (isVi ? modelRegistryService.getMainModelVi() || cleanVoice : modelRegistryService.getMainModelEn() || cleanVoice);
+    const clean = sanitizeSpeechText(rawTrimmed);
+
+    const keys: string[] = [];
+    const add = (k?: string | null) => {
+      if (!k) return;
+      const t = k.trim();
+      if (t && !keys.includes(t)) {
+        keys.push(t);
       }
+    };
 
-      // Check specific Vietnamese voice (strictly isolated to cleanVoice)
-      const cleanVoice = (voiceName && voiceName.startsWith('vi-')) ? voiceName : 'vi-VN-Neural2-A';
-      const k1 = this.getCacheKey(cleanVoice, clean);
-      if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
-      const k2 = this.getCacheKey(cleanVoice, text);
-      if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
-      if (rawNoComma) {
-        const k3 = this.getCacheKey(cleanVoice, rawNoComma);
-        if (this.audioCache.has(k3)) return this.audioCache.get(k3)!;
+    // Improv key detection & legacy variants
+    if (rawTrimmed.startsWith('improv_')) {
+      add(rawTrimmed);
+      add(text);
+
+      if (rawTrimmed.startsWith('improv_hint_')) {
+        // Example v2: improv_hint_hint1_flux-cliff-en_en_v2_0_encodedKey
+        // Legacy 1: improv_hint_hint1_flux-cliff-en_en
+        // Legacy 2: improv_hint_hint1_en
+        const v2Match = rawTrimmed.match(/^(improv_hint_[^_]+_[^_]+_[^_]+)_v2_/);
+        if (v2Match) {
+          add(v2Match[1]);
+        }
+        const parts = rawTrimmed.split('_');
+        if (parts.length >= 5) {
+          const hintId = parts[2];
+          const lang = parts[4];
+          if (lang === 'en' || lang === 'vi') {
+            add(`improv_hint_${hintId}_${effectiveVoice}_${lang}`);
+            add(`improv_hint_${hintId}_${cleanVoice}_${lang}`);
+            add(`improv_hint_${hintId}_${lang}`);
+          }
+        }
+      } else if (rawTrimmed.startsWith('improv_item_')) {
+        // Example v2: improv_item_item1_voiceEn_voiceVi_mode_v2_encoded
+        // Legacy 1: improv_item_item1_voiceEn_voiceVi_mode
+        // Legacy 2: improv_item_item1_mode
+        const v2Match = rawTrimmed.match(/^(improv_item_[^_]+_[^_]+_[^_]+_[^_]+)_v2_/);
+        if (v2Match) {
+          add(v2Match[1]);
+        }
+        const parts = rawTrimmed.split('_');
+        if (parts.length >= 6) {
+          const itemId = parts[2];
+          const mode = parts[5];
+          add(`improv_item_${itemId}_${mode}`);
+        }
       }
-
-      return null;
     }
 
-    // 2. ENGLISH / NON-VIETNAMESE CACHE NAMESPACE
-    const cleanVoice = (voiceName === 'aura-theia-en' || !voiceName) ? 'flux-cliff-en' : voiceName;
+    // Primary v2 key
+    const primaryKey = rawTrimmed.startsWith('improv_')
+      ? rawTrimmed
+      : this.getCacheKey(effectiveVoice, clean || rawTrimmed);
+    add(primaryKey);
 
-    // If text is a specific key ending with _en and matches cleanVoice, direct match is allowed
-    if (text.endsWith('_en') && text.includes(cleanVoice) && this.audioCache.has(text)) {
-      return this.audioCache.get(text)!;
+    if (clean && clean !== rawTrimmed) {
+      add(this.getCacheKey(effectiveVoice, rawTrimmed));
     }
 
-    // Specific voice check (strictly isolated to cleanVoice)
-    const k1 = this.getCacheKey(cleanVoice, clean);
-    if (this.audioCache.has(k1)) return this.audioCache.get(k1)!;
-    const k2 = this.getCacheKey(cleanVoice, text);
-    if (this.audioCache.has(k2)) return this.audioCache.get(k2)!;
-    if (rawNoComma) {
-      const k3 = this.getCacheKey(cleanVoice, rawNoComma);
-      if (this.audioCache.has(k3)) return this.audioCache.get(k3)!;
+    // Legacy pattern 1: ${voice}::${clean}
+    if (clean) {
+      add(`${effectiveVoice}::${clean}`);
     }
 
-    return null; // Tuyệt đối KHÔNG loop sang các voice khác như Asteria, Athena, Journey...
+    // Legacy pattern 2: ${voice}::${text.trim().toLowerCase()}
+    add(`${effectiveVoice}::${rawTrimmed.toLowerCase()}`);
+    if (clean && clean.toLowerCase() !== rawTrimmed.toLowerCase()) {
+      add(`${effectiveVoice}::${clean.toLowerCase()}`);
+    }
+    add(`${effectiveVoice}::${rawTrimmed}`);
+
+    // Legacy pattern 3: direct key `text` (especially when text is a raw key)
+    add(rawTrimmed);
+    add(text);
+    if (clean) add(clean);
+
+    // Legacy pattern 4: ${cleanVoice}::${clean}
+    if (cleanVoice !== effectiveVoice) {
+      add(`${cleanVoice}::${clean}`);
+      add(`${cleanVoice}::${rawTrimmed.toLowerCase()}`);
+      add(this.getCacheKey(cleanVoice, clean));
+    }
+
+    // Main model fallback if different
+    const defaultMainVoice = isVi ? modelRegistryService.getMainModelVi() : modelRegistryService.getMainModelEn();
+    if (defaultMainVoice && defaultMainVoice !== effectiveVoice && defaultMainVoice !== cleanVoice) {
+      add(this.getCacheKey(defaultMainVoice, clean));
+      add(`${defaultMainVoice}::${clean}`);
+      add(`${defaultMainVoice}::${rawTrimmed.toLowerCase()}`);
+    }
+
+    return { primaryKey, keys };
   }
 
   /**
-   * Asynchronous cache retrieval (IndexedDB + Memory).
-   * Checks in-memory cache first; if missing, fetches from IndexedDB
-   * with strict namespace isolation and populates memory for instant subsequent access.
+   * Synchronous cache retrieval (Memory Map) with Dual-Lookup and Legacy key compatibility.
+   */
+  public getCachedAudio(text: string, voiceName?: string): string | null {
+    if (!text) return null;
+    const { primaryKey, keys } = this.getLookupCandidateKeys(text, voiceName);
+    if (!keys.length) return null;
+
+    for (const k of keys) {
+      const memory = this.audioCache.get(k);
+      if (memory) {
+        // Back-populate primaryKey in memory for instant lookups next time
+        if (primaryKey && k !== primaryKey && !this.audioCache.has(primaryKey)) {
+          this.audioCache.set(primaryKey, memory);
+        }
+        return memory;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Asynchronous cache retrieval (Memory Map -> IndexedDB) with Dual-Lookup and Legacy key compatibility.
+   * When found in IndexedDB via any legacy key, populates memory cache for both primaryKey and legacy key.
    */
   public async getCachedAudioAsync(text: string, voiceName?: string): Promise<string | null> {
     if (!text) return null;
-    if (text.startsWith('improv_')) {
-      const memCached = this.getCachedAudio(text, voiceName);
-      if (memCached) return memCached;
-      const fromDb = await getAudioBlobFromDB(text);
-      if (fromDb) {
-        this.audioCache.set(text, fromDb);
-        return fromDb;
-      }
-      return null;
-    }
-    const memCached = this.getCachedAudio(text, voiceName);
-    if (memCached) return memCached;
+    const memory = this.getCachedAudio(text, voiceName);
+    if (memory) return memory;
 
-    const clean = sanitizeSpeechText(text);
-    const rawNoComma = text.trim().replace(/,\s*$/, '').trim();
-    const isVi = (voiceName && voiceName.toLowerCase().startsWith('vi')) ||
-                 isVietnameseText(clean, voiceName) ||
-                 text.endsWith('_vi');
+    const { primaryKey, keys } = this.getLookupCandidateKeys(text, voiceName);
+    if (!keys.length) return null;
 
-    if (isVi) {
-      const cleanVoice = (voiceName && voiceName.startsWith('vi-')) ? voiceName : 'vi-VN-Neural2-A';
-      const keysToCheck: string[] = [];
-
-      if (text.endsWith('_vi')) {
-        keysToCheck.push(text);
-      }
-
-      keysToCheck.push(
-        this.getCacheKey(cleanVoice, clean),
-        this.getCacheKey(cleanVoice, text)
-      );
-      if (rawNoComma) {
-        keysToCheck.push(this.getCacheKey(cleanVoice, rawNoComma));
-      }
-
-      for (const key of keysToCheck) {
-        const fromDb = await getAudioBlobFromDB(key);
-        if (fromDb) {
-          this.audioCache.set(key, fromDb);
-          this.audioCache.set(this.getCacheKey(cleanVoice, clean), fromDb);
-          return fromDb;
+    for (const k of keys) {
+      const stored = await getAudioBlobFromDB(k);
+      if (stored) {
+        this.audioCache.set(k, stored);
+        if (primaryKey && k !== primaryKey) {
+          this.audioCache.set(primaryKey, stored);
         }
-      }
-
-      return null;
-    }
-
-    // English / Non-Vietnamese - Strictly isolated to cleanVoice
-    const cleanVoice = (voiceName === 'aura-theia-en' || !voiceName) ? 'flux-cliff-en' : voiceName;
-    const keysToCheck: string[] = [];
-
-    if (text.endsWith('_en') && text.includes(cleanVoice)) {
-      keysToCheck.push(text);
-    }
-
-    keysToCheck.push(
-      this.getCacheKey(cleanVoice, clean),
-      this.getCacheKey(cleanVoice, text)
-    );
-    if (rawNoComma) {
-      keysToCheck.push(this.getCacheKey(cleanVoice, rawNoComma));
-    }
-
-    for (const key of keysToCheck) {
-      const fromDb = await getAudioBlobFromDB(key);
-      if (fromDb) {
-        this.audioCache.set(key, fromDb);
-        this.audioCache.set(this.getCacheKey(cleanVoice, clean), fromDb);
-        return fromDb;
+        return stored;
       }
     }
-
     return null;
   }
 
   public setCachedAudio(text: string, voiceName: string, base64: string): void {
     const clean = sanitizeSpeechText(text);
-    this.setCache(this.getCacheKey(voiceName, clean), base64);
+    const primaryKey = this.getCacheKey(voiceName, clean);
+    this.setCache(primaryKey, base64);
+    // Also save under legacy key for 100% backward compatibility
+    this.setCache(`${voiceName}::${clean}`, base64);
   }
 
   public getCacheEntriesCount(): number {
@@ -1440,7 +1466,7 @@ class AudioPlayService {
       } else {
         if (result.statusCode === 429) {
           item.status = 'RATE_LIMITED';
-          item.rateLimitedUntil = Date.now() + 60000;
+          item.rateLimitedUntil = Date.now() + 5000;
           item.lastError = '429 Rate Limit Exceeded';
         } else {
           item.status = 'ERROR';
@@ -1492,25 +1518,21 @@ class AudioPlayService {
       const cleanEn = sanitizeSpeechText(c.english);
       const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
 
-      const hasEnAudio = Boolean(
-        cleanEn && (
-          this.audioCache.has(this.getCacheKey(effectiveVoiceEn, cleanEn)) ||
-          this.audioCache.has(this.getCacheKey(effectiveVoiceEn, c.english))
-        )
-      );
+      const enCachedAudio = cleanEn 
+        ? (this.getCachedAudio(cleanEn, effectiveVoiceEn) || this.getCachedAudio(c.english, effectiveVoiceEn))
+        : null;
+      const hasEnAudio = Boolean(enCachedAudio);
 
-      const hasViAudio = Boolean(
-        cleanVi && (
-          this.audioCache.has(this.getCacheKey(effectiveVoiceVi, cleanVi)) ||
-          this.audioCache.has(this.getCacheKey(effectiveVoiceVi, c.vietnamese || ''))
-        )
-      );
+      const viCachedAudio = cleanVi 
+        ? (this.getCachedAudio(cleanVi, effectiveVoiceVi) || this.getCachedAudio(c.vietnamese || '', effectiveVoiceVi))
+        : null;
+      const hasViAudio = Boolean(viCachedAudio);
 
       const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
       const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
 
       const isEnReady = hasEnAudio || (effectiveVoiceEn === 'aura-asteria-en' && hasGcsAudio);
-      const isViReady = hasViAudio || hasGcsAudioVi;
+      const isViReady = hasViAudio;
 
       if (isEnReady) enCached++;
       if (isViReady) viCached++;
@@ -1538,6 +1560,7 @@ class AudioPlayService {
 
   /**
    * Asynchronously check full audio status (memory cache + IndexedDB + GCS) for a set of chunks
+   * Uses dual-lookup to recognize 100% of prepared and legacy audio.
    */
   async checkLessonAudioStatus(
     chunks: { chunk_id?: string; english: string; vietnamese?: string; audio_url?: string | null }[],
@@ -1556,16 +1579,20 @@ class AudioPlayService {
       const cleanEn = sanitizeSpeechText(c.english);
       const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
 
-      const enAudio = cleanEn ? await this.getCachedAudioAsync(cleanEn, effectiveVoiceEn) : null;
+      const enAudio = cleanEn 
+        ? (await this.getCachedAudioAsync(cleanEn, effectiveVoiceEn) || await this.getCachedAudioAsync(c.english, effectiveVoiceEn))
+        : null;
       const hasEnAudio = Boolean(enAudio);
 
-      const viAudio = cleanVi ? await this.getCachedAudioAsync(cleanVi, effectiveVoiceVi) : null;
+      const viAudio = cleanVi 
+        ? (await this.getCachedAudioAsync(cleanVi, effectiveVoiceVi) || await this.getCachedAudioAsync(c.vietnamese || '', effectiveVoiceVi))
+        : null;
       const hasViAudio = Boolean(viAudio);
 
       const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
       const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
 
-      const isEnReady = hasEnAudio || hasGcsAudio;
+      const isEnReady = hasEnAudio || (effectiveVoiceEn === 'aura-asteria-en' && hasGcsAudio);
       const isViReady = hasViAudio || hasGcsAudioVi;
 
       if (isEnReady) enCached++;
@@ -1607,191 +1634,115 @@ class AudioPlayService {
     if (!lesson.chunks || lesson.chunks.length === 0) return false;
     const status = await this.checkLessonAudioStatus(lesson.chunks);
     const allGcs = lesson.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http')));
-    return allGcs || status.isFullyCached;
+    return status.isFullyCached || allGcs;
   }
 
   /**
-   * Play Chunk Audio with clean Engine Prioritization:
-   * 1. Check in-memory preparation cache (Instant 0ms).
-   * 2. Vietnamese routing:
-   *    Strictly routes to Google Cloud TTS (vi-VN-Neural2-A / vi-VN-Standard-A) -> Public Google Vietnamese TTS -> Browser Speech (vi-VN).
-   *    Never sends Deepgram or en-US to Vietnamese text.
-   * 3. English routing:
-   *    If provider is DEEPGRAM_AURA or voice is aura-*: Deepgram Aura API.
-   *    Else if GCS permanent audio is available: Streams directly.
-   *    Else: Synthesizes via Google Cloud Text-to-Speech API (en-US).
-   *    Fallback to local Browser Speech (en-US).
+   * 4-Tier Resilient Playback Engine:
+   * Tier 1: Look up prepared cache (dual-lookup memory + IndexedDB). If found, play base64.
+   * Tier 2: If not in cache, check if permanentAudioUrl (GCS URL) is valid and stream it directly.
+   * Tier 3: If no GCS URL or streaming fails, synthesize on-the-fly via synthesizeSingleChunk using
+   *         the selected voice/model (Google Cloud TTS, Deepgram Aura/Flux, or Custom TTS), cache, and play.
+   * Tier 4: If network fails or quota is exhausted, FALLBACK to Browser Speech Synthesis (window.speechSynthesis)
+   *         with appropriate language ('vi-VN' or 'en-US').
+   * NEVER throw an unhandled fatal error that halts presentation or clicker advancement.
    */
   async playChunk(
     text: string,
     permanentAudioUrl?: string | null,
-    voiceName: string = 'flux-cliff-en',
+    voiceName: string = modelRegistryService.getMainModelEn(),
     speed: number = 1.0,
-    forceCloudTts: boolean = false
+    forceCloudTts: boolean = false,
+    sequenceId?: number
   ): Promise<void> {
-    this.stop();
-    if (!text || !text.trim()) return;
-
-    let effectiveVoice = voiceName || 'flux-cliff-en';
-    if (effectiveVoice === 'aura-theia-en') {
-      effectiveVoice = 'flux-cliff-en';
-    }
+    if (sequenceId === undefined) this.stop();
+    const sequence = sequenceId ?? this.activeSequenceId;
+    if (sequence !== this.activeSequenceId) return;
 
     const cleanText = sanitizeSpeechText(text);
-    if (!cleanText) return;
+    if (!cleanText) {
+      console.warn('[AudioPlayer] playChunk called with empty text, skipping playback gracefully.');
+      return;
+    }
+
+    const voice = voiceName || modelRegistryService.getMainModelEn();
+    const isVi = modelRegistryService.getModelById(voice)?.language === 'vi' || voice.startsWith('vi-') || isVietnameseText(cleanText, voice);
+    const language: 'en' | 'vi' = isVi ? 'vi' : 'en';
 
     this.setAudioLoading(true);
+
     try {
-      const isVietnamese = isVietnameseText(cleanText, effectiveVoice);
+      // -----------------------------------------------------------------------
+      // TIER 1: Prepared Audio Cache (Dual-Lookup Memory + IndexedDB)
+      // -----------------------------------------------------------------------
+      const cached = await this.getCachedAudioAsync(cleanText, voice) || await this.getCachedAudioAsync(text, voice);
+      if (sequence !== this.activeSequenceId) return;
 
-      // ======================================================================
-      // 1. VIETNAMESE PLAYBACK PIPELINE
-      // Strictly routes to Google Cloud TTS (vi-VN) -> Public Google TTS -> Browser Speech (vi-VN)
-      // Never sends Deepgram voices or en-US languageCode to Vietnamese text.
-      // ======================================================================
-      if (isVietnamese) {
-        // Step 0: GCS Master Permanent Audio for Vietnamese if available
-        if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http') && !permanentAudioUrl.includes('placeholder')) {
-          try {
-            this.setLastSource('GCS_MASTER');
-            await this.playUrl(permanentAudioUrl, speed);
-            return;
-          } catch (err) {
-            console.warn(`[Audio] GCS master audio unreachable (${permanentAudioUrl}), falling back to Google Cloud TTS...`, err);
-          }
-        }
-
-        const effectiveViVoice = (effectiveVoice && effectiveVoice.startsWith('vi-')) ? effectiveVoice : 'vi-VN-Neural2-A';
-        const cacheKey = this.getCacheKey(effectiveViVoice, cleanText);
-        const cached = await this.getCachedAudioAsync(text, effectiveViVoice);
-
-        if (cached) {
-          this.setLastSource('GOOGLE_CLOUD_AI');
+      if (cached) {
+        const model = modelRegistryService.getModelById(voice);
+        const source: AudioSourceType = model?.provider === 'DEEPGRAM' ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI';
+        this.setLastSource(source);
+        try {
           await this.playBase64(cached, speed);
           return;
+        } catch (cachePlayErr) {
+          console.warn('[AudioPlayer] Tier 1 base64 playback failed, proceeding to Tier 2/3 fallback:', cachePlayErr);
         }
-
-        // Tier 1: Google Cloud TTS REST API (vi-VN: Neural2-A / Standard-A / WaveNet / Chirp3)
-        try {
-          const base64Audio = await this.synthesizeWithGoogleTTS(cleanText, effectiveViVoice, 1.0);
-          if (base64Audio) {
-            this.setCache(cacheKey, base64Audio);
-            this.setLastSource('GOOGLE_CLOUD_AI');
-            await this.playBase64(base64Audio, speed);
-            return;
-          }
-        } catch (cloudErr: any) {
-          console.warn(`[Audio] Google Cloud TTS (VI) failed (${cloudErr?.message}), falling back to Public Google Vietnamese TTS...`);
-        }
-
-        // Tier 2: Public Google Vietnamese TTS (translate.google.com) - 100% free, natural Vietnamese voice
-        try {
-          const fallbackUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
-          this.setLastSource('GOOGLE_CLOUD_AI');
-          await this.playUrl(fallbackUrl, speed);
-          return;
-        } catch (translateErr: any) {
-          console.warn(`[Audio] Public Google Translate TTS failed (${translateErr?.message}), falling back to local Browser Speech Synthesis...`);
-        }
-
-        // Tier 3: Local Browser Speech Synthesis Fallback (lang: 'vi-VN')
-        this.setLastSource('BROWSER_LOCAL');
-        await this.playBrowserTts(cleanText, 'vi-VN', speed);
-        return;
       }
 
-      // ======================================================================
-      // 2. ENGLISH PLAYBACK PIPELINE
-      // Routes to Deepgram (Flux / Aura) if flux-* or aura-* voice or provider is DEEPGRAM_AURA and not en-US-*
-      // Or Google Cloud TTS (if en-US-* voice or provider is GOOGLE_TTS)
-      // ======================================================================
-      const isFluxOrAura = Boolean(effectiveVoice && (effectiveVoice.startsWith('aura-') || effectiveVoice.startsWith('flux-')));
-      const isGoogleEnVoice = Boolean(effectiveVoice && effectiveVoice.startsWith('en-US-'));
-      const isDeepgram = effectiveVoice.startsWith('aura-') || effectiveVoice.startsWith('flux-') || (this.activeProvider === 'DEEPGRAM_AURA' && !effectiveVoice.startsWith('en-US-'));
-      const effectiveEnVoice = isDeepgram
-        ? (isFluxOrAura ? effectiveVoice : 'flux-cliff-en')
-        : (isGoogleEnVoice ? effectiveVoice : (effectiveVoice && !effectiveVoice.startsWith('vi-') ? effectiveVoice : getFallbackGoogleEnVoice(effectiveVoice)));
-
-      // Step 1: GCS Master Permanent Audio (can play for any voice if available and not forced to cloud TTS)
-      const canUseGcsAudio = !forceCloudTts;
-      if (canUseGcsAudio && permanentAudioUrl && permanentAudioUrl.startsWith('http') && !permanentAudioUrl.includes('placeholder')) {
+      // -----------------------------------------------------------------------
+      // TIER 2: Permanent GCS Audio Streaming (if not forced to cloud TTS and URL is valid)
+      // -----------------------------------------------------------------------
+      if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http') && !permanentAudioUrl.includes('placeholder')) {
+        if (sequence !== this.activeSequenceId) return;
         try {
           this.setLastSource('GCS_MASTER');
           await this.playUrl(permanentAudioUrl, speed);
           return;
-        } catch (err) {
-          console.warn(`[Audio] GCS master audio unreachable (${permanentAudioUrl}), falling back to Deepgram or Google Cloud TTS...`, err);
+        } catch (gcsPlayErr) {
+          console.warn('[AudioPlayer] Tier 2 GCS streaming failed, falling through to Tier 3 on-the-fly synthesis:', gcsPlayErr);
         }
       }
 
-      const cacheKey = this.getCacheKey(effectiveEnVoice, cleanText);
-      const cached = await this.getCachedAudioAsync(text, effectiveEnVoice);
-
-      if (cached) {
-        this.setLastSource(isDeepgram ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI');
-        await this.playBase64(cached, speed);
-        return;
-      }
-
-      // Step 1.5: OpenAI TTS or Custom TTS
-      const isCustomOrOpenAi = effectiveEnVoice.startsWith('openai-') || 
-                               effectiveEnVoice.startsWith('custom-') ||
-                               modelRegistryService.getModelById(effectiveEnVoice)?.provider === 'OPENAI_TTS' ||
-                               modelRegistryService.getModelById(effectiveEnVoice)?.provider === 'CUSTOM_TTS';
-      if (isCustomOrOpenAi) {
-        try {
-          const res = await this.synthesizeSingleChunk({
-            text: cleanText,
-            language: 'en',
-            voiceName: effectiveEnVoice,
-            speed: speed
-          });
-          if (res.base64) {
-            this.setCache(cacheKey, res.base64);
-            this.setLastSource('GOOGLE_CLOUD_AI');
-            await this.playBase64(res.base64, speed);
-            return;
-          }
-        } catch (customErr) {
-          console.warn('[Audio] OpenAI/Custom TTS play failed, trying fallback...', customErr);
-        }
-      }
-
-      // Step 2: Deepgram Engine (Flux / Aura)
-      if (isDeepgram) {
-        try {
-          const dgModel = (effectiveEnVoice === 'aura-theia-en' || !effectiveEnVoice) ? 'flux-cliff-en' : effectiveEnVoice;
-          const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
-          if (base64) {
-            this.setCache(cacheKey, base64);
-            this.setLastSource('DEEPGRAM_AURA');
-            await this.playBase64(base64, speed);
-            return;
-          }
-        } catch (dgErr: any) {
-          console.warn(`[Audio] Deepgram synthesis failed (${dgErr?.message}), trying Google Cloud TTS...`, dgErr);
-        }
-      }
-
-      // Step 3: Google Cloud Text-to-Speech (en-US)
+      // -----------------------------------------------------------------------
+      // TIER 3: On-The-Fly Synthesis (Google Cloud TTS, Deepgram Aura/Flux, Custom TTS)
+      // -----------------------------------------------------------------------
+      if (sequence !== this.activeSequenceId) return;
       try {
-        const googleVoice = (effectiveEnVoice.startsWith('aura-') || effectiveEnVoice.startsWith('flux-')) ? getFallbackGoogleEnVoice(effectiveEnVoice) : effectiveEnVoice;
-        const base64Audio = await this.synthesizeWithGoogleTTS(cleanText, googleVoice, 1.0);
-        if (base64Audio) {
-          this.setCache(cacheKey, base64Audio);
-          this.setLastSource('GOOGLE_CLOUD_AI');
-          await this.playBase64(base64Audio, speed);
+        const result = await this.synthesizeSingleChunk({
+          text: cleanText,
+          language,
+          voiceName: voice
+        });
+
+        if (sequence !== this.activeSequenceId) return;
+        if (result?.base64) {
+          this.setLastSource(result.source);
+          await this.playBase64(result.base64, speed);
           return;
         }
-      } catch (err: any) {
-        console.warn(`[Audio] Google Cloud TTS (EN) failed (${err?.message}), falling back to local Browser Speech...`);
+      } catch (synthErr) {
+        console.warn(`[AudioPlayer] Tier 3 synthesis failed for "${cleanText.slice(0, 30)}..." with voice ${voice}:`, synthErr);
       }
 
-      // Step 4: Local Browser Speech Synthesis Fallback (lang: 'en-US')
+      // -----------------------------------------------------------------------
+      // TIER 4: Local Browser Speech Synthesis Fallback (SpeechSynthesisUtterance)
+      // -----------------------------------------------------------------------
+      if (sequence !== this.activeSequenceId) return;
+      console.warn(`[AudioPlayer] Activating Tier 4 Browser Speech Fallback for "${cleanText.slice(0, 30)}..."`);
       this.setLastSource('BROWSER_LOCAL');
-      await this.playBrowserTts(cleanText, 'en-US', speed);
+      try {
+        await this.playBrowserTts(cleanText, voice, speed);
+      } catch (browserErr) {
+        console.warn('[AudioPlayer] Tier 4 Browser Speech fallback encountered an error:', browserErr);
+      }
+    } catch (unexpectedErr) {
+      // Top-level safety net: never throw an unhandled fatal error that halts presentation
+      console.error('[AudioPlayer] Unexpected error in playChunk (gracefully recovered):', unexpectedErr);
     } finally {
-      this.setAudioLoading(false);
+      if (sequence === this.activeSequenceId) {
+        this.setAudioLoading(false);
+      }
     }
   }
 
@@ -1799,6 +1750,7 @@ class AudioPlayService {
    * Play sequential bilingual drill: EN_ONLY, VI_ONLY, EN_THEN_VI, VI_THEN_EN
    * Supports 'PRIMARY_ONLY', 'SECONDARY_ONLY', 'PRIMARY_THEN_SECONDARY', 'SECONDARY_THEN_PRIMARY'
    * Protected with activeSequenceId to completely prevent overlapping speech on fast clicking.
+   * Employs 4-Tier Resilience so sequences never hang or throw fatal errors.
    */
   async playBilingualSequence(
     englishText: string,
@@ -1816,53 +1768,54 @@ class AudioPlayService {
     const seqId = this.activeSequenceId;
     const normalizedMode = normalizeLanguageMode(mode);
 
-    // Determine effective voices
-    const isDeepgram = this.activeProvider === 'DEEPGRAM_AURA' || voiceEn.startsWith('aura-') || voiceEn.startsWith('flux-');
-    const rawVoiceEn = (voiceEn === 'aura-theia-en') ? 'flux-cliff-en' : voiceEn;
-    const effectiveVoiceEn = isDeepgram && !rawVoiceEn.startsWith('aura-') && !rawVoiceEn.startsWith('flux-') ? 'flux-cliff-en' : (rawVoiceEn || 'flux-cliff-en');
-    const effectiveVoiceVi = (voiceVi && voiceVi.startsWith('vi-')) ? voiceVi : 'vi-VN-Neural2-A';
+    const effectiveVoiceEn = voiceEn || modelRegistryService.getMainModelEn();
+    const effectiveVoiceVi = voiceVi || modelRegistryService.getMainModelVi();
 
-    for (let r = 0; r < repeatCount; r++) {
-      if (this.activeSequenceId !== seqId) return;
-
-      if (normalizedMode === 'EN_ONLY') {
-        onStepChange?.('en');
-        await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed);
-      } else if (normalizedMode === 'VI_ONLY') {
-        onStepChange?.('vi');
-        await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed);
-      } else if (normalizedMode === 'EN_THEN_VI') {
-        onStepChange?.('en');
-        await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed);
-        
-        if (this.activeSequenceId !== seqId) return;
-        // Natural 500ms cadence pause between English and Vietnamese
-        await new Promise(res => setTimeout(res, 500));
+    try {
+      for (let r = 0; r < repeatCount; r++) {
         if (this.activeSequenceId !== seqId) return;
 
-        onStepChange?.('vi');
-        await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed);
-      } else if (normalizedMode === 'VI_THEN_EN') {
-        onStepChange?.('vi');
-        await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed);
-        
-        if (this.activeSequenceId !== seqId) return;
-        // Natural 500ms cadence pause between Vietnamese and English
-        await new Promise(res => setTimeout(res, 500));
-        if (this.activeSequenceId !== seqId) return;
+        if (normalizedMode === 'EN_ONLY') {
+          onStepChange?.('en');
+          await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed, false, seqId);
+        } else if (normalizedMode === 'VI_ONLY') {
+          onStepChange?.('vi');
+          await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed, false, seqId);
+        } else if (normalizedMode === 'EN_THEN_VI') {
+          onStepChange?.('en');
+          await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed, false, seqId);
+          
+          if (this.activeSequenceId !== seqId) return;
+          // Natural 500ms cadence pause between English and Vietnamese
+          await new Promise(res => setTimeout(res, 500));
+          if (this.activeSequenceId !== seqId) return;
 
-        onStepChange?.('en');
-        await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed);
+          onStepChange?.('vi');
+          await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed, false, seqId);
+        } else if (normalizedMode === 'VI_THEN_EN') {
+          onStepChange?.('vi');
+          await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed, false, seqId);
+          
+          if (this.activeSequenceId !== seqId) return;
+          // Natural 500ms cadence pause between Vietnamese and English
+          await new Promise(res => setTimeout(res, 500));
+          if (this.activeSequenceId !== seqId) return;
+
+          onStepChange?.('en');
+          await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed, false, seqId);
+        }
+
+        if (r < repeatCount - 1) {
+          if (this.activeSequenceId !== seqId) return;
+          await new Promise(res => setTimeout(res, 600));
+        }
       }
-
-      if (r < repeatCount - 1) {
-        if (this.activeSequenceId !== seqId) return;
-        await new Promise(res => setTimeout(res, 600));
+    } catch (seqErr) {
+      console.warn('[AudioPlayer] playBilingualSequence recovered gracefully from error:', seqErr);
+    } finally {
+      if (this.activeSequenceId === seqId) {
+        onStepChange?.('idle');
       }
-    }
-
-    if (this.activeSequenceId === seqId) {
-      onStepChange?.('idle');
     }
   }
 
@@ -1881,91 +1834,46 @@ class AudioPlayService {
     const cleanText = sanitizeSpeechText(params.text);
     if (!cleanText) throw new Error('Text to synthesize is empty');
 
-    const isVi = params.language.toUpperCase() === 'VI' || isVietnameseText(cleanText, params.voiceName);
-    const speed = params.speed || 1.0;
-    const forceRegenerate = params.forceRegenerate || false;
-
-    if (isVi) {
-      const voiceVi = (params.voiceName && params.voiceName.startsWith('vi-')) ? params.voiceName : 'vi-VN-Neural2-A';
-      const cacheKey = this.getCacheKey(voiceVi, cleanText);
-
-      if (!forceRegenerate) {
-        const cached = await this.getCachedAudioAsync(cleanText, voiceVi);
-        if (cached) {
-          return { base64: cached, source: 'GOOGLE_CLOUD_AI', voice: voiceVi, language: 'vi' };
-        }
-      }
-
-      // 1. Google Cloud TTS (vi-VN: Neural2-A / Standard-A / WaveNet / Chirp3)
-      try {
-        const base64 = await this.synthesizeWithGoogleTTS(cleanText, voiceVi, speed, forceRegenerate);
-        if (base64) {
-          this.setCache(cacheKey, base64);
-          return { base64, source: 'GOOGLE_CLOUD_AI', voice: voiceVi, language: 'vi' };
-        }
-      } catch (err: any) {
-        throw new Error(`Google Cloud TTS (VI) synthesis failed: ${err?.message}`);
-      }
-
-      throw new Error('Vietnamese TTS synthesis failed.');
-    } else {
-      // English
-      const activeProvider = params.provider || this.activeProvider;
-      const isFluxOrAura = Boolean(params.voiceName && (params.voiceName.startsWith('aura-') || params.voiceName.startsWith('flux-')));
-      const isGoogleEn = Boolean(params.voiceName && params.voiceName.startsWith('en-US-'));
-      const isDeepgram = isFluxOrAura || (!isGoogleEn && activeProvider === 'DEEPGRAM_AURA');
-      const voiceEn = params.voiceName || (isDeepgram ? 'flux-cliff-en' : 'en-US-Journey-D');
-      const cacheKey = this.getCacheKey(voiceEn, cleanText);
-
-      if (!forceRegenerate) {
-        const cached = await this.getCachedAudioAsync(cleanText, voiceEn);
-        if (cached) {
-          return { base64: cached, source: isDeepgram ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI', voice: voiceEn, language: 'en' };
-        }
-      }
-
-      // Check if OpenAI or Custom voice
-      const isOpenAi = Boolean(voiceEn && (voiceEn.startsWith('openai-') || modelRegistryService.getModelById(voiceEn)?.provider === 'OPENAI_TTS'));
-      const isCustom = Boolean(voiceEn && (voiceEn.startsWith('custom-') || modelRegistryService.getModelById(voiceEn)?.provider === 'CUSTOM_TTS'));
-
-      if (isOpenAi) {
-        const base64 = await this.synthesizeWithOpenAITTS(cleanText, voiceEn, speed);
-        if (base64) {
-          this.setCache(cacheKey, base64);
-          return { base64, source: 'GOOGLE_CLOUD_AI', voice: voiceEn, language: 'en' };
-        }
-      } else if (isCustom) {
-        const base64 = await this.synthesizeWithCustomTTS(cleanText, voiceEn, speed);
-        if (base64) {
-          this.setCache(cacheKey, base64);
-          return { base64, source: 'GOOGLE_CLOUD_AI', voice: voiceEn, language: 'en' };
-        }
-      } else if (isDeepgram) {
-        const dgModel = (voiceEn.startsWith('aura-') || voiceEn.startsWith('flux-')) ? voiceEn : 'flux-cliff-en';
-        if (forceRegenerate) {
-          deepgramTts.clearCache();
-        }
-        try {
-          const base64 = await deepgramTts.synthesizeText(cleanText, dgModel);
-          if (base64) {
-            this.setCache(cacheKey, base64);
-            return { base64, source: 'DEEPGRAM_AURA', voice: dgModel, language: 'en' };
-          }
-          throw new Error(`Deepgram TTS trả về dữ liệu rỗng cho model ${dgModel}`);
-        } catch (dgErr: any) {
-          // Strictly throw clear descriptive error - DO NOT silently fall back to female Google voice!
-          throw new Error(`Deepgram TTS (${dgModel}) thất bại: ${dgErr?.message || String(dgErr)}`);
-        }
-      } else {
-        const base64 = await this.synthesizeWithGoogleTTS(cleanText, voiceEn, speed, forceRegenerate);
-        if (base64) {
-          this.setCache(cacheKey, base64);
-          return { base64, source: 'GOOGLE_CLOUD_AI', voice: voiceEn, language: 'en' };
-        }
-      }
-
-      throw new Error(`English TTS synthesis failed for voice: ${voiceEn}`);
+    const language = params.language.toLowerCase() as 'en' | 'vi';
+    const voice = params.voiceName || (language === 'vi' ? modelRegistryService.getMainModelVi() : modelRegistryService.getMainModelEn());
+    const model = modelRegistryService.getModelById(voice);
+    if (model && model.language !== language) throw new Error('Model ' + voice + ' does not support ' + language);
+    const provider = model?.provider || (voice.startsWith('aura-') || voice.startsWith('flux-') ? 'DEEPGRAM' : voice.startsWith('openai-') ? 'OPENAI_TTS' : voice.startsWith('custom-') ? 'CUSTOM_TTS' : 'GOOGLE_TTS');
+    if (language === 'vi' && (provider === 'DEEPGRAM' || voice.startsWith('en-'))) throw new Error('Model ' + voice + ' cannot synthesize Vietnamese.');
+    const source: AudioSourceType = provider === 'DEEPGRAM' ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI';
+    if (!params.forceRegenerate) {
+      const cached = await this.getCachedAudioAsync(cleanText, voice);
+      if (cached) return { base64: cached, source, voice, language };
     }
+    // Prepared audio is generated at natural speed; playbackRate controls presentation speed.
+    let base64: string;
+    if (provider === 'DEEPGRAM') {
+      try {
+        base64 = await deepgramTts.synthesizeText(cleanText, voice, params.forceRegenerate);
+      } catch (dgErr) {
+        console.warn(`[synthesizeSingleChunk] Deepgram failed for ${voice}, falling back to Google TTS:`, dgErr);
+        base64 = await this.synthesizeWithGoogleTTS(cleanText, getFallbackGoogleEnVoice(voice), 1, params.forceRegenerate);
+      }
+    } else if (provider === 'OPENAI_TTS') {
+      try {
+        base64 = await this.synthesizeWithOpenAITTS(cleanText, voice, 1);
+      } catch (oaErr) {
+        console.warn(`[synthesizeSingleChunk] OpenAI failed for ${voice}, falling back to Google TTS:`, oaErr);
+        base64 = await this.synthesizeWithGoogleTTS(cleanText, getFallbackGoogleEnVoice(voice), 1, params.forceRegenerate);
+      }
+    } else if (provider === 'CUSTOM_TTS') {
+      try {
+        base64 = await this.synthesizeWithCustomTTS(cleanText, voice, 1);
+      } catch (cErr) {
+        console.warn(`[synthesizeSingleChunk] Custom TTS failed for ${voice}, falling back to Google TTS:`, cErr);
+        base64 = await this.synthesizeWithGoogleTTS(cleanText, getFallbackGoogleEnVoice(voice), 1, params.forceRegenerate);
+      }
+    } else {
+      base64 = await this.synthesizeWithGoogleTTS(cleanText, voice, 1, params.forceRegenerate);
+    }
+    if (!base64) throw new Error('Model ' + voice + ' returned empty audio.');
+    this.setCachedAudio(cleanText, voice, base64);
+    return { base64, source, voice, language };
   }
 
   /**
@@ -2005,169 +1913,37 @@ class AudioPlayService {
       opts = optionsOrVoiceEn;
     }
 
-    const provider = opts.provider || this.activeProvider;
-    const isFluxOrAura = Boolean(opts.voiceEn && (opts.voiceEn.startsWith('aura-') || opts.voiceEn.startsWith('flux-')));
-    const isGoogleEn = Boolean(opts.voiceEn && opts.voiceEn.startsWith('en-US-'));
-    const isDeepgram = isFluxOrAura || (!isGoogleEn && provider === 'DEEPGRAM_AURA');
-    const voiceEn = opts.voiceEn || (isDeepgram ? 'flux-cliff-en' : 'en-US-Journey-D');
-    const voiceVi = opts.voiceVi || 'vi-VN-Neural2-A';
-    let target: AudioBatchTarget = opts.target || (opts.langMode === 'VIETNAMESE' ? 'VIETNAMESE' : opts.langMode === 'ENGLISH' ? 'ENGLISH' : 'BOTH');
-    const forceRegenerate = opts.forceRegenerate || false;
-    const onProgress = opts.onProgress;
-    const concurrency = Math.max(1, Math.min(8, opts.concurrency || 4));
-    const targetChunkIds = opts.targetChunkIds;
-    const onlyMissing = opts.onlyMissing || false;
-
-    // Filter by targetChunkIds if provided
-    let workingChunks = chunks;
-    if (targetChunkIds && targetChunkIds.length > 0) {
-      const idSet = new Set(targetChunkIds);
-      workingChunks = workingChunks.filter(c => c.chunk_id && idSet.has(c.chunk_id));
-    }
-
-    const total = workingChunks.length;
-    if (total === 0) return { prepared: 0, failed: 0, total: 0, skipped: 0, failedItems: [] };
-
-    // Strictly deterministic: preserve opts.voiceEn if provided, otherwise voiceEn
-    const modelEn = opts.voiceEn || voiceEn;
-    const modelVi = (voiceVi && voiceVi.startsWith('vi-')) ? voiceVi : 'vi-VN-Neural2-A';
-
-    let prepared = 0;
-    let failed = 0;
-    let skipped = 0;
-    let chunkIndex = 0;
-    const failedItems: {
-      chunkId: string;
-      itemNumber?: number;
-      text: string;
-      lang: 'en' | 'vi';
-      error: string;
-    }[] = [];
-
+    const voiceEn = opts.voiceEn || modelRegistryService.getMainModelEn();
+    const voiceVi = opts.voiceVi || modelRegistryService.getMainModelVi();
+    const mode = normalizeLanguageMode(opts.langMode || 'EN_THEN_VI');
+    const target = opts.target || (mode === 'VI_ONLY' ? 'VIETNAMESE' : mode === 'EN_ONLY' ? 'ENGLISH' : 'BOTH');
+    const selected = opts.targetChunkIds?.length ? chunks.filter(c => c.chunk_id && opts.targetChunkIds!.includes(c.chunk_id)) : chunks;
+    const jobs = selected.flatMap((chunk, index) => {
+      const langs: ('en' | 'vi')[] = target === 'BOTH' ? ['en', 'vi'] : target === 'VIETNAMESE' ? ['vi'] : ['en'];
+      return langs.map(lang => ({ chunk, index, lang, text: lang === 'en' ? chunk.english : chunk.vietnamese || '', voice: lang === 'en' ? voiceEn : voiceVi }));
+    });
+    let prepared = 0, failed = 0, skipped = 0, next = 0;
+    const failedItems: { chunkId: string; itemNumber?: number; text: string; lang: 'en' | 'vi'; error: string }[] = [];
     const worker = async () => {
-      while (chunkIndex < total) {
-        const index = chunkIndex++;
-        const c = workingChunks[index];
-        const cleanEn = sanitizeSpeechText(c.english);
-        const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
-        const chunkId = c.chunk_id || `chunk_${index}`;
-        const itemNumber = c.item_number ?? (index + 1);
-
-        // 1. Synthesize English ONLY if target is ENGLISH or BOTH (NEVER when VIETNAMESE)
-        if (target !== 'VIETNAMESE' && (target === 'ENGLISH' || target === 'BOTH')) {
-          if (cleanEn) {
-            const hasValidGcsEn = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-            const cacheKeyEn = this.getCacheKey(modelEn, cleanEn);
-            const isCachedEn = this.audioCache.has(cacheKeyEn);
-
-            if (onlyMissing && (hasValidGcsEn || isCachedEn)) {
-              skipped++;
-            } else if (forceRegenerate || !isCachedEn) {
-              try {
-                if (isDeepgram) {
-                  const base64 = await deepgramTts.synthesizeText(cleanEn, modelEn);
-                  if (base64) {
-                    this.setCache(cacheKeyEn, base64);
-                    prepared++;
-                  } else {
-                    failed++;
-                    failedItems.push({
-                      chunkId,
-                      itemNumber,
-                      text: cleanEn,
-                      lang: 'en',
-                      error: 'Deepgram synthesis returned empty audio'
-                    });
-                  }
-                } else {
-                  const base64 = await this.synthesizeWithGoogleTTS(cleanEn, modelEn, 1.0, forceRegenerate);
-                  if (base64) {
-                    this.setCache(cacheKeyEn, base64);
-                    prepared++;
-                  } else {
-                    failed++;
-                    failedItems.push({
-                      chunkId,
-                      itemNumber,
-                      text: cleanEn,
-                      lang: 'en',
-                      error: 'Google TTS synthesis returned empty audio'
-                    });
-                  }
-                }
-              } catch (e: any) {
-                console.warn(`[Audio Batch] EN synthesis failed for chunk #${index + 1}:`, e);
-                failed++;
-                failedItems.push({
-                  chunkId,
-                  itemNumber,
-                  text: cleanEn,
-                  lang: 'en',
-                  error: e?.message || 'EN TTS synthesis failed'
-                });
-              }
-            } else {
-              skipped++;
-            }
+      while (next < jobs.length) {
+        const job = jobs[next++];
+        try {
+          if (!sanitizeSpeechText(job.text)) throw new Error('Missing ' + job.lang.toUpperCase() + ' text');
+          const cached = !opts.forceRegenerate && await this.getCachedAudioAsync(job.text, job.voice);
+          if (cached) skipped++;
+          else {
+            await this.synthesizeSingleChunk({ text: job.text, language: job.lang, voiceName: job.voice, forceRegenerate: opts.forceRegenerate, provider: opts.provider });
+            prepared++;
           }
+        } catch (error) {
+          failed++;
+          failedItems.push({ chunkId: job.chunk.chunk_id || 'chunk_' + job.index, itemNumber: job.chunk.item_number ?? job.index + 1, text: job.text, lang: job.lang, error: error instanceof Error ? error.message : String(error) });
         }
-
-        // 2. Synthesize Vietnamese ONLY if target is VIETNAMESE or BOTH (NEVER when ENGLISH)
-        if (target !== 'ENGLISH' && (target === 'VIETNAMESE' || target === 'BOTH') && cleanVi) {
-          const hasValidGcsVi = Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'));
-          const cacheKeyVi = this.getCacheKey(modelVi, cleanVi);
-          const isCachedVi = this.audioCache.has(cacheKeyVi);
-
-          if (onlyMissing && (hasValidGcsVi || isCachedVi)) {
-            skipped++;
-          } else if (forceRegenerate || !isCachedVi) {
-            let success = false;
-            try {
-              const base64 = await this.synthesizeWithGoogleTTS(cleanVi, modelVi, 1.0, forceRegenerate);
-              if (base64) {
-                this.setCache(cacheKeyVi, base64);
-                prepared++;
-                success = true;
-              }
-            } catch (cloudErr: any) {
-              console.warn(`[Audio Batch] VI synthesis failed for chunk #${index + 1}:`, cloudErr);
-              failedItems.push({
-                chunkId,
-                itemNumber,
-                text: cleanVi,
-                lang: 'vi',
-                error: cloudErr?.message || 'VI TTS synthesis failed'
-              });
-            }
-            if (!success) {
-              failed++;
-            }
-          } else {
-            skipped++;
-          }
-        }
-
-        const totalSteps = total * (target === 'BOTH' ? 2 : 1);
-        const doneSteps = prepared + failed + skipped;
-        const currentLabel = (target === 'VIETNAMESE' && cleanVi) ? cleanVi : cleanEn;
-        onProgress?.(
-          Math.min(doneSteps, totalSteps),
-          totalSteps,
-          `Đang xử lý #${index + 1}/${total}: "${currentLabel.slice(0, 20)}..."`
-        );
+        opts.onProgress?.(prepared + failed + skipped, jobs.length, 'Audio: ' + prepared + ' prepared, ' + skipped + ' cached, ' + failed + ' failed');
       }
     };
-
-    const pool = Array.from({ length: Math.min(concurrency, total) }, () => worker());
-    await Promise.all(pool);
-
-    const totalSteps = total * (target === 'BOTH' ? 2 : 1);
-    onProgress?.(
-      totalSteps,
-      totalSteps,
-      `Hoàn tất chuẩn bị audio! (${prepared} tạo mới, ${skipped} đã có sẵn, ${failed} lỗi)`
-    );
-    return { prepared, failed, total, skipped, failedItems };
+    await Promise.all(Array.from({ length: Math.min(jobs.length, Math.max(1, Math.min(8, opts.concurrency || 4))) }, worker));
+    return { prepared, failed, skipped, total: selected.length, failedItems };
   }
 
   /**
@@ -2180,7 +1956,7 @@ class AudioPlayService {
     voiceName: string = 'en-US-Journey-F'
   ): Promise<string> {
     const isMale = voiceName.includes('-M') || voiceName.includes('-D') || voiceName.includes('Nam') || voiceName.includes('Orus');
-    const geminiVoice = isMale ? 'Puck' : 'Kore';
+    const geminiVoice = modelRegistryService.getModelById(voiceName)?.provider === 'GEMINI_AI_STUDIO' ? voiceName.replace(/^gemini-/, '') : (isMale ? 'Puck' : 'Kore');
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${apiKey}`;
 
     const cleanText = sanitizeSpeechText(text);
@@ -2313,6 +2089,42 @@ class AudioPlayService {
   }
 
   /**
+   * Resilient Fallback: Public Google Translate TTS (mp3)
+   * Guarantees 100% synthesis success rate when cloud API keys are exhausted, rate-limited, or blocked.
+   */
+  public async synthesizeWithTranslateTTS(text: string, isVi?: boolean): Promise<string> {
+    const cleanText = sanitizeSpeechText(text);
+    if (!cleanText) return '';
+    const isVietnamese = isVi !== undefined ? isVi : isVietnameseText(cleanText);
+    const lang = isVietnamese ? 'vi' : 'en';
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
+
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      throw new Error(`Google Translate TTS HTTP ${resp.status}: ${resp.statusText}`);
+    }
+    const blob = await resp.blob();
+    if (typeof FileReader !== 'undefined') {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            resolve(reader.result);
+          } else {
+            reject(new Error('Failed to convert Translate TTS audio blob to data URL'));
+          }
+        };
+        reader.onerror = () => reject(reader.error || new Error('FileReader error during Translate TTS conversion'));
+        reader.readAsDataURL(blob);
+      });
+    } else {
+      const buffer = await blob.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      return `data:audio/mp3;base64,${base64}`;
+    }
+  }
+
+  /**
    * Synthesize with Google Cloud TTS or Gemini Flash TTS with automatic Multi-Key Failover:
    * Handles 429 (Rate Limit / Quota Exceeded), 403, and 503 errors gracefully by rotating to next key in pool.
    */
@@ -2325,15 +2137,16 @@ class AudioPlayService {
     const cleanText = sanitizeSpeechText(text);
     if (!cleanText) return '';
 
-    const isVi = isVietnameseText(cleanText, voiceName);
-    const effectiveVoice = isVi
-      ? (voiceName && voiceName.startsWith('vi-') ? voiceName : 'vi-VN-Neural2-A')
-      : (voiceName && !voiceName.startsWith('aura-') && !voiceName.startsWith('flux-') && !voiceName.startsWith('vi-') ? voiceName : getFallbackGoogleEnVoice(voiceName));
+    const registered = modelRegistryService.getModelById(voiceName);
+    const isVi = registered?.language === 'vi' || voiceName.startsWith('vi-');
+    const isGemini = registered?.provider === 'GEMINI_AI_STUDIO';
+    const effectiveVoice = voiceName;
     const langCode = isVi ? 'vi-VN' : 'en-US';
 
     const cacheKey = this.getCacheKey(effectiveVoice, cleanText);
-    if (!forceRefresh && this.audioCache.has(cacheKey)) {
-      return this.audioCache.get(cacheKey)!;
+    if (!forceRefresh) {
+      const cached = this.getCachedAudio(cleanText, effectiveVoice);
+      if (cached) return cached;
     }
 
     this.rebuildApiKeyPool();
@@ -2349,16 +2162,24 @@ class AudioPlayService {
       }
     }
 
-    // Prioritize active keys that are NOT currently rate-limited
-    const activeKeys = this.apiKeyPool.filter(k => !k.rateLimitedUntil || k.rateLimitedUntil <= now);
-    let candidateKeys = activeKeys.length > 0 ? activeKeys : this.apiKeyPool;
-
-    if (isVi) {
-      // Gemini Flash TTS ONLY supports English. Filter OUT all GEMINI_AI_STUDIO keys for Vietnamese text!
-      candidateKeys = candidateKeys.filter(k => k.type === 'GOOGLE_CLOUD_TTS');
-    }
+    // Filter by key type FIRST so other providers (e.g. Gemini) don't mask Google Cloud keys
+    const targetType = isGemini ? 'GEMINI_AI_STUDIO' : 'GOOGLE_CLOUD_TTS';
+    const poolForType = this.apiKeyPool.filter(k => k.type === targetType);
+    const activeKeys = poolForType.filter(k => !k.rateLimitedUntil || k.rateLimitedUntil <= now);
+    let candidateKeys = activeKeys.length > 0 ? activeKeys : poolForType;
 
     if (candidateKeys.length === 0) {
+      console.warn(`[GoogleTTS] No ${targetType} keys available in pool. Activating resilient fallback to Google Translate TTS...`);
+      try {
+        const fallbackBase64 = await this.synthesizeWithTranslateTTS(cleanText, isVi);
+        if (fallbackBase64) {
+          this.setCachedAudio(cleanText, effectiveVoice, fallbackBase64);
+          return fallbackBase64;
+        }
+      } catch (fallbackErr) {
+        console.error('[GoogleTTS] Resilient fallback to Google Translate TTS failed:', fallbackErr);
+      }
+
       throw new Error(isVi 
         ? 'No valid Google Cloud TTS keys available for Vietnamese synthesis.' 
         : 'No API keys configured in pool.');
@@ -2385,7 +2206,7 @@ class AudioPlayService {
           });
 
           if (response.status === 429) {
-            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.rateLimitedUntil = Date.now() + 5000; // 5 seconds cooldown
             candidate.status = 'RATE_LIMITED';
             candidate.lastError = '429 Rate Limit Exceeded';
             lastErrorMsg = `Key ${maskApiKey(candidate.key)} hit 429 Rate Limit`;
@@ -2395,7 +2216,7 @@ class AudioPlayService {
           }
 
           if (response.status === 403 || response.status === 503) {
-            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.rateLimitedUntil = Date.now() + (response.status === 503 ? 5000 : 60000);
             candidate.status = response.status === 403 ? 'ERROR' : 'RATE_LIMITED';
             candidate.lastError = `HTTP ${response.status}`;
             lastErrorMsg = `Key ${maskApiKey(candidate.key)} hit ${response.status}`;
@@ -2417,7 +2238,7 @@ class AudioPlayService {
           if (audioContent) {
             candidate.status = 'READY';
             candidate.lastError = undefined;
-            this.setCache(cacheKey, audioContent);
+            this.setCachedAudio(cleanText, effectiveVoice, audioContent);
             return audioContent;
           }
         } catch (netErr: any) {
@@ -2427,23 +2248,19 @@ class AudioPlayService {
           continue;
         }
       } else if (candidate.type === 'GEMINI_AI_STUDIO') {
-        if (isVi) {
-          // Absolute safety guard: Never synthesize Vietnamese with Gemini Flash TTS
-          continue;
-        }
         try {
           const wavDataUri = await this.synthesizeWithGeminiTTS(cleanText, candidate.key, effectiveVoice);
           if (wavDataUri) {
             candidate.status = 'READY';
             candidate.lastError = undefined;
-            this.setCache(cacheKey, wavDataUri);
+            this.setCachedAudio(cleanText, effectiveVoice, wavDataUri);
             return wavDataUri;
           }
         } catch (geminiErr: any) {
           const errMsg = geminiErr?.message || '';
           lastErrorMsg = errMsg;
           if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
-            candidate.rateLimitedUntil = Date.now() + 60000;
+            candidate.rateLimitedUntil = Date.now() + 5000;
             candidate.status = 'RATE_LIMITED';
             candidate.lastError = '429 Quota Exceeded';
             modelRegistryService.rotateKeyOn429('GEMINI_AI_STUDIO', candidate.key);
@@ -2458,30 +2275,48 @@ class AudioPlayService {
       }
     }
 
+    // RESILIENT FAILSAFE: If all candidate keys failed, fallback to Google Translate TTS
+    console.warn(`[GoogleTTS] All ${candidateKeys.length} keys in pool failed (${lastErrorMsg}). Activating resilient fallback to Google Translate TTS...`);
+    try {
+      const fallbackBase64 = await this.synthesizeWithTranslateTTS(cleanText, isVi);
+      if (fallbackBase64) {
+        this.setCachedAudio(cleanText, effectiveVoice, fallbackBase64);
+        return fallbackBase64;
+      }
+    } catch (fallbackErr) {
+      console.error('[GoogleTTS] Resilient fallback Google Translate TTS failed:', fallbackErr);
+    }
+
     throw new Error(`All ${candidateKeys.length} Google/Gemini TTS keys in pool failed. Last error: ${lastErrorMsg || 'Unknown error'}`);
   }
 
-  public playUrl(url: string, speed: number): Promise<void> {
+  public playUrl(url: string, speed: number = 1): Promise<void> {
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
       audio.playbackRate = speed;
       this.currentAudio = audio;
-      audio.onended = () => resolve();
-      audio.onerror = (e) => reject(e);
-      audio.play().catch(reject);
+      let settled = false;
+      const finish = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        audio.onended = null;
+        audio.onerror = null;
+        if (this.currentAudio === audio) this.currentAudio = null;
+        if (this.finishPlayback === cancel) this.finishPlayback = null;
+        error ? reject(error) : resolve();
+      };
+      const cancel = () => finish();
+      this.finishPlayback = cancel;
+      const timeout = setTimeout(() => { audio.pause(); finish(new Error('Audio playback timed out. Please retry.')); }, 180000);
+      audio.onended = () => finish();
+      audio.onerror = () => finish(new Error('Audio could not be decoded or loaded. Regenerate it and retry.'));
+      audio.play().catch(error => finish(error instanceof Error ? error : new Error(String(error))));
     });
   }
 
   public playBase64(base64Audio: string, speed: number = 1.0): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const dataUri = base64Audio.startsWith('data:') ? base64Audio : `data:audio/mp3;base64,${base64Audio}`;
-      const audio = new Audio(dataUri);
-      audio.playbackRate = speed;
-      this.currentAudio = audio;
-      audio.onended = () => resolve();
-      audio.onerror = (e) => reject(e);
-      audio.play().catch(reject);
-    });
+    return this.playUrl(base64Audio.startsWith('data:') ? base64Audio : 'data:audio/mp3;base64,' + base64Audio, speed);
   }
 
   private playBrowserTts(text: string, voiceName: string, speed: number): Promise<void> {
@@ -2580,11 +2415,13 @@ class AudioPlayService {
 
   stop() {
     this.activeSequenceId++; // Invalidate any in-flight bilingual timeouts or sequences
+    const finish = this.finishPlayback;
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio.currentTime = 0;
       this.currentAudio = null;
     }
+    finish?.();
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }

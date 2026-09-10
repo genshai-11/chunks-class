@@ -17,12 +17,15 @@ import {
 import { 
   audioPlayer, 
   GOOGLE_TTS_VOICES, 
-  AudioProvider 
+  AudioProvider,
+  sanitizeSpeechText
 } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
 import { 
   improvTts,
+  getHintAudioCacheKey,
+  prepareSessionAudio,
   getHintTextByLanguage, 
   getHintLanguagePair,
   isSessionAudioReady, 
@@ -126,7 +129,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const [isSessionCompleteGate, setIsSessionCompleteGate] = useState<boolean>(false);
   const [selectedVoice, setSelectedVoice] = useState<string>(() => {
     const v = audioSettings?.voice_profile_en;
-    return (v && v !== 'aura-theia-en') ? v : 'flux-cliff-en';
+    return v || 'flux-cliff-en';
   });
   const [selectedVoiceVi, setSelectedVoiceVi] = useState<string>(
     audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A'
@@ -314,7 +317,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   useEffect(() => {
     if (audioSettings?.voice_profile_en) {
       const v = audioSettings.voice_profile_en;
-      setSelectedVoice((v && v !== 'aura-theia-en') ? v : 'flux-cliff-en');
+      setSelectedVoice(v || 'flux-cliff-en');
     }
     if (audioSettings?.voice_profile_vi) {
       setSelectedVoiceVi(audioSettings.voice_profile_vi);
@@ -341,59 +344,28 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   ): Promise<boolean> => {
     if (!s || !s.items || s.items.length === 0) return false;
 
-    // Check through improvTts with active voice
+    return isSessionAudioReady(s, vEn, vVi, lMode);
+  };
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [isPreparingSession, setIsPreparingSession] = useState(false);
+  const [readinessRevision, setReadinessRevision] = useState(0);
+  const [prepareStatus, setPrepareStatus] = useState('');
+  const prepareActiveSession = async () => {
+    if (!activeSession || isPreparingSession) return;
+    setIsPreparingSession(true);
+    setAudioError(null);
     try {
-      const ready = await isSessionAudioReady(s, vEn, vVi, lMode);
-      if (ready) return true;
-    } catch {
-      // Continue to direct cache check
-    }
-
-    // Direct comprehensive check for active voice
-    try {
-      const normalizedMode = lMode === 'VI_ONLY' ? 'VI_ONLY' : 'EN_ONLY';
-      const isVi = normalizedMode === 'VI_ONLY';
-      const effVoice = isVi ? vVi : vEn;
-      const lang = isVi ? 'vi' : 'en';
-
-      for (const item of s.items) {
-        // 1. Streaming URL check
-        const streamUrl = isVi ? item.audioUrlVi : item.audioUrl;
-        if (streamUrl && streamUrl !== 'cached' && (streamUrl.startsWith('http://') || streamUrl.startsWith('https://') || streamUrl.startsWith('data:'))) {
-          continue;
-        }
-
-        // 2. Combined item audio cache check
-        const k1 = `improv_item_${item.id}_${vEn}_${vVi}_${normalizedMode}`;
-        const cached = await audioPlayer.getCachedAudioAsync(k1, effVoice);
-        if (cached) {
-          continue;
-        }
-
-        // 3. All hints in item.hints cached check
-        if (item.hints && item.hints.length > 0) {
-          let allHintsCached = true;
-          for (const hint of item.hints) {
-            const hintStream = isVi ? hint.audioUrlVi : hint.audioUrl;
-            if (hintStream && hintStream !== 'cached' && (hintStream.startsWith('http://') || hintStream.startsWith('https://') || hintStream.startsWith('data:'))) {
-              continue;
-            }
-            const hintKey = `improv_hint_${hint.id}_${effVoice}_${lang}`;
-            const hCached = await audioPlayer.getCachedAudioAsync(hintKey, effVoice);
-            if (hCached) continue;
-            allHintsCached = false;
-            break;
-          }
-          if (allHintsCached) {
-            continue;
-          }
-        }
-
-        return false;
-      }
-      return true;
-    } catch {
-      return false;
+      const result = await prepareSessionAudio(activeSession, {
+        voiceEn: selectedVoice, voiceVi: selectedVoiceVi,
+        target: languageMode === 'VI_ONLY' ? 'VIETNAMESE' : 'ENGLISH',
+        concurrency: 3, forceRegenerate: false
+      }, p => setPrepareStatus(p.current + '/' + p.total));
+      if (result.failed) setAudioError(result.failed + ' audio failed. Check model/API key in Settings, then retry.');
+    } catch (error) {
+      setAudioError(error instanceof Error ? error.message : 'Audio preparation failed.');
+    } finally {
+      setIsPreparingSession(false);
+      setReadinessRevision(v => v + 1);
     }
   };
 
@@ -436,6 +408,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   // Scan audio readiness for sessions in active package
   useEffect(() => {
     let isMounted = true;
+    setIsSessionReady(false);
     const scanSessions = async () => {
       if (!activePackage?.sessions || activePackage.sessions.length === 0) {
         if (isMounted) {
@@ -470,7 +443,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [activePackage, selectedSessionNum, selectedVoice, selectedVoiceVi, languageMode, isSessionPopoverOpen, isAudioSettingsOpen]);
+  }, [activePackage, selectedSessionNum, selectedVoice, selectedVoiceVi, languageMode, isSessionPopoverOpen, isAudioSettingsOpen, readinessRevision]);
 
   // Re-check active session readiness specifically
   useEffect(() => {
@@ -479,6 +452,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       setIsSessionReady(false);
       return;
     }
+    setIsSessionReady(false);
     checkSessionAudioReady(activeSession, selectedVoice, selectedVoiceVi, languageMode).then((ready) => {
       if (isMounted) {
         setIsSessionReady(ready);
@@ -495,7 +469,16 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [activeSession, selectedVoice, selectedVoiceVi, languageMode, isAudioSettingsOpen]);
+  }, [activeSession, selectedVoice, selectedVoiceVi, languageMode, isAudioSettingsOpen, readinessRevision]);
+
+  useEffect(() => {
+    ++activeSequenceRef.current;
+    audioPlayer.stop();
+    improvTts.stop();
+    setIsPlayingAudio(false);
+    setAudioError(null);
+    return () => { ++activeSequenceRef.current; audioPlayer.stop(); improvTts.stop(); };
+  }, [activeSession, selectedVoice, selectedVoiceVi, languageMode]);
 
   // Filtered packages for switcher popover
   const filteredPackages = useMemo(() => {
@@ -507,18 +490,66 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     );
   }, [packages, packageSearchQuery]);
 
-  // Audio Playback Engine: Sequential Hints with 1-second gap (Cache & GCS First)
+  // Multi-tier resolver for hint audio: Cache -> GCS URL -> On-the-fly Synthesis
+  const resolveHintAudio = async (
+    hint: ImprovHint,
+    lang: 'en' | 'vi',
+    voice: string,
+    seqId: number
+  ): Promise<{ type: 'base64' | 'url'; data: string } | null> => {
+    // 1. Check cache (v2 key, legacy key, and raw/clean text)
+    const v2Key = getHintAudioCacheKey(hint, voice, lang);
+    const legacyKey = `improv_hint_${hint.id}_${voice}_${lang}`;
+    let cached = await audioPlayer.getCachedAudioAsync(v2Key, voice) ||
+                 await audioPlayer.getCachedAudioAsync(legacyKey, voice);
+
+    if (!cached) {
+      const rawText = getHintTextByLanguage(hint, lang);
+      const cleanText = sanitizeSpeechText(rawText);
+      if (cleanText) {
+        cached = await audioPlayer.getCachedAudioAsync(cleanText, voice) ||
+                 (rawText ? await audioPlayer.getCachedAudioAsync(rawText, voice) : null);
+      }
+    }
+
+    if (cached) {
+      return { type: 'base64', data: cached };
+    }
+
+    // 2. Check permanent GCS URL
+    const permanentUrl = lang === 'vi' ? (hint.audioUrlVi || hint.audioUrl) : hint.audioUrl;
+    if (permanentUrl && permanentUrl.startsWith('http') && !permanentUrl.includes('placeholder')) {
+      return { type: 'url', data: permanentUrl };
+    }
+
+    // 3. Synthesize on-the-fly via improvTts
+    try {
+      const base64 = await improvTts.synthesizeSingleHintAudio(hint, lang, voice);
+      if (activeSequenceRef.current !== seqId) return null;
+      if (base64) {
+        return { type: 'base64', data: base64 };
+      }
+    } catch (synthErr) {
+      console.warn('[ImprovPresentation] On-the-fly hint synthesis notice:', synthErr);
+    }
+
+    return null;
+  };
+
+  // Audio Playback Engine: Sequential Hints with 1-second gap (Cache & GCS First, then On-The-Fly Synthesis)
   const playRevealedHintsAudio = async (
     hintsToPlay: ImprovHint[],
     voiceEn: string = selectedVoice,
     voiceVi: string = selectedVoiceVi
   ) => {
+    if (!hintsToPlay || hintsToPlay.length === 0) return;
     audioPlayer.stop();
     improvTts.stop();
     const seqId = ++activeSequenceRef.current;
+    setAudioError(null);
     setIsPlayingAudio(true);
 
-    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'flux-cliff-en';
+    const effectiveVoiceEn = voiceEn || 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
@@ -527,41 +558,21 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         setActivePlayingHintIndex(i);
         const hint = hintsToPlay[i];
         
-        const { en: resolvedEn, vi: resolvedVi } = getHintLanguagePair(hint);
-        const enText = resolvedEn || hint.text;
-        const viText = resolvedVi || hint.translation || hint.text;
+        const voice = languageMode === 'VI_ONLY' ? effectiveVoiceVi : effectiveVoiceEn;
+        const lang = languageMode === 'VI_ONLY' ? 'vi' : 'en';
 
-        if (languageMode === 'VI_ONLY') {
-          const textToSpeak = viText;
-          if (textToSpeak) {
-            if (hint.audioUrlVi && hint.audioUrlVi.startsWith('http')) {
-              await audioPlayer.playChunk(textToSpeak, hint.audioUrlVi, effectiveVoiceVi, speed);
-            } else {
-              const hintKeyVi = `improv_hint_${hint.id}_${effectiveVoiceVi}_vi`;
-              const cachedVi = (await audioPlayer.getCachedAudioAsync(hintKeyVi, effectiveVoiceVi)) ||
-                               (await audioPlayer.getCachedAudioAsync(viText, effectiveVoiceVi));
-              if (cachedVi) {
-                await audioPlayer.playBase64(cachedVi, speed);
-              } else {
-                await audioPlayer.playChunk(textToSpeak, null, effectiveVoiceVi, speed);
-              }
-            }
-          }
+        const audio = await resolveHintAudio(hint, lang, voice, seqId);
+        if (activeSequenceRef.current !== seqId) return;
+
+        if (audio?.type === 'base64') {
+          await audioPlayer.playBase64(audio.data, speed);
+        } else if (audio?.type === 'url') {
+          await audioPlayer.playUrl(audio.data, speed);
         } else {
-          // EN_ONLY
-          if (enText) {
-            if (hint.audioUrl && hint.audioUrl.startsWith('http')) {
-              await audioPlayer.playChunk(enText, hint.audioUrl, effectiveVoiceEn, speed);
-            } else {
-              const hintKeyEn = `improv_hint_${hint.id}_${effectiveVoiceEn}_en`;
-              const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn, effectiveVoiceEn)) ||
-                               (await audioPlayer.getCachedAudioAsync(enText, effectiveVoiceEn));
-              if (cachedEn) {
-                await audioPlayer.playBase64(cachedEn, speed);
-              } else {
-                await audioPlayer.playChunk(enText, null, effectiveVoiceEn, speed);
-              }
-            }
+          // Fallback: playChunk directly with text
+          const text = getHintTextByLanguage(hint, lang);
+          if (text) {
+            await audioPlayer.playChunk(text, null, voice, speed);
           }
         }
 
@@ -576,7 +587,10 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         }
       }
     } catch (err) {
-      console.warn('[ImprovPresentation] Hint audio playback notice:', err);
+      console.warn('[ImprovPresentation] Revealed hints playback error:', err);
+      if (activeSequenceRef.current === seqId) {
+        setAudioError(err instanceof Error ? err.message : 'Audio playback notice. Click to retry.');
+      }
     } finally {
       if (activeSequenceRef.current === seqId) {
         setIsPlayingAudio(false);
@@ -585,7 +599,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     }
   };
 
-  // Play single hint audio (Cache & GCS First)
+  // Play single hint audio (Cache & GCS First, then On-The-Fly Synthesis)
   const playSingleHintAudio = async (
     hint: ImprovHint,
     index: number,
@@ -595,52 +609,36 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     audioPlayer.stop();
     improvTts.stop();
     const seqId = ++activeSequenceRef.current;
+    setAudioError(null);
     setIsPlayingAudio(true);
     setActivePlayingHintIndex(index);
 
-    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'flux-cliff-en';
+    const effectiveVoiceEn = voiceEn || 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
-      const { en: resolvedEn, vi: resolvedVi } = getHintLanguagePair(hint);
-      const enText = resolvedEn || hint.text;
-      const viText = resolvedVi || hint.translation || hint.text;
+      const voice = languageMode === 'VI_ONLY' ? effectiveVoiceVi : effectiveVoiceEn;
+      const lang = languageMode === 'VI_ONLY' ? 'vi' : 'en';
 
-      if (languageMode === 'VI_ONLY') {
-        const textToSpeak = viText;
-        if (textToSpeak) {
-          if (hint.audioUrlVi && hint.audioUrlVi.startsWith('http')) {
-            await audioPlayer.playChunk(textToSpeak, hint.audioUrlVi, effectiveVoiceVi, speed);
-          } else {
-            const hintKeyVi = `improv_hint_${hint.id}_${effectiveVoiceVi}_vi`;
-            const cachedVi = (await audioPlayer.getCachedAudioAsync(hintKeyVi, effectiveVoiceVi)) ||
-                             (await audioPlayer.getCachedAudioAsync(viText, effectiveVoiceVi));
-            if (cachedVi) {
-              await audioPlayer.playBase64(cachedVi, speed);
-            } else {
-              await audioPlayer.playChunk(textToSpeak, null, effectiveVoiceVi, speed);
-            }
-          }
-        }
+      const audio = await resolveHintAudio(hint, lang, voice, seqId);
+      if (activeSequenceRef.current !== seqId) return;
+
+      if (audio?.type === 'base64') {
+        await audioPlayer.playBase64(audio.data, speed);
+      } else if (audio?.type === 'url') {
+        await audioPlayer.playUrl(audio.data, speed);
       } else {
-        // EN_ONLY
-        if (enText) {
-          if (hint.audioUrl && hint.audioUrl.startsWith('http')) {
-            await audioPlayer.playChunk(enText, hint.audioUrl, effectiveVoiceEn, speed);
-          } else {
-            const hintKeyEn = `improv_hint_${hint.id}_${effectiveVoiceEn}_en`;
-            const cachedEn = (await audioPlayer.getCachedAudioAsync(hintKeyEn, effectiveVoiceEn)) ||
-                             (await audioPlayer.getCachedAudioAsync(enText, effectiveVoiceEn));
-            if (cachedEn) {
-              await audioPlayer.playBase64(cachedEn, speed);
-            } else {
-              await audioPlayer.playChunk(enText, null, effectiveVoiceEn, speed);
-            }
-          }
+        // Fallback: playChunk directly with text
+        const text = getHintTextByLanguage(hint, lang);
+        if (text) {
+          await audioPlayer.playChunk(text, null, voice, speed);
         }
       }
     } catch (err) {
-      console.warn('[ImprovPresentation] Single hint playback notice:', err);
+      console.warn('[ImprovPresentation] Single hint playback error:', err);
+      if (activeSequenceRef.current === seqId) {
+        setAudioError(err instanceof Error ? err.message : 'Audio playback notice. Click to retry.');
+      }
     } finally {
       if (activeSequenceRef.current === seqId) {
         setIsPlayingAudio(false);
@@ -656,7 +654,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
     voiceEn: string = selectedVoice,
     voiceVi: string = selectedVoiceVi
   ) => {
-    const effectiveVoiceEn = (voiceEn && voiceEn !== 'aura-theia-en') ? voiceEn : 'flux-cliff-en';
+    const effectiveVoiceEn = voiceEn || 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi || 'vi-VN-Neural2-A';
 
     try {
@@ -1017,6 +1015,29 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
       }`}
     >
       {/* ==================================================================== */}
+      {(audioError || isPreparingSession) && activeSession && (
+        <div role="alert" className="z-[60] shrink-0 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 px-4 py-2.5 flex flex-wrap items-center gap-3 text-xs border-b border-amber-200 dark:border-amber-800">
+          <span className="flex-1">
+            {audioError ? `Lưu ý âm thanh: ${audioError}` : `Đang tải trước âm thanh session (${prepareStatus || 'đang xử lý'})...`}
+          </span>
+          {audioError && (
+            <button onClick={handleReplay} className="underline font-semibold text-amber-900 dark:text-amber-100 cursor-pointer">
+              Thử phát lại
+            </button>
+          )}
+          <button disabled={isPreparingSession} onClick={prepareActiveSession} className="px-2.5 py-1 rounded bg-amber-900 text-white disabled:opacity-50 cursor-pointer">
+            {isPreparingSession ? 'Đang chuẩn bị...' : 'Tải trước session'}
+          </button>
+          <button onClick={() => setIsAudioSettingsOpen(true)} className="underline cursor-pointer">
+            Cài đặt giọng
+          </button>
+          {audioError && (
+            <button onClick={() => setAudioError(null)} className="p-1 text-amber-700 hover:text-amber-950 dark:text-amber-300 cursor-pointer" title="Đóng">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
       {/* 1. BLACKOUT OVERLAY (Key B / Period) */}
       {/* ==================================================================== */}
       {isBlackout && (

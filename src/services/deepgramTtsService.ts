@@ -220,7 +220,8 @@ class DeepgramTtsService {
    */
   async synthesizeText(
     text: string,
-    modelName: string = 'flux-cliff-en'
+    modelName: string = 'flux-cliff-en',
+    forceRegenerate: boolean = false
   ): Promise<string> {
     const cleanText = sanitizeSpeechText(text);
     if (!cleanText) throw new Error('Text to synthesize is empty');
@@ -232,7 +233,7 @@ class DeepgramTtsService {
     }
 
     const cacheKey = `dg_${effectiveModel}_${cleanText}`;
-    if (this.cache.has(cacheKey)) {
+    if (!forceRegenerate && this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!;
     }
 
