@@ -2,6 +2,7 @@ import { Course, LessonDoc, CourseLevel } from '../types';
 import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
 import { CURRICULUM_CATALOG_LEVEL_B_EREL } from '../data/levelBErelData';
 import { CURRICULUM_CATALOG_LEVEL_B_ERES } from '../data/levelBEresData';
+import { CURRICULUM_CATALOG_LEVEL_B_ERE } from '../data/levelBEreData';
 
 /**
  * Dynamic In-Memory Curriculum Registry
@@ -59,6 +60,20 @@ class CurriculumRegistryService {
     };
     this.registerCourse(courseEres, CURRICULUM_CATALOG_LEVEL_B_ERES);
 
+    // Seed Level B - ERE (30 Topics)
+    const courseEre: Course = {
+      id: "course_level_b_ere",
+      level_code: "LEVEL_B_ERE",
+      title: "Level B - ERE (English Reflexes Enhancement)",
+      description: "30 Topics of Comprehensive Spoken Reflexes with 3,150 conversational, vocabulary, and workplace chunks.",
+      total_days: 30,
+      total_chunks: CURRICULUM_CATALOG_LEVEL_B_ERE.reduce((sum, l) => sum + (l.total_chunks || l.chunks.length), 0),
+      default_sessions_count: 30,
+      source: "Genshai ERE 30-Topic Curriculum",
+      is_active: true
+    };
+    this.registerCourse(courseEre, CURRICULUM_CATALOG_LEVEL_B_ERE);
+
     // Legacy fallback mapping for LEVEL_B -> LEVEL_B_ERES
     this.coursesMap.set("LEVEL_B", courseEres);
     this.lessonsMap.set("LEVEL_B", CURRICULUM_CATALOG_LEVEL_B_ERES);
@@ -107,6 +122,9 @@ class CurriculumRegistryService {
     );
     if (direct && direct.length > 0) return direct;
 
+    if (courseIdOrLevel === 'LEVEL_B_ERE' || courseIdOrLevel === 'course_level_b_ere') {
+      return this.lessonsMap.get('course_level_b_ere') || this.lessonsMap.get('LEVEL_B_ERE') || [];
+    }
     if (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b') {
       return this.lessonsMap.get('course_level_b_eres') || this.lessonsMap.get('LEVEL_B_ERES') || [];
     }
@@ -202,13 +220,25 @@ class CurriculumRegistryService {
 
   public getGroupedCoursesWithLessons(): { course: Course; lessons: LessonDoc[] }[] {
     const courses = [
+      this.getCourse('course_level_b_ere'),
       this.getCourse('course_level_b_eres'),
       this.getCourse('course_level_b_erel'),
       this.getCourse('course_level_a')
     ].filter((c): c is Course => Boolean(c));
 
     // Also include any custom registered courses
-    const standardIds = new Set(['course_level_b_eres', 'course_level_b_erel', 'course_level_a', 'LEVEL_B_ERES', 'LEVEL_B_EREL', 'LEVEL_A', 'LEVEL_B', 'course_level_b']);
+    const standardIds = new Set([
+      'course_level_b_ere',
+      'course_level_b_eres',
+      'course_level_b_erel',
+      'course_level_a',
+      'LEVEL_B_ERE',
+      'LEVEL_B_ERES',
+      'LEVEL_B_EREL',
+      'LEVEL_A',
+      'LEVEL_B',
+      'course_level_b'
+    ]);
     const allCourses = this.getAllCourses();
     const customCourses = allCourses.filter(c => !standardIds.has(c.id));
 

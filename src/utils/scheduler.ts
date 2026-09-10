@@ -32,6 +32,9 @@ export interface CalculateSessionParams {
 }
 
 export function resolveCourseIdFromLevel(levelCode: CourseLevel | string): string {
+  if (levelCode === 'LEVEL_B_ERE' || levelCode === 'course_level_b_ere') {
+    return 'course_level_b_ere';
+  }
   if (levelCode === 'LEVEL_B_EREL' || levelCode === 'course_level_b_erel') {
     return 'course_level_b_erel';
   }
