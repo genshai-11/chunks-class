@@ -409,9 +409,9 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     return () => { isMounted = false; };
   }, []);
 
-  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv - Level B ERES Speaking (Day 1)');
+  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv - Level B - ERE (Day 1)');
   const [genDescription, setGenDescription] = useState<string>(
-    'Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm 4 sessions (50 câu) dựa trên từ vựng cốt lõi Level B ERES Speaking - Day 1.'
+    'Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm 4 sessions (50 câu) dựa trên từ vựng cốt lõi Level B - ERE - Day 1.'
   );
   const [genTotalItems, setGenTotalItems] = useState<number>(50);
   const [genSessionsCount, setGenSessionsCount] = useState<number>(4);
@@ -422,11 +422,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     { sessionNumber: 4, hcTotal: 4, hintTypes: ['Keyword', 'Logic word', 'Fancy word', 'Ending'], itemsCount: 13 }
   ]);
 
-  // Layer 1: Khóa học (Defaults to LEVEL_B_ERES)
-  const [genSourceLevel, setGenSourceLevel] = useState<CourseLevel | 'ALL'>('LEVEL_B_ERES');
-  // Layer 2: Bài học (Days) - Defaults to level_b_eres_day_1
+  // Layer 1: Khóa học (Defaults to LEVEL_B - 30 Topics)
+  const [genSourceLevel, setGenSourceLevel] = useState<CourseLevel | 'ALL'>('LEVEL_B');
+  // Layer 2: Bài học (Days) - Defaults to level_b_day_1
   const [genAvailableLessons, setGenAvailableLessons] = useState<LessonDoc[]>([]);
-  const [genSelectedLessonIds, setGenSelectedLessonIds] = useState<string[]>(['level_b_eres_day_1']);
+  const [genSelectedLessonIds, setGenSelectedLessonIds] = useState<string[]>(['level_b_day_1']);
   // Layer 3: Thể loại & Từ vựng cụ thể
   const [genCategoryFilter, setGenCategoryFilter] = useState<string>('all');
   const [genVocabSearch, setGenVocabSearch] = useState<string>('');
@@ -445,9 +445,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     sessionsCount: number,
     totalItems: number
   ) => {
-    let courseTitle = 'Level B ERES Speaking';
+    let courseTitle = 'Level B - ERE (30 Topics)';
     if (courseLevel === 'ALL') {
       courseTitle = 'Tất Cả Giáo Trình CHUNKS';
+    } else if (courseLevel === 'LEVEL_B' || courseLevel === 'course_level_b' || courseLevel === 'LEVEL_B_ERE' || courseLevel === 'course_level_b_ere') {
+      courseTitle = 'Level B - ERE (30 Topics)';
     } else {
       const matched = coursesList.find(c => c.level_code === courseLevel || c.id === courseLevel);
       if (matched) {
@@ -718,7 +720,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
     let isMounted = true;
     async function fetchLessons() {
-      const targetLevel = genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel;
+      const targetLevel = genSourceLevel === 'ALL' ? 'LEVEL_B' : genSourceLevel;
       // 1. Instant in-memory curriculumRegistry lookup (0ms latency, zero network)
       let lessons: LessonDoc[] = curriculumRegistry.getLessons(targetLevel);
 
@@ -3958,7 +3960,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         ))
                       ) : (
                         <>
-                          <option value="LEVEL_A">Level A - Foundation (Days 1..15)</option>
+                          <option value="LEVEL_B">Level B - ERE (30 Topics)</option>
+                          <option value="LEVEL_A">Level A - Foundation (Days 1..16)</option>
                           <option value="LEVEL_B_EREL">Level B - EREL Listening (Days 1..15)</option>
                           <option value="LEVEL_B_ERES">Level B - ERES Speaking (Days 1..15)</option>
                         </>

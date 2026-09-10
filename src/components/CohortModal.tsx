@@ -12,9 +12,12 @@ interface CohortModalProps {
 }
 
 const getInitialTitle = (level: CourseLevel) => {
+  if (level === 'LEVEL_B' || (level as string) === 'course_level_b' || level === 'LEVEL_B_ERE') {
+    return 'Level B - ERE Spoken Reflexes K30 (Mon-Wed-Fri)';
+  }
   if (level === 'LEVEL_A') return 'Level A - Foundation Chunks K25 (Mon-Wed-Fri)';
   if (level === 'LEVEL_B_EREL') return 'Level B - EREL Listening K25 (Mon-Wed-Fri)';
-  if (level === 'LEVEL_B_ERES' || level === 'LEVEL_B') return 'Level B - ERES Speaking K25 (Mon-Wed-Fri)';
+  if (level === 'LEVEL_B_ERES') return 'Level B - ERES Speaking K25 (Mon-Wed-Fri)';
   return `${level} - Cohort K25 (Mon-Wed-Fri)`;
 };
 
@@ -22,7 +25,7 @@ export const CohortModal: React.FC<CohortModalProps> = ({
   isOpen,
   onClose,
   onCreateCohort,
-  initialLevelCode = 'LEVEL_B_ERES'
+  initialLevelCode = 'LEVEL_B'
 }) => {
   const today = new Date().toISOString().split('T')[0];
   const [levelCode, setLevelCode] = useState<CourseLevel>(initialLevelCode);
@@ -57,7 +60,9 @@ export const CohortModal: React.FC<CohortModalProps> = ({
   };
 
   const previewSessions: ClassSession[] = useMemo(() => {
-    return calculate15Sessions(levelCode, startDate, selectedDays, startTime, endTime);
+    const course = curriculumRegistry.getCourse(levelCode);
+    const defaultTotal = (levelCode === 'LEVEL_B' || levelCode === 'LEVEL_B_ERE') ? 30 : (course?.default_sessions_count || 15);
+    return calculate15Sessions(levelCode, startDate, selectedDays, startTime, endTime, [], defaultTotal);
   }, [levelCode, startDate, selectedDays, startTime, endTime]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -115,7 +120,7 @@ export const CohortModal: React.FC<CohortModalProps> = ({
             </div>
             <div>
               <h2 className="font-display font-bold text-base text-[#0A0A0A]">
-                Create Automated 15-Session Cohort
+                Create Automated Cohort
               </h2>
               <p className="text-xs text-[#6B6B6B]">
                 Calculates recurring schedule and links curriculum sessions automatically
@@ -144,7 +149,7 @@ export const CohortModal: React.FC<CohortModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-[#FAFAFA] border border-[#E8E8EC] rounded-lg text-xs font-medium focus:bg-white focus:outline-none focus:border-[#DC2626]"
-              placeholder="e.g. Level B - Evening Cohort K25 (Mon-Wed-Fri)"
+              placeholder="e.g. Level B - Evening Cohort K30 (Mon-Wed-Fri)"
             />
           </div>
 
@@ -165,7 +170,9 @@ export const CohortModal: React.FC<CohortModalProps> = ({
               >
                 {availableCourses.map((c) => {
                   let optionLabel = `${c.title} (${c.total_chunks.toLocaleString()} Chunks • ${c.total_days} Lessons)`;
-                  if (c.level_code === 'LEVEL_A') {
+                  if (c.level_code === 'LEVEL_B' || c.id === 'course_level_b') {
+                    optionLabel = `Level B - ERE (Spoken Reflexes - 3,150 Chunks • 30 Topics)`;
+                  } else if (c.level_code === 'LEVEL_A') {
                     optionLabel = `Level A (Foundation - 4,480 Chunks • 16 Lessons)`;
                   } else if (c.level_code === 'LEVEL_B_EREL') {
                     optionLabel = `Level B - EREL (Listening & Shadowing - 1,019 Chunks • 15 Lessons)`;
@@ -248,14 +255,14 @@ export const CohortModal: React.FC<CohortModalProps> = ({
             </div>
           </div>
 
-          {/* 15 Sessions Preview */}
+          {/* Sessions Preview */}
           <div>
             <div className="flex items-center justify-between text-xs mb-2">
               <span className="font-semibold text-[#0A0A0A]">
-                Calculated 15-Session Schedule Preview:
+                Calculated Schedule Preview:
               </span>
               <span className="text-[11px] font-mono text-[#DC2626] font-bold">
-                15 Sessions ({previewSessions[0]?.scheduled_date} ➔ {previewSessions[previewSessions.length - 1]?.scheduled_date})
+                {previewSessions.length} Sessions ({previewSessions[0]?.scheduled_date} ➔ {previewSessions[previewSessions.length - 1]?.scheduled_date})
               </span>
             </div>
 
@@ -284,7 +291,7 @@ export const CohortModal: React.FC<CohortModalProps> = ({
               className="px-6 py-2.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <CheckCircle className="w-4 h-4" />
-              <span>Create Cohort & Generate Calendar</span>
+              <span>Create Cohort & Generate Calendar ({previewSessions.length} Sessions)</span>
             </button>
           </div>
         </form>

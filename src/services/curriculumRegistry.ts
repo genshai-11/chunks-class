@@ -2,6 +2,7 @@ import { Course, LessonDoc, CourseLevel } from '../types';
 import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
 import { CURRICULUM_CATALOG_LEVEL_B_EREL } from '../data/levelBErelData';
 import { CURRICULUM_CATALOG_LEVEL_B_ERES } from '../data/levelBEresData';
+import { CURRICULUM_CATALOG_LEVEL_B_ERE } from '../data/levelBEreData';
 
 /**
  * Dynamic In-Memory Curriculum Registry
@@ -17,7 +18,35 @@ class CurriculumRegistryService {
   }
 
   private initDefaultSeed() {
-    // Seed Level A
+    // 1. Seed Level B - Canonical 30 Topics ERE Curriculum
+    const courseLevelB: Course = {
+      id: "course_level_b",
+      level_code: "LEVEL_B",
+      title: "Level B - ERE (English Reflexes Enhancement - 30 Topics)",
+      description: "30 Days of Spoken Reflexes & Workplace English with 3,150 conversational, vocabulary, and workplace chunks.",
+      total_days: 30,
+      total_chunks: CURRICULUM_CATALOG_LEVEL_B_ERE.reduce((sum, l) => sum + (l.total_chunks || l.chunks.length), 0),
+      default_sessions_count: 30,
+      source: "Genshai ERE 30-Topic Curriculum",
+      is_active: true
+    };
+    this.registerCourse(courseLevelB, CURRICULUM_CATALOG_LEVEL_B_ERE);
+
+    // Register aliases for Level B ERE
+    this.coursesMap.set("course_level_b_ere", courseLevelB);
+    this.coursesMap.set("LEVEL_B_ERE", courseLevelB);
+    this.lessonsMap.set("course_level_b_ere", CURRICULUM_CATALOG_LEVEL_B_ERE);
+    this.lessonsMap.set("LEVEL_B_ERE", CURRICULUM_CATALOG_LEVEL_B_ERE);
+    CURRICULUM_CATALOG_LEVEL_B_ERE.forEach(l => {
+      this.individualLessonsMap.set(l.id, l);
+      if (l.id.startsWith('level_b_day_')) {
+        this.individualLessonsMap.set(l.id.replace('level_b_day_', 'level_b_ere_day_'), l);
+      } else if (l.id.startsWith('level_b_ere_day_')) {
+        this.individualLessonsMap.set(l.id.replace('level_b_ere_day_', 'level_b_day_'), l);
+      }
+    });
+
+    // 2. Seed Level A - Foundation (16 Lessons)
     const courseA: Course = {
       id: "course_level_a",
       level_code: "LEVEL_A",
@@ -25,13 +54,13 @@ class CurriculumRegistryService {
       description: "16 Lessons (Word List + Days 1..15) with 4,480 essential conversational and survival chunks.",
       total_days: 16,
       total_chunks: 4480,
-      default_sessions_count: 15,
+      default_sessions_count: 16,
       source: "Genshai Foundation Curriculum (ERES Design)",
       is_active: true
     };
     this.registerCourse(courseA, CURRICULUM_CATALOG_LEVEL_A);
 
-    // Seed Level B - EREL
+    // 3. Seed Level B - EREL (Secondary / Listening)
     const courseErel: Course = {
       id: "course_level_b_erel",
       level_code: "LEVEL_B_EREL",
@@ -45,7 +74,7 @@ class CurriculumRegistryService {
     };
     this.registerCourse(courseErel, CURRICULUM_CATALOG_LEVEL_B_EREL);
 
-    // Seed Level B - ERES
+    // 4. Seed Level B - ERES (Secondary / Speaking)
     const courseEres: Course = {
       id: "course_level_b_eres",
       level_code: "LEVEL_B_ERES",
@@ -58,12 +87,6 @@ class CurriculumRegistryService {
       is_active: true
     };
     this.registerCourse(courseEres, CURRICULUM_CATALOG_LEVEL_B_ERES);
-
-    // Legacy fallback mapping for LEVEL_B -> LEVEL_B_ERES
-    this.coursesMap.set("LEVEL_B", courseEres);
-    this.lessonsMap.set("LEVEL_B", CURRICULUM_CATALOG_LEVEL_B_ERES);
-    this.coursesMap.set("course_level_b", courseEres);
-    this.lessonsMap.set("course_level_b", CURRICULUM_CATALOG_LEVEL_B_ERES);
   }
 
   /**
@@ -93,8 +116,8 @@ class CurriculumRegistryService {
     const direct = this.coursesMap.get(courseIdOrLevel) || this.coursesMap.get(courseIdOrLevel.toUpperCase());
     if (direct) return direct;
 
-    if (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b') {
-      return this.coursesMap.get('course_level_b_eres') || this.coursesMap.get('LEVEL_B_ERES') || null;
+    if (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b' || courseIdOrLevel === 'LEVEL_B_ERE' || courseIdOrLevel === 'course_level_b_ere') {
+      return this.coursesMap.get('course_level_b') || this.coursesMap.get('LEVEL_B') || null;
     }
     return null;
   }
@@ -107,8 +130,8 @@ class CurriculumRegistryService {
     );
     if (direct && direct.length > 0) return direct;
 
-    if (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b') {
-      return this.lessonsMap.get('course_level_b_eres') || this.lessonsMap.get('LEVEL_B_ERES') || [];
+    if (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b' || courseIdOrLevel === 'LEVEL_B_ERE' || courseIdOrLevel === 'course_level_b_ere') {
+      return this.lessonsMap.get('course_level_b') || this.lessonsMap.get('LEVEL_B') || CURRICULUM_CATALOG_LEVEL_B_ERE;
     }
     if (courseIdOrLevel === 'LEVEL_A' || courseIdOrLevel === 'course_level_a') {
       return this.lessonsMap.get('course_level_a') || this.lessonsMap.get('LEVEL_A') || [];
@@ -129,11 +152,16 @@ class CurriculumRegistryService {
     const direct = this.individualLessonsMap.get(cleanId);
     if (direct) return direct;
 
-    // Legacy alias: level_b_day_X -> level_b_eres_day_X
+    // Direct alias between level_b_day_X and level_b_ere_day_X (30 Topics)
     if (cleanId.startsWith('level_b_day_')) {
-      const eresId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
-      const eresDoc = this.individualLessonsMap.get(eresId);
-      if (eresDoc) return eresDoc;
+      const ereId = cleanId.replace('level_b_day_', 'level_b_ere_day_');
+      const ereDoc = this.individualLessonsMap.get(ereId);
+      if (ereDoc) return ereDoc;
+    }
+    if (cleanId.startsWith('level_b_ere_day_')) {
+      const bId = cleanId.replace('level_b_ere_day_', 'level_b_day_');
+      const bDoc = this.individualLessonsMap.get(bId);
+      if (bDoc) return bDoc;
     }
 
     // Alias for Level A Day 0 / Word list
@@ -155,12 +183,12 @@ class CurriculumRegistryService {
     if (!lesson || !lesson.id) return;
     this.individualLessonsMap.set(lesson.id, lesson);
 
-    // Also handle legacy aliases for individual lookup
-    if (lesson.id.startsWith('level_b_eres_day_')) {
-      const aliasId = lesson.id.replace('level_b_eres_day_', 'level_b_day_');
+    // Also handle aliases for individual lookup
+    if (lesson.id.startsWith('level_b_day_')) {
+      const aliasId = lesson.id.replace('level_b_day_', 'level_b_ere_day_');
       this.individualLessonsMap.set(aliasId, lesson);
-    } else if (lesson.id.startsWith('level_b_day_')) {
-      const aliasId = lesson.id.replace('level_b_day_', 'level_b_eres_day_');
+    } else if (lesson.id.startsWith('level_b_ere_day_')) {
+      const aliasId = lesson.id.replace('level_b_ere_day_', 'level_b_day_');
       this.individualLessonsMap.set(aliasId, lesson);
     }
     if (lesson.id === 'level_a_word_list') {
@@ -172,8 +200,8 @@ class CurriculumRegistryService {
     this.lessonsMap.forEach((list) => {
       const idx = list.findIndex(l => 
         l.id === lesson.id ||
-        (lesson.id.startsWith('level_b_eres_day_') && l.id === lesson.id.replace('level_b_eres_day_', 'level_b_day_')) ||
-        (lesson.id.startsWith('level_b_day_') && l.id === lesson.id.replace('level_b_day_', 'level_b_eres_day_')) ||
+        (lesson.id.startsWith('level_b_day_') && l.id === lesson.id.replace('level_b_day_', 'level_b_ere_day_')) ||
+        (lesson.id.startsWith('level_b_ere_day_') && l.id === lesson.id.replace('level_b_ere_day_', 'level_b_day_')) ||
         (lesson.id === 'level_a_word_list' && (l.id === 'level_a_day_0' || l.id === 'level_a_0'))
       );
       if (idx >= 0) {
@@ -202,13 +230,25 @@ class CurriculumRegistryService {
 
   public getGroupedCoursesWithLessons(): { course: Course; lessons: LessonDoc[] }[] {
     const courses = [
-      this.getCourse('course_level_b_eres'),
+      this.getCourse('course_level_b'),
+      this.getCourse('course_level_a'),
       this.getCourse('course_level_b_erel'),
-      this.getCourse('course_level_a')
+      this.getCourse('course_level_b_eres')
     ].filter((c): c is Course => Boolean(c));
 
     // Also include any custom registered courses
-    const standardIds = new Set(['course_level_b_eres', 'course_level_b_erel', 'course_level_a', 'LEVEL_B_ERES', 'LEVEL_B_EREL', 'LEVEL_A', 'LEVEL_B', 'course_level_b']);
+    const standardIds = new Set([
+      'course_level_b',
+      'course_level_b_ere',
+      'course_level_b_eres',
+      'course_level_b_erel',
+      'course_level_a',
+      'LEVEL_B',
+      'LEVEL_B_ERE',
+      'LEVEL_B_ERES',
+      'LEVEL_B_EREL',
+      'LEVEL_A'
+    ]);
     const allCourses = this.getAllCourses();
     const customCourses = allCourses.filter(c => !standardIds.has(c.id));
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Cohort, ClassSession, CohortAudioSettings, ChunkItem, LessonDoc } from '../types';
-import { exportScheduleAsICS, calculate15Sessions } from '../utils/scheduler';
+import { Cohort, ClassSession, CohortAudioSettings, ChunkItem, LessonDoc, CourseLevel } from '../types';
+import { exportScheduleAsICS, calculate15Sessions, resolveCourseIdFromLevel } from '../utils/scheduler';
 import { curriculumRegistry } from '../services/curriculumRegistry';
-import { getAllLessons } from '../services/firestoreService';
+import { getAllLessons, deleteFirestoreCohort } from '../services/firestoreService';
 import { audioPlayer, AudioProvider } from '../services/googleTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
 import { sanitizeSpeechText } from '../services/deepgramTtsService';
@@ -26,7 +26,8 @@ import {
   Loader2, 
   AlertCircle,
   Activity,
-  Headphones
+  Headphones,
+  Trash2
 } from 'lucide-react';
 
 interface ScheduleViewProps {
@@ -34,6 +35,7 @@ interface ScheduleViewProps {
   onUpdateCohort: (updated: Cohort) => void;
   onLaunchProjectorForLesson: (lessonId: string, sessionNumber: number) => void;
   onOpenCreateCohort: () => void;
+  onDeleteCohort?: (cohortId: string) => void;
 }
 
 export interface SessionAudioStatus {
@@ -78,7 +80,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   cohort,
   onUpdateCohort,
   onLaunchProjectorForLesson,
-  onOpenCreateCohort
+  onOpenCreateCohort,
+  onDeleteCohort
 }) => {
   const [editingSessionNumber, setEditingSessionNumber] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'scheduled' | 'in_progress' | 'completed'>('all');
@@ -87,10 +90,27 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   // Cohort Settings Editor Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [editTitle, setEditTitle] = useState<string>(cohort.title);
+  const [editTeacherId, setEditTeacherId] = useState<string>(cohort.teacher_id || 'teacher_genshai');
+  const [editCourseId, setEditCourseId] = useState<string>(cohort.course_id || resolveCourseIdFromLevel(cohort.level_code) || 'course_level_b');
+  const [editLevelCode, setEditLevelCode] = useState<CourseLevel | string>(cohort.level_code || 'LEVEL_B');
+  const [editTotalSessions, setEditTotalSessions] = useState<number>(cohort.total_sessions || cohort.sessions?.length || 30);
   const [editStartDate, setEditStartDate] = useState<string>(cohort.start_date || '2026-09-01');
   const [editDays, setEditDays] = useState<string[]>(cohort.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri']);
   const [editStartTime, setEditStartTime] = useState<string>(cohort.schedule_pattern?.start_time || '19:30');
   const [editEndTime, setEditEndTime] = useState<string>(cohort.schedule_pattern?.end_time || '21:00');
+  const [isDeletingCohort, setIsDeletingCohort] = useState<boolean>(false);
+
+  useEffect(() => {
+    setEditTitle(cohort.title || '');
+    setEditTeacherId(cohort.teacher_id || 'teacher_genshai');
+    setEditCourseId(cohort.course_id || resolveCourseIdFromLevel(cohort.level_code) || 'course_level_b');
+    setEditLevelCode(cohort.level_code || 'LEVEL_B');
+    setEditTotalSessions(cohort.total_sessions || cohort.sessions?.length || 30);
+    setEditStartDate(cohort.start_date || '2026-09-01');
+    setEditDays(cohort.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri']);
+    setEditStartTime(cohort.schedule_pattern?.start_time || '19:30');
+    setEditEndTime(cohort.schedule_pattern?.end_time || '21:00');
+  }, [cohort]);
 
   // Audio Settings Modal & Audio Readiness State
   const [isAudioSettingsOpen, setIsAudioSettingsOpen] = useState<boolean>(false);
@@ -415,11 +435,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const handleSaveCohortSettings = (e: React.FormEvent) => {
     e.preventDefault();
     const newSessions = calculate15Sessions(
-      cohort.level_code,
+      editLevelCode,
       editStartDate,
       editDays,
       editStartTime,
-      editEndTime
+      editEndTime,
+      [],
+      editTotalSessions
     );
 
     // Preserve existing session statuses (completed/in_progress)
@@ -438,6 +460,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     const updatedCohort: Cohort = {
       ...cohort,
       title: editTitle.trim() || cohort.title,
+      teacher_id: editTeacherId.trim() || cohort.teacher_id || 'teacher_genshai',
+      course_id: editCourseId,
+      level_code: editLevelCode as CourseLevel,
+      total_sessions: editTotalSessions,
       start_date: editStartDate,
       schedule_pattern: {
         days_of_week: editDays,
@@ -449,7 +475,27 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       updated_at: new Date().toISOString()
     };
     onUpdateCohort(updatedCohort);
+    showToast('success', `✓ Đã cập nhật cohort "${updatedCohort.title}" (${mergedSessions.length} sessions)!`);
     setIsEditModalOpen(false);
+  };
+
+  const handleDeleteCohortClick = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete cohort "${cohort.title}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setIsDeletingCohort(true);
+    try {
+      await deleteFirestoreCohort(cohort.id);
+      showToast('info', `Đã xóa lớp học "${cohort.title}".`);
+      setIsEditModalOpen(false);
+      onDeleteCohort?.(cohort.id);
+    } catch (err: any) {
+      showToast('error', `Lỗi khi xóa cohort: ${err?.message || err}`);
+    } finally {
+      setIsDeletingCohort(false);
+    }
   };
 
   const sessions = cohort?.sessions || [];
@@ -486,11 +532,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   };
 
   const handleLaunchSession = (lessonId: string, sessionNumber: number) => {
-    let cleanId = lessonId;
-    if (cleanId?.startsWith('level_b_day_')) {
-      cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
-    }
-    onLaunchProjectorForLesson(cleanId, sessionNumber);
+    onLaunchProjectorForLesson(lessonId, sessionNumber);
   };
 
   const handleExportICS = () => {
@@ -499,7 +541,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${(cohort?.title || 'Cohort').replace(/\s+/g, '_')}_15_Sessions.ics`);
+    link.setAttribute('download', `${(cohort?.title || 'Cohort').replace(/\s+/g, '_')}_Schedule.ics`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -709,7 +751,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626] uppercase">
-                Standard 15-Session Cohort
+                {totalSessions}-Session Cohort Track
               </span>
               <span className="text-xs text-[#6B6B6B] font-mono">
                 • Start Date: {cohort.start_date}
@@ -1148,10 +1190,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         </div>
       )}
 
-      {/* 5. EDIT COHORT & SCHEDULE SETTINGS MODAL */}
+      {/* 5. COHORT ADMIN & SCHEDULE SETTINGS MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
-          <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-150">
+          <div className="bg-white rounded-2xl border border-[#E8E8EC] shadow-2xl max-w-xl w-full overflow-hidden animate-in fade-in zoom-in duration-150">
             {/* Modal Header */}
             <div className="p-5 border-b border-[#E8E8EC] flex items-center justify-between bg-[#FAFAFA]">
               <div className="flex items-center gap-2.5">
@@ -1159,8 +1201,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-[#0A0A0A] tracking-tight">Edit Cohort & Schedule</h3>
-                  <p className="text-xs text-zinc-500">Configure start date, recurring days, and recalculate 15 sessions</p>
+                  <h3 className="font-extrabold text-base text-[#0A0A0A] tracking-tight">Cohort Admin & Schedule Settings</h3>
+                  <p className="text-xs text-zinc-500">Configure cohort metadata, re-bind curriculum course track, recalculate dynamic sessions, or manage cohort lifecycle</p>
                 </div>
               </div>
               <button
@@ -1172,36 +1214,102 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleSaveCohortSettings} className="p-6 space-y-4">
-              {/* Title */}
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
-                  Cohort Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm focus:outline-hidden focus:border-[#DC2626]"
-                />
+            <form onSubmit={handleSaveCohortSettings} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              {/* Title & Teacher */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
+                    Cohort Title / Batch Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm focus:outline-hidden focus:border-[#DC2626]"
+                    placeholder="e.g. Level B - ERE Spoken Reflexes K30"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
+                    Teacher ID / Instructor
+                  </label>
+                  <input
+                    type="text"
+                    value={editTeacherId}
+                    onChange={(e) => setEditTeacherId(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm focus:outline-hidden focus:border-[#DC2626]"
+                    placeholder="e.g. teacher_genshai"
+                  />
+                </div>
               </div>
 
-              {/* Start Date */}
+              {/* Course Re-binding (Gán data vào course) */}
               <div>
                 <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
-                  Start Date (Khai Giảng)
+                  Course Track / Gán Data Giáo Trình Vào Cohort
                 </label>
-                <input
-                  type="date"
-                  required
-                  value={editStartDate}
-                  onChange={(e) => setEditStartDate(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm font-mono focus:outline-hidden focus:border-[#DC2626]"
-                />
+                <select
+                  value={editCourseId}
+                  onChange={(e) => {
+                    const selCourse = e.target.value;
+                    setEditCourseId(selCourse);
+                    if (selCourse === 'course_level_b' || selCourse === 'LEVEL_B') {
+                      setEditLevelCode('LEVEL_B');
+                      setEditTotalSessions(30);
+                    } else if (selCourse === 'course_level_a' || selCourse === 'LEVEL_A') {
+                      setEditLevelCode('LEVEL_A');
+                      setEditTotalSessions(16);
+                    } else if (selCourse === 'course_level_b_erel' || selCourse === 'LEVEL_B_EREL') {
+                      setEditLevelCode('LEVEL_B_EREL');
+                      setEditTotalSessions(15);
+                    } else if (selCourse === 'course_level_b_eres' || selCourse === 'LEVEL_B_ERES') {
+                      setEditLevelCode('LEVEL_B_ERES');
+                      setEditTotalSessions(15);
+                    }
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm font-semibold focus:outline-hidden focus:border-[#DC2626] bg-white cursor-pointer"
+                >
+                  <option value="course_level_b">Level B - ERE (30 Topics • 3,150 Chunks)</option>
+                  <option value="course_level_a">Level A - Foundation (16 Lessons • 4,480 Chunks)</option>
+                  <option value="course_level_b_erel">Level B - EREL Listening (15 Lessons • 1,019 Chunks)</option>
+                  <option value="course_level_b_eres">Level B - ERES Speaking (15 Lessons • 3,371 Chunks)</option>
+                </select>
                 <p className="text-[11px] text-zinc-500 mt-1">
-                  All 15 sessions will automatically skip to matching weekdays from this date.
+                  Khi chuyển Course Track, hệ thống sẽ tự động liên kết bài học tương ứng và cập nhật số buổi học tiêu chuẩn.
                 </p>
+              </div>
+
+              {/* Start Date & Total Sessions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
+                    Start Date (Khai Giảng)
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editStartDate}
+                    onChange={(e) => setEditStartDate(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm font-mono focus:outline-hidden focus:border-[#DC2626]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1">
+                    Total Sessions (Số Buổi Học)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    required
+                    value={editTotalSessions}
+                    onChange={(e) => setEditTotalSessions(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full px-3.5 py-2 rounded-xl border border-[#E8E8EC] text-sm font-mono font-bold focus:outline-hidden focus:border-[#DC2626]"
+                  />
+                </div>
               </div>
 
               {/* Recurring Days */}
@@ -1257,21 +1365,34 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-3 border-t border-[#E8E8EC] flex items-center justify-end gap-2">
+              <div className="pt-4 border-t border-[#E8E8EC] flex items-center justify-between gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-[#E8E8EC] text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition-colors"
+                  onClick={handleDeleteCohortClick}
+                  disabled={isDeletingCohort}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                  title="Xóa vĩnh viễn cohort này"
                 >
-                  Cancel
+                  {isDeletingCohort ? <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
+                  <span>Delete Cohort</span>
                 </button>
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#DC2626] text-white text-xs font-bold hover:bg-[#B91C1C] shadow-sm transition-all cursor-pointer"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Recalculate & Save 15 Sessions</span>
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 rounded-xl border border-[#E8E8EC] text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#DC2626] text-white text-xs font-bold hover:bg-[#B91C1C] shadow-sm transition-all cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Save & Recalculate {editTotalSessions} Sessions</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

@@ -47,7 +47,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
   onToggleCollapse
 }) => {
   const menuItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'schedule', label: '15-Session Schedule', icon: <Calendar className="w-4 h-4" /> },
+    { id: 'schedule', label: 'Cohort Schedule', icon: <Calendar className="w-4 h-4" /> },
     { id: 'projector', label: 'Presentation - Focus Mode', icon: <Mic2 className="w-4 h-4" />, badge: 'LIVE' },
     { id: 'improv-manager', label: 'Improv Studio', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'improv-presentation', label: 'Improv - Focus Mode', icon: <Play className="w-4 h-4 text-[#DC2626]" /> },
@@ -111,6 +111,8 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
                       ? '🎧 Level B (EREL Listening)'
                       : c.level_code === 'LEVEL_B_ERES'
                       ? '🗣️ Level B (ERES Speaking)'
+                      : (c.level_code === 'LEVEL_B' || c.level_code === 'LEVEL_B_ERE' || c.id === 'course_level_b')
+                      ? '🎯 Level B (30 Topics)'
                       : `📕 ${c.title || c.level_code}`}
                   </option>
                 ))}

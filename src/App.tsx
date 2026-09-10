@@ -17,19 +17,17 @@ import { IMPROV_SET_01 } from './data/improvSet01And02';
 
 function sanitizeCohort(cohort: Cohort): Cohort {
   let levelCode = cohort.level_code;
-  if ((levelCode as string) === 'LEVEL_B') {
-    levelCode = 'LEVEL_B_ERES';
-  }
   let courseId = cohort.course_id;
-  if (!courseId || (courseId as string) === 'course_level_b') {
+
+  if (levelCode === 'LEVEL_B' || levelCode === 'LEVEL_B_ERE' || courseId === 'course_level_b' || courseId === 'course_level_b_ere') {
+    levelCode = 'LEVEL_B';
+    courseId = 'course_level_b';
+  } else if (!courseId) {
     courseId = levelCode === 'LEVEL_A' ? 'course_level_a' : levelCode === 'LEVEL_B_EREL' ? 'course_level_b_erel' : 'course_level_b_eres';
   }
 
   const cleanedSessions = (cohort.sessions || []).map(s => {
     let cleanLessonId = s.lesson_id || '';
-    if (cleanLessonId.startsWith('level_b_day_')) {
-      cleanLessonId = cleanLessonId.replace('level_b_day_', 'level_b_eres_day_');
-    }
     if (!cleanLessonId) {
       cleanLessonId = `${String(levelCode).toLowerCase()}_day_${s.session_number}`;
     }
@@ -58,7 +56,7 @@ export const App: React.FC = () => {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [activeCohortId, setActiveCohortId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [drillLessonId, setDrillLessonId] = useState<string>('level_b_eres_day_1');
+  const [drillLessonId, setDrillLessonId] = useState<string>('level_b_day_1');
   const [drillSessionNumber, setDrillSessionNumber] = useState<number>(1);
   const [improvPackageId, setImprovPackageId] = useState<string>(IMPROV_SET_01.id);
   const [improvSessionNumber, setImprovSessionNumber] = useState<number>(1);
@@ -72,36 +70,39 @@ export const App: React.FC = () => {
         if (loadedCohorts.length > 0) {
           const sanitized = loadedCohorts.map(sanitizeCohort);
           setCohorts(sanitized);
-          const defaultActive = sanitized.find(c => c.level_code === 'LEVEL_B_ERES' || c.title.includes('ERES')) || sanitized[0];
+          const defaultActive = sanitized.find(c => c.level_code === 'LEVEL_B' || c.course_id === 'course_level_b') || sanitized.find(c => c.level_code === 'LEVEL_B_ERE') || sanitized[0];
           setActiveCohortId(defaultActive.id);
           if (defaultActive.sessions?.[0]) {
             setDrillLessonId(defaultActive.sessions[0].lesson_id);
             setDrillSessionNumber(defaultActive.sessions[0].session_number);
           }
         } else {
-          const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
-          const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+          const defaultB = createDefaultCohort("Level B - ERE Spoken Reflexes K30", "LEVEL_B");
           const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
-          setCohorts([defaultEres, defaultErel, defaultA]);
-          setActiveCohortId(defaultEres.id);
-          if (defaultEres.sessions?.[0]) {
-            setDrillLessonId(defaultEres.sessions[0].lesson_id);
-            setDrillSessionNumber(defaultEres.sessions[0].session_number);
+          const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+          const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
+          setCohorts([defaultB, defaultA, defaultErel, defaultEres]);
+          setActiveCohortId(defaultB.id);
+          if (defaultB.sessions?.[0]) {
+            setDrillLessonId(defaultB.sessions[0].lesson_id);
+            setDrillSessionNumber(defaultB.sessions[0].session_number);
           }
-          await saveFirestoreCohort(defaultEres);
-          await saveFirestoreCohort(defaultErel);
+          await saveFirestoreCohort(defaultB);
           await saveFirestoreCohort(defaultA);
+          await saveFirestoreCohort(defaultErel);
+          await saveFirestoreCohort(defaultEres);
         }
       } catch (e) {
         console.error('Error loading cohorts:', e);
-        const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
-        const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+        const defaultB = createDefaultCohort("Level B - ERE Spoken Reflexes K30", "LEVEL_B");
         const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
-        setCohorts([defaultEres, defaultErel, defaultA]);
-        setActiveCohortId(defaultEres.id);
-        if (defaultEres.sessions?.[0]) {
-          setDrillLessonId(defaultEres.sessions[0].lesson_id);
-          setDrillSessionNumber(defaultEres.sessions[0].session_number);
+        const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+        const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
+        setCohorts([defaultB, defaultA, defaultErel, defaultEres]);
+        setActiveCohortId(defaultB.id);
+        if (defaultB.sessions?.[0]) {
+          setDrillLessonId(defaultB.sessions[0].lesson_id);
+          setDrillSessionNumber(defaultB.sessions[0].session_number);
         }
       } finally {
         setIsLoading(false);
@@ -126,20 +127,46 @@ export const App: React.FC = () => {
     await saveFirestoreCohort(sanitized);
   };
 
-  const handleResetToDefault = async () => {
-    if (window.confirm("Are you sure you want to reset and restore the default 15-session cohorts?")) {
-      const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
-      const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
-      const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
-      setCohorts([defaultEres, defaultErel, defaultA]);
-      setActiveCohortId(defaultEres.id);
-      if (defaultEres.sessions?.[0]) {
-        setDrillLessonId(defaultEres.sessions[0].lesson_id);
-        setDrillSessionNumber(defaultEres.sessions[0].session_number);
+  const handleDeleteCohort = async (cohortId: string) => {
+    try {
+      await deleteFirestoreCohort(cohortId);
+    } catch (e) {
+      console.warn('Failed to delete cohort from Firestore:', e);
+    }
+    const updated = cohorts.filter(c => c.id !== cohortId);
+    setCohorts(updated);
+    try {
+      localStorage.setItem('chunks_firestore_synced_cohorts', JSON.stringify(updated));
+    } catch {}
+    if (activeCohortId === cohortId) {
+      const nextActive = updated[0];
+      if (nextActive) {
+        setActiveCohortId(nextActive.id);
+        const firstSession = nextActive.sessions?.[0];
+        if (firstSession) {
+          setDrillLessonId(firstSession.lesson_id);
+          setDrillSessionNumber(firstSession.session_number);
+        }
       }
-      await saveFirestoreCohort(defaultEres);
-      await saveFirestoreCohort(defaultErel);
+    }
+  };
+
+  const handleResetToDefault = async () => {
+    if (window.confirm("Are you sure you want to reset and restore default cohorts?")) {
+      const defaultB = createDefaultCohort("Level B - ERE Spoken Reflexes K30", "LEVEL_B");
+      const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
+      const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+      const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
+      setCohorts([defaultB, defaultA, defaultErel, defaultEres]);
+      setActiveCohortId(defaultB.id);
+      if (defaultB.sessions?.[0]) {
+        setDrillLessonId(defaultB.sessions[0].lesson_id);
+        setDrillSessionNumber(defaultB.sessions[0].session_number);
+      }
+      await saveFirestoreCohort(defaultB);
       await saveFirestoreCohort(defaultA);
+      await saveFirestoreCohort(defaultErel);
+      await saveFirestoreCohort(defaultEres);
     }
   };
 
@@ -154,7 +181,7 @@ export const App: React.FC = () => {
       }
     } else {
       const course = DEFAULT_COURSES.find(c => c.id === courseId);
-      const level = (course?.level_code || 'LEVEL_B_ERES') as any;
+      const level = (course?.level_code || (courseId === 'course_level_b' ? 'LEVEL_B' : 'LEVEL_B_ERES')) as any;
       const title = course?.title || `Cohort - ${courseId}`;
       const newCohort = createDefaultCohort(title, level);
       newCohort.course_id = courseId;
@@ -163,11 +190,7 @@ export const App: React.FC = () => {
   };
 
   const handleLaunchProjectorForLesson = (lessonId: string, sessionNumber: number) => {
-    let cleanId = lessonId;
-    if (cleanId?.startsWith('level_b_day_')) {
-      cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
-    }
-    setDrillLessonId(cleanId);
+    setDrillLessonId(lessonId);
     setDrillSessionNumber(sessionNumber);
     setActiveTab('projector');
   };
@@ -206,7 +229,7 @@ export const App: React.FC = () => {
       activeCohort={activeCohort}
       allCohorts={cohorts}
       courses={DEFAULT_COURSES}
-      selectedCourseId={activeCohort?.course_id || 'course_level_b_eres'}
+      selectedCourseId={activeCohort?.course_id || 'course_level_b'}
       onSelectCourse={handleSelectCourse}
       onSelectCohort={(c) => {
         setActiveCohortId(c.id);
@@ -225,6 +248,7 @@ export const App: React.FC = () => {
           onUpdateCohort={handleUpdateCohort}
           onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
           onOpenCreateCohort={() => {}}
+          onDeleteCohort={handleDeleteCohort}
         />
       )}
 
@@ -236,11 +260,7 @@ export const App: React.FC = () => {
           audioSettings={activeCohort.audio_settings}
           courseLevel={activeCohort.level_code}
           onSelectLesson={(newLessonId, sessionNumber) => {
-            let cleanId = newLessonId;
-            if (cleanId?.startsWith('level_b_day_')) {
-              cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
-            }
-            setDrillLessonId(cleanId);
+            setDrillLessonId(newLessonId);
             if (sessionNumber !== undefined) {
               setDrillSessionNumber(sessionNumber);
             }

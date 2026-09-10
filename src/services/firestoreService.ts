@@ -101,8 +101,14 @@ export async function getLessonById(lessonId: string): Promise<LessonDoc | null>
     let snapshot = await getDoc(docRef);
     
     if (!snapshot.exists() && lessonId.startsWith('level_b_day_')) {
-      const eresId = lessonId.replace('level_b_day_', 'level_b_eres_day_');
-      docRef = doc(db, 'lessons', eresId);
+      const ereId = lessonId.replace('level_b_day_', 'level_b_ere_day_');
+      docRef = doc(db, 'lessons', ereId);
+      snapshot = await getDoc(docRef);
+    }
+
+    if (!snapshot.exists() && lessonId.startsWith('level_b_ere_day_')) {
+      const bId = lessonId.replace('level_b_ere_day_', 'level_b_day_');
+      docRef = doc(db, 'lessons', bId);
       snapshot = await getDoc(docRef);
     }
 
@@ -161,10 +167,17 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string): 
     // If still empty, try alias / canonical fallbacks in Firestore
     if (snapshot.empty) {
       if (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b') {
-        q = query(lessonsRef, where('level_code', '==', 'LEVEL_B_ERES'));
+        q = query(lessonsRef, where('level_code', '==', 'LEVEL_B_ERE'));
         snapshot = await getDocs(q);
         if (snapshot.empty) {
-          q = query(lessonsRef, where('course_id', '==', 'course_level_b_eres'));
+          q = query(lessonsRef, where('course_id', '==', 'course_level_b_ere'));
+          snapshot = await getDocs(q);
+        }
+      } else if (courseIdOrLevel === 'LEVEL_B_ERE' || courseIdOrLevel === 'course_level_b_ere') {
+        q = query(lessonsRef, where('level_code', '==', 'LEVEL_B'));
+        snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          q = query(lessonsRef, where('course_id', '==', 'course_level_b'));
           snapshot = await getDocs(q);
         }
       } else if (courseIdOrLevel === 'LEVEL_B_EREL' || courseIdOrLevel === 'course_level_b_erel') {
