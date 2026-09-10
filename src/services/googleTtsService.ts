@@ -1167,6 +1167,13 @@ class AudioPlayService {
       }
     };
 
+    // Defensively add composite keys early if text contains '::'
+    if (text && text.includes('::')) {
+      add(text);
+      add(rawTrimmed);
+      add(rawTrimmed.toLowerCase());
+    }
+
     // Improv key detection & legacy variants
     if (rawTrimmed.startsWith('improv_')) {
       add(rawTrimmed);
@@ -1294,6 +1301,21 @@ class AudioPlayService {
         }
         return stored;
       }
+    }
+    return null;
+  }
+
+  /**
+   * Retrieve cached audio by exact key (Memory Map -> IndexedDB) without modifying or sanitizing the key.
+   */
+  public async getCachedAudioByExactKey(key: string): Promise<string | null> {
+    if (!key) return null;
+    const memory = this.audioCache.get(key);
+    if (memory) return memory;
+    const stored = await getAudioBlobFromDB(key);
+    if (stored) {
+      this.audioCache.set(key, stored);
+      return stored;
     }
     return null;
   }

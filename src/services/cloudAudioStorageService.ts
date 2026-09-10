@@ -182,6 +182,13 @@ export async function syncLessonCachedAudioToCloud(
           cachedEn = await audioPlayer.getCachedAudioAsync(rawNoComma, options?.voiceEn);
         }
         if (!cachedEn) {
+          const { keys: enCandKeys } = audioPlayer.getLookupCandidateKeys(chunk.english, options?.voiceEn);
+          for (const candKey of enCandKeys) {
+            cachedEn = await audioPlayer.getCachedAudioByExactKey(candKey);
+            if (cachedEn) break;
+          }
+        }
+        if (!cachedEn) {
           for (const cand of enVoiceCandidates) {
             if (cand === options?.voiceEn) continue;
             cachedEn = await audioPlayer.getCachedAudioAsync(chunk.english, cand);
@@ -198,13 +205,16 @@ export async function syncLessonCachedAudioToCloud(
           const rawEn = chunk.english.toLowerCase().trim();
           for (const key of allCachedKeys) {
             const lowerKey = key.toLowerCase();
+            const textPart = lowerKey.includes('::') ? lowerKey.substring(lowerKey.lastIndexOf('::') + 2).trim() : lowerKey;
             if (
+              textPart === cleanEn ||
+              textPart === rawEn ||
               lowerKey.endsWith(`::${cleanEn}`) || 
               lowerKey.endsWith(`::${rawEn}`) ||
               lowerKey === cleanEn ||
               lowerKey === rawEn
             ) {
-              cachedEn = await audioPlayer.getCachedAudioAsync(key);
+              cachedEn = await audioPlayer.getCachedAudioByExactKey(key);
               if (cachedEn) break;
             }
           }
@@ -245,6 +255,13 @@ export async function syncLessonCachedAudioToCloud(
           cachedVi = await audioPlayer.getCachedAudioAsync(cleanVi, options?.voiceVi || 'vi-VN-Neural2-A');
         }
         if (!cachedVi) {
+          const { keys: viCandKeys } = audioPlayer.getLookupCandidateKeys(chunk.vietnamese, options?.voiceVi || 'vi-VN-Neural2-A');
+          for (const candKey of viCandKeys) {
+            cachedVi = await audioPlayer.getCachedAudioByExactKey(candKey);
+            if (cachedVi) break;
+          }
+        }
+        if (!cachedVi) {
           for (const cand of viVoiceCandidates) {
             if (cand === (options?.voiceVi || 'vi-VN-Neural2-A')) continue;
             cachedVi = await audioPlayer.getCachedAudioAsync(chunk.vietnamese, cand) ||
@@ -259,13 +276,16 @@ export async function syncLessonCachedAudioToCloud(
           const rawVi = chunk.vietnamese.toLowerCase().trim();
           for (const key of allCachedKeys) {
             const lowerKey = key.toLowerCase();
+            const textPart = lowerKey.includes('::') ? lowerKey.substring(lowerKey.lastIndexOf('::') + 2).trim() : lowerKey;
             if (
+              textPart === cleanVi ||
+              textPart === rawVi ||
               lowerKey.endsWith(`::${cleanVi}`) || 
               lowerKey.endsWith(`::${rawVi}`) ||
               lowerKey === cleanVi ||
               lowerKey === rawVi
             ) {
-              cachedVi = await audioPlayer.getCachedAudioAsync(key);
+              cachedVi = await audioPlayer.getCachedAudioByExactKey(key);
               if (cachedVi) break;
             }
           }

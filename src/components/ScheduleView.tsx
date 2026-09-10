@@ -146,6 +146,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   // Quick Action Generation & Progress State
   const [generatingSessionNumber, setGeneratingSessionNumber] = useState<number | null>(null);
   const [isSyncingCloudSessionNumber, setIsSyncingCloudSessionNumber] = useState<number | null>(null);
+  const [isSyncingAllCloud, setIsSyncingAllCloud] = useState<boolean>(false);
   const [generationProgress, setGenerationProgress] = useState<{ current: number; total: number; percentage: number }>({
     current: 0,
     total: 0,
@@ -155,8 +156,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const [activeActionMenuSession, setActiveActionMenuSession] = useState<number | null>(null);
 
   // Toast notifications
-  const [toast, setToast] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
-  const showToast = useCallback((type: 'success' | 'info' | 'error', message: string) => {
+  const [toast, setToast] = useState<{ type: 'success' | 'info' | 'error' | 'warning'; message: string } | null>(null);
+  const showToast = useCallback((type: 'success' | 'info' | 'error' | 'warning', message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
   }, []);
@@ -483,12 +484,65 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         setLiveLessons(prev => ({ ...prev, [session.lesson_id]: updatedLesson }));
       }
       await checkSingleSessionAudio(session);
-      showToast('success', `✓ Đã đồng bộ ${res.uploadedEn + res.uploadedVi} audio chunks lên Cloud Storage!`);
+      if (res.uploadedEn + res.uploadedVi === 0) {
+        showToast('info', 'Buổi học này chưa có audio mới trong cache để đồng bộ (hoặc tất cả câu đã có link Cloud).');
+      } else {
+        showToast('success', `✓ Đã đồng bộ ${res.uploadedEn + res.uploadedVi} audio chunks lên Cloud Storage!`);
+      }
     } catch (err: any) {
       console.error('[ScheduleView] Cloud sync error:', err);
       showToast('error', `Lỗi đồng bộ Cloud: ${err?.message || 'Không xác định'}`);
     } finally {
       setIsSyncingCloudSessionNumber(null);
+    }
+  };
+
+  const handleSyncAllCachedSessionsToCloud = async () => {
+    const sessionsWithAudio = (cohort.sessions || []).filter(s => (sessionAudioStatus[s.session_number]?.cached || 0) > 0);
+    if (sessionsWithAudio.length === 0) {
+      showToast('warning', 'Không có buổi học nào có audio trong cache để tải lên. Vui lòng bấm Tạo Audio trước.');
+      return;
+    }
+
+    setIsSyncingAllCloud(true);
+    const voiceEn = getVoiceEn();
+    const voiceVi = cohort.audio_settings?.voice_profile_vi || 
+      cohort.audio_settings?.voice_profile_secondary || 
+      modelRegistryService.getMainModelVi() || 
+      'vi-VN-Neural2-A';
+
+    let totalUploaded = 0;
+    try {
+      for (let idx = 0; idx < sessionsWithAudio.length; idx++) {
+        const s = sessionsWithAudio[idx];
+        const lesson = liveLessonsRef.current[s.lesson_id] || liveLessons[s.lesson_id] || curriculumRegistry.getLessonById(s.lesson_id);
+        if (!lesson || !lesson.chunks || lesson.chunks.length === 0) {
+          continue;
+        }
+
+        showToast('info', `Đang tải lên Cloud buổi ${s.session_number} (${idx + 1}/${sessionsWithAudio.length})...`);
+        const res = await syncLessonCachedAudioToCloud(lesson, {
+          voiceEn,
+          voiceVi,
+          target: 'BOTH'
+        });
+
+        if (res.updatedChunks && res.updatedChunks.length > 0) {
+          const updatedLesson = { ...lesson, chunks: res.updatedChunks };
+          liveLessonsRef.current[s.lesson_id] = updatedLesson;
+          setLiveLessons(prev => ({ ...prev, [s.lesson_id]: updatedLesson }));
+        }
+
+        await checkSingleSessionAudio(s);
+        totalUploaded += (res.uploadedEn + res.uploadedVi);
+      }
+
+      showToast('success', `✓ Đã hoàn tất đồng bộ Cloud! Đã tải lên ${totalUploaded} audio chunks qua ${sessionsWithAudio.length} buổi học.`);
+    } catch (err: any) {
+      console.error('[ScheduleView] Sync all cloud error:', err);
+      showToast('error', `Lỗi đồng bộ Cloud hàng loạt: ${err?.message || 'Không xác định'}`);
+    } finally {
+      setIsSyncingAllCloud(false);
     }
   };
 
@@ -587,6 +641,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
   // Aggregate audio readiness summary
   const readySessionsCount = sessions.filter(s => sessionAudioStatus[s.session_number]?.isReady).length;
+  const sessionsWithCachedCount = sessions.filter(s => (sessionAudioStatus[s.session_number]?.cached || 0) > 0).length;
 
   const handleStatusChange = (sessionNumber: number, newStatus: ClassSession['status']) => {
     const updatedSessions = sessions.map(s => {
@@ -894,20 +949,33 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               <span>Cài Đặt Audio</span>
             </button>
 
-            {/* Sync Cloud Audio */}
+            {/* Sync Cloud Audio (All Cached Sessions) */}
             <button
-              onClick={() => {
-                if (inProgressSession) {
-                  handleSyncSessionToCloud(inProgressSession);
-                } else if (cohort.sessions && cohort.sessions[0]) {
-                  handleSyncSessionToCloud(cohort.sessions[0]);
-                }
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E8E8EC] bg-white text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all cursor-pointer shadow-xs"
-              title="Đồng bộ audio của buổi học hiện tại lên Cloud Storage"
+              disabled={isSyncingAllCloud}
+              onClick={handleSyncAllCachedSessionsToCloud}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer shadow-xs ${
+                isSyncingAllCloud 
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700 cursor-wait'
+                  : 'border-[#E8E8EC] bg-white text-[#0A0A0A] hover:bg-[#FAFAFA]'
+              }`}
+              title={
+                sessionsWithCachedCount > 0
+                  ? `Đồng bộ toàn bộ ${sessionsWithCachedCount} buổi đã có audio trong cache lên Firebase Storage`
+                  : 'Đồng bộ audio trong cache lên Firebase Storage'
+              }
             >
-              <CloudUpload className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Sync Cloud</span>
+              {isSyncingAllCloud ? (
+                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+              ) : (
+                <CloudUpload className="w-3.5 h-3.5 text-emerald-600" />
+              )}
+              <span>
+                {isSyncingAllCloud 
+                  ? 'Đang Sync Cloud...' 
+                  : sessionsWithCachedCount > 0 
+                    ? `Sync Tất Cả (${sessionsWithCachedCount} buổi ready)` 
+                    : 'Sync Cloud'}
+              </span>
             </button>
 
             {/* Edit Cohort Schedule */}
@@ -1546,12 +1614,16 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               ? 'bg-emerald-900 text-white border-emerald-700' 
               : toast.type === 'error'
                 ? 'bg-red-900 text-white border-red-700'
-                : 'bg-zinc-900 text-white border-zinc-700'
+                : toast.type === 'warning'
+                  ? 'bg-amber-900 text-white border-amber-700'
+                  : 'bg-zinc-900 text-white border-zinc-700'
           }`}>
             {toast.type === 'success' ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             ) : toast.type === 'error' ? (
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            ) : toast.type === 'warning' ? (
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
             ) : (
               <Volume2 className="w-4 h-4 text-blue-400 shrink-0" />
             )}
