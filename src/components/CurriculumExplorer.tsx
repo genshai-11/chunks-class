@@ -7,6 +7,7 @@ import {
   deleteChunk, 
   syncAllCurriculumToFirestore, 
   checkFirestoreHealth,
+  getCourses,
   DatabaseStatus
 } from '../services/firestoreService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
@@ -19,19 +20,19 @@ import {
   Volume2, 
   Play, 
   Download, 
-  Plus,
-  Edit2,
-  Trash2,
-  Eye,
-  Database,
-  RefreshCw,
-  CheckCircle2,
-  AlertTriangle,
-  Upload,
-  Layers,
-  Sparkles,
-  ArrowUpDown,
-  FileSpreadsheet
+  Plus, 
+  Edit2, 
+  Trash2, 
+  Eye, 
+  Database, 
+  RefreshCw, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Upload, 
+  Layers, 
+  Sparkles, 
+  ArrowUpDown, 
+  FileSpreadsheet 
 } from 'lucide-react';
 
 interface CurriculumExplorerProps {
@@ -98,18 +99,35 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [playingChunkId, setPlayingChunkId] = useState<string | null>(null);
 
-  const availableCourses = useMemo<Course[]>(() => {
-    return curriculumRegistry.getAllCourses();
+  const [availableCourses, setAvailableCourses] = useState<Course[]>(() => curriculumRegistry.getAllCourses());
+
+  useEffect(() => {
+    let isMounted = true;
+    getCourses().then(fetchedCourses => {
+      if (isMounted && fetchedCourses && fetchedCourses.length > 0) {
+        setAvailableCourses(fetchedCourses);
+      }
+    }).catch(err => {
+      console.warn("Failed to load courses from Firestore:", err);
+    });
+    return () => { isMounted = false; };
   }, []);
 
+  useEffect(() => {
+    if (defaultCourseLevel) {
+      setSelectedLevel(defaultCourseLevel);
+    }
+  }, [defaultCourseLevel]);
+
   const currentCourse = useMemo(() => {
-    return curriculumRegistry.getCourse(selectedLevel);
-  }, [selectedLevel]);
+    return availableCourses.find(c => c.level_code === selectedLevel || c.id === selectedLevel) || curriculumRegistry.getCourse(selectedLevel);
+  }, [availableCourses, selectedLevel]);
 
   const getCourseTabLabel = (course: Course) => {
     if (course.level_code === 'LEVEL_A') return 'Level A';
     if (course.level_code === 'LEVEL_B_EREL') return 'Level B - EREL (Listening)';
     if (course.level_code === 'LEVEL_B_ERES') return 'Level B - ERES (Speaking)';
+    if (course.level_code === 'LEVEL_B_ERE') return 'Level B - ERE (30 Topics)';
     return course.title;
   };
 

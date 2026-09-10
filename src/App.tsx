@@ -22,7 +22,7 @@ function sanitizeCohort(cohort: Cohort): Cohort {
   }
   let courseId = cohort.course_id;
   if (!courseId || (courseId as string) === 'course_level_b') {
-    courseId = levelCode === 'LEVEL_A' ? 'course_level_a' : levelCode === 'LEVEL_B_EREL' ? 'course_level_b_erel' : 'course_level_b_eres';
+    courseId = levelCode === 'LEVEL_A' ? 'course_level_a' : levelCode === 'LEVEL_B_EREL' ? 'course_level_b_erel' : levelCode === 'LEVEL_B_ERE' ? 'course_level_b_ere' : 'course_level_b_eres';
   }
 
   const cleanedSessions = (cohort.sessions || []).map(s => {

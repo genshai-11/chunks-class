@@ -111,6 +111,8 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
                       ? '🎧 Level B (EREL Listening)'
                       : c.level_code === 'LEVEL_B_ERES'
                       ? '🗣️ Level B (ERES Speaking)'
+                      : c.level_code === 'LEVEL_B_ERE'
+                      ? '🎯 Level B (ERE 30 Topics)'
                       : `📕 ${c.title || c.level_code}`}
                   </option>
                 ))}

@@ -65,11 +65,44 @@ async function verifyFirestoreEre() {
     }
   }
 
+  // 3. Verify Cohort document 'cohorts/cohort_level_b_ere_k30'
+  console.log("\n3. Verifying 'cohorts/cohort_level_b_ere_k30'...");
+  const cohortRef = doc(db, "cohorts", "cohort_level_b_ere_k30");
+  const cohortSnap = await getDoc(cohortRef);
+  if (!cohortSnap.exists()) {
+    throw new Error("Cohort 'cohorts/cohort_level_b_ere_k30' does not exist in Firestore!");
+  }
+  const cohortData = cohortSnap.data();
+  console.log("   ✅ Cohort exists:", {
+    id: cohortData.id,
+    level_code: cohortData.level_code,
+    course_id: cohortData.course_id,
+    title: cohortData.title,
+    total_sessions: cohortData.total_sessions,
+    sessions_length: Array.isArray(cohortData.sessions) ? cohortData.sessions.length : 0
+  });
+
+  if (cohortData.total_sessions !== 30) {
+    throw new Error(`Expected cohort total_sessions to be 30, got ${cohortData.total_sessions}`);
+  }
+  if (!Array.isArray(cohortData.sessions) || cohortData.sessions.length !== 30) {
+    throw new Error(`Expected cohort sessions array to have length 30, got ${cohortData.sessions?.length}`);
+  }
+  if (cohortData.sessions[0].day_number !== 1 || cohortData.sessions[29].day_number !== 30) {
+    throw new Error(`Session day_numbers mismatch! Session 1 day: ${cohortData.sessions[0].day_number}, Session 30 day: ${cohortData.sessions[29].day_number}`);
+  }
+  if (cohortData.sessions[0].status !== 'in_progress') {
+    throw new Error(`Expected session 1 status to be 'in_progress', got '${cohortData.sessions[0].status}'`);
+  }
+  console.log(`   Session 1: [${cohortData.sessions[0].scheduled_date} ${cohortData.sessions[0].day_of_week}] ${cohortData.sessions[0].lesson_title} (status: ${cohortData.sessions[0].status})`);
+  console.log(`   Session 30: [${cohortData.sessions[29].scheduled_date} ${cohortData.sessions[29].day_of_week}] ${cohortData.sessions[29].lesson_title} (status: ${cohortData.sessions[29].status})`);
+
   console.log("\n==================================================");
   console.log(`✅ VERIFICATION SUCCESSFUL!`);
   console.log(`- Course: ${courseData.title} (${courseData.id})`);
   console.log(`- Total Lessons Verified: ${verifiedLessonsCount}/30`);
   console.log(`- Total Chunks Verified: ${verifiedChunksCount}/3,150`);
+  console.log(`- Cohort Verified: ${cohortData.title} (${cohortData.sessions.length} sessions)`);
   console.log("==================================================");
 }
 

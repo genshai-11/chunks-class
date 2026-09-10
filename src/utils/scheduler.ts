@@ -213,7 +213,8 @@ export function createDefaultCohort(
   const startDate = `${y}-${m}-${d}`;
   const sessions = calculate15Sessions(levelCode, startDate, ["Mon", "Wed", "Fri"], "19:30", "21:00");
   const course = curriculumRegistry.getCourse(levelCode);
-  const courseId = course?.id || (String(levelCode).toLowerCase().includes('a') ? 'course_level_a' : 'course_level_b_eres');
+  const courseId = course?.id || resolveCourseIdFromLevel(levelCode);
+  const totalSessions = levelCode === 'LEVEL_B_ERE' ? 30 : (course?.default_sessions_count || sessions.length || 15);
 
   return {
     id: "cohort_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
@@ -228,7 +229,7 @@ export function createDefaultCohort(
       end_time: "21:00",
       duration_minutes: 90
     },
-    total_sessions: 15,
+    total_sessions: totalSessions,
     sessions,
     audio_settings: {
       voice_profile_primary: "flux-cliff-en",
