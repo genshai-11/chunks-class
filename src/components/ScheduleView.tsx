@@ -116,6 +116,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const [isAudioSettingsOpen, setIsAudioSettingsOpen] = useState<boolean>(false);
   const [isLoadingAudioStatus, setIsLoadingAudioStatus] = useState<boolean>(false);
   const [liveLessons, setLiveLessons] = useState<Record<string, LessonDoc>>({});
+  const liveLessonsRef = useRef<Record<string, LessonDoc>>({});
   const progressiveCheckRef = useRef<number>(0);
 
   const getVoiceEn = useCallback(() => {
@@ -176,11 +177,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     const voiceEn = getVoiceEn();
 
     try {
+      const allCachedKeys = await audioPlayer.getAllCachedKeys();
+
       for (const session of sessionsList) {
         if (progressiveCheckRef.current !== checkId) return;
 
         const lesson = (customLessons && customLessons[session.lesson_id]) || 
-          liveLessons[session.lesson_id] || 
+          liveLessonsRef.current[session.lesson_id] || 
           curriculumRegistry.getLessonById(session.lesson_id);
         const chunks = lesson?.chunks || [];
         const total = chunks.length;
@@ -195,19 +198,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
         let readyCount = 0;
         for (let i = 0; i < chunks.length; i++) {
-          if (progressiveCheckRef.current !== checkId) return;
-
           const c = chunks[i];
           const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-          if (hasGcs || audioPlayer.hasCachedAudio(c.english, voiceEn)) {
-            readyCount++;
-            continue;
-          }
-
-          const cached = await audioPlayer.getCachedAudioAsync(c.english, voiceEn);
-          if (cached) {
-            readyCount++;
-          }
+          const { keys: candidateKeys } = audioPlayer.getLookupCandidateKeys(c.english, voiceEn);
+          const isCached = hasGcs || 
+            audioPlayer.hasCachedAudio(c.english, voiceEn) || 
+            candidateKeys.some(k => allCachedKeys.has(k));
+          if (isCached) readyCount++;
         }
 
         const percent = Math.round((readyCount / total) * 100);
@@ -228,7 +225,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         setIsLoadingAudioStatus(false);
       }
     }
-  }, [cohort.sessions, getVoiceEn, liveLessons]);
+  }, [cohort.sessions, getVoiceEn]);
 
   const refreshAudioStatuses = useCallback(() => {
     progressiveCheckRef.current++;
@@ -240,7 +237,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     const voiceEn = getVoiceEn();
     const baseline: Record<number, SessionAudioStatus> = {};
     for (const session of cohort?.sessions || []) {
-      const lesson = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
+      const lesson = liveLessonsRef.current[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
       const chunks = lesson?.chunks || [];
       baseline[session.session_number] = computeBaselineStatus(session, chunks, voiceEn);
     }
@@ -248,7 +245,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
     progressiveCheckRef.current++;
     runProgressiveAudioCheck(progressiveCheckRef.current);
-  }, [cohort.id, cohort.sessions, cohort.audio_settings, getVoiceEn, runProgressiveAudioCheck]);
+  }, [cohort.id, cohort.sessions?.length, cohort.audio_settings]);
 
   // Fetch live lessons from Firestore for the cohort's level
   useEffect(() => {
@@ -264,6 +261,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           lessonMap[l.id] = l;
           curriculumRegistry.updateLesson(l);
         }
+        liveLessonsRef.current = { ...liveLessonsRef.current, ...lessonMap };
         setLiveLessons(prev => ({ ...prev, ...lessonMap }));
 
         const voiceEn = getVoiceEn();
@@ -286,11 +284,11 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
     fetchLiveLessons();
     return () => { cancelled = true; };
-  }, [cohort.level_code, cohort.id, cohort.sessions, getVoiceEn, runProgressiveAudioCheck]);
+  }, [cohort.id, cohort.level_code]);
 
   // Check single session audio status after quick batch generation
   const checkSingleSessionAudio = async (session: ClassSession) => {
-    const lesson = liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
+    const lesson = liveLessonsRef.current[session.lesson_id] || liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
     const chunks = lesson?.chunks || [];
     const total = chunks.length;
     if (total === 0) return;
@@ -298,18 +296,16 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     const voiceEn = getVoiceEn();
 
     try {
+      const allCachedKeys = await audioPlayer.getAllCachedKeys();
       let readyCount = 0;
       for (let i = 0; i < chunks.length; i++) {
         const c = chunks[i];
         const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-        if (hasGcs || audioPlayer.hasCachedAudio(c.english, voiceEn)) {
-          readyCount++;
-          continue;
-        }
-        const cached = await audioPlayer.getCachedAudioAsync(c.english, voiceEn);
-        if (cached) {
-          readyCount++;
-        }
+        const { keys: candidateKeys } = audioPlayer.getLookupCandidateKeys(c.english, voiceEn);
+        const isCached = hasGcs || 
+          audioPlayer.hasCachedAudio(c.english, voiceEn) || 
+          candidateKeys.some(k => allCachedKeys.has(k));
+        if (isCached) readyCount++;
       }
 
       const percent = Math.round((readyCount / total) * 100);

@@ -763,6 +763,31 @@ export async function deleteAudioBlobsByPrefixFromDB(prefix: string): Promise<nu
   });
 }
 
+export async function getAllStoredAudioKeys(): Promise<Set<string>> {
+  const keySet = new Set<string>();
+  const db = await openIndexedDB();
+  if (!db) return keySet;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.getAllKeys();
+      request.onsuccess = (e: any) => {
+        const keys: IDBValidKey[] = e.target.result || [];
+        for (const k of keys) {
+          if (typeof k === 'string') {
+            keySet.add(k);
+          }
+        }
+        resolve(keySet);
+      };
+      request.onerror = () => resolve(keySet);
+    } catch {
+      resolve(keySet);
+    }
+  });
+}
+
 export interface AudioCacheExportData {
   version: number;
   exportedAt: string;
@@ -1022,6 +1047,14 @@ class AudioPlayService {
 
   public async getStoredBlobsCount(): Promise<number> {
     return getStoredAudioBlobsCount();
+  }
+
+  public async getAllCachedKeys(): Promise<Set<string>> {
+    const keys = await getAllStoredAudioKeys();
+    for (const key of this.audioCache.keys()) {
+      keys.add(key);
+    }
+    return keys;
   }
 
   public getCacheCount(): number {

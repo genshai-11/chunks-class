@@ -13,6 +13,8 @@ import {
   BookOpen
 } from 'lucide-react';
 
+import { groupChunksIntoParts } from './PartsDrawer';
+
 interface ChunkListPreviewDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -37,8 +39,31 @@ export const ChunkListPreviewDrawer: React.FC<ChunkListPreviewDrawerProps> = ({
   highContrastDark = false
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedPartTab, setSelectedPartTab] = useState<number | 'all'>('all');
   const activeItemRef = useRef<HTMLDivElement>(null);
+
+  // Derive parts dynamically if not provided
+  const effectiveParts = useMemo(() => {
+    if (parts && parts.length > 0) return parts;
+    return groupChunksIntoParts(chunks);
+  }, [parts, chunks]);
+
+  // Format tab label (e.g. "Part 1: Slangs (10)")
+  const formatPartLabel = (p: LessonPart) => {
+    let title = (p.title || p.category || '').replace(/^Part\s*\d+\s*[-:]\s*/i, '').trim();
+    const lower = title.toLowerCase();
+    if (lower === 'slang') title = 'Slangs';
+    else if (lower === 'vocab') title = 'Vocab';
+    else if (lower === 'phrase') title = 'Phrases';
+    else if (lower === 'sentence') title = 'Sentences';
+    else if (lower === 'review') title = '5s Review';
+    else if (lower === 'monologue') title = 'Monologue';
+    else if (lower === 'dialogue') title = 'Dialogue';
+    else if (title) {
+      title = title.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+    return `Part ${p.part_index}: ${title || p.category} (${p.chunk_count})`;
+  };
 
   // Auto-scroll to active chunk when drawer opens
   useEffect(() => {
@@ -58,23 +83,31 @@ export const ChunkListPreviewDrawer: React.FC<ChunkListPreviewDrawerProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Categories list
-  const categories = useMemo(() => {
-    const cats = Array.from(new Set(chunks.map(c => c.category))).filter(Boolean);
-    return ['all', ...cats];
-  }, [chunks]);
-
-  // Filter chunks
+  // Filter chunks by selected Part and search query
   const filteredChunks = useMemo(() => {
-    return chunks.map((chunk, originalIndex) => ({ chunk, originalIndex })).filter(({ chunk }) => {
-      const matchesCat = selectedCategory === 'all' || chunk.category === selectedCategory;
-      const matchesQuery = !searchQuery || 
-        chunk.english.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        chunk.vietnamese.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (chunk.speaker && chunk.speaker.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchesCat && matchesQuery;
+    const targetPart = selectedPartTab === 'all' 
+      ? null 
+      : effectiveParts.find(p => p.part_index === selectedPartTab);
+
+    return chunks.map((chunk, originalIndex) => ({ chunk, originalIndex })).filter(({ chunk, originalIndex }) => {
+      if (targetPart) {
+        if (originalIndex < targetPart.start_index || originalIndex > targetPart.end_index) {
+          return false;
+        }
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesQuery = 
+          chunk.english.toLowerCase().includes(q) ||
+          chunk.vietnamese.toLowerCase().includes(q) ||
+          (chunk.speaker && chunk.speaker.toLowerCase().includes(q)) ||
+          (chunk.notes && chunk.notes.toLowerCase().includes(q)) ||
+          (chunk.part && chunk.part.toLowerCase().includes(q));
+        if (!matchesQuery) return false;
+      }
+      return true;
     });
-  }, [chunks, searchQuery, selectedCategory]);
+  }, [chunks, effectiveParts, selectedPartTab, searchQuery]);
 
   if (!isOpen) return null;
 
@@ -92,6 +125,83 @@ export const ChunkListPreviewDrawer: React.FC<ChunkListPreviewDrawerProps> = ({
     partChunkCurrent = Math.max(0, Math.min(partChunkTotal, currentIndex - currentPart.start_index + 1));
     partProgressPercent = partChunkTotal > 0 ? Math.round((partChunkCurrent / partChunkTotal) * 100) : 0;
   }
+
+  const renderCategoryBadge = (chunk: ChunkItem) => {
+    const cat = (chunk.category || '').toLowerCase();
+    const isExample = Boolean(
+      chunk.is_example || 
+      (chunk.notes && (chunk.notes.includes('[Example Sentence]') || chunk.notes.toLowerCase().includes('example')))
+    );
+
+    if (cat === 'slang') {
+      if (isExample) {
+        return (
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+            SLANG EXAMPLE
+          </span>
+        );
+      }
+      return (
+        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+          SLANG
+        </span>
+      );
+    }
+
+    if (cat === 'vocab') {
+      return (
+        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+          VOCAB
+        </span>
+      );
+    }
+
+    if (cat === 'phrase') {
+      return (
+        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+          PHRASE
+        </span>
+      );
+    }
+
+    if (cat === 'sentence') {
+      return (
+        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
+          SENTENCE
+        </span>
+      );
+    }
+
+    if (cat === 'monologue') {
+      return (
+        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30">
+          MONOLOGUE
+        </span>
+      );
+    }
+
+    if (cat === 'dialogue') {
+      return (
+        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+          DIALOGUE
+        </span>
+      );
+    }
+
+    if (cat === 'review') {
+      return (
+        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/30">
+          REVIEW
+        </span>
+      );
+    }
+
+    return (
+      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+        {cat ? cat.toUpperCase() : 'CHUNK'}
+      </span>
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end font-sans">
@@ -173,7 +283,7 @@ export const ChunkListPreviewDrawer: React.FC<ChunkListPreviewDrawerProps> = ({
           </div>
         </div>
 
-        {/* Search & Category Filter */}
+        {/* Search & Part Tabs Filter */}
         <div className="p-3 border-b border-[#E8E8EC] dark:border-zinc-800 space-y-2">
           {/* Search Input */}
           <div className="relative">
@@ -191,21 +301,33 @@ export const ChunkListPreviewDrawer: React.FC<ChunkListPreviewDrawerProps> = ({
             />
           </div>
 
-          {/* Category Badges */}
+          {/* Part & Phase Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            {categories.map((cat) => (
+            <button
+              onClick={() => setSelectedPartTab('all')}
+              className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase transition-all whitespace-nowrap cursor-pointer ${
+                selectedPartTab === 'all'
+                  ? 'bg-[#DC2626] text-white shadow-xs'
+                  : highContrastDark
+                    ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+              }`}
+            >
+              All ({totalChunks})
+            </button>
+            {effectiveParts.map((part) => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase transition-all whitespace-nowrap ${
-                  selectedCategory === cat
+                key={part.part_index}
+                onClick={() => setSelectedPartTab(part.part_index)}
+                className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  selectedPartTab === part.part_index
                     ? 'bg-[#DC2626] text-white shadow-xs'
                     : highContrastDark
                       ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                       : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
                 }`}
               >
-                {cat}
+                {formatPartLabel(part)}
               </button>
             ))}
           </div>
@@ -243,7 +365,7 @@ export const ChunkListPreviewDrawer: React.FC<ChunkListPreviewDrawerProps> = ({
                     onClick={() => { onSelectChunk(originalIndex); onClose(); }}
                     className="flex-1 cursor-pointer"
                   >
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       {isPassed ? (
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       ) : isCurrent ? (
@@ -253,12 +375,10 @@ export const ChunkListPreviewDrawer: React.FC<ChunkListPreviewDrawerProps> = ({
                       )}
 
                       <span className="text-[10px] font-mono font-bold text-zinc-400">
-                        #{originalIndex + 1}
+                        #{originalIndex + 1} / {totalChunks}
                       </span>
 
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                        {chunk.category}
-                      </span>
+                      {renderCategoryBadge(chunk)}
 
                       {chunk.speaker && (
                         <span className="text-[9px] font-mono text-zinc-400 flex items-center gap-1">

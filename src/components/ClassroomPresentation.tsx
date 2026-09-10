@@ -164,18 +164,28 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     }
   }, [isLessonSwitcherOpen, isSoundSettingsOpen]);
 
+  const handleSwitchLesson = useCallback((newLessonId: string) => {
+    const cleanId = newLessonId;
+    audioPlayer.stop();
+    setIsTopicCompleteGate(false);
+    setIsLessonCompleteGate(false);
+    setCurrentLessonId(cleanId);
+    setCurrentChunkIndex(0);
+    const localDoc = curriculumRegistry.getLessonById(cleanId);
+    if (localDoc) {
+      setFetchedLessonDoc(localDoc);
+    }
+    onSelectLesson?.(cleanId);
+    setIsLessonSwitcherOpen(false);
+    setLessonSearchQuery('');
+  }, [onSelectLesson]);
+
   // Synchronize when initialLessonId changes
   useEffect(() => {
-    if (initialLessonId) {
-      const cleanId = initialLessonId;
-      if (cleanId !== currentLessonId) {
-        setIsTopicCompleteGate(false);
-        setIsLessonCompleteGate(false);
-        setCurrentLessonId(cleanId);
-        setCurrentChunkIndex(0);
-      }
+    if (initialLessonId && initialLessonId !== currentLessonId) {
+      handleSwitchLesson(initialLessonId);
     }
-  }, [initialLessonId]);
+  }, [initialLessonId, currentLessonId, handleSwitchLesson]);
 
   // Synchronize when providedLesson changes
   useEffect(() => {
@@ -507,21 +517,6 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     return () => { cancelled = true; };
   }, [groupedCourses, selectedVoice, isPreparingAudio]);
 
-  const handleSwitchLesson = (newLessonId: string) => {
-    const cleanId = newLessonId;
-    audioPlayer.stop();
-    setIsTopicCompleteGate(false);
-    setIsLessonCompleteGate(false);
-    setCurrentLessonId(cleanId);
-    setCurrentChunkIndex(0);
-    const localDoc = curriculumRegistry.getLessonById(cleanId);
-    if (localDoc) {
-      setFetchedLessonDoc(localDoc);
-    }
-    onSelectLesson?.(cleanId);
-    setIsLessonSwitcherOpen(false);
-    setLessonSearchQuery('');
-  };
 
   // Dual Progress % Computations
   const partChunkTotal = currentPart ? currentPart.chunk_count : 0;
@@ -1648,6 +1643,20 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           <>
             {/* Badges */}
             <div className="flex items-center gap-2 mb-6 flex-wrap justify-center">
+              {/* Part Badge */}
+              <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 shadow-xs ${
+                highContrastDark 
+                  ? 'bg-zinc-800/90 text-zinc-200 border-zinc-700' 
+                  : 'bg-zinc-100/90 text-zinc-800 border-zinc-200'
+              }`}>
+                <Layers className="w-3.5 h-3.5 text-[#DC2626]" />
+                <span>
+                  {currentPart 
+                    ? `Part ${currentPart.part_index} · ${currentPart.title}` 
+                    : (currentChunk.part || 'Drill Phase')}
+                </span>
+              </span>
+
               {currentChunk.speaker && (
                 <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-zinc-800 text-white flex items-center gap-1.5">
                   <GraduationCap className="w-3.5 h-3.5 text-[#DC2626]" />
@@ -1655,9 +1664,27 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 </span>
               )}
 
-              <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${getCategoryColor(currentChunk.category)}`}>
-                {currentChunk.category}
-              </span>
+              {/* Category Badge */}
+              {(() => {
+                const isSlangExample = currentChunk.category === 'slang' && Boolean(
+                  currentChunk.is_example || 
+                  (currentChunk.notes && (currentChunk.notes.includes('[Example Sentence]') || currentChunk.notes.toLowerCase().includes('example')))
+                );
+
+                if (isSlangExample) {
+                  return (
+                    <span className="text-xs font-mono font-bold px-3 py-1 rounded-full border border-amber-400/50 bg-amber-500/15 text-amber-600 dark:text-amber-400 uppercase tracking-wider shadow-xs">
+                      SLANG EXAMPLE
+                    </span>
+                  );
+                }
+
+                return (
+                  <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${getCategoryColor(currentChunk.category)}`}>
+                    {currentChunk.category ? currentChunk.category.toUpperCase() : ''}
+                  </span>
+                );
+              })()}
 
               {currentChunk.audio_url && (
                 <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">

@@ -56,6 +56,7 @@ export interface ChunkItem {
   source_row?: number;
   notes?: string;
   part?: string;
+  is_example?: boolean;
   [key: string]: any;
 }
 

@@ -21,7 +21,7 @@ function getCleanTopicTitle(dayNumber: number, rawPart: string): string {
 function getChunkCategory(type: string): ChunkCategory {
   const t = type.toLowerCase().trim();
   if (["i1", "i2", "i3", "i4", "i5"].includes(t)) return "slang";
-  if (["e1", "e2", "e3", "e4", "e5"].includes(t)) return "sentence";
+  if (["e1", "e2", "e3", "e4", "e5"].includes(t)) return "slang";
   
   if (t.startsWith("i")) {
     const num = parseInt(t.slice(1), 10);
@@ -91,6 +91,11 @@ for (let dayNumber = 1; dayNumber <= 30; dayNumber++) {
 
     if (synonym) {
       chunk.notes = synonym;
+    }
+
+    if (["e1", "e2", "e3", "e4", "e5"].includes(String(row.TYPE).toLowerCase().trim())) {
+      chunk.is_example = true;
+      chunk.notes = chunk.notes ? `[Example Sentence] ${chunk.notes}` : "[Example Sentence]";
     }
 
     return chunk;

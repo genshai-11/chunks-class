@@ -12,9 +12,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -41,7 +41,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d1_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Plus I have to pay him a lot of money!",
         "vietnamese": "Với lại tui phải trả hắn rất là nhiều tiền!",
         "speaker": null,
@@ -53,7 +53,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Plus I have to pay him a lot of money!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 1",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d1_0003",
@@ -76,7 +78,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d1_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Come on, you know that I can't do this myself, right?",
         "vietnamese": "Thôi mà, cậu biết tui đâu có tự làm được cái vụ này đâu, phải không?",
         "speaker": null,
@@ -88,7 +90,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Come on, you know that I can't do this myself, right?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 1",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d1_0005",
@@ -111,7 +115,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d1_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "I want you to be there by 7am, got it?",
         "vietnamese": "Tui muốn anh ở đó trễ nhất là 7 giờ sáng, hiểu chứ?",
         "speaker": null,
@@ -123,7 +127,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I want you to be there by 7am, got it?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 1",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d1_0007",
@@ -146,7 +152,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d1_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "You bet! This is my first time here.",
         "vietnamese": "Chính xác! Đây là lần đầu tui ở đây á.",
         "speaker": null,
@@ -158,7 +164,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "You bet! This is my first time here.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 1",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d1_0009",
@@ -180,7 +188,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d1_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "You know what? You're not as good as you think you are!",
         "vietnamese": "Cậu biết sao không? Cậu không giỏi như cậu nghĩ đâu!",
         "speaker": null,
@@ -192,7 +200,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "You know what? You're not as good as you think you are!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 1",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d1_0011",
@@ -1858,9 +1868,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -1887,7 +1897,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d2_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Look, this case is totally out of my hands, got my point?",
         "vietnamese": "Nhìn nè, cái chuyện này hoàn toàn nằm ngoài tầm tay của tui, hiểu ý tui không?",
         "speaker": null,
@@ -1899,7 +1909,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Look, this case is totally out of my hands, got my point?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 2",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d2_0003",
@@ -1922,7 +1934,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d2_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Beautiful! Problem solved! I'll call you later!",
         "vietnamese": "Quá đẹp! Vấn đề đã được giải quyết! Tôi gọi lại cho cậu sau!",
         "speaker": null,
@@ -1934,7 +1946,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Beautiful! Problem solved! I'll call you later!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 2",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d2_0005",
@@ -1956,7 +1970,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d2_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "If I were you, I would never lend them money, ever!",
         "vietnamese": "Nếu tôi mà là cậu, tôi sẽ không bao giờ cho tụi nó mượn tiền, không bao giờ!",
         "speaker": null,
@@ -1968,7 +1982,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "If I were you, I would never lend them money, ever!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 2",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d2_0007",
@@ -1991,7 +2007,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d2_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "I want those reports on my desk by Monday morning. OK?",
         "vietnamese": "Tôi muốn mấy cái báo cáo đó ở trên bàn tôi chậm nhất là sáng thứ hai. OK?",
         "speaker": null,
@@ -2003,7 +2019,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I want those reports on my desk by Monday morning. OK?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 2",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d2_0009",
@@ -2025,7 +2043,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d2_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Heads up! This is going to be a very challenging year for all of us.",
         "vietnamese": "Báo trước! Đây sẽ là một năm rất thử thách cho tất cả chúng ta.",
         "speaker": null,
@@ -2037,7 +2055,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Heads up! This is going to be a very challenging year for all of us.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 2",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d2_0011",
@@ -3697,9 +3717,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -3726,7 +3746,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d3_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "I tell you what, this is none of your business, OK?",
         "vietnamese": "Tui nói cậu vầy, cái này không phải chuyện của cậu, OK?",
         "speaker": null,
@@ -3738,7 +3758,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I tell you what, this is none of your business, OK?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 3",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d3_0003",
@@ -3761,7 +3783,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d3_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Let's hang out tonight. Tomorrow is weekend anyway.",
         "vietnamese": "Tối nay ra ngoài chơi đi. Đằng nào mai cũng là cuối tuần mà.",
         "speaker": null,
@@ -3773,7 +3795,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Let's hang out tonight. Tomorrow is weekend anyway.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 3",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d3_0005",
@@ -3796,7 +3820,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d3_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Like it or not, you have to live with that.",
         "vietnamese": "Dù thích hay là không, cậu cũng phải sống với điều đó thôi.",
         "speaker": null,
@@ -3808,7 +3832,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Like it or not, you have to live with that.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 3",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d3_0007",
@@ -3830,7 +3856,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d3_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "You only pay 20 bucks with no interest, that cannot be bad, can it?",
         "vietnamese": "Cậu chỉ trả có 20 đô không lãi suất. Cái đó đâu có gì là xấu đâu, phải không?",
         "speaker": null,
@@ -3842,7 +3868,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "You only pay 20 bucks with no interest, that cannot be bad, can it?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 3",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d3_0009",
@@ -3864,7 +3892,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d3_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "I don't care, suck it up and do it!",
         "vietnamese": "Tui không quan tâm, ráng nhịn đi rồi làm!",
         "speaker": null,
@@ -3876,7 +3904,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I don't care, suck it up and do it!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 3",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d3_0011",
@@ -5539,9 +5569,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -5568,7 +5598,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d4_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "My dad's quite difficult, but having said that, he's very kind.",
         "vietnamese": "Tía tui khá là khó, nhưng mà nói đi thì cũng phải nói lại, ổng rất là tốt bụng.",
         "speaker": null,
@@ -5580,7 +5610,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "My dad's quite difficult, but having said that, he's very kind.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 4",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d4_0003",
@@ -5603,7 +5635,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d4_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "You'll never win the lottery, you wish!",
         "vietnamese": "Mày chẳng bao giờ trúng số đâu, mơ đi cưng!",
         "speaker": null,
@@ -5615,7 +5647,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "You'll never win the lottery, you wish!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 4",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d4_0005",
@@ -5638,7 +5672,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d4_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "There's no reason why we cannot do likewise.",
         "vietnamese": "Không có lý gì mà chúng ta không thể làm giống được như vậy.",
         "speaker": null,
@@ -5650,7 +5684,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "There's no reason why we cannot do likewise.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 4",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d4_0007",
@@ -5673,7 +5709,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d4_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Here we go again! Why do you keep following me?",
         "vietnamese": "Sao anh cứ đi theo tôi hoài vậy?",
         "speaker": null,
@@ -5685,7 +5721,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Here we go again! Why do you keep following me?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 4",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d4_0009",
@@ -5708,7 +5746,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d4_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "At all costs, we have to win this pandemic fight.",
         "vietnamese": "Bằng mọi giá ta phải thắng cuộc chiến đại dịch này.",
         "speaker": null,
@@ -5720,7 +5758,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "At all costs, we have to win this pandemic fight.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 4",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d4_0011",
@@ -7382,9 +7422,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -7411,7 +7451,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d5_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Let's say now we hit the road, we would be there by 3:00 pm.",
         "vietnamese": "Giả dụ rằng giờ mình lên đường, mình sẽ có thể tới được đó trước 3 giờ chiều.",
         "speaker": null,
@@ -7423,7 +7463,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Let's say now we hit the road, we would be there by 3:00 pm.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 5",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d5_0003",
@@ -7446,7 +7488,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d5_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "He doesn't speak Cambodian and yet he seems to understand it.",
         "vietnamese": "Ảnh không nói được tiếng Miên và dẫu vậy ảnh vẫn có vẻ hiểu hiểu nó.",
         "speaker": null,
@@ -7458,7 +7500,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "He doesn't speak Cambodian and yet he seems to understand it.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 5",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d5_0005",
@@ -7481,7 +7525,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d5_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Imagine you stay home for 14 days straight, try to feel how cool it is.",
         "vietnamese": "Tưởng tượng bạn ở nhà 14 ngày liền, hãy cố mà cảm xem nó hay ho đến cỡ nào.",
         "speaker": null,
@@ -7493,7 +7537,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Imagine you stay home for 14 days straight, try to feel how cool it is.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 5",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d5_0007",
@@ -7516,7 +7562,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d5_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Of course, Vietnam will beat China in the upcoming football match.",
         "vietnamese": "Còn phải nói, Việt Nam sẽ thắng Trung Quốc trong trận đá banh sắp tới.",
         "speaker": null,
@@ -7528,7 +7574,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Of course, Vietnam will beat China in the upcoming football match.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 5",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d5_0009",
@@ -7551,7 +7599,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d5_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Don't play dumb with me! I'm gonna give you a last chance to tell me everything.",
         "vietnamese": "Đừng có mà giả điên với tui! Tui sẽ cho cậu một cơ hội cuối cùng để khai ra hết mọi thứ đấy.",
         "speaker": null,
@@ -7563,7 +7611,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Don't play dumb with me! I'm gonna give you a last chance to tell me everything.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 5",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d5_0011",
@@ -9214,9 +9264,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -9243,7 +9293,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d6_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Here's the deal, word on the street is that you're a gold digger.",
         "vietnamese": "Chuyện là vầy, ngoài đường người ta đồn rằng cậu là cái đứa đào mỏ đấy.",
         "speaker": null,
@@ -9255,7 +9305,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Here's the deal, word on the street is that you're a gold digger.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 6",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d6_0003",
@@ -9278,7 +9330,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d6_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Why do you keep roaming in the malls, if you don't mind me asking?",
         "vietnamese": "Sao anh cứ lang thang trong mấy cái mall vậy, nếu anh không ngại tôi hỏi?",
         "speaker": null,
@@ -9290,7 +9342,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Why do you keep roaming in the malls, if you don't mind me asking?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 6",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d6_0005",
@@ -9313,7 +9367,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d6_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Two of them rushed toward each other like 2 lionesses, you do the math.",
         "vietnamese": "Hai đứa tụi nó lao vào nhau như 2 con sư tử cái á, cậu tự hiểu đi ha.",
         "speaker": null,
@@ -9325,7 +9379,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Two of them rushed toward each other like 2 lionesses, you do the math.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 6",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d6_0007",
@@ -9347,7 +9403,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d6_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "I knew it! It's very hard to stop a cat fight.",
         "vietnamese": "Tao biết ngay mà! Rất là khó để can ngăn một trận tỉ thí kiểu mèo cào.",
         "speaker": null,
@@ -9359,7 +9415,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I knew it! It's very hard to stop a cat fight.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 6",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d6_0009",
@@ -9382,7 +9440,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d6_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Let's see, maybe the bystanders have seen everything.",
         "vietnamese": "Để coi, có lẽ người qua đường đã nhìn thấy hết rồi.",
         "speaker": null,
@@ -9394,7 +9452,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Let's see, maybe the bystanders have seen everything.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 6",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d6_0011",
@@ -11049,9 +11109,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -11078,7 +11138,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d7_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "To be precise, why did you set foot in his house in the first place?",
         "vietnamese": "Hay chính xác hơn, vì sao ngay từ đầu anh lại đặt chân tới nhà ổng?",
         "speaker": null,
@@ -11090,7 +11150,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "To be precise, why did you set foot in his house in the first place?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 7",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d7_0003",
@@ -11113,7 +11175,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d7_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Shortly after I met Morgan the first time, his wife passed away.",
         "vietnamese": "Không lâu sau khi tôi gặp Morgan lần đầu tiên thì vợ ông ta qua đời.",
         "speaker": null,
@@ -11125,7 +11187,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Shortly after I met Morgan the first time, his wife passed away.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 7",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d7_0005",
@@ -11148,7 +11212,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d7_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "There's a lot of things to do during lockdown: Reading books, cooking, exercising, you name it.",
         "vietnamese": "Có rất nhiều thứ để làm trong suốt khoảng thời gian giãn cách: Đọc sách, nấu ăn, tập thể dục, vân vân và mây mây.",
         "speaker": null,
@@ -11160,7 +11224,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "There's a lot of things to do during lockdown: Reading books, cooking, exercising, you name it.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 7",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d7_0007",
@@ -11182,7 +11248,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d7_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Wow, your youngest daughter is about to go to college already? Time flies!",
         "vietnamese": "Wow, con gái út của cậu sắp vào đại học rồi á? Thời gian trôi qua nhanh thật luôn ấy!",
         "speaker": null,
@@ -11194,7 +11260,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Wow, your youngest daughter is about to go to college already? Time flies!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 7",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d7_0009",
@@ -11217,7 +11285,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d7_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Simply put, it's not too hard to compose an e-mail but don't forget to add a signature.",
         "vietnamese": "Nói một cách đơn giản thì không quá khó để soạn thảo một cái e-mail nhưng đừng quên thêm vào một cái chữ ký.",
         "speaker": null,
@@ -11229,7 +11297,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Simply put, it's not too hard to compose an e-mail but don't forget to add a signature.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 7",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d7_0011",
@@ -12882,9 +12952,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -12911,7 +12981,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d8_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "I'll go find help, meanwhile you stay put till I get back, OK?",
         "vietnamese": "Tôi sẽ đi tìm người giúp, trong lúc đó cô ở yên đây cho đến khi tôi quay lại, OK?",
         "speaker": null,
@@ -12923,7 +12993,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I'll go find help, meanwhile you stay put till I get back, OK?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 8",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d8_0003",
@@ -12945,7 +13017,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d8_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "That's a red herring, I'm asking where did you go last night?",
         "vietnamese": "Cái đó là đánh trống lảng nha, tui đang hỏi là tối qua anh đi đâu?",
         "speaker": null,
@@ -12957,7 +13029,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "That's a red herring, I'm asking where did you go last night?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 8",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d8_0005",
@@ -12980,7 +13054,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d8_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Speaking of COVID-19 vaccine, the side effects are my biggest concerns.",
         "vietnamese": "Nói về vaccine COVID-19, những tác dụng phụ chính là nỗi băn khoăn lớn nhất của tôi.",
         "speaker": null,
@@ -12992,7 +13066,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Speaking of COVID-19 vaccine, the side effects are my biggest concerns.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 8",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d8_0007",
@@ -13015,7 +13091,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d8_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "So far, our city has done more than 50,000 tests.",
         "vietnamese": "Cho đến giờ, thành phố của ta đã thực hiện hơn 50,000 cuộc xét nghiệm.",
         "speaker": null,
@@ -13027,7 +13103,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "So far, our city has done more than 50,000 tests.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 8",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d8_0009",
@@ -13049,7 +13127,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d8_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "No more excuses! Unless having an essential reason, if not, you've got to stay indoors!",
         "vietnamese": "Không có lý do lý trấu gì nữa hết! Trừ khi có lý do thiết yếu, còn không thì cậu phải ở trong nhà!",
         "speaker": null,
@@ -13061,7 +13139,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "No more excuses! Unless having an essential reason, if not, you've got to stay indoors!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 8",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d8_0011",
@@ -14706,9 +14786,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -14735,7 +14815,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d9_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Most importantly, you have to accept the inevitable.",
         "vietnamese": "Quan trọng nhất, cậu phải chấp nhận những điều không thể tránh khỏi.",
         "speaker": null,
@@ -14747,7 +14827,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Most importantly, you have to accept the inevitable.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 9",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d9_0003",
@@ -14770,7 +14852,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d9_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "If that's the case, I'll have him map out the route from here to there.",
         "vietnamese": "Nếu đúng là như vậy, tôi sẽ nhờ ảnh vạch ra lộ trình từ đây đến đó.",
         "speaker": null,
@@ -14782,7 +14864,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "If that's the case, I'll have him map out the route from here to there.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 9",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d9_0005",
@@ -14805,7 +14889,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d9_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "In this day and age, you need to familiarize yourself with business trips.",
         "vietnamese": "Thời buổi này, cậu cần phải tập làm quen với mấy chuyến công tác đi.",
         "speaker": null,
@@ -14817,7 +14901,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "In this day and age, you need to familiarize yourself with business trips.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 9",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d9_0007",
@@ -14839,7 +14925,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d9_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Yesterday, boss caught me playing game, I thought my number was up!",
         "vietnamese": "Hôm qua sếp bắt gặp tao đang chơi game, tao tưởng tao tới số rồi chớ!",
         "speaker": null,
@@ -14851,7 +14937,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Yesterday, boss caught me playing game, I thought my number was up!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 9",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d9_0009",
@@ -14874,7 +14962,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d9_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "What do you mean? I thought you are supposed to be a go-to guy for advice.",
         "vietnamese": "Là sao? Tôi tưởng anh hẳn là người tôi cần tìm để hỏi xin lời khuyên chớ.",
         "speaker": null,
@@ -14886,7 +14974,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "What do you mean? I thought you are supposed to be a go-to guy for advice.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 9",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d9_0011",
@@ -16544,9 +16634,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -16573,7 +16663,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d10_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "What? What's so funny about my hair today???",
         "vietnamese": "Gì? Tóc tui hôm nay có gì mà mắc cười thế???",
         "speaker": null,
@@ -16585,7 +16675,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "What? What's so funny about my hair today???",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 10",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d10_0003",
@@ -16608,7 +16700,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d10_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Instead, why don't we try reducing the labor cost?",
         "vietnamese": "Thay vào đó, sao mình không thử giảm chi phí nhân công?",
         "speaker": null,
@@ -16620,7 +16712,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Instead, why don't we try reducing the labor cost?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 10",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d10_0005",
@@ -16643,7 +16737,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d10_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Have I made myself clear? You've got an hour to come up with an answer.",
         "vietnamese": "Tôi nói vậy có rõ chưa? Cậu có 1 tiếng để nghĩ ra câu trả lời.",
         "speaker": null,
@@ -16655,7 +16749,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Have I made myself clear? You've got an hour to come up with an answer.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 10",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d10_0007",
@@ -16678,7 +16774,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d10_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Ditto, in a project, never ever take the available manpower for granted.",
         "vietnamese": "Cũng y chang vậy, trong một dự án, không bao giờ được coi nhẹ nguồn nhân lực sẵn có.",
         "speaker": null,
@@ -16690,7 +16786,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Ditto, in a project, never ever take the available manpower for granted.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 10",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d10_0009",
@@ -16713,7 +16811,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d10_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Seems like he doesn't want to pump more money into this project, so to speak.",
         "vietnamese": "Có vẻ như hắn không muốn bơm thêm tiền vào cái dự án này, đại loại vậy.",
         "speaker": null,
@@ -16725,7 +16823,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Seems like he doesn't want to pump more money into this project, so to speak.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 10",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d10_0011",
@@ -18386,9 +18486,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -18415,7 +18515,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d11_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "One way or another, we have to bring it up in the shareholders meeting next week.",
         "vietnamese": "Bằng cách này hay cách khác, ta phải lôi chuyện đó lên trong cuộc họp cổ đông tuần sau.",
         "speaker": null,
@@ -18427,7 +18527,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "One way or another, we have to bring it up in the shareholders meeting next week.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 11",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d11_0003",
@@ -18450,7 +18552,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d11_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Otherwise, she has to put her career on hold to have a baby.",
         "vietnamese": "Nếu không, cổ phải trì hoãn lại sự nghiệp của mình để sanh con.",
         "speaker": null,
@@ -18462,7 +18564,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Otherwise, she has to put her career on hold to have a baby.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 11",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d11_0005",
@@ -18484,7 +18588,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d11_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "This way, we can buy him some time before the police come.",
         "vietnamese": "Bằng cách này, ta có thể câu cho nó một chút thời gian trước khi cảnh sát tới.",
         "speaker": null,
@@ -18496,7 +18600,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "This way, we can buy him some time before the police come.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 11",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d11_0007",
@@ -18519,7 +18625,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d11_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "As long as you transfer the money on time then nothing is gonna happen.",
         "vietnamese": "Miễn là cậu chuyển tiền đúng giờ thì sẽ không có chuyện gì xảy ra đâu.",
         "speaker": null,
@@ -18531,7 +18637,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "As long as you transfer the money on time then nothing is gonna happen.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 11",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d11_0009",
@@ -18553,7 +18661,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d11_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "I have no idea what's been going on till now, time will tell.",
         "vietnamese": "Tôi không hề biết chuyện gì đã xảy ra tới giờ luôn, thời gian sẽ trả lời.",
         "speaker": null,
@@ -18565,7 +18673,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I have no idea what's been going on till now, time will tell.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 11",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d11_0011",
@@ -20230,9 +20340,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -20259,7 +20369,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d12_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "On top of that, if the problem still exists, why don't we try calling for a boycott?",
         "vietnamese": "Trên hết, nếu vấn đề vẫn còn tồn tại, sao ta không thử kêu gọi một cuộc tẩy chay?",
         "speaker": null,
@@ -20271,7 +20381,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "On top of that, if the problem still exists, why don't we try calling for a boycott?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 12",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d12_0003",
@@ -20294,7 +20406,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d12_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "So be it, we've got no choice anyway.",
         "vietnamese": "Thì dzậy đi, đằng nào mình cũng đâu có lựa chọn nào đâu.",
         "speaker": null,
@@ -20306,7 +20418,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "So be it, we've got no choice anyway.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 12",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d12_0005",
@@ -20329,7 +20443,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d12_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Long story short, I don't see why you keep sticking your nose into his business.",
         "vietnamese": "Nói tóm lại, tao không hiểu sao mày cứ chõ mũi vào chuyện của nó nữa.",
         "speaker": null,
@@ -20341,7 +20455,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Long story short, I don't see why you keep sticking your nose into his business.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 12",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d12_0007",
@@ -20364,7 +20480,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d12_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "In terms of economic benefits, our city has been playing a dominant role.",
         "vietnamese": "Trên phương diện lợi ích kinh tế, thành phố của chúng ta đã và đang đóng một vai trò chủ đạo.",
         "speaker": null,
@@ -20376,7 +20492,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "In terms of economic benefits, our city has been playing a dominant role.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 12",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d12_0009",
@@ -20399,7 +20517,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d12_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "For the most part, he's your go-to guy if you've got troubles with clients.",
         "vietnamese": "Hầu hết mọi lúc, ảnh là người cậu cần tìm nếu cậu có vấn đề với khách hàng.",
         "speaker": null,
@@ -20411,7 +20529,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "For the most part, he's your go-to guy if you've got troubles with clients.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 12",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d12_0011",
@@ -22073,9 +22193,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -22102,7 +22222,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d13_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Presumably, many businesses will take advantage of COVID-19 to raise prices on essential items.",
         "vietnamese": "Nhiều khả năng, nhiều doanh nghiệp sẽ lợi dụng COVID-19 để tăng giá các mặt hàng thiết yếu.",
         "speaker": null,
@@ -22114,7 +22234,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Presumably, many businesses will take advantage of COVID-19 to raise prices on essential items.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 13",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d13_0003",
@@ -22137,7 +22259,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d13_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Ironically, amid the pandemic, my shares are up 10% year over year.",
         "vietnamese": "Trớ trêu thay, giữa cơn đại dịch, cổ phiếu của tôi đã tăng 10% so với cùng kỳ năm ngoái.",
         "speaker": null,
@@ -22149,7 +22271,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Ironically, amid the pandemic, my shares are up 10% year over year.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 13",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d13_0005",
@@ -22172,7 +22296,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d13_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Well said, take a look back, what have you done for this company?",
         "vietnamese": "Nói hay lắm, nhìn lại coi, anh đã làm được cái gì cho công ty này?",
         "speaker": null,
@@ -22184,7 +22308,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Well said, take a look back, what have you done for this company?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 13",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d13_0007",
@@ -22207,7 +22333,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d13_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Better safe than sorry, very often I'll check my bank account twice before sending it to my boss.",
         "vietnamese": "Cẩn thận thì vẫn hơn, thường thường tôi sẽ check lại tài khoản ngân hàng 2 lần trước khi gửi nó cho sếp.",
         "speaker": null,
@@ -22219,7 +22345,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Better safe than sorry, very often I'll check my bank account twice before sending it to my boss.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 13",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d13_0009",
@@ -22242,7 +22370,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d13_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Contrary to popular belief, COVID-19 doesn't necessarily mean a bad thing.",
         "vietnamese": "Ngược với niềm tin của số đông, COVID-19 không nhất thiết là một điều xấu.",
         "speaker": null,
@@ -22254,7 +22382,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Contrary to popular belief, COVID-19 doesn't necessarily mean a bad thing.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 13",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d13_0011",
@@ -23914,9 +24044,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -23943,7 +24073,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d14_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "No offense, but that's not my business, I just want my money back.",
         "vietnamese": "Không có ý gì, nhưng cái đó không phải là chuyện của tôi, tôi chỉ muốn lấy lại tiền của mình thôi.",
         "speaker": null,
@@ -23955,7 +24085,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "No offense, but that's not my business, I just want my money back.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 14",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d14_0003",
@@ -23978,7 +24110,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d14_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Either way, I've purchased two tickets already. You wanna join?",
         "vietnamese": "Đằng nào tôi cũng mua 2 vé rồi, cô muốn đi chung không?",
         "speaker": null,
@@ -23990,7 +24122,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Either way, I've purchased two tickets already. You wanna join?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 14",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d14_0005",
@@ -24013,7 +24147,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d14_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "The other day, your people charged me twice, to say the least.",
         "vietnamese": "Hôm bữa, người của anh tính tiền tui 2 lần, ít nhất là như vậy.",
         "speaker": null,
@@ -24025,7 +24159,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "The other day, your people charged me twice, to say the least.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 14",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d14_0007",
@@ -24048,7 +24184,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d14_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Regardless of how angry you are, you still have to put your emotion aside. OK?",
         "vietnamese": "Bất kể cậu có tức giận đến thế nào đi nữa, cậu vẫn phải đặt cảm xúc qua một bên. OK?",
         "speaker": null,
@@ -24060,7 +24196,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Regardless of how angry you are, you still have to put your emotion aside. OK?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 14",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d14_0009",
@@ -24083,7 +24221,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d14_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Somehow, I realize I've been making the same mistake my whole life.",
         "vietnamese": "Một cách nào đó, tôi nhận ra mình đã và đang phạm cùng một sai lầm suốt cả cuộc đời tôi.",
         "speaker": null,
@@ -24095,7 +24233,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Somehow, I realize I've been making the same mistake my whole life.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 14",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d14_0011",
@@ -25755,9 +25895,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -25784,7 +25924,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d15_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "How'd it go? Heard that Vietnam Airline is gonna go bankrupt soon?",
         "vietnamese": "Vụ đó sao rồi? Nghe bảo Vietnam Airline sắp phá sản rồi hả?",
         "speaker": null,
@@ -25796,7 +25936,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "How'd it go? Heard that Vietnam Airline is gonna go bankrupt soon?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 15",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d15_0003",
@@ -25819,7 +25961,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d15_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "In other words, I think that is one the main determinants of his success.",
         "vietnamese": "Nói cách khác, tui nghĩ đó là một trong những yếu tố quyết định chính của sự thành công của ổng.",
         "speaker": null,
@@ -25831,7 +25973,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "In other words, I think that is one the main determinants of his success.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 15",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d15_0005",
@@ -25854,7 +25998,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d15_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "To some extent, boss can be very intimidating when he's angry.",
         "vietnamese": "Ở một mức độ nào đó, sếp có thể rất đáng sợ khi mà ổng tức giận.",
         "speaker": null,
@@ -25866,7 +26010,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "To some extent, boss can be very intimidating when he's angry.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 15",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d15_0007",
@@ -25888,7 +26034,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d15_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "In return, I'll do the dishes for you for a week. How's that?",
         "vietnamese": "Đổi lại, tui sẽ rửa chén cho cậu trong vòng một tuần. Vậy được không?",
         "speaker": null,
@@ -25900,7 +26046,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "In return, I'll do the dishes for you for a week. How's that?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 15",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d15_0009",
@@ -25923,7 +26071,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d15_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Forgive me for saying so, that dress won't be able to hide your tummy.",
         "vietnamese": "Nói xin lỗi chớ, cái váy đó sẽ không có che được cái bụng của mày đâu.",
         "speaker": null,
@@ -25935,7 +26083,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Forgive me for saying so, that dress won't be able to hide your tummy.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 15",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d15_0011",
@@ -27589,9 +27739,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -27618,7 +27768,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d16_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Unlike us, they can't achieve their sales target 3 days in a row.",
         "vietnamese": "Không như chúng ta, họ không thể đạt được mục tiêu doanh số 3 ngày liền.",
         "speaker": null,
@@ -27630,7 +27780,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Unlike us, they can't achieve their sales target 3 days in a row.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 16",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d16_0003",
@@ -27652,7 +27804,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d16_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "If my calculations are right, she always spends two hours a day minimum shopping online or facebooking.",
         "vietnamese": "Nếu tính toán của tui đúng, bả luôn dành tối thiểu hai tiếng một ngày để mua hàng online và chơi facebook.",
         "speaker": null,
@@ -27664,7 +27816,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "If my calculations are right, she always spends two hours a day minimum shopping online or facebooking.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 16",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d16_0005",
@@ -27687,7 +27841,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d16_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Has not anyone told you? You were disqualified from driving.",
         "vietnamese": "Chưa ai nói cậu hả? Cậu bị tước quyền lái xe rồi.",
         "speaker": null,
@@ -27699,7 +27853,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Has not anyone told you? You were disqualified from driving.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 16",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d16_0007",
@@ -27722,7 +27878,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d16_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "At first glance, your husband and my son look identical.",
         "vietnamese": "Nhìn sơ qua, chồng cậu với con trai tớ trông giống hệt nhau luôn ấy.",
         "speaker": null,
@@ -27734,7 +27890,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "At first glance, your husband and my son look identical.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 16",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d16_0009",
@@ -27757,7 +27915,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d16_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Likewise, remember to water the plants on the rooftop twice a week.",
         "vietnamese": "Cũng tương tự vậy, đừng quên tưới mấy cái cây trên sân thượng hai lần một tuần nha.",
         "speaker": null,
@@ -27769,7 +27927,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Likewise, remember to water the plants on the rooftop twice a week.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 16",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d16_0011",
@@ -29421,9 +29581,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -29449,7 +29609,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d17_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Good point but I have a hunch that he's not the one we're looking for.",
         "vietnamese": "Có lý nhưng tôi có linh cảm rằng hắn không phải là người chúng ta đang tìm.",
         "speaker": null,
@@ -29461,7 +29621,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Good point but I have a hunch that he's not the one we're looking for.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 17",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d17_0003",
@@ -29484,7 +29646,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d17_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "From now on, just do what I say, do you hear?",
         "vietnamese": "Từ giờ trở đi, cứ làm những gì tôi bảo, cậu rõ chưa?",
         "speaker": null,
@@ -29496,7 +29658,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "From now on, just do what I say, do you hear?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 17",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d17_0005",
@@ -29519,7 +29683,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d17_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Hey, what are you up to? Can I join?",
         "vietnamese": "Này, hai đứa bay đang làm gì đó? Tao tham gia được không?",
         "speaker": null,
@@ -29531,7 +29695,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Hey, what are you up to? Can I join?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 17",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d17_0007",
@@ -29554,7 +29720,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d17_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Did you hear? They're gonna raise taxes again.",
         "vietnamese": "Cậu nghe gì chưa? Họ sắp tăng thuế nữa đấy.",
         "speaker": null,
@@ -29566,7 +29732,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Did you hear? They're gonna raise taxes again.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 17",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d17_0009",
@@ -29589,7 +29757,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d17_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "How come? I thought you really loved teasing dogs.",
         "vietnamese": "Sao thế? Tôi tưởng cậu thích chọc chó lắm mà.",
         "speaker": null,
@@ -29601,7 +29769,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "How come? I thought you really loved teasing dogs.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 17",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d17_0011",
@@ -31256,9 +31426,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -31285,7 +31455,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d18_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Come now, you know what I'm talking about, right?",
         "vietnamese": "Thôi, cậu biết tôi đang nói về cái gì mà, phải không?",
         "speaker": null,
@@ -31297,7 +31467,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Come now, you know what I'm talking about, right?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 18",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d18_0003",
@@ -31320,7 +31492,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d18_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "With all due respect, I'm afraid I can't let you pass without clearance. Understand?",
         "vietnamese": "Với tất cả sự kính trọng nhé, tôi e rằng tôi không thể cho ông qua mà không có giấy qua cổng được. Hiểu chứ?",
         "speaker": null,
@@ -31332,7 +31504,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "With all due respect, I'm afraid I can't let you pass without clearance. Understand?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 18",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d18_0005",
@@ -31355,7 +31529,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d18_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "You know better, you're not supposed to be here this time, dude!",
         "vietnamese": "Mày biết rõ mà, mày đâu có được ở đây giờ này, mảy!",
         "speaker": null,
@@ -31367,7 +31541,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "You know better, you're not supposed to be here this time, dude!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 18",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d18_0007",
@@ -31390,7 +31566,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d18_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "To put it politely, you're not the smartest guy in this room.",
         "vietnamese": "Nói một cách lịch sự, anh không phải là người thông minh nhất trong cái phòng này.",
         "speaker": null,
@@ -31402,7 +31578,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "To put it politely, you're not the smartest guy in this room.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 18",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d18_0009",
@@ -31425,7 +31603,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d18_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Nothing, just stop by to say hi to your dad, have a good day!",
         "vietnamese": "Không có gì, chỉ tạt qua để chào tía cậu tiếng thôi, chúc một ngày vui vẻ nha!",
         "speaker": null,
@@ -31437,7 +31615,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Nothing, just stop by to say hi to your dad, have a good day!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 18",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d18_0011",
@@ -33095,9 +33275,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -33124,7 +33304,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d19_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Hey kiddo, why the long face? What's up?",
         "vietnamese": "Ê nhóc, sao mặt đưa đám vậy? Có chuyện gì à?",
         "speaker": null,
@@ -33136,7 +33316,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Hey kiddo, why the long face? What's up?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 19",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d19_0003",
@@ -33159,7 +33341,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d19_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "In times like this, all we need to do is strictly comply with Directive 16.",
         "vietnamese": "Trong những lúc như vầy, tất cả những gì chúng ta phải làm là tuân thủ nghiêm chỉnh Chỉ thị 16.",
         "speaker": null,
@@ -33171,7 +33353,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "In times like this, all we need to do is strictly comply with Directive 16.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 19",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d19_0005",
@@ -33194,7 +33378,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d19_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "If necessary, go ahead and use me as a guinea pig.",
         "vietnamese": "Nếu cần, cứ thoải mái dùng tôi làm chuộc bạch nè.",
         "speaker": null,
@@ -33206,7 +33390,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "If necessary, go ahead and use me as a guinea pig.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 19",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d19_0007",
@@ -33229,7 +33415,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d19_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Nine times out of 10, he will turn a deaf ear to any ideas we propose.",
         "vietnamese": "Hết 9 trên 10 lần ổng sẽ bỏ ngoài tai bất kỳ ý kiến gì mà tụi mình đưa ra.",
         "speaker": null,
@@ -33241,7 +33427,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Nine times out of 10, he will turn a deaf ear to any ideas we propose.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 19",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d19_0009",
@@ -33264,7 +33452,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d19_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "There you have it, sometimes we just have to sit back, relax and do nothing.",
         "vietnamese": "Có vậy thôi đó, thỉnh thoảng chúng ta chỉ phải ngồi xuống thư giãn và đừng làm gì cả.",
         "speaker": null,
@@ -33276,7 +33464,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "There you have it, sometimes we just have to sit back, relax and do nothing.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 19",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d19_0011",
@@ -34931,9 +35121,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -34960,7 +35150,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d20_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Sounds like a plan, leave it to me, I'll handle the hot pot.",
         "vietnamese": "Nghe ổn đấy, để cái đấy cho tao, tao sẽ lo cái lẩu cho.",
         "speaker": null,
@@ -34972,7 +35162,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Sounds like a plan, leave it to me, I'll handle the hot pot.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 20",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d20_0003",
@@ -34995,7 +35187,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d20_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Hey, count me in, this time I'm not gonna be a party pooper, you have my word.",
         "vietnamese": "Ê, tính tui vô nữa, lần này tui không có phá đám đâu, hứa với mấy cậu luôn.",
         "speaker": null,
@@ -35007,7 +35199,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Hey, count me in, this time I'm not gonna be a party pooper, you have my word.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 20",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d20_0005",
@@ -35030,7 +35224,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d20_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "I don't wanna jinx it but the chances we can throw a party at the moment are very slim.",
         "vietnamese": "Tui không có muốn nói xui nhưng mà cơ hội để mà ta có thể làm một cái tiệc vào thời điểm này là rất mong manh.",
         "speaker": null,
@@ -35042,7 +35236,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I don't wanna jinx it but the chances we can throw a party at the moment are very slim.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 20",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d20_0007",
@@ -35065,7 +35261,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d20_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "See? I told you, now it's broken.",
         "vietnamese": "Thấy chưa? Tao đã nói mày rồi, giờ nó hư rồi đó.",
         "speaker": null,
@@ -35077,7 +35273,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "See? I told you, now it's broken.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 20",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d20_0009",
@@ -35100,7 +35298,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d20_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Don't even think about it! The girl next door, she's out of your league.",
         "vietnamese": "Bỏ liền cái suy nghĩ đó đi nha! Con bé hàng xóm á, mày không có cửa với nó đâu.",
         "speaker": null,
@@ -35112,7 +35310,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Don't even think about it! The girl next door, she's out of your league.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 20",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d20_0011",
@@ -36768,9 +36968,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -36797,7 +36997,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d21_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "It's just hearsay, how come you believed in such things???",
         "vietnamese": "Cái đó chỉ là nghe nói thôi, sao cậu lại đi tin mấy cái thứ đó???",
         "speaker": null,
@@ -36809,7 +37009,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "It's just hearsay, how come you believed in such things???",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 21",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d21_0003",
@@ -36832,7 +37034,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d21_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "It might be true, then what are we supposed to do now?",
         "vietnamese": "Cứ cho là vậy, rồi giờ ta nên làm gì đây?",
         "speaker": null,
@@ -36844,7 +37046,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "It might be true, then what are we supposed to do now?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 21",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d21_0005",
@@ -36866,7 +37070,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d21_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "My dad really enjoys playing sports, more specifically, he loves sweeping the floor and doing the dishes.",
         "vietnamese": "Ba tui rất là thích chơi thể thao, cụ thể hơn, ổng thích môn lau nhà với môn rửa chén.",
         "speaker": null,
@@ -36878,7 +37082,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "My dad really enjoys playing sports, more specifically, he loves sweeping the floor and doing the dishes.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 21",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d21_0007",
@@ -36901,7 +37107,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d21_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "On the flip side, I'll have an opportunity to travel across the country this summer.",
         "vietnamese": "Ở khía cạnh ngược lại, tui sẽ có cơ hội đi du lịch khắp đất nước mùa hè này.",
         "speaker": null,
@@ -36913,7 +37119,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "On the flip side, I'll have an opportunity to travel across the country this summer.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 21",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d21_0009",
@@ -36936,7 +37144,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d21_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Easy for you to say, your parents are rich as hell!",
         "vietnamese": "Cậu thì dễ rồi, tía má cậu giàu như quỷ ấy!",
         "speaker": null,
@@ -36948,7 +37156,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Easy for you to say, your parents are rich as hell!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 21",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d21_0011",
@@ -38609,9 +38819,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -38637,7 +38847,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d22_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Ignorance is bliss, you don't wanna know what your only son did at school today.",
         "vietnamese": "Không biết mà lại là may, ông không muốn biết con trai độc nhất của ông đã làm gì ở trường ngày hôm nay đâu.",
         "speaker": null,
@@ -38649,7 +38859,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Ignorance is bliss, you don't wanna know what your only son did at school today.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 22",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d22_0003",
@@ -38672,7 +38884,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d22_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "After all these years, I still feel great to be on the stage.",
         "vietnamese": "Sau ngần ấy năm, tôi vẫn cảm thấy rất tuyệt vời khi đứng trên sân khấu.",
         "speaker": null,
@@ -38684,7 +38896,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "After all these years, I still feel great to be on the stage.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 22",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d22_0005",
@@ -38707,7 +38921,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d22_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "So what? With that impressive transcript, you can apply for any college you want.",
         "vietnamese": "Vậy thì đã sao? Với một cái bảng điểm ấn tượng thế kia, con có thể nộp vào bất kỳ trường đại học nào mà con muốn mà.",
         "speaker": null,
@@ -38719,7 +38933,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "So what? With that impressive transcript, you can apply for any college you want.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 22",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d22_0007",
@@ -38742,7 +38958,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d22_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Fear not, they are just flying cockroaches.",
         "vietnamese": "Đừng có sợ, tụi nó chỉ là mấy con gián bay thôi mà.",
         "speaker": null,
@@ -38754,7 +38970,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Fear not, they are just flying cockroaches.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 22",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d22_0009",
@@ -38777,7 +38995,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d22_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "I don't buy it, there's no dogs eating your homework.",
         "vietnamese": "Tui chả tin, chả có con chó nào mà lại đi ăn mất bài tập về nhà của cậu cả.",
         "speaker": null,
@@ -38789,7 +39007,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I don't buy it, there's no dogs eating your homework.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 22",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d22_0011",
@@ -40443,9 +40663,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -40472,7 +40692,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d23_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Make sense? I don't see why you keep sugarcoating the truth.",
         "vietnamese": "Hợp lý chứ? Tui chả hiểu sao ông cứ nói giảm nói tránh sự thật đi làm gì.",
         "speaker": null,
@@ -40484,7 +40704,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Make sense? I don't see why you keep sugarcoating the truth.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 23",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d23_0003",
@@ -40506,7 +40728,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d23_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "In my eyes, some things are better left unsaid, you know what I'm saying?",
         "vietnamese": "Trong mắt tôi, vài chuyện tốt hơn là không nên nói ra, ông hiểu ý tui đang nói không?",
         "speaker": null,
@@ -40518,7 +40740,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "In my eyes, some things are better left unsaid, you know what I'm saying?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 23",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d23_0005",
@@ -40541,7 +40765,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d23_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Often, this app will enable us to cut our inventory costs in half.",
         "vietnamese": "Thông thường, cái app này sẽ cho phép chúng ta cắt giảm chi phí tồn kho đi một nửa.",
         "speaker": null,
@@ -40553,7 +40777,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Often, this app will enable us to cut our inventory costs in half.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 23",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d23_0007",
@@ -40576,7 +40802,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d23_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Same difference, you haven't figured that out yet?",
         "vietnamese": "Cũng thế cả thôi, ông vẫn chưa nhận ra sao?",
         "speaker": null,
@@ -40588,7 +40814,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Same difference, you haven't figured that out yet?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 23",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d23_0009",
@@ -40611,7 +40839,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d23_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "To put it bluntly, they want a raise but they don't wanna work harder.",
         "vietnamese": "Nói toẹt ra, tụi nó muốn lên lương nhưng tụi nó không muốn làm việc chăm chỉ hơn.",
         "speaker": null,
@@ -40623,7 +40851,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "To put it bluntly, they want a raise but they don't wanna work harder.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 23",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d23_0011",
@@ -42275,9 +42505,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -42304,7 +42534,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d24_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Deep down, I don't think he gets what I mean.",
         "vietnamese": "Sâu bên trong, tui không nghĩ hắn hiểu ý tui.",
         "speaker": null,
@@ -42316,7 +42546,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Deep down, I don't think he gets what I mean.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 24",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d24_0003",
@@ -42339,7 +42571,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d24_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "No way, how come Vietnam beat host Brazil 31 last night?",
         "vietnamese": "Sao vậy được, sao Việt Nam lại có thể thắng chủ nhà Brazil 31 tối qua được?",
         "speaker": null,
@@ -42351,7 +42583,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "No way, how come Vietnam beat host Brazil 31 last night?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 24",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d24_0005",
@@ -42373,7 +42607,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d24_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Big deal! As long as tomorrow I'll pay you back, is it OK then?",
         "vietnamese": "Có gì đâu mà lớn chuyện! Miễn là mai tao trả lại mày là được chứ gì?",
         "speaker": null,
@@ -42385,7 +42619,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Big deal! As long as tomorrow I'll pay you back, is it OK then?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 24",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d24_0007",
@@ -42408,7 +42644,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d24_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "That explains it, just a second ago his old man just came here looking for him.",
         "vietnamese": "Hèn gì, mới nãy ông già nó vừa mới qua đây tìm nó nè.",
         "speaker": null,
@@ -42420,7 +42656,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "That explains it, just a second ago his old man just came here looking for him.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 24",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d24_0009",
@@ -42443,7 +42681,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d24_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Don't flatter yourself, you've gotta know who you are in life, OK?",
         "vietnamese": "Đừng có mà ảo tưởng sức mạnh, cậu phải biết cậu là ai ở đời, OK?",
         "speaker": null,
@@ -42455,7 +42693,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Don't flatter yourself, you've gotta know who you are in life, OK?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 24",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d24_0011",
@@ -44110,9 +44350,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -44139,7 +44379,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d25_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Stop talking nonsense, put my mother on!",
         "vietnamese": "Thôi đừng có nói xàm nữa, đưa điện thoại cho má tui đi!",
         "speaker": null,
@@ -44151,7 +44391,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Stop talking nonsense, put my mother on!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 25",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d25_0003",
@@ -44174,7 +44416,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d25_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Rumor has it that Kim and her husband have been cohabiting for years.",
         "vietnamese": "Giang hồ đồn rằng Kim với chồng nó đã và đang sống thử nhiều năm rồi.",
         "speaker": null,
@@ -44186,7 +44428,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Rumor has it that Kim and her husband have been cohabiting for years.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 25",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d25_0005",
@@ -44209,7 +44453,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d25_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Tell me about it, there's no doubt that he kept asking me about you.",
         "vietnamese": "Chứ còn gì nữa, hèn gì nó cứ hỏi tao về mày suốt.",
         "speaker": null,
@@ -44221,7 +44465,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Tell me about it, there's no doubt that he kept asking me about you.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 25",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d25_0007",
@@ -44244,7 +44490,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d25_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "All in all, I should have told you in the first place.",
         "vietnamese": "Kể ra tôi đã nên nói cậu ngay từ đầu.",
         "speaker": null,
@@ -44256,7 +44502,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "All in all, I should have told you in the first place.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 25",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d25_0009",
@@ -44279,7 +44527,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d25_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Check, please, we're together.",
         "vietnamese": "Tính tiền dùm, bọn tui đi chung.",
         "speaker": null,
@@ -44291,7 +44539,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Check, please, we're together.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 25",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d25_0011",
@@ -45946,9 +46196,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -45975,7 +46225,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d26_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "In the short run, we can't raise funds for the upcoming campaign.",
         "vietnamese": "Trước mắt, ta không thể gọi vốn cho chiến dịch sắp tới được.",
         "speaker": null,
@@ -45987,7 +46237,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "In the short run, we can't raise funds for the upcoming campaign.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 26",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d26_0003",
@@ -46010,7 +46262,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d26_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "What a relief, I couldn't have finished my thesis without your help.",
         "vietnamese": "Quả là nhẹ nhõm, tui đã không thể hoàn thành bài  luận văn của tui nếu không có sự giúp đỡ của cậu.",
         "speaker": null,
@@ -46022,7 +46274,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "What a relief, I couldn't have finished my thesis without your help.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 26",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d26_0005",
@@ -46045,7 +46299,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d26_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Good for you, now you should have enough cash to lend me, right?",
         "vietnamese": "Mừng cho cậu, giờ chắc cậu có đủ tiền mặt để cho tui mượn rồi ha?",
         "speaker": null,
@@ -46057,7 +46311,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Good for you, now you should have enough cash to lend me, right?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 26",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d26_0007",
@@ -46080,7 +46336,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d26_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Relatively speaking, everything is relative, including this universal truth.",
         "vietnamese": "Nói một cách tương đối, mọi thứ đều là tương đối, kể cả cái chân lý vũ trụ này.",
         "speaker": null,
@@ -46092,7 +46348,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Relatively speaking, everything is relative, including this universal truth.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 26",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d26_0009",
@@ -46115,7 +46373,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d26_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Here's my take, I think what we have seen is just the tip of the iceberg.",
         "vietnamese": "Đây là ý riêng của tui thôi, tui nghĩ những gì chúng ta đã thấy chỉ là phần nổi của tảng băng trôi mà thôi.",
         "speaker": null,
@@ -46127,7 +46385,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Here's my take, I think what we have seen is just the tip of the iceberg.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 26",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d26_0011",
@@ -47779,9 +48039,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -47808,7 +48068,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d27_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Sounds familiar? You don't have to do anything laborious yet you can get rich quickly and easily.",
         "vietnamese": "Nghe có quen không? Cậu không cần phải làm gì nặng nhọc dẫu vậy cậu vẫn có thể làm giàu nhanh chóng và dễ dàng.",
         "speaker": null,
@@ -47820,7 +48080,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Sounds familiar? You don't have to do anything laborious yet you can get rich quickly and easily.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 27",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d27_0003",
@@ -47843,7 +48105,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d27_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "In my day, those kinds of things were really fancy!",
         "vietnamese": "Vào thời của tui, mấy thứ thế này là sang chảnh lắm nha!",
         "speaker": null,
@@ -47855,7 +48117,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "In my day, those kinds of things were really fancy!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 27",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d27_0005",
@@ -47878,7 +48142,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d27_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Make no mistake, no one in life has ever done this doesn't mean it's worth putting money into.",
         "vietnamese": "Đừng có nhầm, không ai trên đời từng làm cái này không có nghĩa là nó đáng bỏ tiền vô.",
         "speaker": null,
@@ -47890,7 +48154,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Make no mistake, no one in life has ever done this doesn't mean it's worth putting money into.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 27",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d27_0007",
@@ -47912,7 +48178,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d27_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "That's more like it, I thought we couldn't even break even.",
         "vietnamese": "Phải vậy chớ, tôi còn tưởng ta thậm chí không thể hòa vốn nổi nữa kìa.",
         "speaker": null,
@@ -47924,7 +48190,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "That's more like it, I thought we couldn't even break even.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 27",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d27_0009",
@@ -47946,7 +48214,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d27_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "For those reasons I just mentioned, sorry but I'm out.",
         "vietnamese": "Với những lý do như tui vừa mới đề cập, xin lỗi nhưng mà tui rút.",
         "speaker": null,
@@ -47958,7 +48226,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "For those reasons I just mentioned, sorry but I'm out.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 27",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d27_0011",
@@ -49612,9 +49882,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -49641,7 +49911,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d28_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "I'll see myself out, I've had a great time, thanks for having me for dinner.",
         "vietnamese": "Không cần tiễn đâu, tôi đã rất là vui, cám ơn đã mời tôi ăn tối nha.",
         "speaker": null,
@@ -49653,7 +49923,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I'll see myself out, I've had a great time, thanks for having me for dinner.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 28",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d28_0003",
@@ -49676,7 +49948,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d28_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Give me a break, you know there was nothing else I could do about this.",
         "vietnamese": "Tha cho tui đi, cô biết là tui đâu có thể làm gì khác được.",
         "speaker": null,
@@ -49688,7 +49960,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Give me a break, you know there was nothing else I could do about this.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 28",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d28_0005",
@@ -49710,7 +49984,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d28_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Don't act so surprised, it was your idea in the 1st place, remember?",
         "vietnamese": "Đừng có làm ra vẻ ngạc nhiên vậy chứ, từ đầu đấy là ý của cậu mà, nhớ không?",
         "speaker": null,
@@ -49722,7 +49996,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Don't act so surprised, it was your idea in the 1st place, remember?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 28",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d28_0007",
@@ -49745,7 +50021,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d28_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "Speak of the devil, look who's here, guys!",
         "vietnamese": "Mới nhắc tào tháo, coi ai tới nè, tụi bay!",
         "speaker": null,
@@ -49757,7 +50033,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Speak of the devil, look who's here, guys!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 28",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d28_0009",
@@ -49780,7 +50058,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d28_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "Now you tell me! Yesterday when she was still here, why didn't you tell me??",
         "vietnamese": "Sao giờ mới nói! Hôm qua lúc bả còn ở đây sao mày không nói tao???",
         "speaker": null,
@@ -49792,7 +50070,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Now you tell me! Yesterday when she was still here, why didn't you tell me??",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 28",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d28_0011",
@@ -51450,9 +51730,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -51479,7 +51759,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d29_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "Facebook addiction is downright dangerous but we can't live without social media, I'll give you that.",
         "vietnamese": "Nghiện FB là vô cùng nguy hiểm nhưng mà chúng ta đâu có thể sống thiếu mạng xã hội được, cái đó thì tôi công nhận đúng.",
         "speaker": null,
@@ -51491,7 +51771,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Facebook addiction is downright dangerous but we can't live without social media, I'll give you that.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 29",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d29_0003",
@@ -51514,7 +51796,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d29_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Nothing new, same old, same old, how about you?",
         "vietnamese": "Không có gì mới, cũng vậy vậy thôi, anh sao rồi?",
         "speaker": null,
@@ -51526,7 +51808,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Nothing new, same old, same old, how about you?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 29",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d29_0005",
@@ -51549,7 +51833,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d29_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Hear me out, I want you guys to steer clear of that quicksand, OK?",
         "vietnamese": "Nghe cho hết đi đã, tôi muốn mọi người tránh xa khỏi cái vũng lầy đó, OK?",
         "speaker": null,
@@ -51561,7 +51845,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Hear me out, I want you guys to steer clear of that quicksand, OK?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 29",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d29_0007",
@@ -51584,7 +51870,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d29_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "I've had that happen, it gives me goosebumps just to think it!",
         "vietnamese": "Tao từng bị cái đó rồi, nghĩ đến nó thôi mà tao đã nổi hết cả da gà lên rồi nè!",
         "speaker": null,
@@ -51596,7 +51882,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I've had that happen, it gives me goosebumps just to think it!",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 29",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d29_0009",
@@ -51619,7 +51907,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d29_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "What else do you want? She's a top-notch teacher. Don't you see that?",
         "vietnamese": "Anh còn muốn cái gì khác nữa? Bả là giáo viên đỉnh của đỉnh rồi. Anh không thấy sao?",
         "speaker": null,
@@ -51631,7 +51919,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "What else do you want? She's a top-notch teacher. Don't you see that?",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 29",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d29_0011",
@@ -53291,9 +53581,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
     "total_chunks": 105,
     "categories": [
       "slang",
-      "sentence",
       "vocab",
       "phrase",
+      "sentence",
       "monologue",
       "dialogue",
       "review"
@@ -53319,7 +53609,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d30_0002",
         "item_number": 2,
-        "category": "sentence",
+        "category": "slang",
         "english": "I didn't know what she really meant but I'll take that as a compliment.",
         "vietnamese": "Tui không biết bả thực sự có ý gì nhưng tui sẽ coi đó là lời khen.",
         "speaker": null,
@@ -53331,7 +53621,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I didn't know what she really meant but I'll take that as a compliment.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 30",
-        "source_row": 4
+        "source_row": 4,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d30_0003",
@@ -53354,7 +53646,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d30_0004",
         "item_number": 4,
-        "category": "sentence",
+        "category": "slang",
         "english": "Apart from that, I'm gonna say it's a good stock worth betting on at the moment.",
         "vietnamese": "Ngoài cái đó ra, tôi sẽ nói nó là một cổ phiếu tốt đáng đặt cược vào thời điểm này.",
         "speaker": null,
@@ -53366,7 +53658,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Apart from that, I'm gonna say it's a good stock worth betting on at the moment.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 30",
-        "source_row": 6
+        "source_row": 6,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d30_0005",
@@ -53389,7 +53683,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d30_0006",
         "item_number": 6,
-        "category": "sentence",
+        "category": "slang",
         "english": "Here's to someone or something",
         "vietnamese": "Ta hãy uống mừng cho ai đó hoặc thứ gì đó",
         "speaker": null,
@@ -53401,7 +53695,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "Here's to someone or something",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 30",
-        "source_row": 8
+        "source_row": 8,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d30_0007",
@@ -53423,7 +53719,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d30_0008",
         "item_number": 8,
-        "category": "sentence",
+        "category": "slang",
         "english": "I don't really like the end of the movie but maybe it's for the best.",
         "vietnamese": "Tui không thích cái kết của phim lắm nhưng mà có lẽ vậy đi là tốt nhất.",
         "speaker": null,
@@ -53435,7 +53731,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "I don't really like the end of the movie but maybe it's for the best.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 30",
-        "source_row": 10
+        "source_row": 10,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d30_0009",
@@ -53457,7 +53755,7 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
       {
         "chunk_id": "chunk_ere_d30_0010",
         "item_number": 10,
-        "category": "sentence",
+        "category": "slang",
         "english": "You know what they say, easy come easy go.",
         "vietnamese": "Cậu biết người ta hay nói đó, dễ đến thì dễ đi mà.",
         "speaker": null,
@@ -53469,7 +53767,9 @@ export const CURRICULUM_CATALOG_LEVEL_B_ERE: LessonDoc[] = [
         "beat_prosody": "You know what they say, easy come easy go.",
         "part": "Part 1 - Vietnamese Slangs",
         "source_sheet": "Topic 30",
-        "source_row": 12
+        "source_row": 12,
+        "is_example": true,
+        "notes": "[Example Sentence]"
       },
       {
         "chunk_id": "chunk_ere_d30_0011",
