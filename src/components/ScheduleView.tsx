@@ -6,6 +6,7 @@ import { getAllLessons, deleteFirestoreCohort } from '../services/firestoreServi
 import { audioPlayer, AudioProvider } from '../services/googleTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
 import { sanitizeSpeechText } from '../services/deepgramTtsService';
+import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { ScheduleAudioSettingsModal } from './ScheduleAudioSettingsModal';
 import { 
   Play, 
@@ -429,6 +430,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       showToast('info', `Đã hủy tạo audio cho Session ${session.session_number}.`);
     } else {
       showToast('success', `✓ Đã tạo xong audio cho Session ${session.session_number} (${completed}/${total} câu)!`);
+      if (lesson) {
+        try {
+          await syncLessonCachedAudioToCloud(lesson, {
+            voiceEn,
+            voiceVi: cohort.audio_settings?.voice_profile_vi || 'vi-VN-Neural2-A',
+            target: 'ENGLISH'
+          });
+        } catch (syncErr) {
+          console.warn('[QuickAudio] Lỗi đồng bộ audio lên cloud:', syncErr);
+        }
+      }
     }
 
     await checkSingleSessionAudio(session);

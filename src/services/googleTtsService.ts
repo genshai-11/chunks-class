@@ -75,6 +75,9 @@ export interface SingleKeyTestResult {
 
 export const BUILTIN_GOOGLE_KEYS: string[] = [
   "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4",
+  "AIzaSyCfqeoe2A1wslwWONlbEVgW9XK9IrDAk3Q",
+  "AIzaSyA6GlWoI1ATkBdU5LROJE5PQYdlmd3X2D4",
+  "AIzaSyD6j9s-rG4OXgDLmyeCM0KVOj0ErLD-3gQ",
   (typeof atob !== 'undefined' ? atob('QVEuQWI4Uk42Smd3UVhxWVFTSTkxRXdYc1BVWlpEaWhBLWJrR0ZEcWxoUy1kOUJXSU5Gc0E=') : ''),
   import.meta.env.VITE_GEMINI_API_KEY || (typeof atob !== 'undefined' ? atob('QVEuQWI4Uk42SmU3d2NZQTZLLWs0YmlnOUprZDRrd3RfOUJlbE1WT3VzU2J5a3ZFWnRkYVE=') : '')
 ].filter(Boolean);
@@ -1486,8 +1489,8 @@ class AudioPlayService {
       item.lastUsedAt = Date.now();
       if (result.success) {
         item.status = 'READY';
-        item.lastError = undefined;
-        item.rateLimitedUntil = undefined;
+        delete item.lastError;
+        delete item.rateLimitedUntil;
         return {
           success: true,
           statusCode: result.statusCode,
@@ -2128,32 +2131,45 @@ class AudioPlayService {
   public async synthesizeWithTranslateTTS(text: string, isVi?: boolean): Promise<string> {
     const cleanText = sanitizeSpeechText(text);
     if (!cleanText) return '';
-    const isVietnamese = isVi !== undefined ? isVi : isVietnameseText(cleanText);
-    const lang = isVietnamese ? 'vi' : 'en';
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
 
-    const resp = await fetch(url);
-    if (!resp.ok) {
-      throw new Error(`Google Translate TTS HTTP ${resp.status}: ${resp.statusText}`);
+    // In web browser environment, translate.google.com/translate_tts blocks direct fetch due to CORS policy
+    if (typeof window !== 'undefined') {
+      console.warn('[GoogleTTS] synthesizeWithTranslateTTS skipped in browser environment due to CORS policy.');
+      return '';
     }
-    const blob = await resp.blob();
-    if (typeof FileReader !== 'undefined') {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === 'string') {
-            resolve(reader.result);
-          } else {
-            reject(new Error('Failed to convert Translate TTS audio blob to data URL'));
-          }
-        };
-        reader.onerror = () => reject(reader.error || new Error('FileReader error during Translate TTS conversion'));
-        reader.readAsDataURL(blob);
-      });
-    } else {
-      const buffer = await blob.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString('base64');
-      return `data:audio/mp3;base64,${base64}`;
+
+    try {
+      const isVietnamese = isVi !== undefined ? isVi : isVietnameseText(cleanText);
+      const lang = isVietnamese ? 'vi' : 'en';
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
+
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        console.warn(`[GoogleTTS] Translate TTS failed HTTP ${resp.status}`);
+        return '';
+      }
+      const blob = await resp.blob();
+      if (typeof FileReader !== 'undefined') {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result);
+            } else {
+              resolve('');
+            }
+          };
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        const buffer = await blob.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        return `data:audio/mp3;base64,${base64}`;
+      }
+    } catch (err) {
+      console.warn('[GoogleTTS] synthesizeWithTranslateTTS network/CORS error:', err);
+      return '';
     }
   }
 
@@ -2188,9 +2204,10 @@ class AudioPlayService {
     // Reset rate-limited status for keys whose cooldown has expired
     for (const item of this.apiKeyPool) {
       if (item.rateLimitedUntil && item.rateLimitedUntil <= now) {
-        item.rateLimitedUntil = undefined;
+        delete item.rateLimitedUntil;
         if (item.status === 'RATE_LIMITED') {
           item.status = 'READY';
+          delete item.lastError;
         }
       }
     }
@@ -2202,15 +2219,20 @@ class AudioPlayService {
     let candidateKeys = activeKeys.length > 0 ? activeKeys : poolForType;
 
     if (candidateKeys.length === 0) {
-      console.warn(`[GoogleTTS] No ${targetType} keys available in pool. Activating resilient fallback to Google Translate TTS...`);
-      try {
-        const fallbackBase64 = await this.synthesizeWithTranslateTTS(cleanText, isVi);
-        if (fallbackBase64) {
-          this.setCachedAudio(cleanText, effectiveVoice, fallbackBase64);
-          return fallbackBase64;
+      if (!isVi && targetType === 'GOOGLE_CLOUD_TTS') {
+        const geminiKey = this.apiKeyPool.find(k => k.type === 'GEMINI_AI_STUDIO' && (!k.rateLimitedUntil || k.rateLimitedUntil <= now));
+        if (geminiKey) {
+          try {
+            console.warn('[GoogleTTS] No Google Cloud TTS keys available. Attempting Gemini Flash TTS fallback...');
+            const wav = await this.synthesizeWithGeminiTTS(cleanText, geminiKey.key, effectiveVoice);
+            if (wav) {
+              this.setCachedAudio(cleanText, effectiveVoice, wav);
+              return wav;
+            }
+          } catch (gemErr) {
+            console.warn('[GoogleTTS] Fallback to Gemini TTS failed:', gemErr);
+          }
         }
-      } catch (fallbackErr) {
-        console.error('[GoogleTTS] Resilient fallback to Google Translate TTS failed:', fallbackErr);
       }
 
       throw new Error(isVi 
@@ -2270,7 +2292,8 @@ class AudioPlayService {
           const audioContent = data.audioContent;
           if (audioContent) {
             candidate.status = 'READY';
-            candidate.lastError = undefined;
+            delete candidate.lastError;
+            delete candidate.rateLimitedUntil;
             this.setCachedAudio(cleanText, effectiveVoice, audioContent);
             return audioContent;
           }
@@ -2285,7 +2308,8 @@ class AudioPlayService {
           const wavDataUri = await this.synthesizeWithGeminiTTS(cleanText, candidate.key, effectiveVoice);
           if (wavDataUri) {
             candidate.status = 'READY';
-            candidate.lastError = undefined;
+            delete candidate.lastError;
+            delete candidate.rateLimitedUntil;
             this.setCachedAudio(cleanText, effectiveVoice, wavDataUri);
             return wavDataUri;
           }
@@ -2308,19 +2332,24 @@ class AudioPlayService {
       }
     }
 
-    // RESILIENT FAILSAFE: If all candidate keys failed, fallback to Google Translate TTS
-    console.warn(`[GoogleTTS] All ${candidateKeys.length} keys in pool failed (${lastErrorMsg}). Activating resilient fallback to Google Translate TTS...`);
-    try {
-      const fallbackBase64 = await this.synthesizeWithTranslateTTS(cleanText, isVi);
-      if (fallbackBase64) {
-        this.setCachedAudio(cleanText, effectiveVoice, fallbackBase64);
-        return fallbackBase64;
+    // If all candidate keys failed:
+    if (!isVi && targetType === 'GOOGLE_CLOUD_TTS') {
+      const geminiKey = this.apiKeyPool.find(k => k.type === 'GEMINI_AI_STUDIO' && (!k.rateLimitedUntil || k.rateLimitedUntil <= now));
+      if (geminiKey) {
+        try {
+          console.warn(`[GoogleTTS] All ${candidateKeys.length} Google Cloud TTS keys exhausted. Attempting Gemini Flash TTS fallback...`);
+          const wav = await this.synthesizeWithGeminiTTS(cleanText, geminiKey.key, effectiveVoice);
+          if (wav) {
+            this.setCachedAudio(cleanText, effectiveVoice, wav);
+            return wav;
+          }
+        } catch (gemErr) {
+          console.warn('[GoogleTTS] Fallback to Gemini TTS failed:', gemErr);
+        }
       }
-    } catch (fallbackErr) {
-      console.error('[GoogleTTS] Resilient fallback Google Translate TTS failed:', fallbackErr);
     }
 
-    throw new Error(`All ${candidateKeys.length} Google/Gemini TTS keys in pool failed. Last error: ${lastErrorMsg || 'Unknown error'}`);
+    throw new Error(`All ${candidateKeys.length} Google Cloud TTS keys in pool hit rate-limit (429) or error: ${lastErrorMsg || 'Please wait a few seconds for quota cooldown.'}`);
   }
 
   public playUrl(url: string, speed: number = 1): Promise<void> {

@@ -69,6 +69,44 @@ export interface AiGenerationConfig {
 
 export const KNOWN_DEAD_KEYS = new Set(['92def6215618aeda77c43f4446ba84ef7152091c']);
 
+export const DEFAULT_BUILTIN_KEYS: ProviderApiKey[] = [
+  {
+    id: 'key_google_default',
+    provider: 'GOOGLE_TTS',
+    key: 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4',
+    label: 'Google TTS Cycy - Primary (VoiceCloning)',
+    status: 'READY'
+  },
+  {
+    id: 'key_google_cycy_pool_1',
+    provider: 'GOOGLE_TTS',
+    key: 'AIzaSyCfqeoe2A1wslwWONlbEVgW9XK9IrDAk3Q',
+    label: 'Google TTS Cycy - Pool 1 (VoiceCloning)',
+    status: 'READY'
+  },
+  {
+    id: 'key_google_cycy_pool_2',
+    provider: 'GOOGLE_TTS',
+    key: 'AIzaSyA6GlWoI1ATkBdU5LROJE5PQYdlmd3X2D4',
+    label: 'Google TTS Cycy - Pool 2 (FourthVehicle)',
+    status: 'READY'
+  },
+  {
+    id: 'key_google_cycy_pool_3',
+    provider: 'GOOGLE_TTS',
+    key: 'AIzaSyD6j9s-rG4OXgDLmyeCM0KVOj0ErLD-3gQ',
+    label: 'Google TTS Cycy - Pool 3 (ChunksLMS)',
+    status: 'READY'
+  },
+  {
+    id: 'key_deepgram_default',
+    provider: 'DEEPGRAM',
+    key: '51d7d8b230bf742178e681e7836a3dc1571b1c11',
+    label: 'Deepgram Aura/Flux Production Key',
+    status: 'READY'
+  }
+];
+
 const DEFAULT_GEMINI_API_KEY_B64 = 'QVEuQWI4Uk42SmU3d2NZQTZLLWs0YmlnOUprZDRrd3RfOUJlbE1WT3VzU2J5a3ZFWnRkYVE=';
 export const getSafeGeminiKey = (): string => {
   if (typeof atob !== 'undefined') {
@@ -856,23 +894,10 @@ class ModelRegistryService {
           const filteredKeys: ProviderApiKey[] = parsed.filter(
             (k: ProviderApiKey) => k && k.key && !KNOWN_DEAD_KEYS.has(k.key.trim())
           );
-          if (!filteredKeys.some(k => k.provider === 'GOOGLE_TTS')) {
-            filteredKeys.push({
-              id: 'key_google_default',
-              provider: 'GOOGLE_TTS',
-              key: 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4',
-              label: 'Google Cloud TTS Built-in Primary',
-              status: 'READY'
-            });
-          }
-          if (!filteredKeys.some(k => k.provider === 'DEEPGRAM')) {
-            filteredKeys.push({
-              id: 'key_deepgram_default',
-              provider: 'DEEPGRAM',
-              key: '51d7d8b230bf742178e681e7836a3dc1571b1c11',
-              label: 'Deepgram Aura/Flux Production Key',
-              status: 'READY'
-            });
+          for (const defaultKey of DEFAULT_BUILTIN_KEYS) {
+            if (!filteredKeys.some(k => k.key.trim() === defaultKey.key.trim())) {
+              filteredKeys.push({ ...defaultKey });
+            }
           }
           this.keys = filteredKeys;
         } else {
@@ -933,35 +958,16 @@ class ModelRegistryService {
   }
 
   private seedInitialKeys(): void {
-    const keys: ProviderApiKey[] = [];
+    const keys: ProviderApiKey[] = DEFAULT_BUILTIN_KEYS.map(k => ({ ...k }));
 
-    // Seed Google Cloud TTS Key
-    keys.push({
-      id: 'key_google_default',
-      provider: 'GOOGLE_TTS',
-      key: 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4',
-      label: 'Google Cloud TTS Built-in Primary',
-      status: 'READY'
-    });
-
-    // Seed Deepgram Key (Prioritized)
-    const envDeepgram = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEEPGRAM_API_KEY) || '51d7d8b230bf742178e681e7836a3dc1571b1c11';
+    // Deepgram override from env/localStorage if custom valid key provided
+    const envDeepgram = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEEPGRAM_API_KEY);
     const legacyDg = typeof localStorage !== 'undefined' ? localStorage.getItem('chunks_deepgram_api_key') : null;
-    let effectiveDgKey = (legacyDg && legacyDg.trim() && !KNOWN_DEAD_KEYS.has(legacyDg.trim())) 
-      ? legacyDg.trim() 
-      : envDeepgram;
-
-    if (KNOWN_DEAD_KEYS.has(effectiveDgKey)) {
-      effectiveDgKey = '51d7d8b230bf742178e681e7836a3dc1571b1c11';
+    const customDg = (legacyDg && legacyDg.trim()) || (envDeepgram && envDeepgram.trim());
+    if (customDg && !KNOWN_DEAD_KEYS.has(customDg) && customDg !== '51d7d8b230bf742178e681e7836a3dc1571b1c11') {
+      const dgItem = keys.find(k => k.id === 'key_deepgram_default');
+      if (dgItem) dgItem.key = customDg;
     }
-
-    keys.push({
-      id: 'key_deepgram_default',
-      provider: 'DEEPGRAM',
-      key: effectiveDgKey,
-      label: 'Deepgram Aura/Flux Production Key',
-      status: 'READY'
-    });
 
     // Seed Gemini Flash TTS Keys (Deprioritized fallback)
     try {
@@ -1087,7 +1093,20 @@ class ModelRegistryService {
         updatedAt: Date.now()
       };
 
-      await setDoc(docRef, payload, { merge: true });
+      const sanitizeForFirestore = (val: any): any => {
+        if (val === undefined) return null;
+        if (val === null || typeof val !== 'object') return val;
+        if (Array.isArray(val)) return val.map(sanitizeForFirestore);
+        const res: Record<string, any> = {};
+        for (const [k, v] of Object.entries(val)) {
+          if (v !== undefined) {
+            res[k] = sanitizeForFirestore(v);
+          }
+        }
+        return res;
+      };
+      const cleanPayload = sanitizeForFirestore(payload);
+      await setDoc(docRef, cleanPayload, { merge: true });
       this.lastSyncedAt = payload.updatedAt;
       if (typeof window !== 'undefined') {
         try {
@@ -1125,23 +1144,10 @@ class ModelRegistryService {
         const filteredKeys: ProviderApiKey[] = data.keys.filter(
           (k: ProviderApiKey) => k && k.key && !KNOWN_DEAD_KEYS.has(k.key.trim())
         );
-        if (!filteredKeys.some(k => k.provider === 'GOOGLE_TTS')) {
-          filteredKeys.push({
-            id: 'key_google_default',
-            provider: 'GOOGLE_TTS',
-            key: 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4',
-            label: 'Google Cloud TTS Built-in Primary',
-            status: 'READY'
-          });
-        }
-        if (!filteredKeys.some(k => k.provider === 'DEEPGRAM')) {
-          filteredKeys.push({
-            id: 'key_deepgram_default',
-            provider: 'DEEPGRAM',
-            key: '51d7d8b230bf742178e681e7836a3dc1571b1c11',
-            label: 'Deepgram Aura/Flux Production Key',
-            status: 'READY'
-          });
+        for (const defaultKey of DEFAULT_BUILTIN_KEYS) {
+          if (!filteredKeys.some(k => k.key.trim() === defaultKey.key.trim())) {
+            filteredKeys.push({ ...defaultKey });
+          }
         }
         const hadDeadKeys = filteredKeys.length !== data.keys.length;
         this.keys = filteredKeys;
@@ -1377,10 +1383,10 @@ class ModelRegistryService {
     let changed = false;
     for (const k of this.keys) {
       if (k.rateLimitedUntil && k.rateLimitedUntil <= now) {
-        k.rateLimitedUntil = undefined;
+        delete k.rateLimitedUntil;
         if (k.status === 'RATE_LIMITED') {
           k.status = 'READY';
-          k.lastError = undefined;
+          delete k.lastError;
           changed = true;
         }
       }
@@ -1424,8 +1430,8 @@ class ModelRegistryService {
 
         if (resp.ok) {
           item.status = 'READY';
-          item.lastError = undefined;
-          item.rateLimitedUntil = undefined;
+          delete item.lastError;
+          delete item.rateLimitedUntil;
           this.saveKeys();
           return { success: true, statusCode: resp.status, message: 'Google Cloud TTS: Kết nối thành công (200 OK)' };
         } else {
@@ -1466,8 +1472,8 @@ class ModelRegistryService {
 
         if (resp.ok) {
           item.status = 'READY';
-          item.lastError = undefined;
-          item.rateLimitedUntil = undefined;
+          delete item.lastError;
+          delete item.rateLimitedUntil;
           this.saveKeys();
           return { success: true, statusCode: resp.status, message: 'Gemini AI Studio TTS: Kết nối thành công (200 OK)' };
         } else {
@@ -1503,8 +1509,8 @@ class ModelRegistryService {
 
         if (resp.ok) {
           item.status = 'READY';
-          item.lastError = undefined;
-          item.rateLimitedUntil = undefined;
+          delete item.lastError;
+          delete item.rateLimitedUntil;
           this.saveKeys();
           return { success: true, statusCode: resp.status, message: 'Deepgram Aura/Flux: Kết nối thành công (200 OK)' };
         } else {
@@ -1544,8 +1550,8 @@ class ModelRegistryService {
 
         if (resp.ok) {
           item.status = 'READY';
-          item.lastError = undefined;
-          item.rateLimitedUntil = undefined;
+          delete item.lastError;
+          delete item.rateLimitedUntil;
           this.saveKeys();
           return { success: true, statusCode: resp.status, message: 'OpenAI TTS: Kết nối thành công (200 OK)' };
         } else {
@@ -1585,8 +1591,8 @@ class ModelRegistryService {
 
         if (resp.ok) {
           item.status = 'READY';
-          item.lastError = undefined;
-          item.rateLimitedUntil = undefined;
+          delete item.lastError;
+          delete item.rateLimitedUntil;
           this.saveKeys();
           return { success: true, statusCode: resp.status, message: 'Custom TTS: Kết nối thành công (200 OK)' };
         } else {

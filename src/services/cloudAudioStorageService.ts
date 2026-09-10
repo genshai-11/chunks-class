@@ -155,6 +155,8 @@ export async function syncLessonCachedAudioToCloud(
     'vi-VN-Standard-A'
   ];
 
+  const allCachedKeys = Array.from(await audioPlayer.getAllCachedKeys());
+
   for (let i = 0; i < updatedChunks.length; i++) {
     const chunk = { ...updatedChunks[i] };
     if (allowedChunkIds && !allowedChunkIds.has(chunk.chunk_id)) {
@@ -187,6 +189,24 @@ export async function syncLessonCachedAudioToCloud(
               cachedEn = await audioPlayer.getCachedAudioAsync(sanitizeSpeechText(chunk.english), cand);
             }
             if (cachedEn) break;
+          }
+        }
+
+        // Resilient lookup across ANY voice in cached keys
+        if (!cachedEn) {
+          const cleanEn = sanitizeSpeechText(chunk.english).toLowerCase().trim();
+          const rawEn = chunk.english.toLowerCase().trim();
+          for (const key of allCachedKeys) {
+            const lowerKey = key.toLowerCase();
+            if (
+              lowerKey.endsWith(`::${cleanEn}`) || 
+              lowerKey.endsWith(`::${rawEn}`) ||
+              lowerKey === cleanEn ||
+              lowerKey === rawEn
+            ) {
+              cachedEn = await audioPlayer.getCachedAudioAsync(key);
+              if (cachedEn) break;
+            }
           }
         }
 
@@ -230,6 +250,24 @@ export async function syncLessonCachedAudioToCloud(
             cachedVi = await audioPlayer.getCachedAudioAsync(chunk.vietnamese, cand) ||
                        await audioPlayer.getCachedAudioAsync(sanitizeSpeechText(chunk.vietnamese), cand);
             if (cachedVi) break;
+          }
+        }
+
+        // Resilient lookup across ANY voice in cached keys
+        if (!cachedVi) {
+          const cleanVi = sanitizeSpeechText(chunk.vietnamese).toLowerCase().trim();
+          const rawVi = chunk.vietnamese.toLowerCase().trim();
+          for (const key of allCachedKeys) {
+            const lowerKey = key.toLowerCase();
+            if (
+              lowerKey.endsWith(`::${cleanVi}`) || 
+              lowerKey.endsWith(`::${rawVi}`) ||
+              lowerKey === cleanVi ||
+              lowerKey === rawVi
+            ) {
+              cachedVi = await audioPlayer.getCachedAudioAsync(key);
+              if (cachedVi) break;
+            }
           }
         }
 
