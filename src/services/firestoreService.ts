@@ -291,6 +291,98 @@ export async function getLessonById(lessonId: string, forceRefresh?: boolean): P
   });
 }
 
+/**
+ * Helper to deduplicate lessons and prioritize canonical lessons over aliases.
+ * Rules:
+ * 1. Exclude explicit alias level codes (e.g. 'LEVEL_B_ALIAS').
+ * 2. Filter out alias lessons: If lesson.id.startsWith('level_b_ere_day_') and a matching level_b_day_X exists, exclude the alias!
+ * 3. Deduplicate by day_number: if multiple lessons have the same day_number, prioritize the canonical one (l.id.startsWith('level_b_day_') over level_b_ere_day_).
+ * 4. For Level B context, ensure exactly 30 unique lessons (Days 1 to 30) are returned.
+ */
+export function deduplicateLessons(lessons: LessonDoc[], context?: CourseLevel | string): LessonDoc[] {
+  // 1. Exclude explicit alias level codes
+  let candidate = lessons.filter(l => l.level_code !== 'LEVEL_B_ALIAS' && !l.level_code?.endsWith('_ALIAS'));
+
+  // 2. Identify canonical IDs present in the candidate set
+  const canonicalIds = new Set(candidate.map(l => l.id));
+
+  // Filter out alias lessons: If lesson.id.startsWith('level_b_ere_day_') and a matching level_b_day_X exists, exclude the alias!
+  candidate = candidate.filter(l => {
+    if (l.id.startsWith('level_b_ere_day_')) {
+      const canonicalId = l.id.replace('level_b_ere_day_', 'level_b_day_');
+      if (canonicalIds.has(canonicalId)) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  // Helper to determine partition key when lessons span multiple courses
+  const getPartitionKey = (lesson: LessonDoc): string => {
+    if (context) return String(context).toUpperCase();
+    if (lesson.id.startsWith('level_a_') || lesson.level_code === 'LEVEL_A') return 'LEVEL_A';
+    if (lesson.id.startsWith('level_b_erel_') || lesson.level_code === 'LEVEL_B_EREL') return 'LEVEL_B_EREL';
+    if (lesson.id.startsWith('level_b_eres_') || lesson.level_code === 'LEVEL_B_ERES') return 'LEVEL_B_ERES';
+    if (lesson.id.startsWith('level_b_day_') || lesson.id.startsWith('level_b_ere_day_') || lesson.level_code === 'LEVEL_B') return 'LEVEL_B';
+    return lesson.course_id || lesson.level_code || 'OTHER';
+  };
+
+  // Group by course partition
+  const groups = new Map<string, LessonDoc[]>();
+  for (const lesson of candidate) {
+    const key = getPartitionKey(lesson);
+    const list = groups.get(key) || [];
+    list.push(lesson);
+    groups.set(key, list);
+  }
+
+  const result: LessonDoc[] = [];
+
+  for (const [partKey, groupLessons] of groups) {
+    const dayMap = new Map<number, LessonDoc>();
+
+    for (const lesson of groupLessons) {
+      const day = lesson.day_number ?? 0;
+      const existing = dayMap.get(day);
+
+      if (!existing) {
+        dayMap.set(day, lesson);
+      } else {
+        // Prioritize canonical lesson:
+        // Prioritize l.id.startsWith('level_b_day_') over level_b_ere_day_
+        const lessonIsCanonical = lesson.id.startsWith('level_b_day_');
+        const existingIsCanonical = existing.id.startsWith('level_b_day_');
+
+        if (lessonIsCanonical && !existingIsCanonical) {
+          dayMap.set(day, lesson);
+        } else if (!lessonIsCanonical && existingIsCanonical) {
+          // Keep existing
+        } else if (existing.id.startsWith('level_b_ere_day_') && !lesson.id.startsWith('level_b_ere_day_')) {
+          dayMap.set(day, lesson);
+        } else if ((lesson.chunks?.length || 0) > (existing.chunks?.length || 0)) {
+          dayMap.set(day, lesson);
+        }
+      }
+    }
+
+    let sortedGroup = Array.from(dayMap.values()).sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+
+    // For LEVEL_B, ensure exactly 30 unique lessons (Days 1 to 30)
+    if (partKey === 'LEVEL_B' || partKey === 'COURSE_LEVEL_B' || partKey === 'LEVEL_B_ERE' || partKey === 'COURSE_LEVEL_B_ERE') {
+      sortedGroup = sortedGroup.filter(l => (l.day_number ?? 0) >= 1 && (l.day_number ?? 0) <= 30 && l.id !== 'level_b_word_list');
+    }
+
+    result.push(...sortedGroup);
+  }
+
+  return result.sort((a, b) => {
+    if (a.level_code !== b.level_code) {
+      return (a.level_code || '').localeCompare(b.level_code || '');
+    }
+    return (a.day_number ?? 0) - (b.day_number ?? 0);
+  });
+}
+
 // --------------------------------------------------------------------------
 // 4. Fetch All Lessons for ANY Course / Level
 // --------------------------------------------------------------------------
@@ -347,7 +439,7 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string, f
       }
       
       if (!snapshot.empty) {
-        const lessons = snapshot.docs.map(d => {
+        const rawLessons = snapshot.docs.map(d => {
           const data = d.data();
           const chunks = Array.isArray(data.chunks) ? data.chunks : [];
           return {
@@ -362,12 +454,17 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string, f
             chunks: chunks,
             created_at: data.created_at || new Date().toISOString()
           } as LessonDoc;
-        }).sort((a, b) => a.day_number - b.day_number);
+        });
+
+        const lessons = deduplicateLessons(rawLessons, courseIdOrLevel);
 
         // Iterate and call curriculumRegistry.updateLesson for each doc before returning
         lessons.forEach(lesson => {
           curriculumRegistry.updateLesson(lesson);
           setCacheEntry(`lesson_by_id:${lesson.id}`, lesson);
+          if (lesson.id.startsWith('level_b_day_')) {
+            setCacheEntry(`lesson_by_id:${lesson.id.replace('level_b_day_', 'level_b_ere_day_')}`, lesson);
+          }
         });
 
         setCacheEntry(cacheKey, lessons);
@@ -398,7 +495,7 @@ export async function getAllLessons(courseIdOrLevel?: CourseLevel | string, forc
     try {
       const snapshot = await getDocs(collection(db, 'lessons'));
       if (!snapshot.empty) {
-        const lessons = snapshot.docs.map(d => {
+        const rawLessons = snapshot.docs.map(d => {
           const data = d.data();
           const chunks = Array.isArray(data.chunks) ? data.chunks : [];
           return {
@@ -413,11 +510,16 @@ export async function getAllLessons(courseIdOrLevel?: CourseLevel | string, forc
             chunks: chunks,
             created_at: data.created_at || new Date().toISOString()
           } as LessonDoc;
-        }).sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+        });
+
+        const lessons = deduplicateLessons(rawLessons);
 
         lessons.forEach(lesson => {
           curriculumRegistry.updateLesson(lesson);
           setCacheEntry(`lesson_by_id:${lesson.id}`, lesson);
+          if (lesson.id.startsWith('level_b_day_')) {
+            setCacheEntry(`lesson_by_id:${lesson.id.replace('level_b_day_', 'level_b_ere_day_')}`, lesson);
+          }
         });
         setCacheEntry(cacheKey, lessons);
         return lessons;
@@ -444,29 +546,7 @@ export async function syncFirestoreLessonsToRegistry(
     if (courseIdOrLevel) {
       lessons = await getLessonsByLevel(courseIdOrLevel);
     } else {
-      const snapshot = await getDocs(collection(db, 'lessons'));
-      if (!snapshot.empty) {
-        lessons = snapshot.docs.map(d => {
-          const data = d.data();
-          const chunks = Array.isArray(data.chunks) ? data.chunks : [];
-          return {
-            id: d.id,
-            course_id: data.course_id,
-            level_code: data.level_code || 'CUSTOM',
-            day_number: data.day_number ?? 0,
-            lesson_title: data.lesson_title || d.id,
-            lesson_type: data.lesson_type || 'Standard Lesson',
-            total_chunks: chunks.length,
-            categories: Array.isArray(data.categories) ? data.categories : [],
-            chunks: chunks,
-            created_at: data.created_at || new Date().toISOString()
-          } as LessonDoc;
-        }).sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
-
-        lessons.forEach(l => curriculumRegistry.updateLesson(l));
-      } else {
-        lessons = curriculumRegistry.getAllLessons();
-      }
+      lessons = await getAllLessons();
     }
 
     let totalChunks = 0;

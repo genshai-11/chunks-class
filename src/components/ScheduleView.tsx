@@ -179,6 +179,16 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     try {
       const allCachedKeys = await audioPlayer.getAllCachedKeys();
 
+      const cleanCachedTexts = new Set<string>();
+      for (const k of allCachedKeys) {
+        const idx = k.indexOf('::');
+        if (idx !== -1) {
+          cleanCachedTexts.add(k.substring(idx + 2).trim().toLowerCase());
+        } else {
+          cleanCachedTexts.add(k.trim().toLowerCase());
+        }
+      }
+
       for (const session of sessionsList) {
         if (progressiveCheckRef.current !== checkId) return;
 
@@ -199,11 +209,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         let readyCount = 0;
         for (let i = 0; i < chunks.length; i++) {
           const c = chunks[i];
+          const clean = sanitizeSpeechText(c.english).trim().toLowerCase();
+          const rawLower = (c.english || '').trim().toLowerCase();
           const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
           const { keys: candidateKeys } = audioPlayer.getLookupCandidateKeys(c.english, voiceEn);
           const isCached = hasGcs || 
             audioPlayer.hasCachedAudio(c.english, voiceEn) || 
-            candidateKeys.some(k => allCachedKeys.has(k));
+            candidateKeys.some(k => allCachedKeys.has(k)) ||
+            cleanCachedTexts.has(clean) ||
+            cleanCachedTexts.has(rawLower);
           if (isCached) readyCount++;
         }
 
@@ -297,14 +311,28 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
 
     try {
       const allCachedKeys = await audioPlayer.getAllCachedKeys();
+      const cleanCachedTexts = new Set<string>();
+      for (const k of allCachedKeys) {
+        const idx = k.indexOf('::');
+        if (idx !== -1) {
+          cleanCachedTexts.add(k.substring(idx + 2).trim().toLowerCase());
+        } else {
+          cleanCachedTexts.add(k.trim().toLowerCase());
+        }
+      }
+
       let readyCount = 0;
       for (let i = 0; i < chunks.length; i++) {
         const c = chunks[i];
+        const clean = sanitizeSpeechText(c.english).trim().toLowerCase();
+        const rawLower = (c.english || '').trim().toLowerCase();
         const hasGcs = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
         const { keys: candidateKeys } = audioPlayer.getLookupCandidateKeys(c.english, voiceEn);
         const isCached = hasGcs || 
           audioPlayer.hasCachedAudio(c.english, voiceEn) || 
-          candidateKeys.some(k => allCachedKeys.has(k));
+          candidateKeys.some(k => allCachedKeys.has(k)) ||
+          cleanCachedTexts.has(clean) ||
+          cleanCachedTexts.has(rawLower);
         if (isCached) readyCount++;
       }
 
@@ -981,7 +1009,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         {session.session_number}
                       </span>
                       <span className="font-mono text-xs font-semibold text-[#0A0A0A]">
-                        Session {session.session_number}/15
+                        Session {session.session_number}/{cohort.total_sessions || cohort.sessions?.length || 30}
                       </span>
                     </div>
 

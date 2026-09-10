@@ -88,7 +88,7 @@ export type QualityFilterType =
 
 export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   onLaunchProjectorForLesson,
-  defaultCourseLevel = 'LEVEL_B_ERES'
+  defaultCourseLevel = 'LEVEL_B'
 }) => {
   const [selectedLevel, setSelectedLevel] = useState<CourseLevel>(defaultCourseLevel);
   const [lessons, setLessons] = useState<LessonDoc[]>([]);
@@ -115,19 +115,33 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
 
   useEffect(() => {
     if (defaultCourseLevel) {
-      setSelectedLevel(defaultCourseLevel);
+      setSelectedLevel(defaultCourseLevel === 'LEVEL_B_ERE' ? 'LEVEL_B' : defaultCourseLevel);
     }
   }, [defaultCourseLevel]);
 
+  const displayCourses = useMemo(() => {
+    const seenCodes = new Set<string>();
+    return availableCourses.filter(course => {
+      const normalizedCode = (course.level_code === 'LEVEL_B_ERE' || course.id === 'course_level_b_ere') 
+        ? 'LEVEL_B' 
+        : course.level_code;
+      if (seenCodes.has(normalizedCode)) return false;
+      seenCodes.add(normalizedCode);
+      return true;
+    });
+  }, [availableCourses]);
+
   const currentCourse = useMemo(() => {
-    return availableCourses.find(c => c.level_code === selectedLevel || c.id === selectedLevel) || curriculumRegistry.getCourse(selectedLevel);
+    return availableCourses.find(c => c.level_code === selectedLevel || c.id === selectedLevel || ((selectedLevel === 'LEVEL_B' || selectedLevel === 'LEVEL_B_ERE') && (c.level_code === 'LEVEL_B' || c.level_code === 'LEVEL_B_ERE' || c.id === 'course_level_b' || c.id === 'course_level_b_ere'))) || curriculumRegistry.getCourse(selectedLevel);
   }, [availableCourses, selectedLevel]);
 
   const getCourseTabLabel = (course: Course) => {
-    if (course.level_code === 'LEVEL_A') return 'Level A';
-    if (course.level_code === 'LEVEL_B_EREL') return 'Level B - EREL (Listening)';
-    if (course.level_code === 'LEVEL_B_ERES') return 'Level B - ERES (Speaking)';
-    if (course.level_code === 'LEVEL_B_ERE') return 'Level B - ERE (30 Topics)';
+    if (course.level_code === 'LEVEL_B' || course.id === 'course_level_b' || course.level_code === 'LEVEL_B_ERE' || course.id === 'course_level_b_ere') {
+      return 'Level B - ERE (30 Topics)';
+    }
+    if (course.level_code === 'LEVEL_A' || course.id === 'course_level_a') return 'Level A (16 Lessons)';
+    if (course.level_code === 'LEVEL_B_EREL' || course.id === 'course_level_b_erel') return 'Level B - EREL (15 Lessons)';
+    if (course.level_code === 'LEVEL_B_ERES' || course.id === 'course_level_b_eres') return 'Level B - ERES (15 Lessons)';
     return course.title;
   };
 
@@ -162,7 +176,22 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const loadCurriculumData = async () => {
     setIsLoading(true);
     try {
-      const data = await getAllLessons(selectedLevel);
+      let data = await getAllLessons(selectedLevel);
+      // Ensure all 30 days are present when LEVEL_B is active by merging with dynamic registry catalog
+      if (selectedLevel === 'LEVEL_B' || selectedLevel === 'LEVEL_B_ERE' || (selectedLevel as string) === 'course_level_b') {
+        const catalogLessons = curriculumRegistry.getLessons('LEVEL_B');
+        if (catalogLessons && catalogLessons.length > 0) {
+          const map = new Map<number, LessonDoc>();
+          catalogLessons.forEach(l => map.set(l.day_number, l));
+          data.forEach(l => {
+            const existing = map.get(l.day_number);
+            if (!existing || (l.chunks && l.chunks.length >= (existing.chunks?.length || 0))) {
+              map.set(l.day_number, l);
+            }
+          });
+          data = Array.from(map.values()).sort((a, b) => a.day_number - b.day_number);
+        }
+      }
       setLessons(data);
       const health = await checkFirestoreHealth();
       setDbStatus(health);
@@ -590,14 +619,18 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Course Level Selector Tabs */}
           <div className="flex items-center p-1 bg-zinc-100 rounded-xl border border-zinc-200/80 gap-1 flex-wrap">
-            {availableCourses.map((course) => {
-              const isSelected = selectedLevel === course.level_code || selectedLevel === course.id;
+            {displayCourses.map((course) => {
+              const isSelected = 
+                selectedLevel === course.level_code || 
+                selectedLevel === course.id ||
+                ((selectedLevel === 'LEVEL_B' || selectedLevel === 'LEVEL_B_ERE' || (selectedLevel as string) === 'course_level_b' || (selectedLevel as string) === 'course_level_b_ere') &&
+                 (course.level_code === 'LEVEL_B' || course.level_code === 'LEVEL_B_ERE' || course.id === 'course_level_b' || course.id === 'course_level_b_ere'));
               return (
                 <button
                   key={course.id}
                   type="button"
                   onClick={() => { 
-                    setSelectedLevel(course.level_code); 
+                    setSelectedLevel(course.level_code === 'LEVEL_B_ERE' ? 'LEVEL_B' : course.level_code); 
                     setSelectedDay('all');
                     setSelectedCategory('all');
                     setQualityFilter('all');
@@ -679,7 +712,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
               onChange={(e) => setSelectedDay(e.target.value === 'all' ? 'all' : Number(e.target.value))}
               className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
             >
-              <option value="all">Tất Cả {lessons.length} Bài Học (Day 1 – {lessons.length > 0 ? Math.max(...lessons.map(l => l.day_number)) : 15})</option>
+              <option value="all">Tất Cả {lessons.length} Bài Học (Day 1 – {lessons.length > 0 ? Math.max(...lessons.map(l => l.day_number)) : ((selectedLevel === 'LEVEL_B' || selectedLevel === 'LEVEL_B_ERE') ? 30 : 15)})</option>
               {lessons.map(l => (
                 <option key={l.id} value={l.day_number}>
                   Day {l.day_number}: {l.lesson_title} ({l.chunks?.length || 0} chunks)
