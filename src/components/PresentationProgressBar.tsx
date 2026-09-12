@@ -7,6 +7,7 @@ interface PresentationProgressBarProps {
   parts?: LessonPart[];
   onSeek?: (index: number) => void;
   highContrastDark?: boolean;
+  isGrammarSlide?: boolean;
   className?: string;
 }
 
@@ -16,6 +17,7 @@ export const PresentationProgressBar: React.FC<PresentationProgressBarProps> = (
   parts = [],
   onSeek,
   highContrastDark = false,
+  isGrammarSlide = false,
   className = ''
 }) => {
   const [hoverPosition, setHoverPosition] = useState<{ x: number; index: number; percent: number } | null>(null);
@@ -23,8 +25,8 @@ export const PresentationProgressBar: React.FC<PresentationProgressBarProps> = (
 
   if (totalChunks <= 0) return null;
 
-  const currentStep = currentIndex + 1;
-  const progressPercent = Math.min(100, Math.max(0, (currentStep / totalChunks) * 100));
+  const currentStep = isGrammarSlide ? 0 : currentIndex + 1;
+  const progressPercent = isGrammarSlide ? 0 : Math.min(100, Math.max(0, (currentStep / totalChunks) * 100));
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!trackRef.current) return;

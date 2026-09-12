@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { TeacherSidebar } from './TeacherSidebar';
 import { Course, NavTab, Cohort } from '../types';
 import { CohortModal } from './CohortModal';
@@ -75,9 +75,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           <div className="flex items-center gap-3">
             <h2 className="font-display font-bold text-lg text-[#0A0A0A]">
               {activeTab === 'schedule' && '15-Session Cohort Schedule'}
-              {activeTab === 'projector' && 'Presentation - Focus Mode'}
+              {activeTab === 'projector' && 'Focus Mode'}
               {activeTab === 'improv-manager' && 'Improv Studio'}
-              {activeTab === 'improv-presentation' && 'Improv - Focus Mode'}
+              {activeTab === 'improv-presentation' && 'Improv Mode'}
               {activeTab === 'curriculum' && 'Curriculum Repository (7,851 Chunks)'}
               {activeTab === 'audio-manager' && 'Quản Lý Âm Thanh Toàn Diện (Audio Management)'}
               {activeTab === 'audio-hub' && 'Voice Engine & Audio Hub'}

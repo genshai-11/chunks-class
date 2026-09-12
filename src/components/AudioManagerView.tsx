@@ -24,6 +24,14 @@ import {
   syncLessonCachedAudioToCloud, 
   buildPublicGcsAudioUrl 
 } from '../services/cloudAudioStorageService';
+import { 
+  CANONICAL_PARTS, 
+  playPartIntro, 
+  regeneratePartAudio,
+  prepareAllCanonicalPartAudios, 
+  isPartAudioCached,
+  PartAnnouncementDef
+} from '../services/partAudioService';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
 import { 
   Volume2, 
@@ -256,8 +264,70 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   }, [failedChunks]);
 
   const clearFailedQueue = () => setFailedChunks([]);
-  const removeFailedChunk = (chunkId: string) => {
-    setFailedChunks(prev => prev.filter(c => c.chunkId !== chunkId));
+  const removeFailedChunk = (chunkId: string) => setFailedChunks(prev => prev.filter(c => c.chunkId !== chunkId));
+
+  // --------------------------------------------------------------------------
+  // Part Intro Transition Audios State & Handlers (Reusable Across Cohorts)
+  // --------------------------------------------------------------------------
+  const [partAudioCacheStatus, setPartAudioCacheStatus] = useState<Record<string, boolean>>({});
+  const [isPreppingPartAudios, setIsPreppingPartAudios] = useState<boolean>(false);
+  const [preppingPartProgress, setPreppingPartProgress] = useState<{ current: number; total: number } | null>(null);
+  const [auditioningPartKey, setAuditioningPartKey] = useState<string | null>(null);
+  const [regeneratingPartKey, setRegeneratingPartKey] = useState<string | null>(null);
+
+  const checkAllPartAudiosCache = useCallback(async () => {
+    const status: Record<string, boolean> = {};
+    for (const p of CANONICAL_PARTS) {
+      status[p.key] = await isPartAudioCached(p.titleEn, voiceProfileEn, p.partNumber);
+    }
+    setPartAudioCacheStatus(status);
+  }, [voiceProfileEn]);
+
+  useEffect(() => {
+    checkAllPartAudiosCache();
+  }, [checkAllPartAudiosCache]);
+
+  const handleAuditionPartIntro = async (part: PartAnnouncementDef, forceRegen = false) => {
+    if (auditioningPartKey || regeneratingPartKey) return;
+    if (forceRegen) {
+      setRegeneratingPartKey(part.key);
+    } else {
+      setAuditioningPartKey(part.key);
+    }
+    try {
+      if (forceRegen) {
+        await regeneratePartAudio(part.titleEn, part.partNumber, voiceProfileEn);
+        addLog(`Đã tạo lại và phát âm thanh cho ${part.titleEn} (Voice: ${voiceProfileEn})`, 'success');
+      } else {
+        await playPartIntro(part.titleEn, part.partNumber, voiceProfileEn);
+      }
+    } catch (e: any) {
+      addLog(`Lỗi phát part intro "${part.titleEn}": ${e?.message || String(e)}`, 'error');
+    } finally {
+      setAuditioningPartKey(null);
+      setRegeneratingPartKey(null);
+      await checkAllPartAudiosCache();
+    }
+  };
+
+  const handlePrepareAllPartAudios = async () => {
+    if (isPreppingPartAudios) return;
+    setIsPreppingPartAudios(true);
+    setPreppingPartProgress({ current: 0, total: CANONICAL_PARTS.length });
+    addLog('Bắt đầu tạo trước âm thanh cho tất cả 7 canonical parts...', 'info');
+
+    try {
+      await prepareAllCanonicalPartAudios(voiceProfileEn, (current, total) => {
+        setPreppingPartProgress({ current, total });
+      });
+      addLog('🎉 Đã chuẩn bị xong toàn bộ âm thanh Part Announcements và lưu vào IndexedDB!', 'success');
+    } catch (e: any) {
+      addLog(`Lỗi chuẩn bị part audios: ${e?.message || String(e)}`, 'error');
+    } finally {
+      setIsPreppingPartAudios(false);
+      setPreppingPartProgress(null);
+      await checkAllPartAudiosCache();
+    }
   };
 
   const [batchProgress, setBatchProgress] = useState<{
@@ -2164,6 +2234,143 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             </div>
           </div>
         )}
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 4.5 Part Intro & Transition Announcements (Reusable Audio)         */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-purple-50 text-purple-700">
+              <Layers className="w-5 h-5" />
+            </span>
+            <div>
+              <h2 className="font-display font-bold text-base text-zinc-900">
+                Part Intro & Transition Announcements (Âm thanh chuyển Part dùng lại)
+              </h2>
+              <p className="text-xs text-zinc-500">
+                Âm thanh thông báo chuẩn khi bắt đầu phần mới trong Focus Mode. Tự động tái sử dụng cho tất cả bài học.
+              </p>
+            </div>
+          </div>
+
+          {/* Batch Prepare Button */}
+          <button
+            type="button"
+            disabled={isPreppingPartAudios}
+            onClick={handlePrepareAllPartAudios}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 disabled:bg-purple-300 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+            title="Tạo trước và lưu toàn bộ 7 âm thanh thông báo Part vào bộ nhớ đệm IndexedDB"
+          >
+            {isPreppingPartAudios ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>
+                  Đang chuẩn bị {preppingPartProgress ? `(${preppingPartProgress.current}/${preppingPartProgress.total})` : '...'}
+                </span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Chuẩn bị tất cả âm thanh Part (Batch Prepare Part Audios)</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Canonical Parts Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+          {CANONICAL_PARTS.map((part) => {
+            const isCached = partAudioCacheStatus[part.key] ?? false;
+            const isAuditioning = auditioningPartKey === part.key;
+            const isRegenerating = regeneratingPartKey === part.key;
+
+            return (
+              <div
+                key={part.key}
+                className={`p-4 rounded-xl border transition-all flex flex-col justify-between space-y-3 ${
+                  isCached
+                    ? 'bg-emerald-50/30 border-emerald-200/80 hover:border-emerald-300'
+                    : 'bg-zinc-50/60 border-zinc-200 hover:border-zinc-300'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-purple-100 text-purple-800">
+                      Part {part.partNumber}
+                    </span>
+                    {isCached ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>Ready / Cached</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-zinc-200 text-zinc-600">
+                        <span>Not Cached</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="font-bold text-xs text-zinc-900 font-display">
+                    {part.titleEn}
+                  </h3>
+                  <div className="text-[11px] text-zinc-500">
+                    {part.titleVi}
+                  </div>
+
+                  {/* Speech Text Box */}
+                  <div className="mt-2.5 p-2 rounded-lg bg-white border border-zinc-200/80 text-[11px] font-mono text-zinc-700 flex items-start gap-1.5">
+                    <span className="text-zinc-400 shrink-0 font-sans">TTS:</span>
+                    <span className="font-semibold text-zinc-900">"{part.speechText}"</span>
+                  </div>
+                </div>
+
+                {/* Audition & Regenerate Buttons */}
+                <div className="pt-2 border-t border-zinc-200/60 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono text-zinc-400 truncate">
+                    Giọng: {voiceProfileEn.split('-')[0]}
+                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      disabled={isAuditioning || isRegenerating}
+                      onClick={() => handleAuditionPartIntro(part, false)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                      title="Nghe thử & Tạo lại âm thanh Part thông báo"
+                    >
+                      {isAuditioning ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
+                          <span>Đang đọc...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-3 h-3 text-emerald-400" />
+                          <span>Nghe thử & Tạo lại</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isAuditioning || isRegenerating}
+                      onClick={() => handleAuditionPartIntro(part, true)}
+                      className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                      title="Bắt buộc tạo lại âm thanh mới nhất bằng giọng đang chọn"
+                    >
+                      {isRegenerating ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
+                      ) : (
+                        <RotateCcw className="w-3 h-3 text-purple-600" />
+                      )}
+                      <span className="hidden sm:inline">Tạo lại</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* ------------------------------------------------------------------ */}

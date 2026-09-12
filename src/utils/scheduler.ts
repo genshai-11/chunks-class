@@ -243,7 +243,9 @@ export function createDefaultCohort(
       language_mode: "EN_THEN_VI",
       auto_advance_delay_sec: 0,
       default_speed: 1.0,
-      repeat_count: 1
+      repeat_count: 1,
+      part_announce_enabled: true,
+      part_intro_autoplay_chunk: false
     },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
