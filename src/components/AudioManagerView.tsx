@@ -97,17 +97,18 @@ const createBaselineStatuses = (lessonList: LessonDoc[]): LessonAudioStatus[] =>
   return lessonList.map(lesson => {
     const chunks = lesson.chunks || [];
     const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+    const gcsViCount = chunks.filter(c => Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'))).length;
     return {
       lessonId: lesson.id,
       dayNumber: lesson.day_number,
       title: lesson.lesson_title || `Day ${lesson.day_number}`,
       totalChunks: chunks.length,
-      enCached: gcsCount, // Baseline estimation
-      viCached: 0,
+      enCached: gcsCount,
+      viCached: gcsViCount,
       gcsCount,
       enPercent: chunks.length > 0 ? Math.round((gcsCount / chunks.length) * 100) : 0,
-      viPercent: 0,
-      isFullyCached: chunks.length > 0 && gcsCount === chunks.length
+      viPercent: chunks.length > 0 ? Math.round((gcsViCount / chunks.length) * 100) : 0,
+      isFullyCached: chunks.length > 0 && gcsCount === chunks.length && gcsViCount === chunks.length
     };
   });
 };
@@ -432,12 +433,14 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       const calculated = await Promise.all(lessons.map(async (lesson) => {
         const chunks = lesson.chunks || [];
         const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+        const gcsViCount = chunks.filter(c => Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'))).length;
 
         try {
           const status = await audioPlayer.checkLessonAudioStatus(chunks, voiceProfileEn, voiceProfileVi);
           const isEnReady = chunks.length > 0 && status.enCached === chunks.length;
           const enPercent = chunks.length > 0 ? (isEnReady ? 100 : Math.round((status.enCached / chunks.length) * 100)) : 0;
-          const viPercent = chunks.length > 0 ? Math.round((status.viCached / chunks.length) * 100) : 0;
+          const effectiveViCached = Math.max(status.viCached, gcsViCount);
+          const viPercent = chunks.length > 0 ? Math.round((effectiveViCached / chunks.length) * 100) : 0;
 
           return {
             lessonId: lesson.id,
@@ -445,11 +448,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             title: lesson.lesson_title || `Day ${lesson.day_number}`,
             totalChunks: chunks.length,
             enCached: isEnReady ? chunks.length : status.enCached,
-            viCached: status.viCached,
+            viCached: effectiveViCached,
             gcsCount,
             enPercent,
             viPercent,
-            isFullyCached: status.isFullyCached
+            isFullyCached: chunks.length > 0 && (isEnReady || status.enCached === chunks.length) && effectiveViCached === chunks.length
           };
         } catch (lessonErr) {
           console.warn(`[calculateReadinessStatus] Error checking status for lesson ${lesson.id}:`, lessonErr);
@@ -459,11 +462,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             title: lesson.lesson_title || `Day ${lesson.day_number}`,
             totalChunks: chunks.length,
             enCached: gcsCount,
-            viCached: 0,
+            viCached: gcsViCount,
             gcsCount,
             enPercent: chunks.length > 0 ? Math.round((gcsCount / chunks.length) * 100) : 0,
-            viPercent: 0,
-            isFullyCached: chunks.length > 0 && gcsCount === chunks.length
+            viPercent: chunks.length > 0 ? Math.round((gcsViCount / chunks.length) * 100) : 0,
+            isFullyCached: chunks.length > 0 && gcsCount === chunks.length && gcsViCount === chunks.length
           };
         }
       }));
@@ -2479,17 +2482,18 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   const lessonDoc = lesson;
                   const chunks = lesson.chunks || [];
                   const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+                  const gcsViCount = chunks.filter(c => Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'))).length;
                   const item = statusMap.get(lesson.id) || {
                     lessonId: lesson.id,
                     dayNumber: lesson.day_number,
                     title: lesson.lesson_title || `Day ${lesson.day_number}`,
                     totalChunks: chunks.length,
                     enCached: gcsCount,
-                    viCached: 0,
+                    viCached: gcsViCount,
                     gcsCount,
                     enPercent: chunks.length > 0 ? Math.round((gcsCount / chunks.length) * 100) : 0,
-                    viPercent: 0,
-                    isFullyCached: chunks.length > 0 && gcsCount === chunks.length
+                    viPercent: chunks.length > 0 ? Math.round((gcsViCount / chunks.length) * 100) : 0,
+                    isFullyCached: chunks.length > 0 && gcsCount === chunks.length && gcsViCount === chunks.length
                   };
                   const isEn100 = item.enPercent === 100 && item.totalChunks > 0;
                   const isVi100 = item.viPercent === 100 && item.totalChunks > 0;
@@ -3012,8 +3016,8 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   const isVoiceConfigOpen = Boolean(expandedChunkVoiceConfig[chunk.chunk_id]);
                   const selectedVoiceEn = chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
                   const selectedVoiceVi = chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
-                  const isEnCached = audioPlayer.hasCachedAudio(chunk.english, selectedVoiceEn);
-                  const isViCached = !!chunk.vietnamese && audioPlayer.hasCachedAudio(chunk.vietnamese, selectedVoiceVi);
+                  const isEnCached = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder')) || audioPlayer.hasCachedAudio(chunk.english, selectedVoiceEn);
+                  const isViCached = Boolean(chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http')) || (Boolean(chunk.vietnamese) && audioPlayer.hasCachedAudio(chunk.vietnamese, selectedVoiceVi));
 
                   if (isEditingThis) {
                     return (
@@ -3141,7 +3145,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                             </span>
                             {chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder') && (
                               <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                                GCS Master
+                                GCS Master EN
+                              </span>
+                            )}
+                            {chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http') && (
+                              <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+                                GCS Master VI
                               </span>
                             )}
                             <button
