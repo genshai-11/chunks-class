@@ -27,6 +27,7 @@ import {
 import { 
   CANONICAL_PARTS, 
   playPartIntro, 
+  regeneratePartAudio,
   prepareAllCanonicalPartAudios, 
   isPartAudioCached,
   PartAnnouncementDef
@@ -272,11 +273,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [isPreppingPartAudios, setIsPreppingPartAudios] = useState<boolean>(false);
   const [preppingPartProgress, setPreppingPartProgress] = useState<{ current: number; total: number } | null>(null);
   const [auditioningPartKey, setAuditioningPartKey] = useState<string | null>(null);
+  const [regeneratingPartKey, setRegeneratingPartKey] = useState<string | null>(null);
 
   const checkAllPartAudiosCache = useCallback(async () => {
     const status: Record<string, boolean> = {};
     for (const p of CANONICAL_PARTS) {
-      status[p.key] = await isPartAudioCached(p.titleEn, voiceProfileEn);
+      status[p.key] = await isPartAudioCached(p.titleEn, voiceProfileEn, p.partNumber);
     }
     setPartAudioCacheStatus(status);
   }, [voiceProfileEn]);
@@ -285,15 +287,25 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     checkAllPartAudiosCache();
   }, [checkAllPartAudiosCache]);
 
-  const handleAuditionPartIntro = async (part: PartAnnouncementDef) => {
-    if (auditioningPartKey) return;
-    setAuditioningPartKey(part.key);
+  const handleAuditionPartIntro = async (part: PartAnnouncementDef, forceRegen = false) => {
+    if (auditioningPartKey || regeneratingPartKey) return;
+    if (forceRegen) {
+      setRegeneratingPartKey(part.key);
+    } else {
+      setAuditioningPartKey(part.key);
+    }
     try {
-      await playPartIntro(part.titleEn, part.partNumber, voiceProfileEn);
+      if (forceRegen) {
+        await regeneratePartAudio(part.titleEn, part.partNumber, voiceProfileEn);
+        addLog(`Đã tạo lại và phát âm thanh cho ${part.titleEn} (Voice: ${voiceProfileEn})`, 'success');
+      } else {
+        await playPartIntro(part.titleEn, part.partNumber, voiceProfileEn);
+      }
     } catch (e: any) {
-      addLog(`Lỗi nghe thử part intro "${part.titleEn}": ${e?.message || String(e)}`, 'error');
+      addLog(`Lỗi phát part intro "${part.titleEn}": ${e?.message || String(e)}`, 'error');
     } finally {
       setAuditioningPartKey(null);
+      setRegeneratingPartKey(null);
       await checkAllPartAudiosCache();
     }
   };
@@ -2272,6 +2284,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           {CANONICAL_PARTS.map((part) => {
             const isCached = partAudioCacheStatus[part.key] ?? false;
             const isAuditioning = auditioningPartKey === part.key;
+            const isRegenerating = regeneratingPartKey === part.key;
 
             return (
               <div
@@ -2313,29 +2326,46 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   </div>
                 </div>
 
-                {/* Audition Button */}
-                <div className="pt-2 border-t border-zinc-200/60 flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-zinc-400">
+                {/* Audition & Regenerate Buttons */}
+                <div className="pt-2 border-t border-zinc-200/60 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono text-zinc-400 truncate">
                     Giọng: {voiceProfileEn.split('-')[0]}
                   </span>
-                  <button
-                    type="button"
-                    disabled={isAuditioning}
-                    onClick={() => handleAuditionPartIntro(part)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                  >
-                    {isAuditioning ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
-                        <span>Đang đọc...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Volume2 className="w-3 h-3 text-emerald-400" />
-                        <span>Nghe thử</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      disabled={isAuditioning || isRegenerating}
+                      onClick={() => handleAuditionPartIntro(part, false)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                      title="Nghe thử & Tạo lại âm thanh Part thông báo"
+                    >
+                      {isAuditioning ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
+                          <span>Đang đọc...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-3 h-3 text-emerald-400" />
+                          <span>Nghe thử & Tạo lại</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isAuditioning || isRegenerating}
+                      onClick={() => handleAuditionPartIntro(part, true)}
+                      className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                      title="Bắt buộc tạo lại âm thanh mới nhất bằng giọng đang chọn"
+                    >
+                      {isRegenerating ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
+                      ) : (
+                        <RotateCcw className="w-3 h-3 text-purple-600" />
+                      )}
+                      <span className="hidden sm:inline">Tạo lại</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );

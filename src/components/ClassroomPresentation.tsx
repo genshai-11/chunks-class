@@ -1787,7 +1787,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       {/* 4. PRIMARY DRILL STAGE (DYNAMIC LANGUAGE INVERSION & ENLARGED TYPOGRAPHY - Feature 4) */}
       <div className={`flex-1 flex flex-col items-center justify-center text-center w-full relative ${
         isGrammarSlide 
-          ? 'max-w-7xl mx-auto p-2 sm:p-4 overflow-y-auto' 
+          ? 'w-full max-w-[96vw] xl:max-w-[1600px] mx-auto px-4 sm:px-8 py-2 overflow-y-auto' 
           : 'max-w-5xl mx-auto p-8 md:p-14'
       }`}>
         {isTopicCompleteGate ? (

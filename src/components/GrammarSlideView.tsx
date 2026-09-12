@@ -76,10 +76,10 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
 
         {/* Title */}
         <div className="pt-1 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight font-display">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight font-display">
             {lessonTitle || 'Grammar & Core Sentence Structures'}
           </h1>
-          <p className={`text-sm sm:text-base mt-1 max-w-4xl ${
+          <p className={`text-base sm:text-lg mt-2 max-w-5xl font-medium ${
             highContrastDark ? 'text-zinc-400' : 'text-zinc-500'
           }`}>
             Target sentence patterns, verb collocations & grammatical structures.
@@ -106,141 +106,141 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 w-full max-w-7xl mx-auto my-auto py-3">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 w-full max-w-[1600px] mx-auto my-auto py-4">
             {/* Column 1: Sentence Structures */}
-            <div className={`p-4 sm:p-6 rounded-3xl border shadow-sm flex flex-col justify-between transition-all ${
+            <div className={`p-5 sm:p-7 rounded-3xl border-2 shadow-md flex flex-col justify-between transition-all ${
               highContrastDark 
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
                 : 'bg-white border-zinc-200/90 hover:border-zinc-300'
             }`}>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
                   <div className="p-2 sm:p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
-                    <Layers className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <Layers className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    <h3 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-blue-600 dark:text-blue-300">
                       SENTENCE STRUCTURES
                     </h3>
                   </div>
                 </div>
 
-                <div className="space-y-2.5 pt-1">
+                <div className="space-y-3 pt-1">
                   {sentenceStructures.length > 0 ? (
                     sentenceStructures.map((struct, idx) => (
                       <div 
                         key={idx} 
-                        className={`p-3.5 sm:p-4 rounded-xl border text-base sm:text-xl font-bold font-mono text-left flex items-start gap-3 transition-all ${
+                        className={`p-4 sm:p-5 rounded-2xl border-2 text-xl sm:text-2xl lg:text-3xl font-black font-mono leading-snug text-left flex items-start gap-3 sm:gap-4 transition-all ${
                           highContrastDark 
-                            ? 'bg-zinc-900/90 border-zinc-800/80 text-blue-200 shadow-xs' 
-                            : 'bg-blue-50/70 border-blue-200/80 text-blue-950 shadow-xs'
+                            ? 'bg-zinc-900/90 border-blue-500/30 text-blue-100 shadow-md' 
+                            : 'bg-blue-50/80 border-blue-300 text-blue-950 shadow-sm'
                         }`}
                       >
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0 mt-2" />
+                        <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-blue-500 shrink-0 mt-2 shadow-xs" />
                         <span className="break-words leading-snug">{struct}</span>
                       </div>
                     ))
                   ) : (
-                    <div className="text-sm sm:text-base text-zinc-400 italic py-2">
+                    <div className="text-base sm:text-lg text-zinc-400 italic py-3">
                       (No specialized sentence structures)
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="pt-2.5 mt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs sm:text-sm font-mono font-medium text-zinc-400">
+              <div className="pt-3 mt-4 border-t border-zinc-100 dark:border-zinc-800 text-xs sm:text-sm font-mono font-medium text-zinc-400">
                 {sentenceStructures.length} key {sentenceStructures.length === 1 ? 'structure' : 'structures'}
               </div>
             </div>
 
             {/* Column 2: Verb Forms & Phrases */}
-            <div className={`p-4 sm:p-6 rounded-3xl border shadow-sm flex flex-col justify-between transition-all ${
+            <div className={`p-5 sm:p-7 rounded-3xl border-2 shadow-md flex flex-col justify-between transition-all ${
               highContrastDark 
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
                 : 'bg-white border-zinc-200/90 hover:border-zinc-300'
             }`}>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
                   <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
-                    <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    <h3 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-300">
                       VERB FORMS & PHRASES
                     </h3>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2.5 pt-1">
+                <div className="flex flex-wrap gap-3 pt-1">
                   {verbForms.length > 0 ? (
                     verbForms.map((vf, idx) => (
                       <span 
                         key={idx}
-                        className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm sm:text-base font-bold font-mono border inline-flex items-center gap-2 shadow-xs transition-all ${
+                        className={`px-5 py-3 sm:px-6 sm:py-3.5 rounded-2xl border-2 text-lg sm:text-xl lg:text-2xl font-black font-mono inline-flex items-center gap-2.5 sm:gap-3 shadow-sm transition-all ${
                           highContrastDark 
-                            ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-200' 
-                            : 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                            ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-100 shadow-md' 
+                            : 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-sm'
                         }`}
                       >
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500 shrink-0" />
                         <span className="break-words">{vf}</span>
                       </span>
                     ))
                   ) : (
-                    <div className="text-sm sm:text-base text-zinc-400 italic py-2">
+                    <div className="text-base sm:text-lg text-zinc-400 italic py-3">
                       (Standard verb forms)
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="pt-2.5 mt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs sm:text-sm font-mono font-medium text-zinc-400">
+              <div className="pt-3 mt-4 border-t border-zinc-100 dark:border-zinc-800 text-xs sm:text-sm font-mono font-medium text-zinc-400">
                 {verbForms.length} verb {verbForms.length === 1 ? 'phrase' : 'phrases'}
               </div>
             </div>
 
             {/* Column 3: Tenses & Patterns */}
-            <div className={`p-4 sm:p-6 rounded-3xl border shadow-sm flex flex-col justify-between transition-all ${
+            <div className={`p-5 sm:p-7 rounded-3xl border-2 shadow-md flex flex-col justify-between transition-all ${
               highContrastDark 
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
                 : 'bg-white border-zinc-200/90 hover:border-zinc-300'
             }`}>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
                   <div className="p-2 sm:p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
-                    <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <FileText className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                    <h3 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-purple-600 dark:text-purple-300">
                       TENSES & PATTERNS
                     </h3>
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-1">
+                <div className="space-y-3 pt-1">
                   {tenses.length > 0 ? (
                     tenses.map((tense, idx) => (
                       <div 
                         key={idx}
-                        className={`p-3 sm:p-3.5 rounded-xl border text-sm sm:text-base font-bold font-mono text-left flex items-center gap-2.5 transition-all ${
+                        className={`p-4 sm:p-5 rounded-2xl border-2 text-lg sm:text-xl lg:text-2xl font-black font-mono flex items-center gap-3 sm:gap-3.5 text-left transition-all ${
                           highContrastDark 
-                            ? 'bg-purple-950/30 border-purple-800/60 text-purple-200 shadow-xs' 
-                            : 'bg-purple-50/80 border-purple-200 text-purple-950 shadow-xs'
+                            ? 'bg-purple-950/30 border-purple-700/60 text-purple-100 shadow-md' 
+                            : 'bg-purple-50/80 border-purple-300 text-purple-950 shadow-sm'
                         }`}
                       >
-                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0" />
+                        <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-purple-500 shrink-0 shadow-xs" />
                         <span className="break-words">{tense}</span>
                       </div>
                     ))
                   ) : (
-                    <div className="text-sm sm:text-base text-zinc-400 italic py-2">
+                    <div className="text-base sm:text-lg text-zinc-400 italic py-3">
                       (Natural tenses & patterns)
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="pt-2.5 mt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs sm:text-sm font-mono font-medium text-zinc-400">
+              <div className="pt-3 mt-4 border-t border-zinc-100 dark:border-zinc-800 text-xs sm:text-sm font-mono font-medium text-zinc-400">
                 {tenses.length} grammar {tenses.length === 1 ? 'pattern' : 'patterns'}
               </div>
             </div>
@@ -249,15 +249,15 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
 
         {/* Optional Teacher Notes Callout */}
         {grammar?.notes && (
-          <div className={`mt-3 max-w-7xl mx-auto p-3 sm:p-3.5 rounded-xl border text-xs sm:text-sm leading-relaxed flex items-start gap-2.5 shadow-xs w-full ${
+          <div className={`mt-4 max-w-[1600px] mx-auto p-4 sm:p-5 rounded-2xl border-2 text-sm sm:text-base leading-relaxed flex items-start gap-3 shadow-sm w-full ${
             highContrastDark 
-              ? 'bg-amber-950/20 border-amber-800/50 text-amber-200' 
-              : 'bg-amber-50 border-amber-200 text-amber-900'
+              ? 'bg-amber-950/30 border-amber-800/60 text-amber-200' 
+              : 'bg-amber-50 border-amber-300 text-amber-950'
           }`}>
-            <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold font-mono uppercase tracking-wider mr-2 text-xs">Teacher Notes:</span>
-              <span>{grammar.notes}</span>
+              <span className="font-black font-mono uppercase tracking-wider mr-2 text-xs sm:text-sm">Teacher Notes:</span>
+              <span className="font-medium">{grammar.notes}</span>
             </div>
           </div>
         )}
@@ -288,10 +288,10 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
           <button
             type="button"
             onClick={onStartDrill}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-bold rounded-2xl bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-lg hover:shadow-xl transition-all cursor-pointer active:scale-95 animate-pulse"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 text-base sm:text-xl font-black rounded-2xl bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer active:scale-95 animate-pulse"
           >
             <span>START CHUNKS DRILL (SPACE / NEXT ➔)</span>
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-6 h-6" />
           </button>
         </div>
       </div>
