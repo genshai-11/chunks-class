@@ -8,7 +8,9 @@ import {
   CheckCircle2, 
   FileText,
   Keyboard,
-  Info
+  Info,
+  Minus,
+  Plus
 } from 'lucide-react';
 
 export interface GrammarSlideViewProps {
@@ -18,6 +20,117 @@ export interface GrammarSlideViewProps {
   highContrastDark?: boolean;
   onStartDrill: () => void;
 }
+
+type FontSizeLevel = 1 | 2 | 3 | 4 | 5;
+
+const SIZE_LABELS: Record<FontSizeLevel, string> = {
+  1: 'S',
+  2: 'M',
+  3: 'L',
+  4: 'XL',
+  5: '2XL',
+};
+
+const getStoredFontSize = (key: string, defaultValue: FontSizeLevel = 3): FontSizeLevel => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (parsed >= 1 && parsed <= 5) {
+          return parsed as FontSizeLevel;
+        }
+      }
+    }
+  } catch {
+    // Ignore localStorage read errors in restricted contexts
+  }
+  return defaultValue;
+};
+
+// Card 1: Sentence Structures dynamic classes
+const STRUCTURES_SIZE_CLASSES: Record<FontSizeLevel, string> = {
+  1: 'p-2 rounded-lg border text-xs sm:text-sm font-bold font-mono leading-snug text-left flex items-start gap-2',
+  2: 'p-2.5 rounded-xl border text-sm sm:text-base font-bold font-mono leading-snug text-left flex items-start gap-2.5',
+  3: 'p-2.5 sm:p-3 rounded-xl border text-sm sm:text-base lg:text-lg font-bold font-mono leading-snug text-left flex items-start gap-2.5',
+  4: 'p-3 sm:p-3.5 rounded-xl border text-base sm:text-lg lg:text-xl font-black font-mono leading-snug text-left flex items-start gap-3',
+  5: 'p-3.5 sm:p-4 rounded-2xl border-2 text-lg sm:text-xl lg:text-2xl font-black font-mono leading-snug text-left flex items-start gap-3.5',
+};
+
+// Card 2: Verb Forms & Phrases dynamic classes
+const VERBS_SIZE_CLASSES: Record<FontSizeLevel, string> = {
+  1: 'px-2.5 py-1 rounded-lg border text-[11px] sm:text-xs font-bold font-mono inline-flex items-center gap-1.5',
+  2: 'px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-bold font-mono inline-flex items-center gap-2',
+  3: 'px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border text-xs sm:text-sm lg:text-base font-bold font-mono inline-flex items-center gap-2',
+  4: 'px-4 py-2.5 rounded-xl border text-sm sm:text-base lg:text-lg font-black font-mono inline-flex items-center gap-2.5',
+  5: 'px-5 py-3 rounded-2xl border-2 text-base sm:text-lg lg:text-xl font-black font-mono inline-flex items-center gap-3',
+};
+
+// Card 3: Tenses & Patterns dynamic classes
+const TENSES_SIZE_CLASSES: Record<FontSizeLevel, string> = {
+  1: 'p-2 rounded-lg border text-xs font-bold font-mono flex items-center gap-2 text-left',
+  2: 'p-2.5 rounded-xl border text-xs sm:text-sm font-bold font-mono flex items-center gap-2.5 text-left',
+  3: 'p-2.5 sm:p-3 rounded-xl border text-xs sm:text-sm lg:text-base font-bold font-mono flex items-center gap-2.5 text-left',
+  4: 'p-3 sm:p-3.5 rounded-xl border text-sm sm:text-base lg:text-lg font-black font-mono flex items-center gap-3 text-left',
+  5: 'p-3.5 sm:p-4 rounded-2xl border-2 text-base sm:text-lg lg:text-xl font-black font-mono flex items-center gap-3.5 text-left',
+};
+
+interface FontSizeStepperProps {
+  level: FontSizeLevel;
+  onChange: (level: FontSizeLevel) => void;
+  highContrastDark?: boolean;
+}
+
+const FontSizeStepper: React.FC<FontSizeStepperProps> = ({ level, onChange, highContrastDark = false }) => {
+  return (
+    <div 
+      className={`flex items-center gap-1 px-1 py-0.5 rounded-lg border shadow-2xs select-none shrink-0 ${
+        highContrastDark 
+          ? 'bg-zinc-800/90 border-zinc-700 text-zinc-300' 
+          : 'bg-zinc-100 border-zinc-200 text-zinc-600'
+      }`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        title="Decrease text size (A-)"
+        disabled={level <= 1}
+        onClick={() => level > 1 && onChange((level - 1) as FontSizeLevel)}
+        className={`p-1 rounded transition-colors ${
+          level <= 1 
+            ? 'opacity-30 cursor-not-allowed' 
+            : highContrastDark 
+              ? 'hover:bg-zinc-700 text-zinc-300 hover:text-white cursor-pointer active:scale-95' 
+              : 'hover:bg-zinc-200 text-zinc-600 hover:text-zinc-900 cursor-pointer active:scale-95'
+        }`}
+        aria-label="Decrease text size"
+      >
+        <Minus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+      </button>
+
+      <span className="w-6 sm:w-7 text-center font-mono font-black text-[10px] sm:text-xs tracking-wider">
+        {SIZE_LABELS[level]}
+      </span>
+
+      <button
+        type="button"
+        title="Increase text size (A+)"
+        disabled={level >= 5}
+        onClick={() => level < 5 && onChange((level + 1) as FontSizeLevel)}
+        className={`p-1 rounded transition-colors ${
+          level >= 5 
+            ? 'opacity-30 cursor-not-allowed' 
+            : highContrastDark 
+              ? 'hover:bg-zinc-700 text-zinc-300 hover:text-white cursor-pointer active:scale-95' 
+              : 'hover:bg-zinc-200 text-zinc-600 hover:text-zinc-900 cursor-pointer active:scale-95'
+        }`}
+        aria-label="Increase text size"
+      >
+        <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+      </button>
+    </div>
+  );
+};
 
 export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
   grammar,
@@ -30,6 +143,38 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
   const verbForms = grammar?.verb_forms || [];
   const tenses = grammar?.tense || [];
   const hasContent = sentenceStructures.length > 0 || verbForms.length > 0 || tenses.length > 0;
+
+  // Font size levels 1..5 for each of the 3 cards, persisted to localStorage
+  const [structuresSize, setStructuresSize] = React.useState<FontSizeLevel>(() =>
+    getStoredFontSize('chunks_grammar_size_structures', 3)
+  );
+  const [verbsSize, setVerbsSize] = React.useState<FontSizeLevel>(() =>
+    getStoredFontSize('chunks_grammar_size_verbs', 3)
+  );
+  const [tensesSize, setTensesSize] = React.useState<FontSizeLevel>(() =>
+    getStoredFontSize('chunks_grammar_size_tenses', 3)
+  );
+
+  const updateStructuresSize = (newLevel: FontSizeLevel) => {
+    setStructuresSize(newLevel);
+    try {
+      localStorage.setItem('chunks_grammar_size_structures', String(newLevel));
+    } catch {}
+  };
+
+  const updateVerbsSize = (newLevel: FontSizeLevel) => {
+    setVerbsSize(newLevel);
+    try {
+      localStorage.setItem('chunks_grammar_size_verbs', String(newLevel));
+    } catch {}
+  };
+
+  const updateTensesSize = (newLevel: FontSizeLevel) => {
+    setTensesSize(newLevel);
+    try {
+      localStorage.setItem('chunks_grammar_size_tenses', String(newLevel));
+    } catch {}
+  };
 
   return (
     <div className={`w-full h-full flex flex-col justify-between p-3 sm:p-5 font-sans transition-colors overflow-hidden select-none animate-fade-in ${
@@ -103,15 +248,23 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
                 : 'bg-white border-zinc-200/90 hover:border-zinc-300'
             }`}>
-              <div className="flex items-center gap-2.5 pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-                <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0">
-                  <Layers className="w-5 h-5" />
+              <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-2.5">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-blue-600 dark:text-blue-300">
+                      SENTENCE STRUCTURES
+                    </h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-blue-600 dark:text-blue-300">
-                    SENTENCE STRUCTURES
-                  </h3>
-                </div>
+
+                <FontSizeStepper
+                  level={structuresSize}
+                  onChange={updateStructuresSize}
+                  highContrastDark={highContrastDark}
+                />
               </div>
 
               <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 scrollbar-thin pt-2">
@@ -119,7 +272,7 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                   sentenceStructures.map((struct, idx) => (
                     <div 
                       key={idx} 
-                      className={`p-2.5 sm:p-3 rounded-xl border text-sm sm:text-base lg:text-lg font-bold font-mono leading-snug text-left flex items-start gap-2.5 transition-all ${
+                      className={`${STRUCTURES_SIZE_CLASSES[structuresSize]} transition-all ${
                         highContrastDark 
                           ? 'bg-zinc-900/90 border-blue-500/30 text-blue-100 shadow-md' 
                           : 'bg-blue-50/80 border-blue-300 text-blue-950 shadow-xs'
@@ -147,15 +300,23 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
                 : 'bg-white border-zinc-200/90 hover:border-zinc-300'
             }`}>
-              <div className="flex items-center gap-2.5 pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-                <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shrink-0">
-                  <Sparkles className="w-5 h-5" />
+              <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-2.5">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-300">
+                      VERB FORMS & PHRASES
+                    </h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-300">
-                    VERB FORMS & PHRASES
-                  </h3>
-                </div>
+
+                <FontSizeStepper
+                  level={verbsSize}
+                  onChange={updateVerbsSize}
+                  highContrastDark={highContrastDark}
+                />
               </div>
 
               <div className="flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin pt-2">
@@ -164,7 +325,7 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                     verbForms.map((vf, idx) => (
                       <span 
                         key={idx}
-                        className={`px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border text-xs sm:text-sm lg:text-base font-bold font-mono inline-flex items-center gap-2 shadow-xs transition-all ${
+                        className={`${VERBS_SIZE_CLASSES[verbsSize]} shadow-xs transition-all ${
                           highContrastDark 
                             ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-100 shadow-md' 
                             : 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xs'
@@ -193,15 +354,23 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
                 : 'bg-white border-zinc-200/90 hover:border-zinc-300'
             }`}>
-              <div className="flex items-center gap-2.5 pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-                <div className="p-1.5 sm:p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 shrink-0">
-                  <FileText className="w-5 h-5" />
+              <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-2.5">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-purple-600 dark:text-purple-300">
+                      TENSES & PATTERNS
+                    </h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-purple-600 dark:text-purple-300">
-                    TENSES & PATTERNS
-                  </h3>
-                </div>
+
+                <FontSizeStepper
+                  level={tensesSize}
+                  onChange={updateTensesSize}
+                  highContrastDark={highContrastDark}
+                />
               </div>
 
               <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 scrollbar-thin pt-2">
@@ -209,7 +378,7 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                   tenses.map((tense, idx) => (
                     <div 
                       key={idx}
-                      className={`p-2.5 sm:p-3 rounded-xl border text-xs sm:text-sm lg:text-base font-bold font-mono flex items-center gap-2.5 text-left transition-all ${
+                      className={`${TENSES_SIZE_CLASSES[tensesSize]} transition-all ${
                         highContrastDark 
                           ? 'bg-purple-950/30 border-purple-700/60 text-purple-100 shadow-md' 
                           : 'bg-purple-50/80 border-purple-300 text-purple-950 shadow-xs'
