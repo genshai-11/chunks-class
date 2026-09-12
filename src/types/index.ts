@@ -72,10 +72,27 @@ export interface LessonDoc {
   total_chunks: number;
   categories: string[];
   chunks: ChunkItem[];
+  grammar?: LessonGrammar;
   source_files?: string[];
   created_at?: string;
   updated_at?: string;
   [key: string]: any;
+}
+
+export interface LessonGrammar {
+  verb_forms: string[];
+  sentence_structures: string[];
+  tense: string[];
+  notes?: string;
+}
+
+export interface LessonGrammarDoc extends LessonGrammar {
+  id: string;             // e.g. "grammar_level_b_day_1"
+  lesson_id: string;      // e.g. "level_b_day_1"
+  course_id: string;      // e.g. "course_level_b"
+  day_number: number;
+  lesson_title: string;
+  updated_at?: string;
 }
 
 // --------------------------------------------------------------------------

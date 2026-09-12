@@ -1,8 +1,9 @@
-import { Course, LessonDoc, CourseLevel } from '../types';
+import { Course, LessonDoc, CourseLevel, LessonGrammar } from '../types';
 import { CURRICULUM_CATALOG_LEVEL_A } from '../data/levelAData';
 import { CURRICULUM_CATALOG_LEVEL_B_EREL } from '../data/levelBErelData';
 import { CURRICULUM_CATALOG_LEVEL_B_ERES } from '../data/levelBEresData';
 import { CURRICULUM_CATALOG_LEVEL_B_ERE } from '../data/levelBEreData';
+import { LEVEL_B_ERE_GRAMMAR_CATALOG, getGrammarForLesson } from '../data/levelBGrammarData';
 
 /**
  * Dynamic In-Memory Curriculum Registry
@@ -19,6 +20,19 @@ class CurriculumRegistryService {
 
   private initDefaultSeed() {
     // 1. Seed Level B - Canonical 30 Topics ERE Curriculum
+    // Attach grammar data to each lesson doc in Level B ERE
+    CURRICULUM_CATALOG_LEVEL_B_ERE.forEach(l => {
+      const g = getGrammarForLesson(l.id);
+      if (g) {
+        l.grammar = {
+          verb_forms: g.verb_forms,
+          sentence_structures: g.sentence_structures,
+          tense: g.tense,
+          notes: g.notes
+        };
+      }
+    });
+
     const courseLevelB: Course = {
       id: "course_level_b",
       level_code: "LEVEL_B",
@@ -176,6 +190,27 @@ class CurriculumRegistryService {
       if (key.toLowerCase() === lower) return doc;
     }
 
+    return null;
+  }
+
+  /**
+   * Fast lookup for grammar structures and verb forms by lesson ID
+   */
+  public getGrammarByLessonId(lessonId: string): LessonGrammar | null {
+    if (!lessonId) return null;
+    const lesson = this.getLessonById(lessonId);
+    if (lesson?.grammar) {
+      return lesson.grammar;
+    }
+    const gDoc = getGrammarForLesson(lessonId);
+    if (gDoc) {
+      return {
+        verb_forms: gDoc.verb_forms,
+        sentence_structures: gDoc.sentence_structures,
+        tense: gDoc.tense,
+        notes: gDoc.notes
+      };
+    }
     return null;
   }
 

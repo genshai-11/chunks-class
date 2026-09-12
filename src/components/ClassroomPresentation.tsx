@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart, LessonTopicInfo } from '../types';
+import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart, LessonTopicInfo, LessonGrammar } from '../types';
 import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
 import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
@@ -13,6 +13,8 @@ import { PartsDrawer, groupChunksIntoParts } from './PartsDrawer';
 import { ChunkListPreviewDrawer } from './ChunkListPreviewDrawer';
 import { PresentationProgressBar } from './PresentationProgressBar';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
+import { GrammarSlideView } from './GrammarSlideView';
+import { playPartIntro } from '../services/partAudioService';
 import { AudioSourceType } from '../services/googleTtsService';
 import confetti from 'canvas-confetti';
 import { 
@@ -86,6 +88,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [isChunkListOpen, setIsChunkListOpen] = useState<boolean>(false);
   const [isTopicCompleteGate, setIsTopicCompleteGate] = useState<boolean>(false);
   const [isLessonCompleteGate, setIsLessonCompleteGate] = useState<boolean>(false);
+  const [isGrammarSlide, setIsGrammarSlide] = useState<boolean>(true);
+  const [isPartAnnounceEnabled, setIsPartAnnounceEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('chunks_part_announce_enabled');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const [partAnnounceBanner, setPartAnnounceBanner] = useState<{ title: string; partNumber?: number } | null>(null);
+  const partAnnounceSeqRef = useRef<number>(0);
 
   // Redesign Popover States
   const [isLessonSwitcherOpen, setIsLessonSwitcherOpen] = useState<boolean>(false);
@@ -169,6 +178,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     audioPlayer.stop();
     setIsTopicCompleteGate(false);
     setIsLessonCompleteGate(false);
+    setIsGrammarSlide(true);
     setCurrentLessonId(cleanId);
     setCurrentChunkIndex(0);
     const localDoc = curriculumRegistry.getLessonById(cleanId);
@@ -192,6 +202,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     if (providedLesson) {
       setIsTopicCompleteGate(false);
       setIsLessonCompleteGate(false);
+      setIsGrammarSlide(true);
       setFetchedLessonDoc(providedLesson);
       setCurrentLessonId(providedLesson.id);
       setCurrentChunkIndex(0);
@@ -357,6 +368,15 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const activeLesson: LessonDoc = fetchedLessonDoc || 
     curriculumRegistry.getLessonById(currentLessonId) || 
     curriculumRegistry.getAllLessons()[0];
+
+  const currentGrammar: LessonGrammar | null = useMemo(() => {
+    if (activeLesson?.grammar) return activeLesson.grammar;
+    if (activeLesson?.id) {
+      const fromRegistry = curriculumRegistry.getGrammarByLessonId(activeLesson.id);
+      if (fromRegistry) return fromRegistry;
+    }
+    return null;
+  }, [activeLesson]);
 
   const [isCurrentLessonFullyCached, setIsCurrentLessonFullyCached] = useState(false);
   const requiredAudio = (chunk: ChunkItem, mode: LanguageMode = languageMode): [string, string][] => {
@@ -631,10 +651,58 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     }
   };
 
+  // Play chunk audio with optional Part Transition announcement
+  const playChunkWithPartTransition = async (
+    targetIndex: number,
+    forceAnnounce: boolean = false
+  ) => {
+    const targetChunk = chunks[targetIndex];
+    if (!targetChunk) return;
+
+    const targetPart = parts.find(p => targetIndex >= p.start_index && targetIndex <= p.end_index);
+    const isNewPart = forceAnnounce || !currentPart || (targetPart && targetPart.part_index !== currentPart?.part_index);
+
+    if (isPartAnnounceEnabled && isNewPart && targetPart) {
+      const seqId = ++playbackSequenceRef.current;
+      audioPlayer.stop();
+      setIsPlayingAudio(true);
+      setPartAnnounceBanner({
+        title: targetPart.title,
+        partNumber: targetPart.part_index
+      });
+
+      try {
+        if (playbackSequenceRef.current === seqId) {
+          await playPartIntro(targetPart.title, targetPart.part_index, selectedVoice);
+        }
+      } catch (err) {
+        console.warn('[ClassroomPresentation] Part intro playback error:', err);
+      } finally {
+        setTimeout(() => {
+          setPartAnnounceBanner(prev => (prev?.partNumber === targetPart.part_index ? null : prev));
+        }, 1500);
+      }
+
+      if (playbackSequenceRef.current === seqId) {
+        await playCurrentChunkAudio(targetChunk);
+      }
+    } else {
+      await playCurrentChunkAudio(targetChunk);
+    }
+  };
+
   // Step Forward (Clicker Next / PageDown / Space)
   const handleNext = () => {
     if (isBlackout) {
       setIsBlackout(false);
+      return;
+    }
+
+    // 0. If currently on Grammar Slide, exit to Chunk 0!
+    if (isGrammarSlide) {
+      setIsGrammarSlide(false);
+      setCurrentChunkIndex(0);
+      playChunkWithPartTransition(0, true);
       return;
     }
 
@@ -653,7 +721,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       } else {
         setIsTopicCompleteGate(false);
         setCurrentChunkIndex(topic2StartIndex);
-        playCurrentChunkAudio(chunks[topic2StartIndex]);
+        playChunkWithPartTransition(topic2StartIndex, true);
         return;
       }
     }
@@ -682,7 +750,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     if (currentChunkIndex < chunks.length - 1) {
       const nextIdx = currentChunkIndex + 1;
       setCurrentChunkIndex(nextIdx);
-      playCurrentChunkAudio(chunks[nextIdx]);
+      playChunkWithPartTransition(nextIdx);
     }
   };
 
@@ -700,12 +768,21 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       setIsLessonCompleteGate(false);
       return;
     }
+    if (isGrammarSlide) {
+      return;
+    }
+    if (currentChunkIndex === 0) {
+      // Return to Grammar Slide (Slide 0)
+      setIsGrammarSlide(true);
+      audioPlayer.stop();
+      return;
+    }
     if (currentChunkIndex > 0) {
       const prevIdx = currentChunkIndex - 1;
       setCurrentChunkIndex(prevIdx);
       const shouldPlay = opts?.playAudio ?? shortcutConfigService.getConfig().focusMode.playAudioOnPrev;
       if (shouldPlay) {
-        playCurrentChunkAudio(chunks[prevIdx]);
+        playChunkWithPartTransition(prevIdx);
       } else {
         audioPlayer.stop();
       }
@@ -715,7 +792,21 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   // Replay Audio (Key R)
   const handleReplay = () => {
     if (isBlackout) setIsBlackout(false);
+    if (isGrammarSlide) return;
     playCurrentChunkAudio(currentChunk);
+  };
+
+  // Toggle Grammar Slide (Key G)
+  const handleToggleGrammar = () => {
+    if (isGrammarSlide) {
+      setIsGrammarSlide(false);
+      if (chunks[currentChunkIndex]) {
+        playCurrentChunkAudio(chunks[currentChunkIndex]);
+      }
+    } else {
+      setIsGrammarSlide(true);
+      audioPlayer.stop();
+    }
   };
 
   // Toggle Blackout Screen (Key B / Period)
@@ -761,6 +852,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     onTogglePartsDrawer: handleTogglePartsDrawer,
     onToggleChunkList: () => setIsChunkListOpen(prev => !prev),
     onToggleFullscreen: handleToggleFullscreen,
+    onToggleGrammar: handleToggleGrammar,
     onSetLoop: handleSetLoop,
     isModalOpen: isLessonSwitcherOpen || isSoundSettingsOpen || isPrepModalOpen || isDiagnosticOpen || showKeyboardGuide || isPartsDrawerOpen || isChunkListOpen
   }, true);
@@ -768,7 +860,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   // Play audio when lesson changes or first mounts
   useEffect(() => {
     audioPlayer.stop();
-    if (!isBlackout && currentChunk) {
+    if (!isGrammarSlide && !isBlackout && currentChunk) {
       playCurrentChunkAudio(currentChunk);
     }
   }, [currentLessonId]);
@@ -852,11 +944,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         totalChunks={chunks.length}
         parts={parts}
         highContrastDark={highContrastDark}
+        isGrammarSlide={isGrammarSlide}
         onSeek={(targetIndex) => {
           setIsTopicCompleteGate(false);
           setIsLessonCompleteGate(false);
+          setIsGrammarSlide(false);
           setCurrentChunkIndex(targetIndex);
-          playCurrentChunkAudio(chunks[targetIndex]);
+          playChunkWithPartTransition(targetIndex);
         }}
       />
 
@@ -878,6 +972,26 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
       )}
 
+      {/* Floating Part Announcement Banner (Toast) */}
+      {partAnnounceBanner && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-40 animate-in fade-in zoom-in-95 duration-200 pointer-events-none">
+          <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-zinc-950/95 text-white border border-zinc-700/80 shadow-2xl backdrop-blur-md">
+            <div className="p-2 rounded-xl bg-[#DC2626] text-white">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400">
+                Chuyển Phần · Part Announcement
+              </div>
+              <div className="text-sm sm:text-base font-extrabold font-display text-white">
+                Part {partAnnounceBanner.partNumber} · {partAnnounceBanner.title}
+              </div>
+            </div>
+            <Volume2 className="w-4 h-4 text-emerald-400 animate-pulse ml-1" />
+          </div>
+        </div>
+      )}
+
       {/* 3. SLIM HIGH-SIGNAL TOP BAR */}
       <div className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-3 transition-colors z-20 ${
         highContrastDark ? 'border-zinc-800 bg-[#0F0F12]' : 'border-[#E8E8EC] bg-white/95 backdrop-blur-xs'
@@ -886,12 +1000,22 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
           {/* Day pill + Level badge */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <span 
-              className="font-mono font-bold text-xs px-2.5 py-1.5 rounded-xl bg-[#DC2626] text-white shrink-0 shadow-2xs"
-              title={`Day ${activeLesson?.day_number ?? 1}`}
-            >
-              Day {activeLesson?.day_number ?? 1}
-            </span>
+            {isGrammarSlide ? (
+              <span 
+                className="font-mono font-bold text-xs px-2.5 py-1.5 rounded-xl bg-purple-600 text-white shrink-0 shadow-2xs flex items-center gap-1.5 animate-pulse"
+                title="Slide 0: Grammar & Sentence Structures"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Grammar / Slide 0</span>
+              </span>
+            ) : (
+              <span 
+                className="font-mono font-bold text-xs px-2.5 py-1.5 rounded-xl bg-[#DC2626] text-white shrink-0 shadow-2xs"
+                title={`Day ${activeLesson?.day_number ?? 1}`}
+              >
+                Day {activeLesson?.day_number ?? 1}
+              </span>
+            )}
             <span 
               className={`hidden sm:inline-block text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl border shrink-0 ${
                 highContrastDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'
@@ -1467,6 +1591,34 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                         ))}
                       </div>
                     </div>
+
+                    {/* Part Intro Transition Audio Toggle */}
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+                      <div className="pr-2">
+                        <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                          Giới thiệu Part (Part Intro Audio)
+                        </div>
+                        <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                          Tự động đọc thông báo khi bắt đầu phần mới (VD: "Part 1: Vietnamese slangs")
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextVal = !isPartAnnounceEnabled;
+                          setIsPartAnnounceEnabled(nextVal);
+                          localStorage.setItem('chunks_part_announce_enabled', String(nextVal));
+                        }}
+                        className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
+                          isPartAnnounceEnabled ? 'bg-[#DC2626]' : 'bg-zinc-300 dark:bg-zinc-600'
+                        }`}
+                        title="Bật/Tắt âm thanh giới thiệu phần mới"
+                      >
+                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                          isPartAnnounceEnabled ? 'translate-x-4' : 'translate-x-0'
+                        }`} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Quick Actions Footer */}
@@ -1639,6 +1791,18 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               </button>
             </div>
           </div>
+        ) : isGrammarSlide ? (
+          <GrammarSlideView
+            grammar={currentGrammar}
+            lessonTitle={activeLesson?.lesson_title || 'Grammar & Core Sentence Structures'}
+            dayNumber={activeLesson?.day_number}
+            highContrastDark={highContrastDark}
+            onStartDrill={() => {
+              setIsGrammarSlide(false);
+              setCurrentChunkIndex(0);
+              playChunkWithPartTransition(0, true);
+            }}
+          />
         ) : (
           <>
             {/* Badges */}
@@ -1775,12 +1939,21 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         onClose={() => setIsPartsDrawerOpen(false)}
         parts={parts}
         currentChunkIndex={currentChunkIndex}
+        isGrammarActive={isGrammarSlide}
+        hasGrammar={Boolean(currentGrammar)}
         lessonTitle={activeLesson?.lesson_title}
+        onSelectGrammar={() => {
+          setIsTopicCompleteGate(false);
+          setIsLessonCompleteGate(false);
+          setIsGrammarSlide(true);
+          audioPlayer.stop();
+        }}
         onSelectPart={(startIndex) => {
           setIsTopicCompleteGate(false);
           setIsLessonCompleteGate(false);
+          setIsGrammarSlide(false);
           setCurrentChunkIndex(startIndex);
-          playCurrentChunkAudio(chunks[startIndex]);
+          playChunkWithPartTransition(startIndex, true);
         }}
       />
 
@@ -1873,17 +2046,18 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrev}
-            disabled={currentChunkIndex === 0}
+            disabled={currentChunkIndex === 0 && isGrammarSlide}
             className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-white text-xs font-bold text-zinc-900 disabled:opacity-30 transition-all cursor-pointer shadow-xs"
-            title="Previous Chunk (PageUp / Left)"
+            title={isGrammarSlide ? "Slide 0 (Đầu bài học)" : (currentChunkIndex === 0 ? "Về Slide 0 (Ngữ pháp)" : "Previous Chunk (PageUp / Left)")}
           >
             <ChevronLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Prev</span>
+            <span className="hidden sm:inline">{currentChunkIndex === 0 && !isGrammarSlide ? 'Grammar' : 'Prev'}</span>
           </button>
 
           <button
             onClick={handleReplay}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#DC2626] text-white text-xs font-bold hover:bg-[#B91C1C] transition-all cursor-pointer shadow-xs"
+            disabled={isGrammarSlide}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#DC2626] text-white text-xs font-bold hover:bg-[#B91C1C] disabled:opacity-40 transition-all cursor-pointer shadow-xs"
             title="Replay Audio (Key R)"
           >
             <Volume2 className="w-4 h-4" />
@@ -1893,7 +2067,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           <button
             onClick={handleNext}
             className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs ${
-              isTopicCompleteGate
+              isGrammarSlide
+                ? 'bg-[#DC2626] text-white animate-pulse shadow-red-500/20'
+                : isTopicCompleteGate
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white animate-pulse shadow-emerald-500/20 ring-2 ring-emerald-400/50'
                 : isLessonCompleteGate || currentChunkIndex === chunks.length - 1
                 ? 'bg-amber-600 text-white hover:bg-amber-500 shadow-amber-500/20'
@@ -1902,7 +2078,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             title="Next Chunk (PageDown / Right / Space)"
           >
             <span>
-              {isTopicCompleteGate
+              {isGrammarSlide
+                ? 'Bắt đầu Chunks ➔'
+                : isTopicCompleteGate
                 ? 'Bắt đầu Topic 2 ➔'
                 : (isLessonCompleteGate || currentChunkIndex === chunks.length - 1)
                 ? 'Hoàn Tất 🎉'

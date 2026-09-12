@@ -11,6 +11,7 @@ export interface ClickerHandlers {
   onTogglePartsDrawer?: () => void;
   onToggleChunkList?: () => void;
   onToggleFullscreen?: () => void;
+  onToggleGrammar?: () => void;
   onSetLoop?: (count: number) => void;
   isModalOpen?: boolean;
   mode?: 'focus' | 'improv';
@@ -102,6 +103,15 @@ export function usePresenterClicker(handlers: ClickerHandlers, enabled: boolean 
       // 2. Guard against clicker actions when a Modal / Overlay is open
       if (handlersRef.current.isModalOpen && e.code !== 'Escape') {
         return;
+      }
+
+      // Quick toggle grammar slide (Key G)
+      if (e.code === 'KeyG' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (handlersRef.current.onToggleGrammar) {
+          e.preventDefault();
+          handlersRef.current.onToggleGrammar();
+          return;
+        }
       }
 
       const curConfig = configRef.current;
