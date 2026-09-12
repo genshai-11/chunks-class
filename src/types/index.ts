@@ -134,6 +134,8 @@ export interface CohortAudioSettings {
   repeat_count: number;
   provider_primary?: string;       // 'DEEPGRAM_AURA' | 'GOOGLE_TTS'
   provider_secondary?: string;
+  part_announce_enabled?: boolean;
+  part_intro_autoplay_chunk?: boolean;
 }
 
 export interface Cohort {

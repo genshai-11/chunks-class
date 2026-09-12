@@ -90,9 +90,20 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [isLessonCompleteGate, setIsLessonCompleteGate] = useState<boolean>(false);
   const [isGrammarSlide, setIsGrammarSlide] = useState<boolean>(true);
   const [isPartAnnounceEnabled, setIsPartAnnounceEnabled] = useState<boolean>(() => {
+    if (audioSettings?.part_announce_enabled !== undefined) {
+      return audioSettings.part_announce_enabled;
+    }
     const saved = localStorage.getItem('chunks_part_announce_enabled');
     return saved !== null ? saved === 'true' : true;
   });
+  const [isPartAutoplayChunk, setIsPartAutoplayChunk] = useState<boolean>(() => {
+    if (audioSettings?.part_intro_autoplay_chunk !== undefined) {
+      return audioSettings.part_intro_autoplay_chunk;
+    }
+    const saved = localStorage.getItem('chunks_part_autoplay_chunk');
+    return saved !== null ? saved === 'true' : false;
+  });
+  const [isAwaitingFirstChunkPlay, setIsAwaitingFirstChunkPlay] = useState<boolean>(false);
   const [partAnnounceBanner, setPartAnnounceBanner] = useState<{ title: string; partNumber?: number } | null>(null);
   const partAnnounceSeqRef = useRef<number>(0);
 
@@ -228,6 +239,12 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       if (audioSettings.repeat_count && audioSettings.repeat_count !== repeatCount) {
         setRepeatCount(audioSettings.repeat_count);
       }
+      if (audioSettings.part_announce_enabled !== undefined && audioSettings.part_announce_enabled !== isPartAnnounceEnabled) {
+        setIsPartAnnounceEnabled(audioSettings.part_announce_enabled);
+      }
+      if (audioSettings.part_intro_autoplay_chunk !== undefined && audioSettings.part_intro_autoplay_chunk !== isPartAutoplayChunk) {
+        setIsPartAutoplayChunk(audioSettings.part_intro_autoplay_chunk);
+      }
     }
   }, [audioSettings]);
 
@@ -244,7 +261,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       audioSettings.voice_profile_vi !== selectedVoiceVi ||
       audioSettings.language_mode !== languageMode ||
       audioSettings.default_speed !== speed ||
-      audioSettings.repeat_count !== repeatCount;
+      audioSettings.repeat_count !== repeatCount ||
+      audioSettings.part_announce_enabled !== isPartAnnounceEnabled ||
+      audioSettings.part_intro_autoplay_chunk !== isPartAutoplayChunk;
 
     if (hasChanged) {
       onUpdateAudioSettings?.({
@@ -260,10 +279,12 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         voice_profile_vi: selectedVoiceVi,
         language_mode: languageMode,
         default_speed: speed,
-        repeat_count: repeatCount
+        repeat_count: repeatCount,
+        part_announce_enabled: isPartAnnounceEnabled,
+        part_intro_autoplay_chunk: isPartAutoplayChunk
       });
     }
-  }, [selectedVoice, selectedVoiceVi, speed, repeatCount, languageMode]);
+  }, [selectedVoice, selectedVoiceVi, speed, repeatCount, languageMode, isPartAnnounceEnabled, isPartAutoplayChunk]);
 
   const handleStartPrepareAudio = async () => {
     if (chunks.length === 0) return;
@@ -684,9 +705,18 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       }
 
       if (playbackSequenceRef.current === seqId) {
-        await playCurrentChunkAudio(targetChunk);
+        if (isPartAutoplayChunk) {
+          setIsAwaitingFirstChunkPlay(false);
+          await playCurrentChunkAudio(targetChunk);
+        } else {
+          // Manual mode: stop audio and wait for teacher to trigger Chunk 1 playback
+          setIsPlayingAudio(false);
+          setActiveSpeechStep('idle');
+          setIsAwaitingFirstChunkPlay(true);
+        }
       }
     } else {
+      setIsAwaitingFirstChunkPlay(false);
       await playCurrentChunkAudio(targetChunk);
     }
   };
@@ -695,6 +725,15 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const handleNext = () => {
     if (isBlackout) {
       setIsBlackout(false);
+      return;
+    }
+
+    // Manual mode: if teacher was waiting to play the first chunk after Part intro
+    if (isAwaitingFirstChunkPlay) {
+      setIsAwaitingFirstChunkPlay(false);
+      if (chunks[currentChunkIndex]) {
+        playCurrentChunkAudio(chunks[currentChunkIndex]);
+      }
       return;
     }
 
@@ -756,6 +795,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
   // Step Back (Clicker Prev / PageUp)
   const handlePrev = (opts?: { playAudio?: boolean }) => {
+    setIsAwaitingFirstChunkPlay(false);
     if (isBlackout) {
       setIsBlackout(false);
       return;
@@ -793,11 +833,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const handleReplay = () => {
     if (isBlackout) setIsBlackout(false);
     if (isGrammarSlide) return;
+    setIsAwaitingFirstChunkPlay(false);
     playCurrentChunkAudio(currentChunk);
   };
 
   // Toggle Grammar Slide (Key G)
   const handleToggleGrammar = () => {
+    setIsAwaitingFirstChunkPlay(false);
     if (isGrammarSlide) {
       setIsGrammarSlide(false);
       if (chunks[currentChunkIndex]) {
@@ -1592,32 +1634,82 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       </div>
                     </div>
 
-                    {/* Part Intro Transition Audio Toggle */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
-                      <div className="pr-2">
-                        <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                          Giới thiệu Part (Part Intro Audio)
+                    {/* Part Intro Transition Audio Toggle & Autoplay Mode */}
+                    <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="pr-2">
+                          <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                            Giới thiệu Part (Part Intro Audio)
+                          </div>
+                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                            Tự động đọc thông báo khi bắt đầu phần mới (VD: "Part 1: Vietnamese slangs")
+                          </div>
                         </div>
-                        <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
-                          Tự động đọc thông báo khi bắt đầu phần mới (VD: "Part 1: Vietnamese slangs")
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextVal = !isPartAnnounceEnabled;
+                            setIsPartAnnounceEnabled(nextVal);
+                            localStorage.setItem('chunks_part_announce_enabled', String(nextVal));
+                          }}
+                          className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
+                            isPartAnnounceEnabled ? 'bg-[#DC2626]' : 'bg-zinc-300 dark:bg-zinc-600'
+                          }`}
+                          title="Bật/Tắt âm thanh giới thiệu phần mới"
+                        >
+                          <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                            isPartAnnounceEnabled ? 'translate-x-4' : 'translate-x-0'
+                          }`} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const nextVal = !isPartAnnounceEnabled;
-                          setIsPartAnnounceEnabled(nextVal);
-                          localStorage.setItem('chunks_part_announce_enabled', String(nextVal));
-                        }}
-                        className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
-                          isPartAnnounceEnabled ? 'bg-[#DC2626]' : 'bg-zinc-300 dark:bg-zinc-600'
-                        }`}
-                        title="Bật/Tắt âm thanh giới thiệu phần mới"
-                      >
-                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                          isPartAnnounceEnabled ? 'translate-x-4' : 'translate-x-0'
-                        }`} />
-                      </button>
+
+                      {isPartAnnounceEnabled && (
+                        <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-700/80 space-y-1.5 animate-fade-in">
+                          <div className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+                            <span>Chế độ phát sau khi giới thiệu Part</span>
+                            <span className="text-[10px] font-mono font-medium text-[#DC2626]">
+                              {isPartAutoplayChunk ? 'Tự động' : 'Thủ công'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-zinc-200/60 dark:bg-zinc-900/60">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsPartAutoplayChunk(true);
+                                localStorage.setItem('chunks_part_autoplay_chunk', 'true');
+                              }}
+                              className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
+                                isPartAutoplayChunk
+                                  ? 'bg-[#DC2626] text-white shadow-xs'
+                                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                              }`}
+                              title="Tự động phát audio của Chunk đầu tiên ngay sau khi giới thiệu Part"
+                            >
+                              Tự động (Auto-play)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsPartAutoplayChunk(false);
+                                localStorage.setItem('chunks_part_autoplay_chunk', 'false');
+                              }}
+                              className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
+                                !isPartAutoplayChunk
+                                  ? 'bg-[#DC2626] text-white shadow-xs'
+                                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                              }`}
+                              title="Dừng lại để giáo viên giảng giải, bấm Next/Space để phát"
+                            >
+                              Thủ công (Manual)
+                            </button>
+                          </div>
+                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                            {isPartAutoplayChunk
+                              ? '⚡ Tự động phát audio của Chunk đầu tiên ngay sau khi giới thiệu Part'
+                              : '⏸️ Dừng lại để giáo viên giảng giải, bấm Next/Space để phát'}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1929,6 +2021,14 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 <span>Playing: {activeSpeechStep === 'en' ? 'English (EN)' : activeSpeechStep === 'vi' ? 'Vietnamese (VI)' : 'Drill Audio'}</span>
               </div>
             )}
+
+            {/* Awaiting Manual Play of First Chunk */}
+            {isAwaitingFirstChunkPlay && !isPlayingAudio && (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/80 font-mono text-xs font-bold mt-3 animate-pulse shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                <span>⏸️ Chế độ thủ công: Bấm Next / Space (hoặc click Phát lại) để phát audio Chunk đầu tiên</span>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -1943,6 +2043,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         hasGrammar={Boolean(currentGrammar)}
         lessonTitle={activeLesson?.lesson_title}
         onSelectGrammar={() => {
+          setIsAwaitingFirstChunkPlay(false);
           setIsTopicCompleteGate(false);
           setIsLessonCompleteGate(false);
           setIsGrammarSlide(true);
@@ -2073,9 +2174,11 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white animate-pulse shadow-emerald-500/20 ring-2 ring-emerald-400/50'
                 : isLessonCompleteGate || currentChunkIndex === chunks.length - 1
                 ? 'bg-amber-600 text-white hover:bg-amber-500 shadow-amber-500/20'
+                : isAwaitingFirstChunkPlay
+                ? 'bg-[#DC2626] text-white animate-pulse shadow-red-500/30 ring-2 ring-red-400/50'
                 : 'bg-zinc-900 text-white hover:bg-zinc-800'
             }`}
-            title="Next Chunk (PageDown / Right / Space)"
+            title={isAwaitingFirstChunkPlay ? "Phát audio Chunk đầu tiên (Space / Next)" : "Next Chunk (PageDown / Right / Space)"}
           >
             <span>
               {isGrammarSlide
@@ -2084,6 +2187,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 ? 'Bắt đầu Topic 2 ➔'
                 : (isLessonCompleteGate || currentChunkIndex === chunks.length - 1)
                 ? 'Hoàn Tất 🎉'
+                : isAwaitingFirstChunkPlay
+                ? 'Phát Audio (Space) ▶'
                 : 'Tiếp (Next)'}
             </span>
             <ChevronRight className="w-4 h-4" />
@@ -2219,6 +2324,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         currentPart={currentPart}
         highContrastDark={highContrastDark}
         onSelectChunk={(targetIndex) => {
+          setIsAwaitingFirstChunkPlay(false);
           setIsTopicCompleteGate(false);
           setIsLessonCompleteGate(false);
           setCurrentChunkIndex(targetIndex);
