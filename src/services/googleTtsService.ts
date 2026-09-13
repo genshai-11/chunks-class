@@ -874,7 +874,9 @@ class AudioPlayService {
   private gcsAvailabilityCache = new Map<string, boolean>();
   private lastSource: AudioSourceType = 'DEEPGRAM_AURA';
   private activeProvider: AudioProvider = 'DEEPGRAM_AURA';
+  private preferredAudioSource: 'human' | 'tts' = 'human';
   private sourceListeners: ((source: AudioSourceType) => void)[] = [];
+  private preferredSourceListeners: ((source: 'human' | 'tts') => void)[] = [];
   private loadingListeners: ((isLoading: boolean) => void)[] = [];
   private customApiKeys: string[] = [];
   private apiKeyPool: GoogleApiKeyConfig[] = [];
@@ -907,6 +909,13 @@ class AudioPlayService {
           this.activeProvider = savedProvider;
         } else {
           this.activeProvider = 'DEEPGRAM_AURA';
+        }
+
+        const savedPreferred = localStorage.getItem('chunks_preferred_audio_source');
+        if (savedPreferred === 'human' || savedPreferred === 'tts') {
+          this.preferredAudioSource = savedPreferred;
+        } else {
+          this.preferredAudioSource = 'human';
         }
       } catch {}
 
@@ -1073,6 +1082,33 @@ class AudioPlayService {
 
   public getAudioProvider(): AudioProvider {
     return this.activeProvider;
+  }
+
+  public setPreferredAudioSource(source: 'human' | 'tts'): void {
+    this.preferredAudioSource = source;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('chunks_preferred_audio_source', source);
+      } catch {}
+    }
+    this.preferredSourceListeners.forEach(listener => {
+      try {
+        listener(source);
+      } catch (err) {
+        console.warn('[AudioPlayer] Error in preferred audio source listener:', err);
+      }
+    });
+  }
+
+  public getPreferredAudioSource(): 'human' | 'tts' {
+    return this.preferredAudioSource;
+  }
+
+  public onPreferredAudioSourceChange(listener: (source: 'human' | 'tts') => void): () => void {
+    this.preferredSourceListeners.push(listener);
+    return () => {
+      this.preferredSourceListeners = this.preferredSourceListeners.filter(l => l !== listener);
+    };
   }
 
   public onSourceChange(listener: (source: AudioSourceType) => void): () => void {
@@ -1586,8 +1622,10 @@ class AudioPlayService {
         : null;
       const hasViAudio = Boolean(viCachedAudio);
 
-      const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-      const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
+      const enUrl = (c as any).audio_url_human || c.audio_url;
+      const viUrl = (c as any).audio_url_human_vi || (c as any).audio_url_vi;
+      const hasGcsAudio = Boolean(enUrl && enUrl.startsWith('http') && !enUrl.includes('placeholder'));
+      const hasGcsAudioVi = Boolean(viUrl && viUrl.startsWith('http'));
 
       const isEnReady = hasEnAudio || hasGcsAudio;
       const isViReady = hasViAudio || hasGcsAudioVi;
@@ -1647,8 +1685,10 @@ class AudioPlayService {
         : null;
       const hasViAudio = Boolean(viAudio);
 
-      const hasGcsAudio = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-      const hasGcsAudioVi = Boolean((c as any).audio_url_vi && (c as any).audio_url_vi.startsWith('http'));
+      const enUrl = (c as any).audio_url_human || c.audio_url;
+      const viUrl = (c as any).audio_url_human_vi || (c as any).audio_url_vi;
+      const hasGcsAudio = Boolean(enUrl && enUrl.startsWith('http') && !enUrl.includes('placeholder'));
+      const hasGcsAudioVi = Boolean(viUrl && viUrl.startsWith('http'));
 
       const isEnReady = hasEnAudio || hasGcsAudio;
       const isViReady = hasViAudio || hasGcsAudioVi;
@@ -1678,11 +1718,14 @@ class AudioPlayService {
   }
 
   /**
-   * Check if all chunks in a lesson have permanent GCS audio URLs
+   * Check if all chunks in a lesson have permanent GCS audio URLs (human or TTS)
    */
   isLessonAudioReady(lesson: { chunks?: ChunkItem[] }): boolean {
     if (!lesson.chunks || lesson.chunks.length === 0) return false;
-    return lesson.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http')));
+    return lesson.chunks.every(c => {
+      const url = c.audio_url_human || c.audio_url;
+      return Boolean(url && url.startsWith('http') && !url.includes('placeholder'));
+    });
   }
 
   /**
@@ -1711,7 +1754,8 @@ class AudioPlayService {
     voiceName: string = modelRegistryService.getMainModelEn(),
     speed: number = 1.0,
     forceCloudTts: boolean = false,
-    sequenceId?: number
+    sequenceId?: number,
+    chunk?: ChunkItem
   ): Promise<void> {
     if (sequenceId === undefined) this.stop();
     const sequence = sequenceId ?? this.activeSequenceId;
@@ -1729,41 +1773,99 @@ class AudioPlayService {
 
     this.setAudioLoading(true);
 
+    const pref = this.preferredAudioSource;
+
     try {
-      // -----------------------------------------------------------------------
-      // TIER 1: Prepared Audio Cache (Dual-Lookup Memory + IndexedDB)
-      // -----------------------------------------------------------------------
-      const cached = await this.getCachedAudioAsync(cleanText, voice) || await this.getCachedAudioAsync(text, voice);
-      if (sequence !== this.activeSequenceId) return;
+      if (pref === 'human') {
+        // ---------------------------------------------------------------------
+        // HUMAN MODE:
+        // 1. Try Human Studio Voice first
+        // ---------------------------------------------------------------------
+        const humanUrl = chunk
+          ? (language === 'vi' ? chunk.audio_url_human_vi : chunk.audio_url_human)
+          : (permanentAudioUrl && (permanentAudioUrl.includes('/human/') || !forceCloudTts) ? permanentAudioUrl : null);
 
-      if (cached) {
-        const model = modelRegistryService.getModelById(voice);
-        const source: AudioSourceType = model?.provider === 'DEEPGRAM' ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI';
-        this.setLastSource(source);
-        try {
-          await this.playBase64(cached, speed);
-          return;
-        } catch (cachePlayErr) {
-          console.warn('[AudioPlayer] Tier 1 base64 playback failed, proceeding to Tier 2/3 fallback:', cachePlayErr);
+        if (humanUrl && humanUrl.startsWith('http') && !humanUrl.includes('placeholder')) {
+          if (sequence !== this.activeSequenceId) return;
+          try {
+            this.setLastSource('GCS_MASTER');
+            await this.playUrl(humanUrl, speed);
+            return;
+          } catch (humanPlayErr) {
+            console.warn('[AudioPlayer] Human studio audio playback failed, falling back:', humanPlayErr);
+          }
         }
-      }
 
-      // -----------------------------------------------------------------------
-      // TIER 2: Permanent GCS Audio Streaming (if not forced to cloud TTS and URL is valid)
-      // -----------------------------------------------------------------------
-      if (!forceCloudTts && permanentAudioUrl && permanentAudioUrl.startsWith('http') && !permanentAudioUrl.includes('placeholder')) {
+        // 2. Fallback to existing GCS audio / TTS audio URL
+        const fallbackUrl = chunk
+          ? (language === 'vi' ? (chunk.audio_url_tts_vi || chunk.audio_url_vi) : (chunk.audio_url_tts || chunk.audio_url))
+          : permanentAudioUrl;
+
+        if (fallbackUrl && fallbackUrl.startsWith('http') && fallbackUrl !== humanUrl && !fallbackUrl.includes('placeholder')) {
+          if (sequence !== this.activeSequenceId) return;
+          try {
+            this.setLastSource('GCS_MASTER');
+            await this.playUrl(fallbackUrl, speed);
+            return;
+          } catch (gcsPlayErr) {
+            console.warn('[AudioPlayer] Fallback GCS audio playback failed, proceeding to TTS synthesis:', gcsPlayErr);
+          }
+        }
+
+        // 3. Fallback to TTS (Cached base64 or On-The-Fly Synthesis)
+        const cached = await this.getCachedAudioAsync(cleanText, voice) || await this.getCachedAudioAsync(text, voice);
         if (sequence !== this.activeSequenceId) return;
-        try {
-          this.setLastSource('GCS_MASTER');
-          await this.playUrl(permanentAudioUrl, speed);
-          return;
-        } catch (gcsPlayErr) {
-          console.warn('[AudioPlayer] Tier 2 GCS streaming failed, falling through to Tier 3 on-the-fly synthesis:', gcsPlayErr);
+
+        if (cached) {
+          const model = modelRegistryService.getModelById(voice);
+          const source: AudioSourceType = model?.provider === 'DEEPGRAM' ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI';
+          this.setLastSource(source);
+          try {
+            await this.playBase64(cached, speed);
+            return;
+          } catch (cachePlayErr) {
+            console.warn('[AudioPlayer] Cached TTS playback failed, falling back to synthesis:', cachePlayErr);
+          }
+        }
+      } else {
+        // ---------------------------------------------------------------------
+        // TTS MODE:
+        // 1. Prepared Audio Cache (Dual-Lookup Memory + IndexedDB)
+        // ---------------------------------------------------------------------
+        const cached = await this.getCachedAudioAsync(cleanText, voice) || await this.getCachedAudioAsync(text, voice);
+        if (sequence !== this.activeSequenceId) return;
+
+        if (cached) {
+          const model = modelRegistryService.getModelById(voice);
+          const source: AudioSourceType = model?.provider === 'DEEPGRAM' ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI';
+          this.setLastSource(source);
+          try {
+            await this.playBase64(cached, speed);
+            return;
+          } catch (cachePlayErr) {
+            console.warn('[AudioPlayer] Tier 1 base64 playback failed, proceeding to Tier 2/3 fallback:', cachePlayErr);
+          }
+        }
+
+        // 2. TTS Audio URL (prefer audio_url_tts, then non-human audio_url)
+        const ttsUrl = chunk
+          ? (language === 'vi' ? (chunk.audio_url_tts_vi || (!chunk.audio_url_vi?.includes('/human/') ? chunk.audio_url_vi : null)) : (chunk.audio_url_tts || (!chunk.audio_url?.includes('/human/') ? chunk.audio_url : null)))
+          : (!permanentAudioUrl?.includes('/human/') ? permanentAudioUrl : null);
+
+        if (!forceCloudTts && ttsUrl && ttsUrl.startsWith('http') && !ttsUrl.includes('placeholder')) {
+          if (sequence !== this.activeSequenceId) return;
+          try {
+            this.setLastSource('GCS_MASTER');
+            await this.playUrl(ttsUrl, speed);
+            return;
+          } catch (ttsPlayErr) {
+            console.warn('[AudioPlayer] TTS GCS playback failed, falling through to synthesis:', ttsPlayErr);
+          }
         }
       }
 
       // -----------------------------------------------------------------------
-      // TIER 3: On-The-Fly Synthesis (Google Cloud TTS, Deepgram Aura/Flux, Custom TTS)
+      // COMMON TIER 3: On-The-Fly Synthesis (Google Cloud TTS, Deepgram, Custom TTS)
       // -----------------------------------------------------------------------
       if (sequence !== this.activeSequenceId) return;
       try {
@@ -1780,11 +1882,11 @@ class AudioPlayService {
           return;
         }
       } catch (synthErr) {
-        console.warn(`[AudioPlayer] Tier 3 synthesis failed for "${cleanText.slice(0, 30)}..." with voice ${voice}:`, synthErr);
+        console.warn(`[AudioPlayer] Synthesis failed for "${cleanText.slice(0, 30)}..." with voice ${voice}:`, synthErr);
       }
 
       // -----------------------------------------------------------------------
-      // TIER 4: Local Browser Speech Synthesis Fallback (SpeechSynthesisUtterance)
+      // COMMON TIER 4: Local Browser Speech Synthesis Fallback
       // -----------------------------------------------------------------------
       if (sequence !== this.activeSequenceId) return;
       console.warn(`[AudioPlayer] Activating Tier 4 Browser Speech Fallback for "${cleanText.slice(0, 30)}..."`);
@@ -1808,7 +1910,7 @@ class AudioPlayService {
    * Play sequential bilingual drill: EN_ONLY, VI_ONLY, EN_THEN_VI, VI_THEN_EN
    * Supports 'PRIMARY_ONLY', 'SECONDARY_ONLY', 'PRIMARY_THEN_SECONDARY', 'SECONDARY_THEN_PRIMARY'
    * Protected with activeSequenceId to completely prevent overlapping speech on fast clicking.
-   * Employs 4-Tier Resilience so sequences never hang or throw fatal errors.
+   * Employs dual-layer audio resilience (human studio voice vs TTS).
    */
   async playBilingualSequence(
     englishText: string,
@@ -1820,7 +1922,8 @@ class AudioPlayService {
     speed: number = 1.0,
     repeatCount: number = 1,
     onStepChange?: (step: 'en' | 'vi' | 'idle') => void,
-    vietnameseAudioUrl?: string | null
+    vietnameseAudioUrl?: string | null,
+    chunk?: ChunkItem
   ): Promise<void> {
     this.stop();
     const seqId = this.activeSequenceId;
@@ -1835,13 +1938,13 @@ class AudioPlayService {
 
         if (normalizedMode === 'EN_ONLY') {
           onStepChange?.('en');
-          await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed, false, seqId);
+          await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed, false, seqId, chunk);
         } else if (normalizedMode === 'VI_ONLY') {
           onStepChange?.('vi');
-          await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed, false, seqId);
+          await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed, false, seqId, chunk);
         } else if (normalizedMode === 'EN_THEN_VI') {
           onStepChange?.('en');
-          await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed, false, seqId);
+          await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed, false, seqId, chunk);
           
           if (this.activeSequenceId !== seqId) return;
           // Natural 500ms cadence pause between English and Vietnamese
@@ -1849,10 +1952,10 @@ class AudioPlayService {
           if (this.activeSequenceId !== seqId) return;
 
           onStepChange?.('vi');
-          await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed, false, seqId);
+          await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed, false, seqId, chunk);
         } else if (normalizedMode === 'VI_THEN_EN') {
           onStepChange?.('vi');
-          await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed, false, seqId);
+          await this.playChunk(vietnameseText, vietnameseAudioUrl, effectiveVoiceVi, speed, false, seqId, chunk);
           
           if (this.activeSequenceId !== seqId) return;
           // Natural 500ms cadence pause between Vietnamese and English
@@ -1860,7 +1963,7 @@ class AudioPlayService {
           if (this.activeSequenceId !== seqId) return;
 
           onStepChange?.('en');
-          await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed, false, seqId);
+          await this.playChunk(englishText, englishAudioUrl, effectiveVoiceEn, speed, false, seqId, chunk);
         }
 
         if (r < repeatCount - 1) {
@@ -1875,6 +1978,44 @@ class AudioPlayService {
         onStepChange?.('idle');
       }
     }
+  }
+
+  /**
+   * High-level Chunk Playback method that respects preferredAudioSource ('human' vs 'tts'):
+   * Preserves existing TTS while enabling human studio voice, with automatic fallback.
+   */
+  public async playChunkAudio(
+    chunk: ChunkItem,
+    options?: {
+      speed?: number;
+      mode?: LanguageMode;
+      repeatCount?: number;
+      voiceEn?: string;
+      voiceVi?: string;
+      onStepChange?: (step: 'en' | 'vi' | 'idle') => void;
+      forceCloudTts?: boolean;
+    }
+  ): Promise<void> {
+    const speed = options?.speed ?? 1.0;
+    const mode = options?.mode ?? 'EN_THEN_VI';
+    const repeatCount = options?.repeatCount ?? 1;
+    const voiceEn = options?.voiceEn || modelRegistryService.getMainModelEn();
+    const voiceVi = options?.voiceVi || modelRegistryService.getMainModelVi();
+    const onStepChange = options?.onStepChange;
+
+    return this.playBilingualSequence(
+      chunk.english,
+      chunk.vietnamese,
+      mode,
+      chunk.audio_url || null,
+      voiceEn,
+      voiceVi,
+      speed,
+      repeatCount,
+      onStepChange,
+      chunk.audio_url_vi || null,
+      chunk
+    );
   }
 
   /**
@@ -2522,5 +2663,7 @@ export const isLessonFullyReadyAsync = (lesson: { chunks?: ChunkItem[] }): Promi
   audioPlayer.isLessonFullyReadyAsync(lesson);
 
 export const prepareSpeechText = sanitizeSpeechText;
+
+export type PreferredAudioSource = 'human' | 'tts';
 
 export { AudioPlayService, AudioPlayService as GoogleTtsService };
