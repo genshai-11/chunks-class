@@ -9,7 +9,8 @@ import {
   exportAllAudioBlobs,
   importAudioBlobs,
   getStoredAudioBlobsCount,
-  AudioCacheExportData
+  AudioCacheExportData,
+  PreferredAudioSource
 } from '../services/googleTtsService';
 import { modelRegistryService, PROVIDERS_META, getMinimalName } from '../services/modelRegistryService';
 import { getAllLessons } from '../services/firestoreService';
@@ -116,6 +117,15 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
 
   // 5. API Key & Provider State
   const [audioProvider, setAudioProvider] = useState<AudioProvider>(audioPlayer.getAudioProvider());
+  const [preferredAudioSource, setPreferredAudioSourceState] = useState<PreferredAudioSource>(audioPlayer.getPreferredAudioSource());
+
+  useEffect(() => {
+    const unsub = audioPlayer.onPreferredAudioSourceChange((src) => {
+      setPreferredAudioSourceState(src);
+    });
+    return () => unsub();
+  }, []);
+
   const [deepgramKeyInput, setDeepgramKeyInput] = useState<string>(
     localStorage.getItem('chunks_deepgram_api_key') || '51d7d8b230bf742178e681e7836a3dc1571b1c11'
   );
@@ -472,6 +482,87 @@ export const AudioHubView: React.FC<AudioHubViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Preset Voice Profiles (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Card: Dual-Layer Audio Source Architecture Switcher */}
+          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎙️</span>
+                <h2 className="font-display font-bold text-base text-zinc-900">
+                  Nguồn Phát Âm Thanh Lớp Học (Audio Source Priority)
+                </h2>
+              </div>
+              <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full ${
+                preferredAudioSource === 'human'
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-blue-100 text-blue-800'
+              }`}>
+                {preferredAudioSource === 'human' ? '🎙️ Human Studio Active' : '🤖 AI Voice Active'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div
+                onClick={() => {
+                  audioPlayer.setPreferredAudioSource('human');
+                  setPreferredAudioSourceState('human');
+                }}
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  preferredAudioSource === 'human'
+                    ? 'border-amber-500 bg-amber-50/50 shadow-xs ring-2 ring-amber-500/20'
+                    : 'border-zinc-200 bg-zinc-50/60 hover:bg-zinc-50'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-extrabold text-sm text-zinc-900">🎙️ Giọng Phòng Thu (Human Studio)</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">Khuyên dùng</span>
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                      Phát âm thanh thu âm từ diễn viên lồng tiếng chuẩn bản ngữ (3,150 chunks EN & VI). Tự động fallback sang TTS nếu file chưa sẵn sàng.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-zinc-200/60 text-[11px] font-mono">
+                  <span className="text-zinc-500">GCS Bucket Permanent URL</span>
+                  <span className="font-bold text-amber-700">
+                    {preferredAudioSource === 'human' ? '✓ Đang kích hoạt' : 'Nhấp để chọn'}
+                  </span>
+                </div>
+              </div>
+
+              <div
+                onClick={() => {
+                  audioPlayer.setPreferredAudioSource('tts');
+                  setPreferredAudioSourceState('tts');
+                }}
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  preferredAudioSource === 'tts'
+                    ? 'border-blue-500 bg-blue-50/50 shadow-xs ring-2 ring-blue-500/20'
+                    : 'border-zinc-200 bg-zinc-50/60 hover:bg-zinc-50'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-extrabold text-sm text-zinc-900">🤖 Giọng Trí Tuệ Nhân Tạo (AI Voice)</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-bold">AI Synthesis</span>
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                      Phát qua các model tổng hợp AI (Deepgram Aura Flux & Google Cloud TTS Journey/Studio) với các tùy chọn thay đổi tốc độ linh hoạt.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-zinc-200/60 text-[11px] font-mono">
+                  <span className="text-zinc-500">Multi-Provider AI Pool</span>
+                  <span className="font-bold text-blue-700">
+                    {preferredAudioSource === 'tts' ? '✓ Đang kích hoạt' : 'Nhấp để chọn'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Card: Engine Selection & English Voices */}
           <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-5">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-4">

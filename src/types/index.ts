@@ -45,6 +45,11 @@ export interface ChunkItem {
   speaker: string | null;
   audio_url?: string | null;
   audio_url_vi?: string | null;
+  audio_url_human?: string | null;
+  audio_url_human_vi?: string | null;
+  audio_url_tts?: string | null;
+  audio_url_tts_vi?: string | null;
+  audio_source_preferred?: 'human' | 'tts';
   raw_audio_en?: string | null;
   raw_audio_vi?: string | null;
   raw_image?: string | null;

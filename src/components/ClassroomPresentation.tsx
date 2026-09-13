@@ -4,7 +4,7 @@ import { getLessonById as getFirestoreLessonById } from '../services/firestoreSe
 import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { playTopicTransitionChime, playLessonCompletionFanfare } from '../utils/audioChimes';
-import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget } from '../services/googleTtsService';
+import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget, PreferredAudioSource } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
@@ -142,6 +142,40 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [showKeyboardGuide, setShowKeyboardGuide] = useState<boolean>(false);
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState<boolean>(false);
   const [activeAudioSource, setActiveAudioSource] = useState<AudioSourceType>(audioPlayer.getLastSource());
+  
+  // Dual-Layer Voice Mode Switcher (Human Studio vs AI Voice)
+  const [preferredAudioSource, setPreferredAudioSourceState] = useState<PreferredAudioSource>(audioPlayer.getPreferredAudioSource());
+  const [audioSwitchToast, setAudioSwitchToast] = useState<string | null>(null);
+  const audioSwitchToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const unsub = audioPlayer.onPreferredAudioSourceChange((source) => {
+      setPreferredAudioSourceState(source);
+    });
+    return () => {
+      unsub();
+      if (audioSwitchToastTimeoutRef.current) {
+        clearTimeout(audioSwitchToastTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleToggleAudioSource = useCallback(() => {
+    const nextSource: PreferredAudioSource = preferredAudioSource === 'human' ? 'tts' : 'human';
+    audioPlayer.setPreferredAudioSource(nextSource);
+    setPreferredAudioSourceState(nextSource);
+
+    if (audioSwitchToastTimeoutRef.current) {
+      clearTimeout(audioSwitchToastTimeoutRef.current);
+    }
+    const message = nextSource === 'human' 
+      ? '🎙️ Đã bật: Giọng Phòng Thu (Human Studio Audio)' 
+      : '🤖 Đã bật: Giọng AI Tổng Hợp (AI Voice TTS)';
+    setAudioSwitchToast(message);
+    audioSwitchToastTimeoutRef.current = setTimeout(() => {
+      setAudioSwitchToast(null);
+    }, 2400);
+  }, [preferredAudioSource]);
   
   // Audio Provider & Batch Pre-generation Engine
   const [audioProvider, setAudioProvider] = useState<AudioProvider>(audioPlayer.getAudioProvider());
@@ -657,7 +691,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             setActiveSpeechStep(step);
           }
         },
-        targetChunk.audio_url_vi || null
+        targetChunk.audio_url_vi || null,
+        targetChunk
       );
     } catch (err) {
       console.warn('[ClassroomPresentation] Audio playback error:', err);
@@ -1034,6 +1069,17 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         </div>
       )}
 
+      {/* Floating Audio Mode Switch Toast */}
+      {audioSwitchToast && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 animate-in fade-in zoom-in-95 slide-in-from-top-3 duration-200 pointer-events-none">
+          <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-zinc-950/95 text-white border border-zinc-700/80 shadow-2xl backdrop-blur-md">
+            <span className="text-sm sm:text-base font-extrabold font-display text-white tracking-tight">
+              {audioSwitchToast}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 3. SLIM HIGH-SIGNAL TOP BAR */}
       <div className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-3 transition-colors z-20 ${
         highContrastDark ? 'border-zinc-800 bg-[#0F0F12]' : 'border-[#E8E8EC] bg-white/95 backdrop-blur-xs'
@@ -1297,6 +1343,20 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
         {/* Right Action Cluster: Audio Settings Popover, Fullscreen toggle, Theme toggle, Exit */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Dual-Layer Voice Mode Switcher Badge / Button */}
+          <button
+            type="button"
+            onClick={handleToggleAudioSource}
+            className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 shrink-0 select-none ${
+              preferredAudioSource === 'human'
+                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 ring-1 ring-amber-400/20'
+                : 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700/60 text-blue-800 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 ring-1 ring-blue-400/20'
+            }`}
+            title={`Chế độ phát hiện tại: ${preferredAudioSource === 'human' ? 'Giọng phòng thu người thật' : 'Giọng AI TTS'}. Nhấp để chuyển đổi ngay lập tức.`}
+          >
+            <span>{preferredAudioSource === 'human' ? '🎙️ Human Studio' : '🤖 AI Voice'}</span>
+          </button>
+
           {/* 2. AUDIO & SOUND SETTINGS ICON BUTTON & POPOVER (Feature 2) */}
           <div className="relative" ref={soundSettingsRef}>
             <button
@@ -1320,7 +1380,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 <Sliders className="w-4 h-4 text-[#DC2626]" />
               )}
               <span className="hidden sm:inline text-xs font-bold font-mono">
-                {isCurrentLessonAudioReady ? 'Audio Ready' : (audioProvider === 'DEEPGRAM_AURA' ? 'Aura AI' : 'Google TTS')}
+                {preferredAudioSource === 'human' ? 'Human Studio' : (audioProvider === 'DEEPGRAM_AURA' ? 'Aura AI' : 'Google TTS')}
               </span>
             </button>
 
@@ -1339,7 +1399,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                     </div>
                     <div>
                       <h3 className="text-xs font-extrabold tracking-tight">Cài Đặt Bộ Tổng Hợp Âm Thanh</h3>
-                      <p className="text-[10px] text-zinc-500">Deepgram Aura & Google Cloud TTS Audio Engine</p>
+                      <p className="text-[10px] text-zinc-500">Human Studio & AI TTS Dual Engine</p>
                     </div>
                   </div>
                   <button
@@ -1353,7 +1413,58 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
                 {/* Popover Body */}
                 <div className="p-4 space-y-4 overflow-y-auto text-xs">
-                  {isCurrentLessonAudioReady ? (
+                  {/* Dual-Layer Audio Source Selector: Human Studio vs AI Voice */}
+                  <div className={`p-3 rounded-xl border flex flex-col gap-2 ${
+                    highContrastDark ? 'bg-zinc-900/90 border-zinc-800' : 'bg-zinc-50 border-zinc-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-[11px] uppercase tracking-wider text-zinc-500">
+                        Nguồn Giọng Phát (Voice Mode)
+                      </span>
+                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                        preferredAudioSource === 'human'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200'
+                      }`}>
+                        {preferredAudioSource === 'human' ? '🎙️ Studio Active' : '🤖 AI Active'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-200/60 dark:bg-zinc-800/80 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (preferredAudioSource !== 'human') handleToggleAudioSource();
+                        }}
+                        className={`py-2 px-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          preferredAudioSource === 'human'
+                            ? 'bg-white dark:bg-zinc-900 text-amber-700 dark:text-amber-300 shadow-xs border border-amber-200 dark:border-amber-800/60'
+                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        <span>🎙️ Human Studio</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (preferredAudioSource !== 'tts') handleToggleAudioSource();
+                        }}
+                        className={`py-2 px-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          preferredAudioSource === 'tts'
+                            ? 'bg-white dark:bg-zinc-900 text-blue-700 dark:text-blue-300 shadow-xs border border-blue-200 dark:border-blue-800/60'
+                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        <span>🤖 AI Voice</span>
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 leading-tight">
+                      {preferredAudioSource === 'human'
+                        ? 'Đang phát giọng đọc phòng thu người thật (3,150 chunks). Tự động fallback sang TTS nếu cần.'
+                        : 'Đang phát qua bộ tổng hợp AI Deepgram Aura & Google Cloud TTS.'}
+                    </p>
+                  </div>
+
+                  {preferredAudioSource === 'human' && isCurrentLessonAudioReady ? (
                     /* High-contrast readiness banner */
                     <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0">
@@ -1361,11 +1472,11 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5">
-                          <span>Audio Đã Sẵn Sàng</span>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded font-mono bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">GCS Master</span>
+                          <span>Studio Audio Đã Sẵn Sàng</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded font-mono bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">Human Studio</span>
                         </div>
                         <div className="text-[11px] text-emerald-600 dark:text-emerald-400 leading-snug mt-0.5">
-                          Bài học đang phát từ audio chuẩn studio, không cần cấu hình model TTS.
+                          Bài học đang phát từ audio phòng thu người thật chất lượng cao.
                         </div>
                       </div>
                     </div>
