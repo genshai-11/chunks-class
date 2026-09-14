@@ -1,0 +1,896 @@
+{
+  "metadata": {
+    "version": "2.0.0",
+    "generated_at": "2026-09-14T08:47:56.487Z",
+    "total_topics": 30,
+    "groups": {
+      "core_19_lessons": {
+        "count": 19,
+        "description": "Verified lessons from grammar.json mapped to 15-day intensive cohort schedule"
+      },
+      "supplemental_7_lessons": {
+        "count": 7,
+        "description": "Lessons transcribed from Audio Boost with reflex-oriented condensation"
+      },
+      "pending_4_lessons": {
+        "count": 4,
+        "description": "Lessons pending teacher audio recording with provisional chunk-derived reflexes"
+      }
+    },
+    "thematic_modules": [
+      "Onboarding",
+      "Office Culture",
+      "Operations & Management",
+      "Team & Leadership",
+      "Professional Acumen",
+      "Business & Sales"
+    ]
+  },
+  "lessons": [
+    {
+      "id": "grammar_level_b_day_1",
+      "lesson_id": "level_b_day_1",
+      "course_id": "course_level_b",
+      "day_number": 1,
+      "lesson_title": "Day 1 - First Day Of Work",
+      "thematic_module": "Onboarding",
+      "data_group": "supplemental_7_lessons",
+      "status": "active",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "be supposed to + V1",
+        "spend + [time] + V-ing",
+        "have [X] years of experience V-ing",
+        "be gonna + V1 (I'm gonna V1)"
+      ],
+      "sentence_structures": [
+        "S + be + aware that...",
+        "because + clause vs because of + Noun / V-ing",
+        "There's a lot of + N",
+        "..., would you? (Polite tag questions with imperatives)"
+      ],
+      "tense": [
+        "Have you already V3?"
+      ],
+      "notes": "- **Adjective usage: 'aware'**: The word 'aware' is an adjective, not a verb. A common mistake is to use it directly after a subject (e.g., 'I aware'). The correct structure requires a 'to be' verb before 'aware' (e.g., 'I am aware').\n- **Distinction between 'because' and 'because of'**: 'because' must be followed by a complete finite clause (Subject + Verb + Object/Complement). 'because of' is a prepositional phrase followed solely by a noun, noun phrase, or gerund (V-ing), never a complete clause.\n- **The phrase 'be supposed to'**: 'be supposed to + V' carries a subtle blended pragmatic tone between 'should' (advisability) and 'have to / be allowed to' (institutional rules/expectations). It communicates what is socially or professionally expected without sounding overly aggressive.\n- **Verb pattern with 'spend'**: A common mistake is using 'to + verb' after 'spend + time'. The correct patterns are 'spend + time + V-ing' or 'spend + time + on + Noun'.\n- **Expressing existence (There is/are) with 'a lot of'**: The teacher explains how to express 'there is/are something'. It's incorrect to use 'having' for this purpose. The common and widely accepted way, even in informal speech, is to use 'there's a lot of' even when referring to plural nouns (e.g., 'there's a lot of books'). While 'there are a lot of' is grammatically correct for plural nouns, 'there's a lot of' is frequently heard and accepted in everyday usage.\n- **Tag Questions with Imperatives**: When forming tag questions with imperatives:\n- 'would you' is generally more polite than 'will you'.\n- Both 'will you' and 'would you' are grammatically acceptable.\n- **Expressing 'years of experience'**: The teacher explains two ways to express 'X years of experience': using 'of' (e.g., 'three years of experience') or using the possessive apostrophe ('s) (e.g., 'three years' experience'). When using the possessive form for plural 'years', the apostrophe is placed after the 's' (years'). This possessive form acts as a substitute for 'of'. The teacher advises using 'of' for simplicity and easier recall, especially in common contexts like job interviews.\n- **Contraction 'gonna' and expressing future actions**: The common mistake is to say 'I gonna' instead of 'I'm gonna'. 'Gonna' is a contraction of 'going to' and is used to express a near future action. It is similar in meaning to 'will go', 'will be going', 'I'm going', or 'I'm about to go'.\n- **Present Perfect for asking about actions started or not yet started**: This tense is commonly used to ask if an action or event has started or happened yet. The adverb \"already\" can be omitted without changing the core meaning. It's frequently used when inquiring about what has or hasn't happened yet (cái gì rồi, cái gì chưa).",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_2",
+      "lesson_id": "level_b_day_2",
+      "course_id": "course_level_b",
+      "day_number": 2,
+      "lesson_title": "Day 2 - Viettel",
+      "thematic_module": "Onboarding",
+      "data_group": "supplemental_7_lessons",
+      "status": "active",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "S + do/does/did + V1 (Emphatic affirmative)",
+        "V + Adverb (directly connect / conduct)",
+        "be interested in + N / V-ing"
+      ],
+      "sentence_structures": [
+        "Would you mind + V-ing?",
+        "have got news for you (uncountable 'news')",
+        "have + O + V1 vs ask + O + to V1 (Causative)",
+        "A has nothing to do with B",
+        "What + S + V + was/is... (Pseudo-cleft)",
+        "S + want to know + if/whether + clause"
+      ],
+      "tense": [
+        "It seemed that + S + V (Past Simple)",
+        "S + would/will be + V-ing (Future Continuous)"
+      ],
+      "notes": "- **Emphatic Sentences with Do/Does/Did**: The main verb after 'do/does/did' (used for emphasis) must always be in its base form (V0), without any '-ed' or other inflections. A common mistake is to use 'did' for emphasis and then add '-ed' to the main verb (e.g., 'I did called him'), which is incorrect.\n- **Adverbs modifying verbs**: Verbs must be modified by adverbs (words typically ending in -ly), not adjectives. The common error is using an adjective (e.g., 'direct') instead of an adverb (e.g., 'directly') to describe how an action is performed. This is a very basic grammar rule: an adverb modifies a verb.\n- **Using 'interested in'**: 'Interested' is an adjective, not a verb. Therefore, it must be preceded by a form of the verb 'to be' (e.g., am, is, are, was, were, might be, etc.). A common mistake is to omit 'be' before 'interested in'.\n- **Polite requests with 'Would/Do you mind'**: Always use the V-ing form (gerund) after 'mind' (e.g., 'opening'), not the infinitive 'to + verb' (e.g., 'to open'). 'Do you mind' can be used interchangeably with 'Would you mind' for polite requests.\n- **Countable and Uncountable Nouns (specifically 'news'), Articles (a/an)**: The noun 'news' is uncountable, similar to 'water'. Therefore, it does not take the indefinite article 'a' or 'an'. Common mistake is to say 'a good news' or 'a bad news'.\n- **Causative Form (Thể nhờ vả)**: The teacher explains the 'causative form' (thể nhờ vả) in English. He highlights two ways to express 'asking someone to do something':\n1. Using 'ask': S + ask + O + to V (e.g., he asked me to call you).\n2. Using 'have/had': S + have/had + O + V (bare infinitive). This is the key point, emphasizing that after 'have/had', a bare infinitive (V) is used, not 'to V'.\nCommon mistake to avoid: Using 'to call' after 'he had me'. The correct form is 'he had me call you'.\n- **Expressing relationships or relevance between two entities**: The phrase \"A has/has got (nothing/a lot/a little) to do with B\" is a common and useful way to express the degree of relationship or relevance between two things. The 'got' form is frequently used in spoken English. By changing the quantifier (nothing, a lot, a little) in the middle, the meaning of the sentence changes to reflect no relation, strong relation, or slight relation, respectively.\n- **Using 'What' clauses as subjects and translating 'cái điều mà... là...'**: The teacher emphasizes the importance of including 'was' in the English translation of 'cái điều mà... là...' because 'was' functions as the equivalent of 'là' at the end of the Vietnamese sentence. This structure uses a 'what' clause as the subject of the sentence. Common errors include omitting 'was' or incorrectly structuring the sentence. Alternative idioms for 'làm tôi bực' (to make me angry/annoyed) are also provided.\n- **Indirect Yes/No Questions with 'if' or 'whether'**: New English learners often forget to use 'if' or 'whether' when forming indirect yes/no questions. 'If' or 'whether' should immediately follow the main clause (e.g., 'I want to know'). Both 'if' and 'whether' are acceptable in this context.\n- **Past Simple Tense with 'seem'**: The keyword 'yesterday' indicates the use of the Past Simple tense. The verb 'seem' must be conjugated to 'seemed' (with -ed) in the Past Simple. This is a common mistake for learners to forget the -ed ending.\n- **Future Continuous Tense (Will be + V-ing)**: The teacher emphasizes that 'will be + V-ing' (Future Continuous) can simply denote a future action, often a near future action, and learners should feel comfortable using it without overthinking its continuous aspect. It can convey a similar nuance to 'I'm about to do that' or 'I'm gonna do that'.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_3",
+      "lesson_id": "level_b_day_3",
+      "course_id": "course_level_b",
+      "day_number": 3,
+      "lesson_title": "Day 3 - Tell me about yourself",
+      "thematic_module": "Onboarding",
+      "data_group": "supplemental_7_lessons",
+      "status": "active",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "-ically pronunciation: /ɪkli/ (specifically, basically)",
+        "congratulations (always plural -s)",
+        "love / like / hate + V-ing vs to V1",
+        "preposition + V-ing (from listening to reading)",
+        "had a year of V-ing (working as...)"
+      ],
+      "sentence_structures": [
+        "consider / see myself as + N (no redundant 'is')",
+        "be in love with / be into + N",
+        "Although + clause vs In spite of / Despite + N/V-ing"
+      ],
+      "tense": [
+        "have been V-ing (Present Perfect Continuous)",
+        "Like I said / mentioned (Past Simple)",
+        "What S just said excites me (Past action + Present impact)"
+      ],
+      "notes": "- **Pronunciation of adverbs ending in -ically**: This lesson focuses on the correct pronunciation of adverbs ending in \"-ically\".\nCommon mistake: pronouncing \"-ically\" as two syllables (e.g., \"colly\") or misplacing the stress.\nRule 1: For words ending in \"-ic\" (which often precede \"-ally\" to form adverbs), the stress falls on the syllable immediately before \"-ic\" (e.g., spe**ci**fic).\nRule 2: The suffix \"-cally\" should be pronounced as a single syllable, /kli/ (like \"cly\"), not two syllables /kəʊli/ (like \"colly\").\nThe teacher explicitly states this is a pronunciation point and not related to verb forms.\n- **Correct usage and spelling of 'congratulations'**: The common mistake is omitting the final 's' in 'congratulations'. It should always be used in its plural form, 'congratulations', to express good wishes for an achievement.\n- **Verbs followed by Gerunds or Infinitives (Verbs taking both)**: Some verbs (e.g., love, like, hate) can be followed by either a gerund (-ing) or a to-infinitive with little or no difference in meaning. Using the gerund (V-ing) emphasizes the activity as a noun. The teacher expresses a personal preference for using the gerund form (e.g., 'love reading book').\n- **Verb Forms After Prepositions (Gerunds)**: The teacher emphasizes that after prepositions like 'from' and 'to', or any preposition, the verb should be in the -ing form (gerund). The phrase 'from in to in' is a shorthand used to indicate 'from + V-ing to + V-ing'. This is a common rule for using gerunds after prepositions.\n- **Redundant 'is' in 'consider/see myself' constructions**: Vietnamese learners often add the verb 'is' after 'consider myself' or 'see myself' when introducing a noun complement (e.g., 'I consider myself is a student'). This 'is' is redundant and should be omitted. The correct structure is to directly follow the object ('myself') with 'a/an' and the noun (or adjective + noun).\n- **Expressing Liking and Preference**: The common mistake is omitting the 'to be' verb before 'in love with'. 'In love' functions as an adjective phrase, thus requiring a 'to be' verb to form a complete sentence. The teacher also provides alternative ways to express liking or preference, such as 'I love', 'I'm into', and 'X is my cup of tea'.\n- **Concessive Clauses / Expressing Contrast**: The teacher explains how to express 'although' or 'despite' in English. 'Although' is always followed by a full clause (subject + verb + object). 'In spite of' and 'despite' are followed by a noun phrase or a gerund (V-ing). To use 'in spite of' with a full clause, you must add 'the fact that' after it, forming 'in spite of the fact that + clause'.\n- **Verb form after 'had a year' (or similar expressions of past duration/experience)**: When expressing a past period of experience or duration (e.g., 'I had a year'), use the gerund (V-ing) form to describe the activity. Using the infinitive (to V) would incorrectly imply a future or unfulfilled action, whereas the context refers to something that has already occurred and is completed in the past.\n- **Present Perfect Continuous vs. Present Continuous**: The teacher emphasizes that the Present Perfect Continuous (đã và đang) is more commonly used for general ongoing actions than the Present Continuous (đang). The Present Continuous is typically reserved for specific, immediate actions (e.g., answering 'What are you doing?'). For general ongoing thoughts or actions, 'I have been V-ing' (or 'I've been V-ing') is more appropriate and sounds more natural than 'I am V-ing'.\n- **Verb Form for Referring to Previous Statements**: When referring to something previously stated or mentioned, always use the past simple form of the verb (e.g., 'said', 'mentioned' with -ed), not the present simple form (e.g., 'say'). The teacher emphasizes this by referring to it as 'thì cột hai' (verb column 2) and highlighting the '-ed' ending for regular verbs like 'mention'.\n- **Tense usage with 'just' and expressing present impact of past actions**: The phrase 'what A just said' refers to an action completed in the past ('vừa mới nói là qua rồi'). The resulting feeling or impact ('really excites me') can be expressed in the present simple tense, even though the action that caused it is in the past. The correct tense pattern for 'just' in this context is 'just' followed by the past simple form (V2).",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_4",
+      "lesson_id": "level_b_day_4",
+      "course_id": "course_level_b",
+      "day_number": 4,
+      "lesson_title": "Day 4 - Smarketing",
+      "thematic_module": "Onboarding",
+      "data_group": "supplemental_7_lessons",
+      "status": "active",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "have got to + V1 / gotta + V1",
+        "be afraid of / scared of + N/V-ing",
+        "want / need + someone + to V1"
+      ],
+      "sentence_structures": [
+        "adjective / adverb + enough",
+        "It's + adj + (for someone) + to V1",
+        "There is / There are (Existence reflex)",
+        "It turns out that + clause / Turns out..."
+      ],
+      "tense": [
+        "as you were told (was/were + V3 Passive)",
+        "I'll never + V1 + anymore (Future Simple negation)"
+      ],
+      "notes": "- **Informal Contractions / Modal Verbs of Obligation**: The informal contraction 'you gotta' is a shortened form of 'you have got to'. Both express obligation, similar to 'you must'. It's important to understand the full form to grasp the meaning of the contraction.\n- **Using 'afraid of' and 'scared of' (adjective phrases)**: Both 'afraid' and 'scared' are adjectives. Therefore, they must always be used with the verb 'to be' (e.g., 'I am afraid of', 'She is scared of'). A common mistake is to omit the 'be' verb.\n- **Word order with 'enough' (Adjective/Adverb + enough)**: The usage of 'enough' with adjectives/adverbs is often reversed by Vietnamese learners due to direct translation (e.g., 'đủ mạnh' -> 'enough strong'). The correct order in English is 'Adjective/Adverb + enough' (e.g., 'strong enough'). The teacher emphasizes that the adjective or adverb must come before 'enough'. Practice is key to mastering this pattern.\n- **Verb patterns: 'want/need' + object + infinitive with 'to'**: This is a very basic but commonly mistaken grammar point. When there are two verbs separated by an object (e.g., 'want/need' + object), the second verb should almost always be in the 'to-infinitive' form. Do not use the bare infinitive (verb without 'to'). Even if unsure, adding 'to' between the object and the second verb in this structure significantly increases the chance of being correct. Avoid getting used to the incorrect bare infinitive form.\n- **It's + Adjective + To-infinitive Structure**: This structure is a common way native English speakers (specifically mentioned as 'người Anh' - British English speakers) express difficulty or other qualities. Learners are encouraged to practice and get accustomed to using this pattern.\n- **Expressing Existence (There is / There are)**: When expressing existence ('có cái gì đó') at the beginning of a sentence, always use 'There is' or 'There are'. Do not use 'having' or 'have' in this context, as 'have' typically implies possession.\n- **Usage and structure of 'turns out'**: The 's' in 'turns out' is essential because it originates from 'it turns out', where 'it' is the third-person singular subject. Even when 'it' is omitted in informal speech, the verb 'turn' retains the 's' for correct conjugation. Learners should remember to include the 's' when using 'turns out' in this context.\n- **Passive Voice (Past Simple Passive)**: The phrase \"were told\" indicates a passive voice construction in the past tense. The general structure for the past simple passive is 'was' or 'were' followed by the past participle (V3) of the main verb. In this example, 'told' is the past participle of 'tell'.\n- **Future Simple (Negative with 'never')**: The structure 'I will never + V1' is used to express a strong negative intention or prediction for the future. It's a simple and direct way to state that an action will never happen. The teacher emphasizes the simplicity of the structure 'I'll (I will) never + V1'.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_5",
+      "lesson_id": "level_b_day_5",
+      "course_id": "course_level_b",
+      "day_number": 5,
+      "lesson_title": "Day 5 - Office Romance",
+      "thematic_module": "Onboarding",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 1,
+      "lesson_number_19": 1,
+      "verb_forms": [
+        "nowadays vs these days (adverbs of time)",
+        "a hundred percent / bucks (a hundred vs one hundred)",
+        "-ate pronunciation: /eɪt/ (verb) vs /ət/ (noun/adj)",
+        "become attracted to + N",
+        "help + (someone) + (to) V1"
+      ],
+      "sentence_structures": [
+        "lots of / a lot of + N vs a lot (adv)",
+        "... and yet ... (concession conjunction)",
+        "Who knows?!? (singular verb with Who)"
+      ],
+      "tense": [
+        "Have you ever + V3...?",
+        "S + have/has been + V3 (You've been warned!)"
+      ],
+      "notes": "- **Correct usage of adverbs of time (nowadays, these days)**: Many learners forget to add 's' at the end of 'nowadays' and 'these days'. Both words are always plural and require the 's'.\n- **Spoken usage of '100' (a hundred vs one hundred)**: In actual spoken English, people rarely use 'one hundred'. Instead, they commonly use 'a hundred'. The teacher advises to use 'one' less often when referring to '100' in casual speech.\n- **Distinguishing 'lots of', 'a lot of', and 'a lot'**: 1. 'Lots of' and 'a lot of' are interchangeable and mean 'many/much'. They are followed by a noun. \n2. 'A lot' (without 'of') is an adverb, meaning 'very much' or 'frequently'. It typically follows the verb.\n3. Irregular plural nouns like 'sheep' and 'fish' do not add '-s' for their plural form.\n- **Pronunciation of '-ate' ending based on part of speech**: The pronunciation of the '-ate' ending changes depending on the word's part of speech. If the word is a noun or an adjective, the '-ate' ending is typically pronounced as /ət/. If the word is a verb, the '-ate' ending is typically pronounced as /eɪt/. Learners should pay attention to this distinction to avoid common pronunciation errors.\n- **Usage of 'and yet' as a conjunction**: The phrase 'and yet' is used to mean 'mặc dù vậy' or 'dẫu vậy' (despite that, nevertheless). It's a usage that many learners might have encountered but don't frequently use. The teacher highlights that 'and yet', 'and... too', and 'but' can convey similar meanings in certain contexts, encouraging learners to understand the nuance of 'and yet'.\n- **Usage of 'become' with adjectives and the phrase 'become attracted to'**: The verb 'become' can be followed by an adjective, similar to 'get' or 'to be'. A specific phrase 'become attracted to' means to develop an interest in or be drawn to someone/something. The teacher also mentions a colloquial expression 'be into somebody' as a synonym for 'like' or 'be attracted to' someone.\n- **The verb 'help' and its sentence structure**: 1. Pronunciation: Pay attention to the 'L' sound in 'help', it should have an 'o' sound (âm 'ồ').\n2. Usage: The verb 'help' can be followed by either a bare infinitive or a to-infinitive. However, it is more common and concise to omit 'to' in everyday usage.\n- **Subject-verb agreement with interrogative pronouns (who, what)**: The teacher explains a common mistake where learners omit the 's' in 'knows' when 'who' or 'what' is the subject. The key point is that interrogative pronouns like 'who' and 'what' (and other question words) are treated as singular nouns (singular noun) in English, thus requiring the third-person singular verb form (e.g., 'knows' instead of 'know').\n- **Asking about past experiences**: This is a very common and useful pattern for asking if someone has done something at any point in their life up to now.\n- **Present Perfect Passive**: This structure combines the Present Perfect tense with the Passive Voice. The contracted form 'You've been warned' is commonly used in speech.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_6",
+      "lesson_id": "level_b_day_6",
+      "course_id": "course_level_b",
+      "day_number": 6,
+      "lesson_title": "Day 6 - Gossipy",
+      "thematic_module": "Office Culture",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 1,
+      "lesson_number_19": 2,
+      "verb_forms": [
+        "S + look + adjective (look chubby)",
+        "plan to / intend to + V1 vs be going to + V1",
+        "refuse + to V1 vs deny + V-ing"
+      ],
+      "sentence_structures": [
+        "Noun + V-ing (Reduced relative clause)",
+        "not that + adjective (degree intensifier)",
+        "Do you mind + my/me V-ing?",
+        "There's a lot of + N"
+      ],
+      "tense": [
+        "S + must have + V3 (Past deduction)",
+        "I didn't do anything (Past negative action)",
+        "We've been friends for [time]",
+        "This is the first time + S + have/has V3"
+      ],
+      "notes": "- **Describing appearance with 'look + adjective'**: The teacher emphasizes subject-verb agreement for the third person singular 'she', requiring 'she looks' instead of 'she look'. The verb 'look' in this context means 'to appear' or 'to seem' (trông thế này, trông thế kia).\n- **Expressing intention: 'going to' vs 'plan to' / 'intend to'**: For simple, everyday intentions, using \"I'm gonna\" (short for \"I'm going to\") is more natural and less formal than \"I plan to\" or \"I intend to\". The latter two can sound \"hơi quá\" (a bit too much/formal) or \"nặng nề\" (heavy/stiff) in casual conversation. The listener will understand the intention clearly with \"I'm gonna\".\n- **Distinction between Refuse and Deny**: Crucial distinction between 'refuse' and 'deny': 'Refuse + to + V' means declining or not agreeing to perform an action (từ chối làm gì). 'Deny + V-ing / Noun' means declaring that a past event or statement did not happen or rejecting an accusation (chối bỏ, phủ nhận việc đã làm).\n- **Reduced Relative Clauses (Present Participle)**: The teacher explains that the structure 'There was + Noun + V-ing' is a shortened form of 'There was + Noun + who was + V-ing'. The relative pronoun 'who' and the auxiliary verb 'was' are often omitted to create a more concise sentence, especially when describing an ongoing action in the past. This reduction is common in spoken and written English.\n- **Using 'that' as an intensifier/adverb of degree**: The teacher explains that using 'that' as an intensifier (meaning 'so' or 'to that extent') before an adjective makes the sentence more concise and natural. For example, 'Kim is not that tough' is preferred over 'Kim is not tough like that'. This pattern is common for expressing 'not so [adjective]' or 'not that [adjective]' in English.\n- **Gerunds after 'mind' with pronouns**: The teacher explains that while 'if you don't mind my asking' is grammatically correct (possessive pronoun + gerund), 'if you don't mind me asking' (object pronoun + gerund) is more commonly used in everyday speech. He advises learners to use the more common 'me asking' form.\n- **Expressing Quantity: There's/There are a lot of**: The teacher highlights that 'There's a lot of' is a perfectly valid and effective (work/hiệu quả) way to express 'a lot of', despite 'There are a lot of' also being correct. This addresses a common usage point, possibly for uncountable nouns or when 'a lot of' is treated as a singular unit, or simply as a common colloquial usage.\n- **Making deductions/guesses about the past**: Expressing past deduction: 'S + must have + V3/Ved' indicates a high-probability inference about a completed past action where the speaker feels confident but lacks 100% confirmation (chắc hẳn là đã làm gì trong quá khứ).\n- **Expressing 'I didn't do anything' (Past Negative Actions)**: When expressing 'I didn't do anything' for a past event or a period up to now, avoid using 'I don't do anything.' Instead, use 'I didn't do anything' (Past Simple) or 'I haven't done anything' (Present Perfect). Both are acceptable depending on the specific context of the past action.\n- **Expressing duration of a relationship or state using 'be'**: This pattern is used to describe a relationship or state that started in the past and continues up to the present. The teacher emphasizes using 'been together' or 'been friends' to express that people have known each other or been in a relationship for a long time.\n- **This is the first time... + Present Perfect**: When using the structure 'This is the first time...', it is highly probable that the Present Perfect tense will follow. This pattern is used to express an experience that is new or has never happened before up to the present moment.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_7",
+      "lesson_id": "level_b_day_7",
+      "course_id": "course_level_b",
+      "day_number": 7,
+      "lesson_title": "Day 7 - Electronic mail",
+      "thematic_module": "Office Culture",
+      "data_group": "supplemental_7_lessons",
+      "status": "active",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "precise (adj) vs precisely (adv)"
+      ],
+      "sentence_structures": [
+        "It seems / appears / looks like + clause",
+        "find + O + adjective (I find it surprising)",
+        "Wh-subject + V-s/es (Who knows / What happens)",
+        "never heard of / about + N",
+        "..., right? / Tag questions",
+        "wondering if + S + would/could V1"
+      ],
+      "tense": [
+        "S + might be + V-ing (Modal Continuous)",
+        "It has been [time] since + S + V2"
+      ],
+      "notes": "- **Adjective vs. Adverb: precise vs. precisely**: The teacher explains the difference between using the adjective 'precise' and the adverb 'precisely'. When using 'precisely', do not use 'to be' before it. 'More' can be optionally used with 'precisely' (e.g., 'more precisely' or just 'precisely'). The common error is to combine 'to be' with 'precisely'.\n- **Expressing appearance or likelihood (It seems/appears/looks like)**: The verbs 'seems', 'appears', and 'looks' must take an '-s' ending when the subject is 'it' (third person singular). A slight pause after 'like' can make the pronunciation sound more natural.\n- **Expressing opinion/perception: 'I find something + adjective'**: The teacher emphasizes a common mistake among Vietnamese learners, which is to translate 'tôi thấy' (I see/I find) literally as 'I see' when expressing an opinion or perception about something's quality. The correct English expression for this context is 'I find [something] [adjective]'.\n- **Question Words as Subjects (Singular)**: When a question word (e.g., 'What') functions as the subject of a sentence, it is treated as a singular noun. Therefore, the main verb in the present simple tense must take the third-person singular '-s' ending.\n- **Expressing 'never heard of/about something'**: The preposition 'of' can be replaced by 'about' without being incorrect in this context. Learners should practice these phrases until they become natural and fluent.\n- **Tag Questions (Câu hỏi đuôi)**: The core rule for tag questions is to 'flip' the statement at the end. If the main clause contains 'not' (negative), the tag will be positive. If the main clause is positive, the tag will be negative. The speaker explains that the original form of a tag question was likely a choice, e.g., 'You don't know, or do you?', which was then shortened to the current tag question structure. This historical context helps explain why the auxiliary verb and negation are inverted in the tag.\n- **Modal Verb 'Might' with Continuous Aspect**: The Vietnamese word 'đang' (meaning 'currently' or 'in the process of') often corresponds to the -ing form in English. When expressing a possibility of an ongoing action using 'might', the correct structure is 'might + be + V-ing'. A common error is omitting 'be' (e.g., 'might wondering'), which is incorrect because 'might' should be followed by a base form (V1), and for the continuous aspect, 'be' is the base form of the verb 'to be' that precedes the V-ing.\n- **Expressing past states/emotions within future uncertainty**: The teacher explains how to combine a future expression of not knowing ('sẽ không biết') with a past state ('đã hạnh phúc'). The English translation uses 'You never know' (present simple, implying future uncertainty or general truth) and 'I was' (past simple) to accurately convey the meaning. The key is to correctly use the past simple for the state that occurred in the past, even when the 'knowing' part is in the future or a general statement.\n- **Present Perfect with 'since' for duration of time**: After 'since' in this structure, the verb should typically be in the Past Simple form (cột 2).",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_8",
+      "lesson_id": "level_b_day_8",
+      "course_id": "course_level_b",
+      "day_number": 8,
+      "lesson_title": "Day 8 - COVID-19",
+      "thematic_module": "Office Culture",
+      "data_group": "supplemental_7_lessons",
+      "status": "active",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "will be able to + V1",
+        "get + V3 (Passive voice with get)",
+        "go + bare verb (go check / go get)",
+        "suffer from + illness (bị bệnh)",
+        "help + (someone) + V1"
+      ],
+      "sentence_structures": [
+        "one of the + plural Nouns",
+        "speaking of / when it comes to + N",
+        "everybody / everyone + V-s/es"
+      ],
+      "tense": [
+        "S + have/has V3 + so far",
+        "since + S + V2 / past time"
+      ],
+      "notes": "- **One of + Plural Noun**: The phrase \"one of\" must be followed by a plural noun. The Vietnamese word \"những\" (meaning 'many' or 'plural') indicates that the following noun must be in its plural form. Learners should remember to add 's' (or appropriate plural ending) to the noun after \"one of\".\n- **Expressions for 'talking about' or 'regarding' a topic**: The phrase \"talk about\" is acceptable for expressing \"nói về\" (talking about), but for more idiomatic or advanced expression, especially when referring to a topic, alternatives like \"speaking of\", \"in terms of\", \"in [topic] terms\", and \"when it comes to\" are preferred. \"When it comes to\" is particularly useful for expressing \"khi nói về một vấn đề gì đó\" (when talking about a certain issue).\n- **Using 'be able to' instead of 'can' for future ability**: The phrase 'be able to' means 'can' (có thể). It is used when 'can' cannot be directly applied, especially with other modal verbs like 'will'. A common mistake is to combine 'will' and 'can' (e.g., 'I will can do that'), which is grammatically incorrect. Instead, use 'will be able to' to express future ability.\n- **Passive Voice with 'Get'**: The passive voice can be formed with 'get' instead of 'be' in some cases. Using 'get' often makes the passive construction sound stronger or more emphatic. The verb form following 'get' in this passive construction is still the past participle (V3/ED), just like with 'be'.\n- **Subject-verb agreement with indefinite pronouns (everybody, everyone)**: The indefinite pronouns 'everybody' and 'everyone' are always treated as singular subjects, even though they refer to multiple people. Therefore, the verb following them in the simple present tense must take an '-s' (e.g., needs, wants, goes).\n- **Verb patterns with 'go' (go + bare infinitive)**: Explains the pattern 'go + bare infinitive' (e.g., 'go buy') to express purpose or a direct action, emphasizing that 'and' or 'to' are often unnecessary in such constructions. The teacher explicitly states to avoid 'I will go and buy' or 'I will go to buy' for this specific pattern. However, it is also noted that 'go and + verb' is a valid structure in other contexts.\n- **Expressing illness: 'bị' in Vietnamese vs. 'suffer from' in English**: The Vietnamese word 'bị' when referring to an illness or disease is often translated using 'suffer' or 'suffering from' in English. The teacher emphasizes that 'He's suffering from lung cancer' is an appropriate way to express 'Ổng đang bị ung thư phổi'.\n- **Verb Pattern with 'help'**: The verb 'help' can be followed directly by a bare infinitive (verb) without an object or 'to'. This is an alternative to the more common 'help somebody do something' or 'help somebody to do something'. The teacher emphasizes the flexibility of 'help' + bare infinitive as a correct and common pattern.\n- **Present Perfect Tense with 'so far'**: The phrase 'so far' means 'until this point' or 'until now' ('until now'). It signals the use of the Present Perfect tense (have + past participle).\n- **Usage of 'since' with Past Simple**: The word 'since' is very useful. When 'since' is followed by a clause indicating a specific past event (e.g., 'the first time', 'the last time'), the verb in that clause is typically in the Past Simple (V2) form. This is a common pattern for expressing a point in time from which something has happened.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_9",
+      "lesson_id": "level_b_day_9",
+      "course_id": "course_level_b",
+      "day_number": 9,
+      "lesson_title": "Day 9 - Business trip",
+      "thematic_module": "Office Culture",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 2,
+      "lesson_number_19": 3,
+      "verb_forms": [
+        "make an effort to + V1 / on + N",
+        "come up with + idea/solution",
+        "end up + V-ing",
+        "be late / get late (adjective usage of late)",
+        "be not supposed to + V1",
+        "I'm afraid of / scared of + N"
+      ],
+      "sentence_structures": [
+        "What are you gonna do then?",
+        "No matter how + adj/adv + S + V"
+      ],
+      "tense": [
+        "S + will soon have to + V1",
+        "have been to (returned) vs have gone to (not yet returned)",
+        "be + V-ing (Near future: where you're going)"
+      ],
+      "notes": "- **The + Adjective for Plural Nouns**: Using 'the' followed by an adjective can refer to a group of people or things without explicitly stating the noun (e.g., 'people', 'things'). This construction is more concise and commonly understood. While adding a noun like 'things' (e.g., 'the inevitable things') is grammatically correct, it is often redundant as the adjective itself, preceded by 'the', implies the group or concept.\n- **Agreement of demonstratives (this/these) with 'kind/kinds' and subsequent nouns**: The core rule is to match the demonstrative (this/these) with the number of 'kind' (kind/kinds). 'This' (singular) goes with 'kind' (singular). 'These' (plural) goes with 'kinds' (plural). When using 'in this kind of...', 'kind' should be singular (no 's'). The teacher notes that using 'this kind of trips' (singular 'kind' with a plural noun 'trips') is sometimes used or tolerated, even though 'these kinds of trips' is the more grammatically consistent plural form.\n- **Verb pattern with 'end up'**: The verb 'end up' means to find oneself in an unintended or unexpected place or situation. It can sometimes carry a connotation of being 'victimized' or ending up in an undesirable situation. The crucial grammatical point is that 'end up' is always followed by a verb in the -ing form (gerund).\n- **Usage of 'late' as an adjective**: 'Late' is an adjective, not a verb. Therefore, it must be used with the verb 'to be' (e.g., 'to be late'). A common mistake is to use 'get' instead of 'be' with 'late'.\n- **be supposed to**: The phrase \"be supposed to\" means \"nên là phải\" (should or are expected to). It indicates an obligation, expectation, or what is generally considered appropriate or required.\n- **Expressing fear (afraid of / scared of)**: The teacher emphasizes the correct usage of 'I'm afraid of' and 'I'm scared of' (using the verb 'to be'). A common mistake to avoid is saying 'I afraid of' or 'I scared of' without 'am'.\n- **Usage of 'then'**: The word 'then' has two primary meanings/usages:\n1. 'Sau đó' (after that/next), commonly used in spoken language.\n2. 'Thì' (in that case/as a result), used in conditional sentences following 'if'.\n- **Expressing 'No Matter How' (Concession of Degree)**: The teacher explains how to express the idea of 'no matter how + adjective/adverb' in both Vietnamese and English, providing direct translations and examples to illustrate the structure and usage.\n- **Using 'will soon' for future actions**: The teacher explains that the combination of 'will' and 'soon' in English is equivalent to the Vietnamese phrase 'sẽ sớm', indicating an action that will happen in the near future. It emphasizes the full structure 'will soon' for clarity.\n- **Been to vs. Gone to (Present Perfect)**: The teacher explains the common usage of 'been to' to describe having visited a place. It is explicitly stated that 'been to' is preferred over 'gone to' in this context, implying the speaker has returned from the location or is no longer there.\n- **Expressing Future (Near Future and other Future Forms)**: The 'near future' (tương lai gần) can be expressed using the present continuous (to be + V-ing). In the given context, various future forms (present continuous, simple future, future continuous, and 'be about to') are interchangeable and all grammatically correct for expressing future meaning.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_10",
+      "lesson_id": "level_b_day_10",
+      "course_id": "course_level_b",
+      "day_number": 10,
+      "lesson_title": "Day 10 - Project management",
+      "thematic_module": "Office Culture",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 2,
+      "lesson_number_19": 4,
+      "verb_forms": [
+        "how / what / where + to V1"
+      ],
+      "sentence_structures": [
+        "Being + N/adj + doesn't mean + clause",
+        "It's a good idea to + V1 / have no idea",
+        "Why don't we + V1? / Let's + V1",
+        "If + S + V2/ed, S + would + V1 (Conditional Type 2)",
+        "Either A or B + verb agreement"
+      ],
+      "tense": [
+        "When I was young / little + Past Simple",
+        "decided to + V1 (Past Simple of decide)",
+        "thought + S + would + V1 (Future in the Past)",
+        "thought + S + would have + V3 (Past modal expectation)"
+      ],
+      "notes": "- **Verb forms (how to + V)**: Many learners understand 'how to' in isolation but struggle or forget its usage when forming full sentences, leading to confusion.\n- **Gerund as Subject (Being vs. Be)**: The common mistake is using the base form 'be' instead of the gerund 'being' when the action or state itself is the subject of the sentence, especially in structures like 'doing something doesn't mean...'. The correct form requires 'being' to function as a noun (gerund subject).\n- **Usage of 'idea' and common phrases**: The word 'idea' is highly valued and deeply embedded in American culture and language. It's used in many common expressions to convey suggestions, advice, or lack of knowledge.\n- **Polite suggestions and invitations**: Người Mỹ có cách nói 'lòng vòng' nhưng thực chất là lịch sự. Họ dùng 'Why don't we' để mời hoặc gợi ý một cách gián tiếp và lịch sự, khác với cách nói trực tiếp hơn như 'Let's...' mà người Việt có thể quen dùng.\n- **Conditional Type 2**: Conditional Type 2 is used for situations that are contrary to fact in the present. The if-clause uses the past simple tense (V2/ed), and the main clause uses 'would' followed by the base form of the verb (V1). Emphasize not to use 'will' in the main clause, always use 'would'.\n- **Either... or... (Subject-Verb Agreement)**: When using the structure 'either A or B', the verb agrees with the subject closest to it (subject B). In the example, 'will have to see' agrees with 'my friends' (plural), which is subject B, not 'I' (subject A).\n- **Expressing 'When I was young' / Talking about the past**: The teacher introduces various ways to express 'when I was young' as a common starting point for discussing past events or states. This phrase typically introduces a clause describing an action or state in the past simple tense.\n- **Verb 'decide' usage, particularly in past tense**: The teacher emphasizes that when speaking, the past tense form 'decided' is very frequently used, indicating a high probability of its usage in real-life communication, even though 'decide' (present tense) is also possible depending on the specific context of the sentence.\n- **Sequence of Tenses / Future in the Past**: When the main verb is in the past (e.g., 'thought'), the subsequent future action must be expressed using 'would' (the past form of 'will'), indicating a 'future in the past'. The Vietnamese word 'tưởng' (thought) implies a past belief or action, thus requiring the past tense sequence. 'Thought' and 'would' commonly appear together in this grammatical construction.\n- **Past Perfect Modals: Expressing Past Expectations or Assumptions with 'would have + V3'**: The teacher explains the combination of 'thought' with 'would have + V3' to express a past expectation or assumption that an action would have been completed. The Vietnamese phrase 'sẽ đã' is used to convey this sense of a past completed action that was expected. It is crucial to use the past participle (V3) form of the main verb after 'would have'.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_11",
+      "lesson_id": "level_b_day_11",
+      "course_id": "course_level_b",
+      "day_number": 11,
+      "lesson_title": "Day 11 - Stand up meeting",
+      "thematic_module": "Operations & Management",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 4,
+      "lesson_number_19": 5,
+      "verb_forms": [
+        "prevent + O + from + V-ing",
+        "stay + adjective / V3 (stay focused / tuned)",
+        "every day (adv) vs everyday (adj)",
+        "be involved in + N / V-ing"
+      ],
+      "sentence_structures": [
+        "plenty of + N (countable / uncountable)",
+        "under control / out of control",
+        "all but / anything but / nothing but",
+        "The police are / will be + V"
+      ],
+      "tense": [
+        "S + have/has V3 + lately / recently",
+        "S + have/has been V-ing + for years"
+      ],
+      "notes": "- **plenty of**: The main point is the usage of 'plenty of'. A key instruction is to avoid putting 'a' before 'plenty of' (e.g., don't say 'a plenty of'). The teacher explicitly states: 'plenty of các bạn đừng bỏ ở ra đằng trước nhé.' (For plenty of, don't put 'a' in front).\n- **Verb + Preposition: prevent from**: The verb 'prevent' is commonly followed by the preposition 'from' and a gerund (V-ing) to express stopping something from happening.\n- **Verb pattern: stay + adjective / past participle**: The verb 'stay' is followed by an adjective or a past participle (V-ed) to describe a state or condition. It should not be followed by a present participle (V-ing) in this context.\n- **Distinction between 'every day' (adverbial phrase) and 'everyday' (adjective)**: The teacher explains a common mistake regarding the spelling and usage of 'every day' (two words) versus 'everyday' (one word). 'Every day' (two words) functions as an adverbial phrase meaning 'daily' or 'each day'. 'Everyday' (one word) functions as an adjective meaning 'routine', 'common', or 'ordinary'.\n- **Describing a state of control**: The phrase 'is still under control' is used to describe a situation or item that remains within a managed or predictable state.\n- **Usage of 'but' as 'except' / 'only'**: The word 'but' can be used to mean 'except' (ngoại trừ), indicating an exclusion from a general statement or group.\n- **Usage of 'involve' and the structure 'be involved in'**: The word 'involve' is becoming increasingly common in English. The structure 'be deeply involved in' is used to express a strong or close connection/participation in something.\n- **Future Tenses and Noun Plurality (Police)**: The word \"police\" is always treated as a plural noun, so the verb following it should be in its base form (e.g., \"come\" not \"comes\"). If referring to a single person, use \"police officer\". The teacher also highlights the difference between Future Simple (\"I will run away\") and Future Perfect (\"I will have run away\") when describing an action that will be completed before another future event.\n- **Usage of 'lately' and 'recently' with Present Perfect**: The adverbs 'lately', 'recently', and 'in the recent time' are synonymous and all mean 'gần đây về thời gian' (recently in time). They are typically used with the Present Perfect tense to indicate actions that happened at an unspecified time in the recent past.\n- **Present Perfect and Present Perfect Continuous with 'for years'**: The keyword 'for years' indicates a duration of many years without a specific number, and is typically used with the Present Perfect tense. If emphasizing an action that started in the past and is still ongoing ('đã và đang làm'), the Present Perfect Continuous tense is used. 'For years' can be replaced by a specific duration like 'for three years'.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_12",
+      "lesson_id": "level_b_day_12",
+      "course_id": "course_level_b",
+      "day_number": 12,
+      "lesson_title": "Day 12 - Electronic mail (Advanced)",
+      "thematic_module": "Operations & Management",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 4,
+      "lesson_number_19": 6,
+      "verb_forms": [
+        "try to V1 vs try V-ing",
+        "get used to + V-ing / Noun",
+        "like + V-ing (general preference)",
+        "take a look at + N (delexical verb)"
+      ],
+      "sentence_structures": [
+        "There's no easy way to + V1",
+        "... for what? (Asking purpose)",
+        "If I were you, I would + V1",
+        "I don't see why + S + V"
+      ],
+      "tense": [
+        "S + V2 + once (Single past occurrence)"
+      ],
+      "notes": "- **Try + to V vs. Try + V-ing**: 'Try + to + V' expresses exerting conscious effort to accomplish a challenging task (cố gắng làm gì). In contrast, 'Try + V-ing' expresses testing an alternative approach or experimenting to observe results (thử nghiệm làm việc gì xem hiệu quả ra sao).\n- **get used to (become accustomed to)**: The phrase 'get used to' means to become accustomed to something, or to start to become familiar with something. It implies a process of adaptation. It is followed by a noun or a gerund (V-ing).\n- **Like + V-ing (Gerund after 'like')**: When 'like' is used to mean 'similar to' or 'in the manner of', it functions as a preposition and should be followed by a gerund (V-ing) if a verb is used.\n- **Verb-to-Noun Transformation: 'look at' vs. 'take/have a look at'**: The teacher explains a common pattern in English, especially as speakers become more proficient: the tendency to use noun phrases (e.g., 'take a look') more often than simple verbs (e.g., 'look'). This transformation from a verb to a noun phrase (verb + article + noun + preposition) is a stylistic choice that can make language sound more natural and idiomatic, similar to how American English speakers might prefer this construction. The core idea is to shift from a direct verb to a more descriptive noun phrase.\n- **Expressing the absence of an easy method**: This phrase emphasizes that a task or goal requires effort and there are no shortcuts. It's a common idiomatic expression.\n- **Usage of 'for what' to ask about purpose**: The teacher explains that 'for what' is used to ask about the purpose or reason for something, translating to 'để làm gì?' in Vietnamese. The example provided illustrates this usage with a gerund phrase.\n- **Conditional Type 2 (If-clause Type 2)**: The teacher introduces the 'if I were in your shoes' idiom as an example of Conditional Type 2. It's highlighted as a common phrase. The structure uses 'were' for all subjects in the if-clause (even 'I'), and 'would' + base verb in the main clause. The idiom 'if I were in your shoes' means 'if I were in your situations'.\n- **Expressing lack of understanding or reason**: The phrase \"I don't see why\" is presented as a stronger way to express not understanding the reason or point of something, compared to \"I don't understand why\".\n- **Using 'once' to describe a single past action**: This is a simple sentence pattern introduced in lesson 12. It is used to express that the subject performed an action a single time in the past.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_13",
+      "lesson_id": "level_b_day_13",
+      "course_id": "course_level_b",
+      "day_number": 13,
+      "lesson_title": "Day 13 - Chart analysis",
+      "thematic_module": "Operations & Management",
+      "data_group": "supplemental_7_lessons",
+      "status": "active",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "increase twofold / twofold increase"
+      ],
+      "sentence_structures": [
+        ", which means + clause (sentential relative)",
+        "S + be + nothing compared to + N",
+        "It doesn't necessarily mean that + S + V",
+        "What's going on (with)...?"
+      ],
+      "tense": [
+        "What did you do? vs What have you done?",
+        "There has been + N (Present Perfect existence)"
+      ],
+      "notes": "- **Usage of 'twofold' vs. 'two times' for expressing multiplication**: The word 'twofold' does not require an 's' at the end, unlike 'two times' when expressing multiplication.\n- **Relative clause (which means)**: The teacher emphasizes the importance of adding '-s' to 'means' when using 'which means' to refer to a preceding clause or idea. This highlights the third-person singular agreement for 'which' when it represents a singular concept or statement.\n- **Comparing oneself/something to another**: The teacher emphasizes that 'compared' in this phrase should be in the past participle form (with -ed).\n- **Expressing lack of necessity or certainty (It doesn't necessarily mean)**: The teacher introduces a common phrase to express that something is not always or absolutely true. It addresses a potential point of confusion ('lúng túng') for learners regarding the usage of 'necessarily' in negative statements to convey 'not always' or 'not absolutely'.\n- **Asking about ongoing events/situations**: The phrasal verb 'go on' is a synonym for 'happen' when asking about ongoing events.\n- **Present Perfect vs. Past Simple (emphasis on completion)**: The Present Perfect ('What have you done?') emphasizes the completion of an action, making it stronger in the sense of 'having finished something' compared to the Past Simple ('What did you do?').\n- **Present Perfect with 'There'**: The teacher explains that 'there's been' or 'there has been' is a more advanced way to express 'đã có' (there has been/there was), elevating the common 'there is/are' structure to a higher level of usage.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_14",
+      "lesson_id": "level_b_day_14",
+      "course_id": "course_level_b",
+      "day_number": 14,
+      "lesson_title": "Day 14 - Customer complaint",
+      "thematic_module": "Operations & Management",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 5,
+      "lesson_number_19": 7,
+      "verb_forms": [
+        "remain / keep + adjective",
+        "keep + someone + posted / updated (V3)",
+        "prove somebody wrong",
+        "work like a charm (Idiom & Present Simple)"
+      ],
+      "sentence_structures": [
+        "no worries vs don't worry",
+        "All you need to do is + V1",
+        "It's totally understandable that...",
+        "There's a saying that goes...",
+        "I'm not sure if/whether + clause",
+        "You mean... / Are you saying that...?"
+      ],
+      "tense": [
+        "in case + S + have/has V3",
+        "who put... (Past Simple of irregular 'put')"
+      ],
+      "notes": "- **Verbs followed by adjectives (remain, keep)**: The verb 'remain' is similar to 'keep' in that it is followed by an adjective to describe the state of the subject. 'Courteous' means 'lịch sự'.\n- **Keep + Object + Past Participle**: This pattern (keep + object + past participle) is used to express the idea of continuously informing or updating someone about a situation. The past participle acts as an adjective describing the state of the object (e.g., 'you' will be in a 'posted' state).\n- **Verb pattern: prove somebody wrong**: The teacher explains the English phrase 'prove somebody wrong' as the equivalent of 'chứng minh ai đó sai' (to prove someone wrong).\n- **Subject-Verb Agreement (Present Simple) and Idiom Usage**: The teacher emphasizes the importance of adding '-s' to the verb 'work' when the subject is 'it' (third-person singular) in the Present Simple tense. The idiom 'work like a charm' means to be very effective, similar to a 'magic potion' or 'spell'. The word 'charm' in this context refers to a spell or a magical influence.\n- **Distinction between \"no worries\" and \"don't worry\"**: The teacher explains the common mistake of confusing \"no worries\" and \"don't worry\". The key distinction is that \"worry\" in \"don't worry\" is a verb, while \"worries\" in \"no worries\" is a plural noun. Learners should remember to include the \"-es\" ending for \"worries\" when using it as a noun in \"no worries\".\n- **Sentence Structures**: The teacher introduces a common English sentence structure 'All you need to do is...' and provides its direct Vietnamese translation and usage context.\n- **Adverb vs Adjective (totally vs total)**: The teacher emphasizes using the adverb 'totally' to modify the adjective 'understandable', and not the adjective 'total'. This highlights the correct usage of adverbs to modify adjectives.\n- **Idiomatic usage of 'goes' in 'a saying that goes'**: The teacher explains the meaning of 'goes' in the fixed phrase 'a famous saying that goes'. It clarifies that 'goes' in this context means 'says' or 'states', addressing a common point of confusion or debate among learners.\n- **Adjective usage with 'sure'**: The common mistake is to omit the verb 'to be' before the adjective 'sure'. The teacher emphasizes that 'sure' is an adjective, thus requiring 'to be' before it (e.g., 'I am sure', 'I am not sure').\n- **Present Perfect with 'in case'**: The phrase 'in case you haven't noticed' requires the Present Perfect tense (have + V3) to be grammatically correct. This structure is used to talk about something that might have happened or might be true, and the speaker is bringing it to the listener's attention.\n- **Irregular verb 'put' in past tense**: The verb 'put' is an irregular verb where its past simple form (V2) is also 'put'. The teacher emphasizes that 'put' in these sentences is in the past tense ('cột hai') because it refers to an action that has already occurred ('sự việc đã xảy ra rồi'). Learners should be aware of irregular verbs that do not change form in the past simple.\n- **Asking for Clarification / Confirming Understanding**: These are common phrases used to ask for clarification or to confirm what someone means or is implying. They are essential for ensuring mutual understanding in a conversation.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_15",
+      "lesson_id": "level_b_day_15",
+      "course_id": "course_level_b",
+      "day_number": 15,
+      "lesson_title": "Day 15 - Close the deal!",
+      "thematic_module": "Operations & Management",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 5,
+      "lesson_number_19": 8,
+      "verb_forms": [
+        "close the deal / go bankrupt",
+        "It's very intimidating (Participle adjective)",
+        "be flooded with + N (Passive expression)",
+        "keep / stop + V-ing"
+      ],
+      "sentence_structures": [
+        "Why / Why not + base verb?",
+        "How did it go? (Asking past outcome)",
+        "Wh-word + Noun (What time, which option)",
+        "Do you know + Wh-word + S + V? (Embedded question)"
+      ],
+      "tense": [
+        "have invested time/effort in + V-ing",
+        "That's not gonna happen (Future negation)",
+        "I've been thinking about + N/V-ing",
+        "be + V-ing (Present Continuous for future)"
+      ],
+      "notes": "- **Business English Collocations and Phrases**: The teacher highlights common collocations for 'bankrupt': 'go bankrupt' and 'declare bankrupt'. These are specific phrases used in a business context.\n- **Adjectives to describe fear/scary things**: The teacher explains different adjectives (intimidating, scary, daunting) that can be used interchangeably to express that something is 'very scary' or 'đáng sợ' in Vietnamese. The common structure is 'It's very + adjective'.\n- **Expressing 'being overwhelmed/filled with something'**: The phrase 'be flooded with' is used to express that something is overwhelmed or filled with something else, translating to 'tràn ngập' in Vietnamese. The example demonstrates its use in the present simple passive voice.\n- **Using 'Why' for suggestions or rhetorical questions**: The teacher explains the common usage of 'Why + verb' or 'Why not + verb' for making suggestions or asking rhetorical questions. A key pedagogical point is the distinction in pronunciation and meaning between 'bother' (bận tâm) and 'border' (biên giới), emphasizing the 'or' sound in 'border' versus the 'o' sound in 'bother'.\n- **Verbs followed by gerunds (V-ing)**: The verbs 'keep' and 'stop' are followed by the gerund form (V-ing). 'Keep + V-ing' means to continue an action, while 'stop + V-ing' means to cease an action. This is highlighted as a very important grammar point.\n- **Asking about past events or outcomes**: The phrase 'How did it go?' is used to ask about the outcome or progress of a past event. The teacher emphasizes that 'D' in 'How did' stands for 'did'. It is highlighted as one of the most iconic phrases from the TV show 'Friends', implying its common usage and recognition in English.\n- **Expressing investment of time/effort**: The key pattern to express 'investing time/effort into an activity' is to use 'invested' followed by the preposition 'in' and then a gerund (V-ing).\n- **Question words followed by nouns (Interrogative Determiners)**: The teacher explains how to place a noun immediately after specific question words like 'what' and 'which' to form a question, effectively using them as interrogative determiners. This allows asking about a specific type or amount of something.\n- **Embedded Questions / Indirect Questions**: The embedded clause in an indirect question (e.g., \"who my dad is\") follows statement word order (Subject + Verb), not question word order. A common error is to invert the subject and verb in the embedded clause (e.g., \"who is my dad\"). Such questions can often be rhetorical, not seeking direct information.\n- **Future Tense: gonna vs. will not**: The teacher explains 'gonna' as a colloquial form of 'going to' and demonstrates its equivalence to 'will not' in expressing future negation. Both 'that's not gonna happen' and 'that will not happen' convey the same meaning of something not occurring in the future.\n- **Present Perfect Continuous**: The structure 'I've been + V-ing' signifies an action that started in the past and is still continuing in the present ('đã và đang'). The teacher notes this topic was previously covered, suggesting it's a review or reinforcement.\n- **Present Continuous for Future Arrangements (Tương lai gần)**: The teacher explains that 'tương lai gần' (near future) is formed with 'be + ing' (Present Continuous). A key pedagogical point is the ambiguity of 'is coming?' in Vietnamese, which can be interpreted as a present action ('ảnh đang tới hả?') or a future arrangement ('ảnh có tới hay là không, ảnh sẽ tới hay là không'). The lesson focuses on using the Present Continuous to express future arrangements.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_16",
+      "lesson_id": "level_b_day_16",
+      "course_id": "course_level_b",
+      "day_number": 16,
+      "lesson_title": "Day 16 - Social media",
+      "thematic_module": "Team & Leadership",
+      "data_group": "pending_4_lessons",
+      "status": "pending_audio",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "No one wants to get left behind (get + V3)"
+      ],
+      "sentence_structures": [
+        "Unlike + Noun/Pronoun, S + V",
+        "From what I've gathered, S + must be V3"
+      ],
+      "tense": [
+        "S + has/have been V-ing (Present Perfect Continuous)"
+      ],
+      "notes": "- **Contrastive comparisons with 'Unlike'**: Use 'Unlike + Noun/Pronoun' at the head of a sentence to establish a sharp contrast with another party or competitor (e.g., 'Unlike us, they can't achieve their sales target 3 days in a row').\n- **Colloquial passive with 'get'**: 'get left behind' is preferred in fast-paced workplace speech over 'be left behind' to emphasize the rapid consequence of falling behind technological shifts.\n- **Present Perfect Continuous for macro trends**: 'This world has been changing rapidly' emphasizes an ongoing transformation that started in the past and continues to accelerate right now.\n- **Pragmatic nuance of 'What's that supposed to mean?'**: Unlike a neutral 'What do you mean?', this expression carries defensive skepticism or disbelief when someone hints at an uncomfortable implication.\n- **Pattern 'spend + time/resources + V-ing'**: 'I've spent all my youth studying marketing' reinforces that 'spend' takes a gerund (V-ing) directly without any preposition.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_17",
+      "lesson_id": "level_b_day_17",
+      "course_id": "course_level_b",
+      "day_number": 17,
+      "lesson_title": "Day 17 - Teamwork",
+      "thematic_module": "Team & Leadership",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 7,
+      "lesson_number_19": 9,
+      "verb_forms": [
+        "want someone to be + adj (aware)",
+        "let / make + someone + V1 (Causative)"
+      ],
+      "sentence_structures": [
+        "Here comes + N / Here is + N (Inversion)",
+        "What are you up to?",
+        "There's something wrong with + N",
+        "From now on, I will + V1",
+        "You know what I'm saying? / You know what I mean?"
+      ],
+      "tense": [
+        "didn't say it would + V1 (Reported speech backshift)",
+        "S + has/have been V-ing + all morning",
+        "The moment + S + V2, S + V2",
+        "Why haven't I been told (about)...?",
+        "Who told you that...? (Past Simple subject question)"
+      ],
+      "notes": "- **Usage of the adjective 'aware' and the verb pattern 'want someone to be something'**: The word 'aware' is an adjective and must always be preceded by the verb 'to be'.\n- **Causative verbs: let and make**: The verbs 'let' and 'make' are followed by a bare infinitive (the base form of the verb without 'to').\n- **Subject-verb agreement with 'here' (inversion)**: The teacher explains that 'here' can introduce a sentence, similar to 'this'. The teacher states that 'here' is treated as a singular subject for verb agreement in these contexts. Therefore, when the subject following 'here' is singular, the verb should be singular (e.g., 'is', 'comes'). A common error to avoid is forgetting to add '-s' to the verb when the subject following 'here' is singular (e.g., 'comes' instead of 'come').\n- **Usage of 'What/Where are you up to?'**: The phrase 'What are you up to?' is not just asking about current activity ('What are you doing now?') but often about future plans or intentions ('What are you planning to do?'). Similarly, 'Where are you up to?' is equivalent to 'Where are you going?' and asks about one's intended destination or plans for going somewhere.\n- **Expressing problems or issues**: The teacher introduces a common phrase 'There's something wrong with...' to express that there is an issue or a problem with something. This is a fixed expression.\n- **Expressing future actions/intentions from the present moment**: The phrase 'From now on' is used to indicate that an action, habit, or policy will start from the present moment and continue into the future. It signifies a change or a new beginning.\n- **Reported Speech (Sequence of Tenses)**: The teacher emphasizes using 'I didn't say' (past tense) when reporting a past statement, rather than 'I don't say' (present tense), especially when the reported clause uses 'would be' to express a future event from a past perspective. This highlights the importance of maintaining the correct sequence of tenses in reported speech.\n- **Politeness and directness in asking for comprehension/attention**: The teacher explains that 'Did you hear?' can be perceived as direct ('hơi direct') and potentially impolite ('hơi bất lịch sự') in certain contexts when asking if someone has understood or heard something, suggesting a need for more nuanced or polite phrasing.\n- **Present Perfect Continuous Tense**: The Present Perfect Continuous tense (has/have been + V-ing) signifies an action that started in the past and is still continuing in the present. The Vietnamese equivalent 'đã và đang' (already and currently) helps learners grasp this concept. The phrase 'all morning' emphasizes the duration of the action.\n- **Describing past events with 'The moment'**: When describing an event in the past, especially one that happened at a specific moment or immediately after another, use the past simple tense for both clauses. The verb should be in its second form (V2 or 'cột hai').\n- **Present Perfect Passive Voice (asking about lack of information)**: The teacher introduces a common way to express not being informed or notified about something, using the present perfect passive voice. The examples show variations of the phrase, from more complete to more concise.\n- **Asking 'Who told you...?' (Past Tense)**: The teacher emphasizes using 'who told you' (past tense) instead of 'who tells' (present simple) when asking about information received in the past. This addresses a common learner mistake in tense usage for such questions.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_18",
+      "lesson_id": "level_b_day_18",
+      "course_id": "course_level_b",
+      "day_number": 18,
+      "lesson_title": "Day 18 - Salary negotiation",
+      "thematic_module": "Team & Leadership",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 7,
+      "lesson_number_19": 10,
+      "verb_forms": [
+        "to put it bluntly / mildly (adv modifying verb)",
+        "be worth + V-ing / Noun",
+        "feel hurt / offended (feel + participle adjective)",
+        "keep + V-ing (keep asking myself)"
+      ],
+      "sentence_structures": [
+        "Let's + V1 (Suggestions)",
+        "if my memory serves me right",
+        "Why + V1 (Why make a big deal out of it?)",
+        "There's nothing to be scared of",
+        "adj + enough + to V1"
+      ],
+      "tense": [
+        "have come too far (Present Perfect)"
+      ],
+      "notes": "- **Adverb vs. Adjective usage (specifically with 'to put it')**: The teacher emphasizes the correct usage of the adverb 'politely' in the phrase 'to put it politely', correcting the common mistake of using the adjective 'polite' instead. The phrase means 'to say it politely' or 'to put it in a polite way'.\n- **Usage of 'worth'**: The word 'worth' is an adjective meaning 'đáng' (worthwhile). It is followed by a gerund (V-ing), not an infinitive (to + V). The teacher also highlights that the pronunciation of 'worth' can be challenging.\n- **Making suggestions with 'Let's'**: The pattern 'Let's' is used to make suggestions or proposals, meaning 'hãy làm cái gì thôi'. It is always followed by the base form of the verb (V1).\n- **Idiomatic expression: if my memory serves (me right)**: The verb 'serves' must include the '-s' ending because the subject 'my memory' is a third-person singular noun. This is a common point of confusion for learners regarding subject-verb agreement in the Present Simple tense.\n- **Sentence structure: Why + verb base form**: This structure is used to express 'why do something' or 'why bother doing something'. The teacher emphasizes that 'why make' is the opening part of the sentence, followed by the base form of the verb (V1).\n- **Passive meaning with 'feel + adjective'**: The teacher explains how the structure 'feel + adjective' can convey a passive meaning. Specifically, 'I don't feel hurt' is used to illustrate not feeling heard or listened to (emotionally acknowledged), rather than physical pain. This is clarified by rephrasing it into a full passive construction 'I don't feel that I have been being hurt' and providing the Vietnamese meaning 'Tôi đã và đang được lắng nghe' (I have been and am being listened to).\n- **Usage of 'scared of' and adjectives with 'to be'**: The word 'scared' is an adjective, and therefore requires the verb 'to be' before it in a sentence. The common phrase is 'to be scared of' something.\n- **Verb pattern: keep + V-ing**: The verb 'keep' must always be followed by a verb in the -ing form (gerund).\n- **Enough to + Infinitive**: Explanation of the 'enough to' structure with an adjective, indicating sufficiency for an action.\n- **Present Perfect Tense**: The teacher introduces the Present Perfect tense using the example 'I have come too far' and provides its Vietnamese translation, emphasizing the meaning of having gone beyond a certain point or limit.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_19",
+      "lesson_id": "level_b_day_19",
+      "course_id": "course_level_b",
+      "day_number": 19,
+      "lesson_title": "Day 19 - EXCEL",
+      "thematic_module": "Team & Leadership",
+      "data_group": "pending_4_lessons",
+      "status": "pending_audio",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "Try + V-ing (troubleshooting trial)",
+        "prevent + Object + from being V3"
+      ],
+      "sentence_structures": [
+        "It usually takes up to [time] to V1",
+        "May I ask you a favor?"
+      ],
+      "tense": [],
+      "notes": "- **'Try + V-ing' in tech troubleshooting**: 'I've tried hitting the escape key' illustrates trying an action as a trial or experiment to see if it resolves a bug, distinct from 'try to V' (putting effort into achieving a difficult task).\n- **Passive gerund with 'prevent from'**: 'prevent all your formulas from being recalculated' combines the prepositional pattern 'prevent + O + from' with the passive gerund 'being + V3', essential for technical descriptions.\n- **Duration with 'takes'**: 'It usually takes up to half an hour to finish running' uses 'take + [duration] + to V' as the standard structure for software processing time.\n- **Polite workplace request**: 'May I ask you a favor?' provides a professional, respectful alternative to casual requests when asking colleagues for urgent assistance.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_20",
+      "lesson_id": "level_b_day_20",
+      "course_id": "course_level_b",
+      "day_number": 20,
+      "lesson_title": "Day 20 - Year-end party",
+      "thematic_module": "Team & Leadership",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 8,
+      "lesson_number_19": 11,
+      "verb_forms": [
+        "chip in (Phrasal verb)",
+        "getting + comparative + and + comparative",
+        "stop + V-ing",
+        "be not allowed to + V1",
+        "I did ask him, but... (Emphatic did)"
+      ],
+      "sentence_structures": [
+        "Sounds like a plan / Sounds good",
+        "There's a lot of + N",
+        "(Do) you still remember?"
+      ],
+      "tense": [
+        "This time I won't + V1 (Future negation)",
+        "since the last time + S + V2",
+        "Whenever + S + V, S + will V",
+        "forgot to bring / forgot + O (Past Simple)"
+      ],
+      "notes": "- **Usage of \"Sounds like a plan\" and implied subject omission**: The phrase \"Sounds like a plan\" is used to express approval or agreement with an idea or plan, meaning it's a good idea or plan. The 's' in \"sounds\" is a contraction of the subject \"it\" (from \"it sounds\"), which is often omitted in this common expression, especially in informal contexts. The teacher also mentions \"sounds good\" as a similar expression.\n- **Phrasal verb: chip in**: The teacher explains the phrasal verb 'chip in' by first linking 'chip' to its origin in casino culture (the round tokens representing money). 'Chip in' means to contribute money or help, often for a shared purpose. The example 'if everybody chips in' means 'if everyone contributes their share (of money/effort)'.\n- **Comparative Adjectives (Expressing Increasing Change)**: To express that something is becoming increasingly [adjective] (ngày càng to hơn), use the structure 'S + be + getting + comparative adjective'. To emphasize a continuous and significant increase (ngày ngày càng to ra), repeat the comparative adjective with 'and' in between: 'S + be + getting + comparative adjective + and + comparative adjective'. The 'getting' construction implies a process of change over time.\n- **Verbs followed by Gerunds**: The teacher explains that 'stop' follows the same pattern as 'keep', which is to be followed by a gerund (V-ing).\n- **Quantifiers: a lot of**: This is a very traditional and frequently repeated grammar point.\n- **Question formation and natural speech reduction (omission of 'Do you')**: The teacher explains that while the full grammatical form is 'Do you still remember?', in fast, natural speech, 'Do you' is often reduced or even omitted, leading to 'You still remember?' being used as a question. This highlights a common pronunciation pattern and potential point of confusion for learners.\n- **Expressing prohibition / lack of permission**: The phrases 'not allowed to', 'must not', and 'not supposed to' are similar in meaning, all expressing prohibition or that something is not permitted/expected.\n- **Emphatic structures with 'do'/'did'**: The teacher explains that 'do' or 'did' is used to create an emphatic sentence. The crucial rule is that the main verb following 'do' or 'did' must always be in its base form (infinitive without 'to'), regardless of the tense implied by 'do' or 'did'. This prevents a common error of conjugating the main verb after the auxiliary 'do' or 'did'.\n- **Future Tense (Negation)**: The teacher introduces a clear example of expressing future negation, highlighting its straightforwardness ('Nó quá rõ về thì' - It's very clear about the tense).\n- **Tense usage with 'the last time' and 'the first time' clauses**: The teacher notes a common tendency to use the Present Perfect tense with 'the last time' or 'the first time'. However, when the phrase 'since the last time' or 'since the first time' is used, the verb in the clause following 'since' must be in the Past Simple tense (chia ở cột hai).\n- **Temporal Clause with 'Whenever'**: The teacher explains that the Vietnamese phrase 'mỗi lần mà... thì sẽ...' directly corresponds to the English 'Whenever... will...' structure, implying a repeated action or a general truth in the future.\n- **Past Simple of 'forget'**: The teacher emphasizes using 'I forgot' for past actions, correcting the common mistake of saying 'I forget' in a past context. This highlights the importance of using the correct past simple form of irregular verbs.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_21",
+      "lesson_id": "level_b_day_21",
+      "course_id": "course_level_b",
+      "day_number": 21,
+      "lesson_title": "Day 21 - Compensation and benefits",
+      "thematic_module": "Professional Acumen",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 8,
+      "lesson_number_19": 12,
+      "verb_forms": [
+        "enjoy / love + V-ing",
+        "after / before + V-ing",
+        "be brilliant / supposed to + V1",
+        "must be based on + N (Passive modal deduction)",
+        "didn't even bother to V1"
+      ],
+      "sentence_structures": [
+        "more specifically (adv discourse marker)",
+        "It takes + [courage/effort] + to V1",
+        "How come + S + V? (Why...)"
+      ],
+      "tense": [
+        "I've never + V3 (Present Perfect experience)"
+      ],
+      "notes": "- **Verb patterns with 'enjoy' and 'love'**: The verb 'enjoy' is typically followed by the V-ing form. The verb 'love' can be followed by either the V-ing form or the to-verb form.\n- **Preposition followed by V-ing (Gerund)**: The teacher explains that the pattern 'after + V-ing' is similar to 'before + V-ing', and generalizes this rule to all prepositions, stating that they are followed by the V-ing form (gerund).\n- **Expressing 'more specifically' and its variations**: The teacher mentions that the pronunciation of 'more specifically' was covered in previous lessons. The phrases 'to be more specific' and 'to be specific' are presented as alternative ways to express the same meaning as 'more specifically'.\n- **Be supposed to**: The teacher introduces 'be supposed to' as an important sentence structure. The Vietnamese explanation implies it conveys a sense of what one 'should' or 'is expected to' do, similar to 'nên làm gì'.\n- **Expressing the effort or courage required for an action (It takes...)**: The teacher highlights the interchangeability of 'lots of guts' and 'a lot of guts' in this structure. The phrase 'guts' refers to courage or bravery.\n- **Passive Voice (Deductions)**: Explaining how to express that a salary or an amount of money is 'deducted directly from' a source, using the passive voice.\n- **Expressing \"not even bother\" / \"didn't bother\"**: The teacher explains how to translate the Vietnamese phrase \"không thèm\" (not even bother) into English using \"didn't bother\" or \"didn't even bother\". This addresses a common difficulty for Vietnamese learners in expressing this specific nuance of not caring enough to do something.\n- **Usage of 'How come'**: The phrase 'how come' is not a question but an expression of surprise or strong emotion. It is often followed by the past simple tense (cột hai) because it typically refers to a past event or action that has already occurred.\n- **Expressing lack of past experience (I've never...)**: The teacher explains how to express 'I have never done something' using the Present Perfect tense with 'never' and 'before' to indicate a lack of experience up to the present moment.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_22",
+      "lesson_id": "level_b_day_22",
+      "course_id": "course_level_b",
+      "day_number": 22,
+      "lesson_title": "Day 22 - Nepotism",
+      "thematic_module": "Professional Acumen",
+      "data_group": "pending_4_lessons",
+      "status": "pending_audio",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [
+        "S + want/expect + to be V3 (Passive Infinitive)"
+      ],
+      "sentence_structures": [
+        "There's no such thing as + N",
+        "It can't be more [adj] (Negative Comparative)",
+        "It depends on how + S + V (Embedded Question)"
+      ],
+      "tense": [],
+      "notes": "- **Denying concepts with 'There's no such thing as'**: 'There's no such thing as a free lunch' denies the conceptual reality or possibility of something, far stronger than 'There is no free lunch'.\n- **Emphatic negative comparative**: 'It can't be more true in this situation' uses a negative modal with a comparative adjective to express absolute agreement (nó không thể đúng hơn được nữa).\n- **Soft corporate directives**: 'I'll need you to pull the strings' is a polite yet authoritative way managers assign sensitive or critical duties, softer than 'You must'.\n- **Dependent question clauses as objects**: 'It depends on how you define nepotism' demonstrates that indirect questions retain affirmative word order (how + S + V), avoiding inversion.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_23",
+      "lesson_id": "level_b_day_23",
+      "course_id": "course_level_b",
+      "day_number": 23,
+      "lesson_title": "Day 23 - What KPI stands for?",
+      "thematic_module": "Professional Acumen",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 10,
+      "lesson_number_19": 13,
+      "verb_forms": [
+        "V + more effectively (Verb + Adverb)",
+        "demanding (participle adjective: a demanding boss)",
+        "be known as + N",
+        "S + enable + O + to V1"
+      ],
+      "sentence_structures": [
+        "speaking of / in terms of + N",
+        "There's still room for + N/V-ing",
+        "This must be the reason why + clause",
+        "better left unsaid (Idiom)"
+      ],
+      "tense": [
+        "S + haven't/hasn't V3 + yet",
+        "S + should have + V3 (Past regret)"
+      ],
+      "notes": "- **Adverbs vs. Adjectives (Modifying Verbs)**: The teacher explains the use of adverbs (e.g., 'effectively') to modify verbs (e.g., 'speak'), describing *how* an action is performed. This contrasts with adjectives (e.g., 'effective') which modify nouns. The key pedagogical point is to avoid the common mistake of using an adjective when an adverb is required to modify a verb.\n- **Adjectives ending in -ing vs. -ed (Participle Adjectives)**: The teacher explains the common mistake of confusing -ing and -ed adjectives. Adjectives ending in -ing describe the characteristic of something that *causes* a feeling (e.g., 'a demanding boss' means the boss makes demands/is difficult). Adjectives ending in -ed describe someone or something that *experiences* a feeling (e.g., 'a bored student' means the student feels bored). The examples 'demanded boss', 'interested boss', and 'bored boss' are highlighted as incorrect usage when describing the boss's characteristic.\n- **Introducing a topic / Referring to a subject**: These phrases can be used interchangeably to introduce or refer to a specific topic or issue.\n- **Idiomatic expression: There's still room for...**: This phrase indicates that there is still an opportunity or space for something to happen or to be improved. It's commonly used to suggest that something is not yet perfect and can be made better.\n- **Expressing strong deduction or certainty with 'must be'**: The teacher emphasizes that using 'must' for a guess or deduction indicates the strongest level of certainty or probability ('mạnh nhất rồi đó'). It's used when you are quite sure about something.\n- **Idiom / Common Saying**: The teacher introduces this as a very famous American saying. The core meaning is that sometimes it is wiser or better not to speak about certain things.\n- **Be known as**: The teacher introduces the structure 'A is known as B' to explain how to say that 'A is recognized or identified as B'. This is a common passive voice construction used to state the identity or reputation of someone or something.\n- **Verb 'enable' and its sentence structure**: The verb 'enable' means 'cho phép' (to allow or permit). It is followed by an object and then an infinitive verb (to + base form).\n- **Present Perfect with 'yet' for unfinished actions**: This structure is used to ask about actions that have not yet been completed. The teacher emphasizes that for questions about what has or hasn't been done, the Present Perfect tense is typically used.\n- **Modals of past regret/obligation (should have + V3)**: The teacher explains 'should have + V3' to express regret or a missed opportunity in the past, meaning something *should have* happened but didn't, and now it's too late ('trễ rồi đó', 'it's too late now'). It implies a past action that was advisable but not taken.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_24",
+      "lesson_id": "level_b_day_24",
+      "course_id": "course_level_b",
+      "day_number": 24,
+      "lesson_title": "Day 24 - How to write a CV?",
+      "thematic_module": "Professional Acumen",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 10,
+      "lesson_number_19": 14,
+      "verb_forms": [
+        "be no longer used (Passive with no longer)",
+        "came looking for + someone"
+      ],
+      "sentence_structures": [
+        "That explains it (No wonder)",
+        "Why would + S + V1...?",
+        "What's wrong with + N/Pronoun?"
+      ],
+      "tense": [
+        "Don't tell me you're gonna + V1"
+      ],
+      "notes": "- **Subject-verb agreement and common phrases for understanding/lack of surprise**: The verb 'explains' requires an '-s' because the subject 'that' is singular (third person singular). 'That explains it' is a common idiom meaning 'that makes sense' or 'no wonder'. Other similar phrases include 'no question' and 'no doubt'.\n- **Usage of 'no longer' in passive voice**: The phrase 'no longer' indicates that an action or state has ceased. In the passive voice, 'is no longer used' means something is not being used anymore.\n- **Verb pattern: came looking for**: This pattern describes someone arriving (came) with the purpose of finding or searching for someone/something (looking for). The word 'just' emphasizes that the action happened very recently.\n- **Why would (expressing surprise or questioning a reason)**: The phrase 'why would' is used to express surprise, disbelief, or to question the reason behind an action or situation that seems unexpected or illogical. The teacher explains that 'would' in this context conveys the meaning of 'lại' (again, how come, why) in Vietnamese, emphasizing the unexpected nature of the question.\n- **What's wrong with...**: Dùng để hỏi cái gì bị làm sao, có vấn đề gì.\n- **Common English Idiom/Phrase: Don't tell me you're gonna**: The teacher introduces a common English phrase 'Don't tell me you're gonna' as the equivalent of the Vietnamese 'Đừng nói tôi cậu sẽ'. This is presented as a key sentence pattern from a test or lesson (Bài 24). The use of 'gonna' indicates an informal context for this expression.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_25",
+      "lesson_id": "level_b_day_25",
+      "course_id": "course_level_b",
+      "day_number": 25,
+      "lesson_title": "Day 25 - Small talk",
+      "thematic_module": "Professional Acumen",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 11,
+      "lesson_number_19": 15,
+      "verb_forms": [
+        "quit + V-ing",
+        "hate someone's guts (Idiom)"
+      ],
+      "sentence_structures": [
+        "Easier said than done (Idiom)",
+        "Who cares?!? (Subject-verb agreement)",
+        "There's no doubt that + clause",
+        "Who knows what happened? (Embedded question)"
+      ],
+      "tense": [
+        "Did you hear anything? vs Have you heard anything?",
+        "didn't know S had V3 (Past Perfect)",
+        "has been ... ever since (Present Perfect)",
+        "must have + V3 (Past deduction)"
+      ],
+      "notes": "- **Idiom: Easier said than done**: The teacher emphasizes using the past participle forms 'said' and 'done' in the idiom 'easier said than done', and explicitly warns against using the base forms 'say' and 'do'.\n- **Subject-verb agreement with 'who' in fixed expressions**: The teacher emphasizes the correct use of the -s ending for the third-person singular verb form in fixed expressions like 'who cares' and 'who knows', correcting the common mistake of using the base form 'care' or 'know'.\n- **Verb patterns: quit + V-ing**: The verb 'quit' is typically followed by a gerund (V-ing). It means to stop an activity or to resign from a job.\n- **Sentence Structures**: The teacher introduces a common phrase/structure used to express certainty.\n- **Idiom: Hate someone's guts**: The idiom 'hate someone's guts' means to intensely dislike someone. The teacher emphasizes using the possessive pronoun 'my' (or 'his', 'her', 'their', etc.) before 'guts', correcting the common mistake of using 'me guts'.\n- **Embedded Questions / Idiomatic Expressions**: The phrase 'who knows what happened' is introduced as a common expression. It functions as an indirect question.\n- **Past Simple vs. Present Perfect (interrogative)**: The teacher explains that 'Have you heard anything?' is also a correct and acceptable alternative to 'Did you hear anything?' in certain contexts, implying a flexibility or overlap in usage between the Past Simple and Present Perfect for this type of question.\n- **Past Perfect Tense (Thì Quá khứ hoàn thành)**: The Past Perfect tense (had + V3) is used when you are talking about an event in the past and you want to mention another event that happened *before* that first past event. It's often used to emphasize the completion of an action prior to another past action.\n- **Present Perfect with 'ever since'**: The teacher explains the structure 'S + has + V3 + ever since' to mean 'from that time, I have been [doing something]'. In the example sentence, the teacher uses 'I has been' which is grammatically incorrect; it should be 'I have been'. This might be a slip of the tongue or an example of a common learner error.\n- **Modal Perfect: Must have + Past Participle (Past Deduction)**: This is presented as the 'last pattern' and something that has 'already been learned,' suggesting it's a review or a concluding point in a series of grammar lessons. It expresses a strong deduction or certainty about an action or state in the past.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_26",
+      "lesson_id": "level_b_day_26",
+      "course_id": "course_level_b",
+      "day_number": 26,
+      "lesson_title": "Day 26 - Financial picture",
+      "thematic_module": "Business & Sales",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 11,
+      "lesson_number_19": 16,
+      "verb_forms": [
+        "relatively speaking (adverbial participle)"
+      ],
+      "sentence_structures": [
+        "such a + adj + N vs so + adj",
+        "no sign of + N (sign of vs size of)"
+      ],
+      "tense": [
+        "have/has been V-ing recently (Present Perfect Continuous)"
+      ],
+      "notes": "- **Adverbial phrase: relatively speaking**: The teacher emphasizes the correct usage of the adverbial phrase 'relatively speaking' and points out the common mistake of using 'relative speaking' (adjective + participle) instead of 'relatively speaking' (adverb + participle).\n- **Using 'such a' and 'so' for emphasis**: The teacher explains two ways to express emphasis: 'it's such a + adjective + noun' and 'that + noun + is so + adjective'. Both convey a similar meaning of 'quả là' or 'rất' (very), but use different grammatical structures.\n- **Word Usage / Collocations / Common Errors**: The teacher is correcting the misuse of 'size of' to mean 'dấu hiệu của' (sign of / indication of). 'Size of' refers to physical dimensions or magnitude, not an indicator or sign. The teacher explicitly states 'Không có cái size của cái dấu hiệu của' (There is no 'size of' for 'dấu hiệu của'), highlighting that 'size of' is not the appropriate phrase in this context. The correct English phrase for 'dấu hiệu của' would typically be 'sign of', 'indication of', or 'evidence of'.\n- **Present Perfect Continuous**: The teacher reminds learners about the Present Perfect Continuous tense, emphasizing its meaning of 'đã và đang' (have been and are currently) for actions that started in the past and are still ongoing, particularly in the recent past.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_27",
+      "lesson_id": "level_b_day_27",
+      "course_id": "course_level_b",
+      "day_number": 27,
+      "lesson_title": "Day 27 - Shark Tank",
+      "thematic_module": "Business & Sales",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 13,
+      "lesson_number_19": 17,
+      "verb_forms": [
+        "sounds familiar (sound + adj)",
+        "be here + V-ing (Expressing purpose)",
+        "was/were born and raised in [place]",
+        "be sick of + N/V-ing",
+        "be familiar with + N/V-ing"
+      ],
+      "sentence_structures": [
+        "Who wants to + V1? / Who doesn't want to + V1?",
+        "What + V + O + is + Complement (What-clause subject)",
+        "For those reasons I just mentioned"
+      ],
+      "tense": [
+        "was valued at [amount] (Valuation passive)",
+        "was valued at vs is valued at",
+        "didn't say (that) S would + V1 (Reported speech)"
+      ],
+      "notes": "- **The phrase 'sounds familiar'**: The teacher emphasizes the importance of adding the 's' to 'sound' in the phrase 'sounds familiar' because 'it' (referring to the subject that sounds familiar) is a third-person singular subject, requiring the -s ending in the present simple tense. This highlights a common error for learners.\n- **Questions with 'who' and 'want to'**: The teacher initially says \"who doesn't wants to\" but then correctly states \"who doesn't want to\", implicitly correcting a common error of adding '-s' to the main verb after 'doesn't'.\n- **Expressing purpose with 'be here + V-ing'**: The present participle (V-ing) is used after 'be here' to correctly express the purpose or reason for being in a particular place or situation. The teacher emphasizes that 'seeking' is the accurate form in this context.\n- **Passive voice: be born and raised**: This is a common fixed expression used to state where one was born and grew up. The teacher notes it as a phrase learners might have used before.\n- **Expressing being fed up/bored with something (Idiom: be sick of)**: The teacher introduces the idiom \"be sick of\" to express being extremely bored, annoyed, or fed up with something. It's a stronger expression than just 'bored'. The example shows its usage with a noun.\n- **Using 'familiar' and 'be familiar with'**: The word 'familiar' is an adjective, so it must be used with the verb 'to be' (e.g., 'I am familiar', 'She is familiar'). A common mistake is to omit the 'to be' verb, saying 'I familiar' which is grammatically incorrect.\n- **Nominal Relative Clause as Subject (What-clause)**: The teacher explains how to use a 'what' clause as the subject to emphasize 'the thing that...' or 'what is important'. This structure highlights the cause of concern or trouble, often used to introduce a problem or a main point.\n- **Expressing value (Passive Voice)**: This structure is used to state the monetary value at which something was assessed or determined. It uses the passive voice to emphasize the 'something' being valued rather than the entity doing the valuing.\n- **Passive voice for valuation**: This structure is used to express that something was appraised or determined to be worth a certain amount. It uses the passive voice 'was valued at' to indicate the valuation.\n- **Introduction to Tenses; Common Phrases for Stating Reasons**: The teacher introduces the topic of tenses but immediately provides a common English phrase used to introduce reasons. The phrase is presented with both plural ('reasons') and singular ('reason') forms, though the Vietnamese translation is only provided for the plural form in the audio.\n- **Reported Speech (Denial)**: The teacher explains how to deny a past statement or intention, linking the common Vietnamese expression of denial 'đâu có... đâu' to the English structure 'I didn't say...'. It highlights the sequence of tenses, specifically using 'would' in the reported clause when the reporting verb ('didn't say') is in the past tense.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_28",
+      "lesson_id": "level_b_day_28",
+      "course_id": "course_level_b",
+      "day_number": 28,
+      "lesson_title": "Day 28 - Never eat alone",
+      "thematic_module": "Business & Sales",
+      "data_group": "pending_4_lessons",
+      "status": "pending_audio",
+      "cohort_day_15": null,
+      "lesson_number_19": null,
+      "verb_forms": [],
+      "sentence_structures": [
+        "If it weren't for + N, S + would (not) V",
+        "S + be + out of my hands",
+        "Is there any way that you can + V1?"
+      ],
+      "tense": [
+        "At first, I thought + S + had V3 (Past Perfect)"
+      ],
+      "notes": "- **Subjunctive unreal condition with 'If it weren't for'**: 'If it weren't for your dad, I wouldn't even have a chance to work here' is the essential workplace reflex to express that a present reality depends entirely on someone's prior support or intervention.\n- **Past Perfect for mistaken past beliefs**: 'At first, I thought you had mistaken him for someone else' uses the Past Perfect ('had mistaken') to indicate an action completed prior to the past thought ('thought').\n- **Diplomatic limitation & boundary setting**: 'This is out of my hands' and 'There's really not much we can do about this' allow professionals to gracefully communicate jurisdictional boundaries without being rude.\n- **Negotiation opening**: 'Is there any way that you can look past this?' uses modal possibility to open a negotiation for leniency or exception in an office violation.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_29",
+      "lesson_id": "level_b_day_29",
+      "course_id": "course_level_b",
+      "day_number": 29,
+      "lesson_title": "Day 29 - LinkedIn",
+      "thematic_module": "Business & Sales",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 13,
+      "lesson_number_19": 18,
+      "verb_forms": [
+        "convincing (active/thing) vs convinced (passive/person)",
+        "get hired / get employed (Passive with get)",
+        "increase chances of + V-ing"
+      ],
+      "sentence_structures": [
+        "simply + Noun phrase (It's simply a rule)",
+        "That's all I'm saying",
+        "Would it kill you just to + V1?",
+        "I wish + S + could/would + V1 (Subjunctive wish)"
+      ],
+      "tense": [
+        "used to + V1 (Past habit/state)",
+        "How have you been? vs How are you?",
+        "heard that S had V3 (Past Perfect)",
+        "have had that happen (Causative/experiential have)"
+      ],
+      "notes": "- **Adjective forms: -ing vs. -ed adjectives (specifically 'convincing' vs. 'convinced')**: The phrase 'way more' is used for emphasis, meaning 'much more' or 'far more'. When describing a thing, event, or phenomenon (sự vật, hiện tượng), use the -ing adjective form (e.g., 'convincing'). Do not use the -ed form ('convinced') in this context, as -ed adjectives typically describe feelings or states of people.\n- **Passive Voice with 'Get'**: The passive voice can be formed using 'get + past participle' as an alternative to 'be + past participle'. The 'get-passive' can sometimes convey a stronger or more dynamic sense of the action happening to the subject. 'Get hired' is equivalent to 'get employed'.\n- **Adverbs vs. Adjectives (modifying 'to be')**: The adverb 'simply' is used to modify the verb 'is' (part of the verb 'to be'), indicating *how* it is a rule. It is incorrect to use the adjective 'simple' in this context because 'simple' would modify a noun, not a verb. The teacher emphasizes that 'simply' modifies the verb 'to be'.\n- **Idiomatic expression: That's all I'm saying**: The phrase 'That's all I'm saying' is used to indicate that the speaker has finished making their point or that their statement is limited to what they have just said. The 'I'm saying' part emphasizes the ongoing action of speaking, reinforcing that the current statement is the full extent of their message.\n- **Rhetorical question: Would it kill you to...?**: This is a rhetorical question used to express that an action is not difficult or harmful, often used to mildly urge or challenge someone to do something simple. It implies that the suggested action is a minor inconvenience at most.\n- **Preposition and verb form after 'chances'**: A common mistake is to use 'increase your chances to do something'. The correct pattern is 'increase your chances of + V-ing'. The preposition 'of' is followed by a gerund (V-ing) to express the likelihood or possibility of something happening.\n- **Used to for past habits/states**: The phrase 'used to' implies that the action or state described is no longer true or happening in the present. The teacher emphasizes that listeners understand 'it's over now' (bây giờ hết rồi) when they hear 'used to', often with a humorous or stark contrast to the present situation.\n- **I wish clause (expressing wishes about the present/future)**: A common mistake for Vietnamese learners is using 'can' or 'will' after 'I wish' when expressing wishes about the present or future. The correct forms are 'I wish I could' or 'I wish I would' (for willingness).\n- **How have you been? vs How are you?**: The phrase \"How have you been?\" is presented as a 'lùi thì' (back-shifted tense) version of \"How are you?\". It uses the Present Perfect tense to inquire about someone's well-being from a point in the past up until the present moment, emphasizing the duration or recent period ('dạo này').\n- **Past Perfect Tense**: The teacher explains the use of the Past Perfect tense (had + V3) to describe an action that happened before another action in the past. The example 'I heard that you had joined...' illustrates that the joining of the meeting happened before the speaker heard about it.\n- **Causative Have (experiential meaning)**: The structure 'have + object + bare infinitive' is used here to express experiencing something. The verb 'happen' remains in its base form (bare infinitive) without adding '-ed' or '-s'. The example 'I've had that happen' means 'This has happened to me already' or 'I have experienced that'.",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    },
+    {
+      "id": "grammar_level_b_day_30",
+      "lesson_id": "level_b_day_30",
+      "course_id": "course_level_b",
+      "day_number": 30,
+      "lesson_title": "Day 30 - Farewell party",
+      "thematic_module": "Business & Sales",
+      "data_group": "core_19_lessons",
+      "status": "active",
+      "cohort_day_15": 14,
+      "lesson_number_19": 19,
+      "verb_forms": [],
+      "sentence_structures": [
+        "May I have your [Noun]?",
+        "Are you in a hurry to + V1?",
+        "There's a very thin line between A and B"
+      ],
+      "tense": [
+        "thought it through (think through in Past Simple)",
+        "This is the last time + S + will V / be V-ing",
+        "It's not that I didn't + V1",
+        "the most [adj] I've ever V3 (Superlative + Present Perfect)"
+      ],
+      "notes": "- **Polite requests with 'May I have your'**: The structure 'May I have your...' is a very polite way to make a request, more polite than 'Can I have your...'. It is used for asking for someone's name, attention, or other personal items/information.\n- **Expressing urgency / being in a rush**: The teacher introduces a common question pattern to ask if someone is in a rush to perform an action. The structure is 'Are you in a hurry to + base form of the verb?'\n- **Expressing a subtle distinction or boundary**: The teacher explains the phrase 'There's a very thin line between A and B' which means there is a very subtle or narrow distinction between two things (A and B). They also clarify that 'There's a' means 'có một' (there is one).\n- **Phrasal verb 'think through' and pronunciation of 'thought' vs 'through'**: The teacher highlights the common confusion between 'thought' (past tense of 'think') and 'through' (a preposition) due to their similar spelling but distinct pronunciation and meaning. 'Thought' is the past simple of 'think', while 'through' means 'xuyên qua'. The phrase 'think through' means to consider something carefully. The example 'I thought it through' means 'I have considered it carefully/thought it through'.\n- **Using 'This is the last time' with future tenses**: The phrase 'This is the last time' can be followed by various future forms (Future Simple, Present Continuous for future, Future Continuous), and all these forms are grammatically correct and acceptable. While the Past Simple can be used for general statements, the focus for 'last time' often implies a future action that will not be repeated.\n- **Expressing denial or clarification about past actions/intentions**: This structure is used to clarify or deny a past action or intention, meaning 'it's not the case that I didn't do something'. The teacher specifies 'cột một' (column 1) which refers to the base form of the verb following 'didn't'.\n- **Superlatives with Present Perfect (A is the most... I've ever)**: When using the superlative structure 'A is the most... I've ever', it is more appropriate and grammatically correct to follow it with the Present Perfect tense (e.g., I've ever watched/seen).",
+      "updated_at": "2026-09-14T10:38:17.793Z"
+    }
+  ]
+}

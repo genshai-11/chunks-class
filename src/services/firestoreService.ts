@@ -12,8 +12,9 @@ import {
   where,
   getCountFromServer 
 } from 'firebase/firestore';
-import { Course, Cohort, LessonDoc, ChunkItem, CourseLevel } from '../types';
+import { Course, Cohort, LessonDoc, ChunkItem, CourseLevel, LessonGrammar } from '../types';
 import { curriculumRegistry } from './curriculumRegistry';
+import { CURRICULUM_CATALOG_LEVEL_B_ERE } from '../data/levelBEreData';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4",
@@ -264,6 +265,7 @@ export async function getLessonById(lessonId: string, forceRefresh?: boolean): P
           total_chunks: chunksArray.length,
           categories: Array.isArray(data.categories) ? data.categories : [],
           chunks: chunksArray,
+          grammar: data.grammar,
           created_at: data.created_at || new Date().toISOString()
         };
 
@@ -452,6 +454,7 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string, f
             total_chunks: chunks.length,
             categories: data.categories || [],
             chunks: chunks,
+            grammar: data.grammar,
             created_at: data.created_at || new Date().toISOString()
           } as LessonDoc;
         });
@@ -508,6 +511,7 @@ export async function getAllLessons(courseIdOrLevel?: CourseLevel | string, forc
             total_chunks: chunks.length,
             categories: Array.isArray(data.categories) ? data.categories : [],
             chunks: chunks,
+            grammar: data.grammar,
             created_at: data.created_at || new Date().toISOString()
           } as LessonDoc;
         });
@@ -800,6 +804,101 @@ export async function syncAllCurriculumToFirestore(
       totalChunks: 0,
       error: err?.message || String(err)
     };
+  }
+}
+
+// --------------------------------------------------------------------------
+// 7. Grammar Resource Management & Sync
+// --------------------------------------------------------------------------
+function sanitizeForFirestore<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data, (_key, value) => {
+    return value === undefined ? null : value;
+  }));
+}
+
+export async function saveLessonGrammar(
+  lessonId: string,
+  grammar: LessonGrammar
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!lessonId) {
+      return { success: false, error: 'lessonId is required' };
+    }
+    const cleanId = lessonId.trim();
+    const docId = cleanId.startsWith('level_b_ere_day_') 
+      ? cleanId.replace('level_b_ere_day_', 'level_b_day_')
+      : cleanId;
+
+    const sanitizedGrammar = sanitizeForFirestore(grammar);
+    const docRef = doc(db, 'lessons', docId);
+
+    await setDoc(
+      docRef,
+      {
+        grammar: sanitizedGrammar,
+        updated_at: new Date().toISOString()
+      },
+      { merge: true }
+    );
+
+    // Update in-memory registry immediately so all components see updates
+    curriculumRegistry.updateLessonGrammar(docId, sanitizedGrammar);
+    if (docId !== cleanId) {
+      curriculumRegistry.updateLessonGrammar(cleanId, sanitizedGrammar);
+    }
+
+    // Invalidate caches
+    invalidateLessonsCache('LEVEL_B');
+    invalidateLessonsCache('course_level_b');
+    memoryCache.delete(`lesson_by_id:${docId}`);
+    memoryCache.delete(`lesson_by_id:${cleanId}`);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error(`[Firestore] saveLessonGrammar error for ${lessonId}:`, err);
+    return { success: false, error: err?.message || String(err) };
+  }
+}
+
+export async function syncAllLevelBGrammarToFirestore(
+  onProgress?: (current: number, total: number, message: string) => void
+): Promise<{ success: boolean; totalSynced: number; error?: string }> {
+  try {
+    const total = CURRICULUM_CATALOG_LEVEL_B_ERE.length;
+    let syncedCount = 0;
+
+    for (let i = 0; i < total; i++) {
+      const lesson = CURRICULUM_CATALOG_LEVEL_B_ERE[i];
+      const docId = `level_b_day_${lesson.day_number}`;
+
+      const existingGrammar = lesson.grammar || 
+        curriculumRegistry.getGrammarByLessonId(docId) || 
+        curriculumRegistry.getGrammarByLessonId(lesson.id);
+
+      if (!existingGrammar) {
+        onProgress?.(i + 1, total, `Bỏ qua Day ${lesson.day_number}: Không tìm thấy cấu trúc`);
+        continue;
+      }
+
+      onProgress?.(
+        i + 1,
+        total,
+        `Đang đồng bộ Day ${lesson.day_number} (${lesson.lesson_title})...`
+      );
+
+      const result = await saveLessonGrammar(docId, existingGrammar);
+      if (!result.success) {
+        throw new Error(`Lỗi đồng bộ ${docId}: ${result.error}`);
+      }
+
+      syncedCount++;
+    }
+
+    onProgress?.(total, total, `Đã đồng bộ thành công toàn bộ ${syncedCount} bài học ERE lên Firestore!`);
+    return { success: true, totalSynced: syncedCount };
+  } catch (err: any) {
+    console.error('[Firestore] syncAllLevelBGrammarToFirestore error:', err);
+    return { success: false, totalSynced: 0, error: err?.message || String(err) };
   }
 }
 

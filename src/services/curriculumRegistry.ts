@@ -28,7 +28,12 @@ class CurriculumRegistryService {
           verb_forms: g.verb_forms,
           sentence_structures: g.sentence_structures,
           tense: g.tense,
-          notes: g.notes
+          notes: g.notes,
+          data_group: g.data_group,
+          status: g.status,
+          cohort_day_15: g.cohort_day_15,
+          lesson_number_19: g.lesson_number_19,
+          thematic_module: g.thematic_module
         };
       }
     });
@@ -208,10 +213,41 @@ class CurriculumRegistryService {
         verb_forms: gDoc.verb_forms,
         sentence_structures: gDoc.sentence_structures,
         tense: gDoc.tense,
-        notes: gDoc.notes
+        notes: gDoc.notes,
+        data_group: gDoc.data_group,
+        status: gDoc.status,
+        cohort_day_15: gDoc.cohort_day_15,
+        lesson_number_19: gDoc.lesson_number_19,
+        thematic_module: gDoc.thematic_module
       };
     }
     return null;
+  }
+
+  /**
+   * Update grammar data for a specific lesson across in-memory registry,
+   * CURRICULUM_CATALOG_LEVEL_B_ERE, and individual lesson maps.
+   */
+  public updateLessonGrammar(lessonId: string, grammar: LessonGrammar): void {
+    if (!lessonId || !grammar) return;
+    const cleanId = lessonId.trim();
+
+    // 1. Update in-memory lesson doc if found
+    const lesson = this.getLessonById(cleanId);
+    if (lesson) {
+      lesson.grammar = { ...grammar };
+      this.updateLesson(lesson);
+    }
+
+    // 2. Synchronize directly into CURRICULUM_CATALOG_LEVEL_B_ERE
+    const ereLesson = CURRICULUM_CATALOG_LEVEL_B_ERE.find(l => 
+      l.id === cleanId || 
+      (cleanId.startsWith('level_b_day_') && l.id === cleanId) ||
+      (cleanId.startsWith('level_b_ere_day_') && l.id === cleanId.replace('level_b_ere_day_', 'level_b_day_'))
+    );
+    if (ereLesson) {
+      ereLesson.grammar = { ...grammar };
+    }
   }
 
   public updateLesson(lesson: LessonDoc): void {
