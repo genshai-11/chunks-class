@@ -5,6 +5,8 @@ interface MiniLesson {
   file: string;
   topic: string;
   transcript: string;
+  primary_structure?: string;
+  structure_type?: 'sentence_structure' | 'verb_form' | 'tense_reflex';
   structures: string[];
   verb_forms: string[];
   tense: string[];

@@ -260,7 +260,18 @@
         </div>
 
         <!-- Topic Reflexes Summary: Structures, Verb Forms, Tense -->
-        <div class="mt-6 pt-5 border-t border-zinc-800/80 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="mt-6 pt-5 border-t border-zinc-800/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+              <span>🎯 Tổng quan Cấu trúc Trọng tâm (1-to-1 Mapping)</span>
+            </h3>
+            <span id="topicSummaryExactCountBadge" class="text-xs font-mono font-semibold px-2.5 py-1 rounded-lg bg-brand-500/15 border border-brand-500/30 text-brand-300 w-fit">
+              9 cấu trúc trọng tâm tương ứng 9 audio clips
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           <!-- Sentence Structures -->
           <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-xl p-3.5">
@@ -695,6 +706,13 @@
         renderPills('summaryVerbForms', topic.verb_forms, 'emerald');
         renderPills('summaryTense', topic.tense, 'amber');
 
+        const summaryExactBadge = document.getElementById('topicSummaryExactCountBadge');
+        if (summaryExactBadge) {
+          const count = topic.mini_lessons.length;
+          const unit = topic.has_audio ? 'audio clips' : 'bài specs';
+          summaryExactBadge.textContent = `${count} cấu trúc trọng tâm tương ứng ${count} ${unit}`;
+        }
+
         // Teacher Notes
         const notesBody = document.getElementById('teacherNotesBody');
         const notesContainer = document.getElementById('teacherNotesContainer');
@@ -805,8 +823,26 @@
               </div>
             </div>
 
+            <!-- 🎯 Canonical 1-to-1 Focus Structure -->
+            <div class="mt-3.5 p-3 sm:p-3.5 rounded-xl bg-zinc-950/90 border border-brand-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-sm">
+              <div class="flex items-start sm:items-center gap-2.5 min-w-0">
+                <span class="text-base shrink-0 select-none">🎯</span>
+                <div class="min-w-0">
+                  <div class="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold flex items-center gap-1.5">
+                    <span>Cấu trúc trọng tâm (1-to-1):</span>
+                  </div>
+                  <div class="text-sm sm:text-base font-mono font-bold text-amber-300 tracking-wide break-words mt-0.5">
+                    ${mini.primary_structure || mini.topic}
+                  </div>
+                </div>
+              </div>
+              <div class="shrink-0 self-start sm:self-center">
+                ${renderStructureTypeBadge(mini.structure_type)}
+              </div>
+            </div>
+
             <!-- Audio Player Bar -->
-            <div class="mt-4 pt-1">
+            <div class="mt-3.5 pt-1">
               ${
                 !isPending
                   ? `
@@ -954,6 +990,19 @@
           amber: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
         };
         return items.map(item => '<span class="text-[11px] px-2 py-0.5 rounded border font-mono ' + colors[color] + '">' + item + '</span>').join('');
+      }
+
+      function renderStructureTypeBadge(type) {
+        if (type === 'sentence_structure') {
+          return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold font-mono bg-sky-500/15 border border-sky-500/30 text-sky-300"><span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>Mẫu câu</span>';
+        }
+        if (type === 'verb_form') {
+          return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold font-mono bg-emerald-500/15 border border-emerald-500/30 text-emerald-300"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Dạng động từ</span>';
+        }
+        if (type === 'tense_reflex') {
+          return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold font-mono bg-amber-500/15 border border-amber-500/30 text-amber-300"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Thì ngữ pháp</span>';
+        }
+        return '<span class="px-2 py-0.5 rounded text-xs text-zinc-400 bg-zinc-800">Cấu trúc</span>';
       }
 
       function renderExamples(examples) {
