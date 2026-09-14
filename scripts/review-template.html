@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHUNKS Grammar Boost Reviewer — 26 Topics & 253 Teacher Recordings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Be Vietnam Pro"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'Consolas', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .dark ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+    .dark ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+    ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+
+    /* Clean typography & accents */
+    .prose-notes strong { color: #f4f4f5; font-weight: 600; }
+    .light .prose-notes strong { color: #18181b; }
+    .prose-notes code { background: rgba(39, 39, 42, 0.7); color: #38bdf8; padding: 0.15rem 0.35rem; border-radius: 0.25rem; font-family: inherit; font-size: 0.9em; }
+    .light .prose-notes code { background: #e4e4e7; color: #0284c7; }
+
+    /* Audio custom stylings */
+    audio {
+      height: 38px;
+      border-radius: 8px;
+    }
+    .dark audio {
+      filter: invert(0.9) hue-rotate(180deg) brightness(1.2);
+    }
+
+    /* Selection animation */
+    .active-card-ring {
+      box-shadow: 0 0 0 2px #6366f1, 0 8px 24px -4px rgba(99, 102, 241, 0.25);
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans transition-colors duration-200 antialiased selection:bg-brand-500 selection:text-white" id="appBody">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="sticky top-0 z-40 bg-zinc-900/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 transition-colors">
+    <div class="max-w-[1920px] mx-auto px-4 lg:px-6 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Stats -->
+      <div class="flex items-center gap-3 min-w-max">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-base lg:text-lg tracking-tight text-white flex items-center gap-2">
+              <span>CHUNKS Grammar Boost</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 font-semibold border border-brand-500/30">Reviewer v2.0</span>
+            </h1>
+          </div>
+          <p class="text-xs text-zinc-400 flex items-center gap-2">
+            <span><strong class="text-emerald-400 font-semibold">26</strong> Audio Verified</span>
+            <span class="text-zinc-600">•</span>
+            <span><strong class="text-amber-400 font-semibold">4</strong> Pending</span>
+            <span class="text-zinc-600">•</span>
+            <span><strong class="text-indigo-400 font-semibold">253</strong> Teacher MP3s</span>
+            <span class="text-zinc-600">•</span>
+            <span><strong class="text-zinc-300 font-semibold">269</strong> Mini-Lessons</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Search Bar -->
+      <div class="flex-1 max-w-2xl relative">
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Tìm kiếm transcript, cấu trúc ngữ pháp, ví dụ song ngữ... (Phím '/' để tìm)"
+            class="w-full pl-10 pr-24 py-2 text-sm bg-zinc-900 dark:bg-zinc-900 border border-zinc-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-zinc-100 placeholder-zinc-500 shadow-inner"
+          />
+          <div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1.5">
+            <span id="searchMatchCount" class="hidden text-xs px-2 py-0.5 rounded-md bg-brand-500/20 text-brand-300 font-medium"></span>
+            <button id="clearSearchBtn" class="hidden p-1 text-zinc-400 hover:text-zinc-200 rounded">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <kbd class="hidden md:inline-block text-[11px] px-1.5 py-0.5 bg-zinc-800 text-zinc-400 rounded border border-zinc-700 font-mono">/</kbd>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Controls & Filters -->
+      <div class="flex items-center gap-2">
+        <!-- Status Filter Pills -->
+        <div class="hidden xl:flex items-center p-1 bg-zinc-900 border border-zinc-800 rounded-xl text-xs font-medium">
+          <button class="filter-status-btn px-3 py-1 rounded-lg transition-colors bg-brand-600 text-white shadow" data-status="all">Tất cả (30)</button>
+          <button class="filter-status-btn px-3 py-1 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200" data-status="audio">🟢 Có Audio (26)</button>
+          <button class="filter-status-btn px-3 py-1 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200" data-status="pending">🟡 Chờ Thu (4)</button>
+        </div>
+
+        <!-- Expand / Collapse All -->
+        <button id="toggleExpandAllBtn" class="p-2 text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs flex items-center gap-1.5 transition-colors" title="Mở / Thu gọn tất cả mini-lessons">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+          <span class="hidden sm:inline">Thu gọn</span>
+        </button>
+
+        <!-- Folder Picker Button (For offline file:/// usage) -->
+        <label for="folderInput" class="cursor-pointer p-2 text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs flex items-center gap-1.5 transition-colors" title="Chọn thư mục Grammar Boost nếu mở trực tiếp bằng file:/// (không qua server)">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+          <span class="hidden lg:inline">Audio Folder</span>
+        </label>
+        <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden" />
+
+        <!-- Theme Toggle -->
+        <button id="themeToggleBtn" class="p-2 text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-colors" title="Chuyển đổi Sáng / Tối">
+          <svg id="themeIconDark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <svg id="themeIconLight" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= OFFLINE / LOCAL NOTICE BANNER ================= -->
+  <div id="localNoticeBanner" class="bg-gradient-to-r from-indigo-950 via-zinc-900 to-indigo-950 border-b border-indigo-800/40 px-4 py-2 text-xs text-indigo-200 flex items-center justify-between">
+    <div class="flex items-center gap-2 mx-auto">
+      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span id="serverStatusText">Chạy server trực tiếp để stream audio: <code class="px-1.5 py-0.5 bg-indigo-900/60 text-indigo-300 rounded font-mono">bun run scripts/serve-grammar-review.ts</code> &rarr; mở <a href="http://localhost:3333" class="underline font-semibold hover:text-white">http://localhost:3333</a></span>
+      <span id="localFolderStatus" class="ml-3 hidden text-emerald-400 font-medium">✓ Đã nạp audio từ folder cục bộ</span>
+    </div>
+    <button onclick="document.getElementById('localNoticeBanner').classList.add('hidden')" class="text-indigo-400 hover:text-white p-1">&times;</button>
+  </div>
+
+  <!-- ================= MAIN LAYOUT ================= -->
+  <div class="max-w-[1920px] mx-auto px-4 lg:px-6 py-6 flex-1 flex flex-col lg:flex-row gap-6 w-full">
+
+    <!-- LEFT SIDEBAR: TOPIC EXPLORER -->
+    <aside class="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col gap-4">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sticky top-24 max-h-[calc(100vh-7rem)] flex flex-col shadow-xl">
+        
+        <!-- Sidebar Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <div>
+            <h2 class="font-bold text-sm tracking-tight text-white flex items-center gap-2">
+              <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              <span>30 Chuyên đề Ngữ pháp</span>
+            </h2>
+            <p class="text-[11px] text-zinc-400">6 Thematic Modules • Level B ERE</p>
+          </div>
+          <div class="text-right">
+            <span id="sidebarCount" class="text-xs px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-mono">30 / 30</span>
+          </div>
+        </div>
+
+        <!-- Quick Module Selector -->
+        <div class="pt-2 pb-1">
+          <select id="moduleSelect" class="w-full py-1.5 px-3 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-brand-500">
+            <option value="all">📂 Tất cả 6 Modules</option>
+            <option value="Onboarding">1. Onboarding (Day 1 - 5)</option>
+            <option value="Office Culture">2. Office Culture (Day 6 - 10)</option>
+            <option value="Operations & Management">3. Operations & Management (Day 11 - 15)</option>
+            <option value="Team & Leadership">4. Team & Leadership (Day 16 - 20)</option>
+            <option value="Professional Acumen">5. Professional Acumen (Day 21 - 25)</option>
+            <option value="Business & Sales">6. Business & Sales (Day 26 - 30)</option>
+          </select>
+        </div>
+
+        <!-- Topics List with Smooth Scroll -->
+        <div id="topicListContainer" class="overflow-y-auto flex-1 pr-1 space-y-1 mt-2 divide-y divide-zinc-800/40">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Quick Keyboard Shortcuts Helper -->
+        <div class="pt-3 mt-2 border-t border-zinc-800/80 text-[11px] text-zinc-500 flex items-center justify-between">
+          <span>Phím tắt: <kbd class="px-1 bg-zinc-800 rounded text-zinc-300 font-mono">[</kbd> <kbd class="px-1 bg-zinc-800 rounded text-zinc-300 font-mono">]</kbd> chuyển bài</span>
+          <span><kbd class="px-1 bg-zinc-800 rounded text-zinc-300 font-mono">J</kbd> <kbd class="px-1 bg-zinc-800 rounded text-zinc-300 font-mono">K</kbd> chọn mini</span>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- MAIN STAGE: LESSON DETAILS & MINI-LESSONS CARDS -->
+    <main class="flex-1 min-w-0 flex flex-col gap-6" id="mainStage">
+
+      <!-- Topic Hero Banner -->
+      <section id="topicHeroBanner" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 relative overflow-hidden shadow-xl">
+        <div class="absolute -top-12 -right-12 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+          <div>
+            <!-- Breadcrumbs -->
+            <div class="flex items-center gap-2 text-xs text-zinc-400 mb-1.5">
+              <span id="heroModule" class="font-medium text-brand-400">Onboarding</span>
+              <span>&rsaquo;</span>
+              <span id="heroDayBadge" class="text-zinc-300 font-mono">Day 01</span>
+              <span id="heroGroupBadge" class="text-[11px] px-2 py-0.2 rounded bg-zinc-800 text-zinc-400">Supplemental 7</span>
+            </div>
+            <!-- Title -->
+            <h2 id="heroTitle" class="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex items-center gap-3">
+              Day 1 - First Day Of Work
+            </h2>
+          </div>
+
+          <!-- Quick Metrics & Audio Count Badge -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <div id="heroAudioBadge" class="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+              </svg>
+              <span id="heroAudioCount">9 Teacher Recordings</span>
+            </div>
+
+            <button id="playAllTopicBtn" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-md shadow-indigo-600/25">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+              </svg>
+              <span>Nghe liên tục</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Topic Reflexes Summary: Structures, Verb Forms, Tense -->
+        <div class="mt-6 pt-5 border-t border-zinc-800/80 grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          <!-- Sentence Structures -->
+          <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-xl p-3.5">
+            <h4 class="text-xs font-semibold text-sky-400 flex items-center gap-1.5 mb-2">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+              </svg>
+              <span>Mẫu câu (Sentence Structures)</span>
+            </h4>
+            <div id="summaryStructures" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <!-- Verb Forms -->
+          <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-xl p-3.5">
+            <h4 class="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 mb-2">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>Dạng động từ (Verb Forms)</span>
+            </h4>
+            <div id="summaryVerbForms" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <!-- Tense -->
+          <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-xl p-3.5">
+            <h4 class="text-xs font-semibold text-amber-400 flex items-center gap-1.5 mb-2">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Thì ngữ pháp (Tense Reflexes)</span>
+            </h4>
+            <div id="summaryTense" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+        </div>
+
+        <!-- Teacher Notes Collapsible Callout -->
+        <div id="teacherNotesContainer" class="mt-4 bg-zinc-950/80 border border-zinc-800 rounded-xl p-4">
+          <div class="flex items-center justify-between cursor-pointer" onclick="toggleTeacherNotes()">
+            <h4 class="text-xs font-bold text-zinc-300 flex items-center gap-2">
+              <span class="text-brand-400">💡</span>
+              <span>Ghi chú Sư phạm Tổng quan (Teacher Pedagogical Notes)</span>
+            </h4>
+            <span id="teacherNotesChevron" class="text-zinc-400 text-xs transform transition-transform">▼</span>
+          </div>
+          <div id="teacherNotesBody" class="mt-3 text-xs leading-relaxed text-zinc-300 prose-notes border-t border-zinc-800/60 pt-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Mini-Lessons List Section Header -->
+      <div class="flex items-center justify-between pt-2">
+        <div class="flex items-center gap-3">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span>Danh sách Mini-Lessons</span>
+            <span id="miniLessonsCountBadge" class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 font-mono">9 bài</span>
+          </h3>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-zinc-400">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" id="autoPlayNextCheck" class="rounded bg-zinc-800 border-zinc-700 text-brand-600 focus:ring-0">
+            <span>Tự động phát tiếp</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Mini-Lessons Cards Grid / List -->
+      <div id="miniLessonsContainer" class="flex flex-col gap-4">
+        <!-- Injected by JS -->
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ================= PERSISTENT BOTTOM FLOATING AUDIO CONTROLLER ================= -->
+  <footer id="bottomPlayer" class="sticky bottom-0 z-30 bg-zinc-900/95 backdrop-blur-md border-t border-zinc-800 px-4 lg:px-8 py-2.5 transition-transform duration-300 translate-y-full">
+    <div class="max-w-[1920px] mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Current Track Info -->
+      <div class="flex items-center gap-3 min-w-0 max-w-sm lg:max-w-md">
+        <div class="w-10 h-10 rounded-lg bg-brand-600 flex items-center justify-center shrink-0 text-white shadow">
+          <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div id="bottomTrackTitle" class="font-semibold text-xs text-white truncate">Adjective usage: 'aware'</div>
+          <div class="flex items-center gap-2 text-[11px] text-zinc-400">
+            <span id="bottomTrackFile" class="font-mono text-zinc-500 truncate">1en_Gr_01_1.mp3</span>
+            <span>•</span>
+            <span id="bottomTrackTopic" class="text-brand-400 truncate">Day 1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audio Element Container -->
+      <div class="flex-1 max-w-2xl flex items-center justify-center">
+        <audio id="globalAudio" controls class="w-full max-w-xl h-9"></audio>
+      </div>
+
+      <!-- Controls: Prev, Next, Playback Rate -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="prevTrackBtn" class="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors" title="Bài trước (K)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button id="nextTrackBtn" class="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors" title="Bài tiếp (J)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        <select id="playbackRateSelect" class="bg-zinc-800 border border-zinc-700 rounded-lg text-xs text-zinc-200 px-2 py-1">
+          <option value="0.8">0.8x</option>
+          <option value="1.0" selected>1.0x</option>
+          <option value="1.25">1.25x</option>
+          <option value="1.5">1.5x</option>
+        </select>
+        <button onclick="hideBottomPlayer()" class="p-1 text-zinc-400 hover:text-white" title="Ẩn thanh player">
+          &times;
+        </button>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-16 right-6 z-50 bg-zinc-800 border border-zinc-700 text-zinc-100 text-xs px-4 py-2.5 rounded-xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none flex items-center gap-2">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <span id="toastMsg">Đã sao chép vào bộ nhớ tạm!</span>
+  </div>
+
+  <!-- EMBEDDED COMPLETE DATASET -->
+  <script>
+    window.GRAMMAR_DATA = /* __GRAMMAR_DATA_PLACEHOLDER__ */ null;
+  </script>
+
+  <!-- APP RUNTIME LOGIC -->
+  <script>
+    (function () {
+      const DATA = window.GRAMMAR_DATA;
+      if (!DATA || !DATA.topics) {
+        console.error('No GRAMMAR_DATA found!');
+        return;
+      }
+      const topics = DATA.topics;
+
+      // App State
+      const state = {
+        activeTopicIndex: 0,
+        activeMiniIndex: 0,
+        searchQuery: '',
+        statusFilter: 'all', // 'all' | 'audio' | 'pending'
+        moduleFilter: 'all',
+        autoplay: false,
+        expandedCards: new Set(), // Set of "topicNum-miniIdx"
+        reviewedLessons: new Set(JSON.parse(localStorage.getItem('chunks_grammar_reviewed') || '[]')),
+        localFileMap: new Map(), // filename -> objectURL
+        isTeacherNotesOpen: true,
+      };
+
+      // DOM Elements
+      const topicListContainer = document.getElementById('topicListContainer');
+      const miniLessonsContainer = document.getElementById('miniLessonsContainer');
+      const searchInput = document.getElementById('searchInput');
+      const searchMatchCount = document.getElementById('searchMatchCount');
+      const clearSearchBtn = document.getElementById('clearSearchBtn');
+      const moduleSelect = document.getElementById('moduleSelect');
+      const sidebarCount = document.getElementById('sidebarCount');
+      const folderInput = document.getElementById('folderInput');
+      const autoPlayNextCheck = document.getElementById('autoPlayNextCheck');
+      const bottomPlayer = document.getElementById('bottomPlayer');
+      const globalAudio = document.getElementById('globalAudio');
+      const bottomTrackTitle = document.getElementById('bottomTrackTitle');
+      const bottomTrackFile = document.getElementById('bottomTrackFile');
+      const bottomTrackTopic = document.getElementById('bottomTrackTopic');
+      const prevTrackBtn = document.getElementById('prevTrackBtn');
+      const nextTrackBtn = document.getElementById('nextTrackBtn');
+      const playbackRateSelect = document.getElementById('playbackRateSelect');
+      const playAllTopicBtn = document.getElementById('playAllTopicBtn');
+      const toggleExpandAllBtn = document.getElementById('toggleExpandAllBtn');
+
+      // Initialize
+      function init() {
+        setupTheme();
+        detectServerStatus();
+        renderSidebar();
+        renderActiveTopic();
+        setupEventListeners();
+      }
+
+      // Check if running via server or file:///
+      function detectServerStatus() {
+        const isFile = window.location.protocol === 'file:';
+        const serverStatusText = document.getElementById('serverStatusText');
+        if (!isFile) {
+          serverStatusText.innerHTML = '🟢 <strong>Local Server Active:</strong> Đang stream trực tiếp từ <code class="px-1.5 py-0.5 bg-indigo-900/60 text-indigo-300 rounded font-mono">http://localhost:3333</code>';
+        }
+      }
+
+      // Theme Support
+      function setupTheme() {
+        const savedTheme = localStorage.getItem('chunks_theme') || 'dark';
+        applyTheme(savedTheme);
+
+        document.getElementById('themeToggleBtn').addEventListener('click', () => {
+          const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          applyTheme(newTheme);
+          localStorage.setItem('chunks_theme', newTheme);
+        });
+      }
+
+      function applyTheme(theme) {
+        const body = document.getElementById('appBody');
+        const darkIcon = document.getElementById('themeIconDark');
+        const lightIcon = document.getElementById('themeIconLight');
+
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+          body.classList.remove('bg-zinc-100', 'text-zinc-900');
+          body.classList.add('bg-zinc-950', 'text-zinc-100');
+          darkIcon.classList.remove('hidden');
+          lightIcon.classList.add('hidden');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+          body.classList.remove('bg-zinc-950', 'text-zinc-100');
+          body.classList.add('bg-zinc-100', 'text-zinc-900');
+          darkIcon.classList.add('hidden');
+          lightIcon.classList.remove('hidden');
+        }
+      }
+
+      // Markdown renderer for notes
+      function renderMarkdown(md) {
+        if (!md) return '';
+        let html = md
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+
+        // Bold
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+        // Italic
+        html = html.replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>');
+        // Inline code
+        html = html.replace(new RegExp('`([^`]+)`', 'g'), '<code class="px-1.5 py-0.5 rounded bg-zinc-800 text-sky-400 font-mono text-xs">$1</code>');
+        
+        // Bullet list lines
+        const lines = html.split('\n');
+        let inList = false;
+        let out = '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+            if (!inList) {
+              out += '<ul class="space-y-1.5 my-2">';
+              inList = true;
+            }
+            out += '<li class="flex items-start gap-2"><span class="text-brand-400 font-bold mt-0.5">•</span><span>' + trimmed.slice(2) + '</span></li>';
+          } else {
+            if (inList) {
+              out += '</ul>';
+              inList = false;
+            }
+            if (trimmed.length > 0) {
+              out += '<p class="my-1.5">' + trimmed + '</p>';
+            }
+          }
+        }
+        if (inList) out += '</ul>';
+        return out;
+      }
+
+      // Get audio source for a given topic & filename
+      function getAudioUrl(topicNum, filename) {
+        if (state.localFileMap.has(filename)) {
+          return state.localFileMap.get(filename);
+        }
+        return '/audio/Topic ' + topicNum + '/' + encodeURIComponent(filename);
+      }
+
+      // Filter topics based on search, status, and module
+      function getFilteredTopics() {
+        const query = state.searchQuery.toLowerCase().trim();
+        return topics.map((t, idx) => {
+          // Status filter
+          if (state.statusFilter === 'audio' && !t.has_audio) return null;
+          if (state.statusFilter === 'pending' && t.has_audio) return null;
+
+          // Module filter
+          if (state.moduleFilter !== 'all' && t.thematic_module !== state.moduleFilter) return null;
+
+          // Search query filter
+          if (!query) return { topic: t, index: idx, matches: 0 };
+
+          let matches = 0;
+          if (t.lesson_title.toLowerCase().includes(query)) matches += 2;
+          if (t.thematic_module.toLowerCase().includes(query)) matches += 1;
+          if (t.notes && t.notes.toLowerCase().includes(query)) matches += 1;
+
+          for (const m of t.mini_lessons) {
+            if (m.topic.toLowerCase().includes(query)) matches++;
+            if (m.transcript.toLowerCase().includes(query)) matches++;
+            if (m.structures && m.structures.some(s => s.toLowerCase().includes(query))) matches++;
+            if (m.verb_forms && m.verb_forms.some(v => v.toLowerCase().includes(query))) matches++;
+            if (m.tense && m.tense.some(te => te.toLowerCase().includes(query))) matches++;
+            if (m.examples && m.examples.some(e => e.en.toLowerCase().includes(query) || e.vi.toLowerCase().includes(query))) matches++;
+          }
+
+          if (matches > 0) {
+            return { topic: t, index: idx, matches };
+          }
+          return null;
+        }).filter(Boolean);
+      }
+
+      // Render Sidebar
+      function renderSidebar() {
+        const filtered = getFilteredTopics();
+        sidebarCount.textContent = filtered.length + ' / ' + topics.length;
+        topicListContainer.innerHTML = '';
+
+        if (filtered.length === 0) {
+          topicListContainer.innerHTML = '<div class="text-center py-8 text-xs text-zinc-500">Không tìm thấy chuyên đề phù hợp với điều kiện tìm kiếm.</div>';
+          return;
+        }
+
+        // Group by Thematic Module for organized display
+        let currentModule = '';
+        filtered.forEach(({ topic, index, matches }) => {
+          if (topic.thematic_module !== currentModule && state.moduleFilter === 'all') {
+            currentModule = topic.thematic_module;
+            const moduleHeader = document.createElement('div');
+            moduleHeader.className = 'pt-3 pb-1 text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5';
+            moduleHeader.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span><span>' + currentModule + '</span>';
+            topicListContainer.appendChild(moduleHeader);
+          }
+
+          const isActive = index === state.activeTopicIndex;
+          const isReviewed = state.reviewedLessons.has('topic-' + topic.topic_number);
+
+          const item = document.createElement('button');
+          item.className = 'w-full text-left p-2.5 rounded-xl transition-all flex items-start justify-between gap-2 group ' + (
+            isActive 
+              ? 'bg-brand-600/20 border border-brand-500/40 text-white active-card-ring' 
+              : 'hover:bg-zinc-800/60 text-zinc-300 border border-transparent'
+          );
+          item.onclick = () => {
+            state.activeTopicIndex = index;
+            renderSidebar();
+            renderActiveTopic();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+
+          const statusBadge = topic.has_audio
+            ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-mono shrink-0 border border-emerald-500/30">🟢 ' + topic.mini_lessons.length + ' audios</span>'
+            : '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 font-mono shrink-0 border border-amber-500/30">🟡 Chờ thu</span>';
+
+          const matchBadge = matches > 0 
+            ? '<span class="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 font-medium font-mono shrink-0">' + matches + ' khớp</span>' 
+            : '';
+
+          item.innerHTML = `
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="text-[11px] font-bold font-mono ${isActive ? 'text-brand-300' : 'text-zinc-500'}">D${String(topic.day_number).padStart(2, '0')}</span>
+                <span class="text-xs font-semibold truncate text-zinc-100 ${isReviewed ? 'line-through opacity-75' : ''}">${topic.lesson_title.replace(/^Day \d+\s*-\s*/i, '')}</span>
+                ${isReviewed ? '<span class="text-[10px] text-emerald-400">✓</span>' : ''}
+              </div>
+              <div class="text-[11px] text-zinc-400 truncate flex items-center gap-2">
+                <span>${topic.thematic_module}</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 shrink-0">
+              ${statusBadge}
+              ${matchBadge}
+            </div>
+          `;
+
+          topicListContainer.appendChild(item);
+        });
+      }
+
+      // Render Active Topic
+      function renderActiveTopic() {
+        const topic = topics[state.activeTopicIndex];
+        if (!topic) return;
+
+        // Hero info
+        document.getElementById('heroModule').textContent = topic.thematic_module;
+        document.getElementById('heroDayBadge').textContent = 'Day ' + String(topic.day_number).padStart(2, '0');
+        document.getElementById('heroTitle').textContent = topic.lesson_title;
+        
+        const groupLabel = topic.data_group === 'core_19_lessons'
+          ? 'Core 19 (Cohort Day ' + (topic.cohort_day_15 || 'N/A') + ')'
+          : topic.data_group === 'supplemental_7_lessons'
+          ? 'Supplemental 7 (Audio Boost)'
+          : 'Pending 4 (Curriculum Verified)';
+        document.getElementById('heroGroupBadge').textContent = groupLabel;
+
+        const heroAudioBadge = document.getElementById('heroAudioBadge');
+        if (topic.has_audio) {
+          heroAudioBadge.className = 'px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 shadow-sm';
+          heroAudioBadge.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+            </svg>
+            <span>${topic.mini_lessons.length} Teacher Recordings</span>
+          `;
+          playAllTopicBtn.classList.remove('hidden');
+        } else {
+          heroAudioBadge.className = 'px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1.5 shadow-sm';
+          heroAudioBadge.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>Chờ phòng thu (4 Manual Specs)</span>
+          `;
+          playAllTopicBtn.classList.add('hidden');
+        }
+
+        // Summary Badges
+        renderPills('summaryStructures', topic.sentence_structures, 'sky');
+        renderPills('summaryVerbForms', topic.verb_forms, 'emerald');
+        renderPills('summaryTense', topic.tense, 'amber');
+
+        // Teacher Notes
+        const notesBody = document.getElementById('teacherNotesBody');
+        const notesContainer = document.getElementById('teacherNotesContainer');
+        if (topic.notes && topic.notes.trim()) {
+          notesContainer.classList.remove('hidden');
+          notesBody.innerHTML = renderMarkdown(topic.notes);
+        } else {
+          notesContainer.classList.add('hidden');
+        }
+
+        // Mini Lessons Count
+        document.getElementById('miniLessonsCountBadge').textContent = topic.mini_lessons.length + ' bài mini';
+
+        // Render Mini Lessons Cards
+        renderMiniLessons(topic);
+      }
+
+      function renderPills(containerId, items, color) {
+        const c = document.getElementById(containerId);
+        c.innerHTML = '';
+        if (!items || items.length === 0) {
+          c.innerHTML = '<span class="text-zinc-500 text-xs italic">Không có dữ liệu</span>';
+          return;
+        }
+
+        const colorClasses = {
+          sky: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
+          emerald: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+          amber: 'bg-amber-500/10 text-amber-300 border-amber-500/20',
+        };
+
+        items.forEach(item => {
+          const span = document.createElement('span');
+          span.className = 'text-xs px-2.5 py-1 rounded-lg border font-medium font-mono ' + (colorClasses[color] || colorClasses.sky);
+          span.textContent = item;
+          c.appendChild(span);
+        });
+      }
+
+      // Render Mini-Lessons Cards
+      function renderMiniLessons(topic) {
+        miniLessonsContainer.innerHTML = '';
+
+        if (!topic.mini_lessons || topic.mini_lessons.length === 0) {
+          miniLessonsContainer.innerHTML = `
+            <div class="p-8 text-center bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-400 text-sm">
+              Chưa có mini-lesson nào trong chuyên đề này.
+            </div>
+          `;
+          return;
+        }
+
+        topic.mini_lessons.forEach((mini, idx) => {
+          const cardKey = topic.topic_number + '-' + idx;
+          const isExpanded = state.expandedCards.has(cardKey);
+          const isReviewed = state.reviewedLessons.has('mini-' + cardKey);
+          const audioUrl = getAudioUrl(topic.topic_number, mini.file);
+          const isPending = mini.file.endsWith('.manual') || !topic.has_audio;
+
+          const card = document.createElement('div');
+          card.className = 'bg-zinc-900 border border-zinc-800 hover:border-zinc-700/80 rounded-2xl p-5 shadow-lg transition-all ' + (
+            isReviewed ? 'opacity-85 border-emerald-900/40 bg-zinc-900/60' : ''
+          );
+          card.id = 'mini-card-' + idx;
+
+          // Safe transcript text for data attributes
+          const escapedTranscript = mini.transcript.replace(/"/g, '&quot;');
+
+          card.innerHTML = `
+            <!-- Card Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800/80">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-7 h-7 rounded-lg bg-zinc-800 text-brand-400 font-bold font-mono text-xs flex items-center justify-center shrink-0">#${idx + 1}</span>
+                <div class="min-w-0">
+                  <h4 class="text-base font-bold text-white tracking-tight truncate">${mini.topic}</h4>
+                  <div class="flex items-center gap-2 text-xs text-zinc-400 mt-0.5">
+                    <span class="font-mono text-[11px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300">${mini.file}</span>
+                    ${isPending ? '<span class="text-amber-400 font-medium">• Chờ thu</span>' : '<span class="text-emerald-400 font-medium">• Audio sẵn sàng</span>'}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center gap-2 shrink-0">
+                <!-- Mark Reviewed Checkbox -->
+                <button onclick="toggleReviewed('mini-${cardKey}')" class="px-2.5 py-1 text-xs rounded-lg border ${
+                  isReviewed ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white'
+                } transition-colors flex items-center gap-1" title="Đánh dấu đã review xong">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>${isReviewed ? 'Đã duyệt' : 'Duyệt'}</span>
+                </button>
+
+                <!-- Copy Transcript -->
+                <button class="copy-transcript-btn p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 transition-colors" data-transcript="${escapedTranscript}" title="Sao chép toàn bộ lời giảng transcript">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                  </svg>
+                </button>
+
+                <!-- Expand / Collapse -->
+                <button onclick="toggleCard('${cardKey}')" class="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors">
+                  <svg class="w-4 h-4 transform transition-transform ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Audio Player Bar -->
+            <div class="mt-4 pt-1">
+              ${
+                !isPending
+                  ? `
+                    <div class="flex items-center gap-3 bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-800/80">
+                      <button onclick="playMiniAudio(${topic.topic_number}, ${idx})" class="w-9 h-9 rounded-lg bg-brand-600 hover:bg-brand-500 text-white flex items-center justify-center shrink-0 shadow transition-colors" title="Nghe đoạn này">
+                        <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                      <div class="flex-1 min-w-0">
+                        <audio id="audio-${cardKey}" controls preload="none" class="w-full h-8" src="${audioUrl}"></audio>
+                        <div class="audio-error-banner hidden text-[11px] text-amber-400 mt-1 flex items-center gap-1">
+                          <span>💡 Không phát được audio? Chạy <code class="bg-zinc-800 px-1 rounded">bun run scripts/serve-grammar-review.ts</code> hoặc chọn thư mục bằng nút "Audio Folder".</span>
+                        </div>
+                      </div>
+                    </div>
+                  `
+                  : `
+                    <div class="bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-2 font-medium">
+                      <span>⚠️ Chuyên đề này đang chờ thu audio từ giáo viên. Nội dung transcript và phản xạ được chuẩn hóa từ curriculum gốc.</span>
+                    </div>
+                  `
+              }
+            </div>
+
+            <!-- Verbatim Transcript Box -->
+            <div class="mt-4 bg-zinc-950 p-4 rounded-xl border border-zinc-800/80 relative">
+              <div class="flex items-center justify-between text-xs text-zinc-400 font-semibold mb-2">
+                <span class="flex items-center gap-1.5 text-zinc-300">
+                  <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                  <span>Lời giảng Verbatim (Transcript)</span>
+                </span>
+                <span class="text-[11px] text-zinc-500 font-mono">${mini.transcript.length} ký tự</span>
+              </div>
+              <p class="text-sm sm:text-base leading-relaxed text-zinc-200 font-normal selection:bg-brand-500">
+                ${formatTranscriptText(mini.transcript)}
+              </p>
+            </div>
+
+            <!-- Collapsible Detail Section -->
+            <div class="${isExpanded ? 'hidden' : 'block'} mt-4 space-y-4">
+              
+              <!-- Grammar Formulas Tags (Structures, Verb Forms, Tense) -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <!-- Structures -->
+                <div class="bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/60">
+                  <div class="text-[11px] font-bold text-sky-400 mb-1.5">Sentence Structures</div>
+                  <div class="flex flex-wrap gap-1">
+                    ${renderMiniTags(mini.structures, 'sky')}
+                  </div>
+                </div>
+
+                <!-- Verb Forms -->
+                <div class="bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/60">
+                  <div class="text-[11px] font-bold text-emerald-400 mb-1.5">Verb Forms</div>
+                  <div class="flex flex-wrap gap-1">
+                    ${renderMiniTags(mini.verb_forms, 'emerald')}
+                  </div>
+                </div>
+
+                <!-- Tense -->
+                <div class="bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/60">
+                  <div class="text-[11px] font-bold text-amber-400 mb-1.5">Tense</div>
+                  <div class="flex flex-wrap gap-1">
+                    ${renderMiniTags(mini.tense, 'amber')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bilingual Examples -->
+              ${renderExamples(mini.examples)}
+
+              <!-- Mini-lesson Teacher Note (if present) -->
+              ${
+                mini.notes
+                  ? `
+                    <div class="bg-indigo-950/20 border border-indigo-500/20 p-3.5 rounded-xl text-xs text-indigo-200">
+                      <strong class="text-indigo-300 font-semibold block mb-1">Ghi chú Sư phạm:</strong>
+                      ${mini.notes}
+                    </div>
+                  `
+                  : ''
+              }
+
+            </div>
+          `;
+
+          miniLessonsContainer.appendChild(card);
+
+          // Copy button listener
+          const copyBtn = card.querySelector('.copy-transcript-btn');
+          if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+              copyToClipboard(mini.transcript, 'Đã chép transcript!');
+            });
+          }
+
+          // Attach audio listener
+          const audioElem = card.querySelector('#audio-' + cardKey);
+          if (audioElem) {
+            audioElem.addEventListener('play', () => {
+              // Pause other audios
+              document.querySelectorAll('audio').forEach(a => {
+                if (a !== audioElem && !a.paused) a.pause();
+              });
+              syncBottomPlayer(topic, mini, idx);
+            });
+            audioElem.addEventListener('error', () => {
+              const errBanner = card.querySelector('.audio-error-banner');
+              if (errBanner) errBanner.classList.remove('hidden');
+            });
+            audioElem.addEventListener('ended', () => {
+              if (state.autoplay) {
+                playNextMiniLesson();
+              }
+            });
+          }
+        });
+      }
+
+      function formatTranscriptText(text) {
+        if (!text) return '';
+        // Escape HTML
+        let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        // Highlight search query if active
+        if (state.searchQuery && state.searchQuery.trim().length > 1) {
+          const q = state.searchQuery.trim();
+          const regex = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+          escaped = escaped.replace(regex, '<mark class="bg-amber-500/30 text-amber-200 px-1 rounded font-medium">$1</mark>');
+        }
+
+        return escaped;
+      }
+
+      function renderMiniTags(items, color) {
+        if (!items || items.length === 0) {
+          return '<span class="text-zinc-500 text-[11px] italic">None</span>';
+        }
+        const colors = {
+          sky: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+          emerald: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+          amber: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+        };
+        return items.map(item => '<span class="text-[11px] px-2 py-0.5 rounded border font-mono ' + colors[color] + '">' + item + '</span>').join('');
+      }
+
+      function renderExamples(examples) {
+        if (!examples || examples.length === 0) return '';
+        const cards = examples.map((ex, i) => `
+          <div class="bg-zinc-950/80 p-3 rounded-xl border border-zinc-800 flex flex-col gap-1 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-brand-400 font-semibold text-xs tracking-wide">Ví dụ #${i + 1}</span>
+              <button onclick="copyToClipboard('${ex.en.replace(/'/g, "\\'")}', 'Đã sao chép câu tiếng Anh!')" class="text-zinc-500 hover:text-zinc-300 p-0.5" title="Copy câu tiếng Anh">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </button>
+            </div>
+            <div class="text-sm font-semibold text-zinc-100">${ex.en}</div>
+            <div class="text-xs text-zinc-400 italic">${ex.vi}</div>
+          </div>
+        `).join('');
+
+        return `
+          <div class="space-y-1.5">
+            <div class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Bilingual Reflex Examples</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">${cards}</div>
+          </div>
+        `;
+      }
+
+      // Card Collapse / Expand Toggle
+      window.toggleCard = function (cardKey) {
+        if (state.expandedCards.has(cardKey)) {
+          state.expandedCards.delete(cardKey);
+        } else {
+          state.expandedCards.add(cardKey);
+        }
+        const topic = topics[state.activeTopicIndex];
+        renderMiniLessons(topic);
+      };
+
+      // Reviewed Status
+      window.toggleReviewed = function (key) {
+        if (state.reviewedLessons.has(key)) {
+          state.reviewedLessons.delete(key);
+        } else {
+          state.reviewedLessons.add(key);
+        }
+        localStorage.setItem('chunks_grammar_reviewed', JSON.stringify(Array.from(state.reviewedLessons)));
+        renderSidebar();
+        renderActiveTopic();
+      };
+
+      // Copy Helper with Toast
+      window.copyToClipboard = function (text, message) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(message || 'Đã sao chép vào bộ nhớ tạm!');
+        }).catch(() => {
+          showToast('Lỗi khi sao chép!');
+        });
+      };
+
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+        toastMsg.textContent = msg;
+        toast.classList.remove('opacity-0', 'pointer-events-none');
+        toast.classList.add('opacity-100');
+        setTimeout(() => {
+          toast.classList.remove('opacity-100');
+          toast.classList.add('opacity-0', 'pointer-events-none');
+        }, 2200);
+      }
+
+      // Teacher notes toggle
+      window.toggleTeacherNotes = function () {
+        state.isTeacherNotesOpen = !state.isTeacherNotesOpen;
+        const body = document.getElementById('teacherNotesBody');
+        const chevron = document.getElementById('teacherNotesChevron');
+        if (state.isTeacherNotesOpen) {
+          body.classList.remove('hidden');
+          chevron.style.transform = 'rotate(0deg)';
+        } else {
+          body.classList.add('hidden');
+          chevron.style.transform = 'rotate(-90deg)';
+        }
+      };
+
+      // Play audio from mini lesson
+      window.playMiniAudio = function (topicNum, miniIdx) {
+        const cardKey = topicNum + '-' + miniIdx;
+        const audio = document.getElementById('audio-' + cardKey);
+        if (audio) {
+          audio.currentTime = 0;
+          audio.play();
+        }
+      };
+
+      // Synchronize floating bottom player
+      function syncBottomPlayer(topic, mini, idx) {
+        state.activeMiniIndex = idx;
+        bottomTrackTitle.textContent = mini.topic;
+        bottomTrackFile.textContent = mini.file;
+        bottomTrackTopic.textContent = 'Day ' + topic.day_number + ' (' + topic.lesson_title.replace(/^Day \d+\s*-\s*/i, '') + ')';
+        
+        const audioUrl = getAudioUrl(topic.topic_number, mini.file);
+        if (globalAudio.src !== audioUrl) {
+          globalAudio.src = audioUrl;
+        }
+
+        bottomPlayer.classList.remove('translate-y-full');
+      }
+
+      window.hideBottomPlayer = function () {
+        bottomPlayer.classList.add('translate-y-full');
+        globalAudio.pause();
+      };
+
+      function playNextMiniLesson() {
+        const topic = topics[state.activeTopicIndex];
+        if (!topic) return;
+        const nextIdx = state.activeMiniIndex + 1;
+        if (nextIdx < topic.mini_lessons.length) {
+          playMiniAudio(topic.topic_number, nextIdx);
+          const card = document.getElementById('mini-card-' + nextIdx);
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          showToast('Đã phát xong toàn bộ mini-lessons của chuyên đề này!');
+        }
+      }
+
+      function playPrevMiniLesson() {
+        const topic = topics[state.activeTopicIndex];
+        if (!topic) return;
+        const prevIdx = state.activeMiniIndex - 1;
+        if (prevIdx >= 0) {
+          playMiniAudio(topic.topic_number, prevIdx);
+          const card = document.getElementById('mini-card-' + prevIdx);
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      // Event Listeners
+      function setupEventListeners() {
+        // Search Input
+        let debounceTimer;
+        searchInput.addEventListener('input', (e) => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            state.searchQuery = e.target.value;
+            clearSearchBtn.classList.toggle('hidden', !state.searchQuery);
+            renderSidebar();
+            renderActiveTopic();
+
+            // Update match count badge
+            const filtered = getFilteredTopics();
+            if (state.searchQuery.trim().length > 0) {
+              searchMatchCount.classList.remove('hidden');
+              searchMatchCount.textContent = filtered.length + ' chuyên đề';
+            } else {
+              searchMatchCount.classList.add('hidden');
+            }
+          }, 150);
+        });
+
+        clearSearchBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          state.searchQuery = '';
+          clearSearchBtn.classList.add('hidden');
+          searchMatchCount.classList.add('hidden');
+          renderSidebar();
+          renderActiveTopic();
+          searchInput.focus();
+        });
+
+        // Module filter dropdown
+        moduleSelect.addEventListener('change', (e) => {
+          state.moduleFilter = e.target.value;
+          renderSidebar();
+        });
+
+        // Status Filter Buttons
+        document.querySelectorAll('.filter-status-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-status-btn').forEach(b => {
+              b.classList.remove('bg-brand-600', 'text-white', 'shadow');
+              b.classList.add('text-zinc-400');
+            });
+            btn.classList.add('bg-brand-600', 'text-white', 'shadow');
+            btn.classList.remove('text-zinc-400');
+
+            state.statusFilter = btn.dataset.status;
+            renderSidebar();
+          });
+        });
+
+        // Autoplay toggle
+        autoPlayNextCheck.addEventListener('change', (e) => {
+          state.autoplay = e.target.checked;
+        });
+
+        // Expand All / Collapse All
+        let allExpanded = false;
+        toggleExpandAllBtn.addEventListener('click', () => {
+          const topic = topics[state.activeTopicIndex];
+          if (!topic) return;
+          allExpanded = !allExpanded;
+          state.expandedCards.clear();
+          if (allExpanded) {
+            topic.mini_lessons.forEach((_, idx) => {
+              state.expandedCards.add(topic.topic_number + '-' + idx);
+            });
+            toggleExpandAllBtn.querySelector('span').textContent = 'Mở rộng';
+          } else {
+            toggleExpandAllBtn.querySelector('span').textContent = 'Thu gọn';
+          }
+          renderMiniLessons(topic);
+        });
+
+        // Play all in topic
+        playAllTopicBtn.addEventListener('click', () => {
+          state.autoplay = true;
+          autoPlayNextCheck.checked = true;
+          playMiniAudio(topics[state.activeTopicIndex].topic_number, 0);
+          showToast('Bắt đầu phát liên tục từ bài 1');
+        });
+
+        // Global Bottom Player Prev / Next
+        prevTrackBtn.addEventListener('click', playPrevMiniLesson);
+        nextTrackBtn.addEventListener('click', playNextMiniLesson);
+
+        playbackRateSelect.addEventListener('change', (e) => {
+          const rate = parseFloat(e.target.value);
+          globalAudio.playbackRate = rate;
+          document.querySelectorAll('audio').forEach(a => a.playbackRate = rate);
+        });
+
+        // Local Folder Selection for offline file:/// mode
+        folderInput.addEventListener('change', (e) => {
+          const files = e.target.files;
+          if (!files || files.length === 0) return;
+
+          let loadedCount = 0;
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.name.endsWith('.mp3')) {
+              const objectUrl = URL.createObjectURL(file);
+              state.localFileMap.set(file.name, objectUrl);
+              loadedCount++;
+            }
+          }
+
+          if (loadedCount > 0) {
+            const folderStatus = document.getElementById('localFolderStatus');
+            folderStatus.textContent = '✓ Đã nạp ' + loadedCount + ' tệp MP3 từ thư mục cục bộ';
+            folderStatus.classList.remove('hidden');
+            showToast('Đã nạp thành công ' + loadedCount + ' tệp audio MP3!');
+            renderActiveTopic();
+          }
+        });
+
+        // Global Keyboard Shortcuts
+        window.addEventListener('keydown', (e) => {
+          // Ignore if user is typing in search input
+          if (document.activeElement === searchInput) {
+            if (e.key === 'Escape') {
+              searchInput.blur();
+            }
+            return;
+          }
+
+          if (e.key === '/') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+          } else if (e.key === ']') {
+            // Next Topic
+            e.preventDefault();
+            if (state.activeTopicIndex < topics.length - 1) {
+              state.activeTopicIndex++;
+              renderSidebar();
+              renderActiveTopic();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          } else if (e.key === '[') {
+            // Prev Topic
+            e.preventDefault();
+            if (state.activeTopicIndex > 0) {
+              state.activeTopicIndex--;
+              renderSidebar();
+              renderActiveTopic();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          } else if (e.key === 'j' || e.key === 'ArrowDown') {
+            // Next mini lesson
+            e.preventDefault();
+            playNextMiniLesson();
+          } else if (e.key === 'k' || e.key === 'ArrowUp') {
+            // Prev mini lesson
+            e.preventDefault();
+            playPrevMiniLesson();
+          } else if (e.key === ' ' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+            // Toggle global audio
+            e.preventDefault();
+            if (globalAudio.paused) {
+              globalAudio.play();
+            } else {
+              globalAudio.pause();
+            }
+          }
+        });
+      }
+
+      // Run on DOM loaded
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+    })();
+  </script>
+
+</body>
+</html>
