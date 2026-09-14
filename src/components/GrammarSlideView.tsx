@@ -192,6 +192,23 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
               <BookOpen className="w-3.5 h-3.5" />
               <span>GRAMMAR OVERVIEW</span>
             </span>
+            {grammar?.thematic_module && (
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-bold tracking-wide border ${
+                highContrastDark ? 'bg-zinc-800/80 border-zinc-700 text-zinc-300' : 'bg-zinc-100 border-zinc-200 text-zinc-700'
+              }`}>
+                {grammar.thematic_module}
+              </span>
+            )}
+            {grammar?.lesson_number_19 && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-bold tracking-wide bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80">
+                Lesson {grammar.lesson_number_19} (Cohort Day {grammar.cohort_day_15})
+              </span>
+            )}
+            {grammar?.status === 'pending_audio' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-bold tracking-wide bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80">
+                Pending Audio
+              </span>
+            )}
           </div>
 
           {/* Day & Slide indicator Right */}

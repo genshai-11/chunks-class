@@ -28,7 +28,12 @@ class CurriculumRegistryService {
           verb_forms: g.verb_forms,
           sentence_structures: g.sentence_structures,
           tense: g.tense,
-          notes: g.notes
+          notes: g.notes,
+          data_group: g.data_group,
+          status: g.status,
+          cohort_day_15: g.cohort_day_15,
+          lesson_number_19: g.lesson_number_19,
+          thematic_module: g.thematic_module
         };
       }
     });
@@ -208,7 +213,12 @@ class CurriculumRegistryService {
         verb_forms: gDoc.verb_forms,
         sentence_structures: gDoc.sentence_structures,
         tense: gDoc.tense,
-        notes: gDoc.notes
+        notes: gDoc.notes,
+        data_group: gDoc.data_group,
+        status: gDoc.status,
+        cohort_day_15: gDoc.cohort_day_15,
+        lesson_number_19: gDoc.lesson_number_19,
+        thematic_module: gDoc.thematic_module
       };
     }
     return null;
