@@ -224,6 +224,32 @@ class CurriculumRegistryService {
     return null;
   }
 
+  /**
+   * Update grammar data for a specific lesson across in-memory registry,
+   * CURRICULUM_CATALOG_LEVEL_B_ERE, and individual lesson maps.
+   */
+  public updateLessonGrammar(lessonId: string, grammar: LessonGrammar): void {
+    if (!lessonId || !grammar) return;
+    const cleanId = lessonId.trim();
+
+    // 1. Update in-memory lesson doc if found
+    const lesson = this.getLessonById(cleanId);
+    if (lesson) {
+      lesson.grammar = { ...grammar };
+      this.updateLesson(lesson);
+    }
+
+    // 2. Synchronize directly into CURRICULUM_CATALOG_LEVEL_B_ERE
+    const ereLesson = CURRICULUM_CATALOG_LEVEL_B_ERE.find(l => 
+      l.id === cleanId || 
+      (cleanId.startsWith('level_b_day_') && l.id === cleanId) ||
+      (cleanId.startsWith('level_b_ere_day_') && l.id === cleanId.replace('level_b_ere_day_', 'level_b_day_'))
+    );
+    if (ereLesson) {
+      ereLesson.grammar = { ...grammar };
+    }
+  }
+
   public updateLesson(lesson: LessonDoc): void {
     if (!lesson || !lesson.id) return;
     this.individualLessonsMap.set(lesson.id, lesson);

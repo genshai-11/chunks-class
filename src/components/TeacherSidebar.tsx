@@ -14,7 +14,8 @@ import {
   GraduationCap,
   ShieldCheck,
   FileSpreadsheet,
-  Play
+  Play,
+  Library
 } from 'lucide-react';
 
 interface TeacherSidebarProps {
@@ -53,6 +54,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
     { id: 'improv-presentation', label: 'Improv Mode', icon: <Play className="w-4 h-4 text-[#DC2626]" /> },
     { id: 'curriculum', label: 'Curriculum & Chunks', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'audio-manager', label: 'Audio Management', icon: <Volume2 className="w-4 h-4" /> },
+    { id: 'resource-manager', label: 'Manage Resources', icon: <Library className="w-4 h-4 text-indigo-500" />, badge: 'GRAMMAR' },
     { id: 'settings', label: 'Modules Settings', icon: <Settings className="w-4 h-4" /> }
   ];
 

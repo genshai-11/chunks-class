@@ -84,11 +84,34 @@ export interface LessonDoc {
   [key: string]: any;
 }
 
+export interface GrammarExample {
+  en: string;
+  vi: string;
+}
+
+export type GrammarStructureType = 'sentence_structure' | 'verb_form' | 'tense_reflex';
+
+export interface GrammarMiniLesson {
+  file?: string;
+  topic?: string;
+  transcript?: string;
+  structures?: string[];
+  verb_forms?: string[];
+  tense?: string[];
+  examples?: GrammarExample[];
+  notes?: string;
+  primary_structure?: string;
+  structure_type?: GrammarStructureType;
+}
+
 export interface LessonGrammar {
   verb_forms: string[];
   sentence_structures: string[];
   tense: string[];
   notes?: string;
+  mini_lessons?: GrammarMiniLesson[];
+  total_audio_files?: number;
+  source_type?: string;
   data_group?: 'core_19_lessons' | 'supplemental_7_lessons' | 'pending_4_lessons';
   status?: 'active' | 'pending_audio';
   cohort_day_15?: number | null;
@@ -200,7 +223,8 @@ export type NavTab =
   | 'audio-manager' 
   | 'settings'
   | 'improv-manager'
-  | 'improv-presentation';
+  | 'improv-presentation'
+  | 'resource-manager';
 
 // --------------------------------------------------------------------------
 // 4. CHUNKS Improv Domain Models
