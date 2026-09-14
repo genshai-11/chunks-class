@@ -4,7 +4,7 @@ import { buildGrammarReviewHtml } from './build-grammar-review-html';
 import { syncGrammarToFirestore } from './sync-grammar-to-firestore';
 
 const PORT = Number(process.env.PORT) || 3333;
-const AUDIO_BASE_DIR = process.env.AUDIO_DIR || 'C:\\Users\\gensh\\Downloads\\chunks-grammar\\Grammar Boost\\Grammar Boost';
+const AUDIO_BASE_DIR = process.env.AUDIO_DIR || 'C:\\Users\\gensh\\Downloads\\chunks-grammar\\FULL 30 Topic_P@W\\Grammar Boost\\Grammar Boost';
 const ROOT_DIR = path.resolve('.');
 const HTML_FILE = path.join(ROOT_DIR, 'review-grammar-boost.html');
 const CATALOG_JSON = path.join(ROOT_DIR, 'scripts', 'grammar-boost-catalog.json');

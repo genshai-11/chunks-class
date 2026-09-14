@@ -677,23 +677,35 @@ export const GRAMMAR_1TO1_ALIGNMENT: Record<string, AlignmentEntry> = {
   },
 
   // ==========================================
-  // Day 16: Day 16 - Social media (4 Curated Manual)
+  // Day 16: Day 16 - Social media (7 audios)
   // ==========================================
-  'curriculum_d16_1.manual': {
-    primary_structure: 'Unlike + Noun/Pronoun, S + V',
-    structure_type: 'sentence_structure'
-  },
-  'curriculum_d16_2.manual': {
-    primary_structure: 'No one wants to get left behind (get + V3)',
+  '1en_Gr_16_1.mp3': {
+    primary_structure: 'get left behind (get + V3)',
     structure_type: 'verb_form'
   },
-  'curriculum_d16_3.manual': {
-    primary_structure: 'S + has/have been V-ing (Present Perfect Continuous)',
+  '1en_Gr_16_2.mp3': {
+    primary_structure: 'look + Adj (look identical)',
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_16_3.mp3': {
+    primary_structure: 'must be V3 (must be taken seriously)',
+    structure_type: 'verb_form'
+  },
+  '1en_Gr_16_4.mp3': {
+    primary_structure: 'A little bird told me that + clause',
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_16_5.mp3': {
+    primary_structure: "There's [Noun] + V-ing (Participial clause)",
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_16_6.mp3': {
+    primary_structure: "Hasn't anyone told you...? (Present Perfect question)",
     structure_type: 'tense_reflex'
   },
-  'curriculum_d16_4.manual': {
-    primary_structure: "From what I've gathered, S + must be V3",
-    structure_type: 'sentence_structure'
+  '1en_Gr_16_7.mp3': {
+    primary_structure: 'spend + [time] + (in) V-ing',
+    structure_type: 'verb_form'
   },
 
   // ==========================================
@@ -793,23 +805,39 @@ export const GRAMMAR_1TO1_ALIGNMENT: Record<string, AlignmentEntry> = {
   },
 
   // ==========================================
-  // Day 19: Day 19 - EXCEL (4 Curated Manual)
+  // Day 19: Day 19 - EXCEL (8 audios)
   // ==========================================
-  'curriculum_d19_1.manual': {
-    primary_structure: 'Try + V-ing (troubleshooting trial)',
+  '1en_Gr_19_1.mp3': {
+    primary_structure: "be not allowed to + V1 / won't allow me to + V1",
     structure_type: 'verb_form'
   },
-  'curriculum_d19_2.manual': {
-    primary_structure: 'prevent + Object + from being V3',
+  '1en_Gr_19_2.mp3': {
+    primary_structure: 'finish + V-ing',
     structure_type: 'verb_form'
   },
-  'curriculum_d19_3.manual': {
-    primary_structure: 'It usually takes up to [time] to V1',
+  '1en_Gr_19_3.mp3': {
+    primary_structure: 'except + V1 / except + to V1',
+    structure_type: 'verb_form'
+  },
+  '1en_Gr_19_4.mp3': {
+    primary_structure: 'May I + V1? (Polite request)',
     structure_type: 'sentence_structure'
   },
-  'curriculum_d19_4.manual': {
-    primary_structure: 'May I ask you a favor?',
+  '1en_Gr_19_5.mp3': {
+    primary_structure: 'It usually takes + [time] + to V1',
     structure_type: 'sentence_structure'
+  },
+  '1en_Gr_19_6.mp3': {
+    primary_structure: 'Is there a possibility that + clause?',
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_19_7.mp3': {
+    primary_structure: "There's nothing to + V1 (worry about / be scared of)",
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_19_8.mp3': {
+    primary_structure: 'S + V2 + all day yesterday (Past Simple duration)',
+    structure_type: 'tense_reflex'
   },
 
   // ==========================================
@@ -905,23 +933,47 @@ export const GRAMMAR_1TO1_ALIGNMENT: Record<string, AlignmentEntry> = {
   },
 
   // ==========================================
-  // Day 22: Day 22 - Nepotism (4 Curated Manual)
+  // Day 22: Day 22 - Nepotism (10 audios)
   // ==========================================
-  'curriculum_d22_1.manual': {
+  '1en_Gr_22_1.mp3': {
+    primary_structure: 'Verb + not (fear not / worry not)',
+    structure_type: 'verb_form'
+  },
+  '1en_Gr_22_2.mp3': {
+    primary_structure: 'promise + (not) + to V1',
+    structure_type: 'verb_form'
+  },
+  '1en_Gr_22_3.mp3': {
     primary_structure: "There's no such thing as + N",
     structure_type: 'sentence_structure'
   },
-  'curriculum_d22_2.manual': {
-    primary_structure: "It can't be more [adj] (Negative Comparative)",
+  '1en_Gr_22_4.mp3': {
+    primary_structure: 'Do you know what it means? (it means)',
     structure_type: 'sentence_structure'
   },
-  'curriculum_d22_3.manual': {
-    primary_structure: 'S + want/expect + to be V3 (Passive Infinitive)',
+  '1en_Gr_22_5.mp3': {
+    primary_structure: "It's no shame to + V1",
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_22_6.mp3': {
+    primary_structure: 'want + to be V3 (Passive infinitive)',
     structure_type: 'verb_form'
   },
-  'curriculum_d22_4.manual': {
-    primary_structure: 'It depends on how + S + V (Embedded Question)',
+  '1en_Gr_22_7.mp3': {
+    primary_structure: "There's a thing called + N (Reduced relative)",
     structure_type: 'sentence_structure'
+  },
+  '1en_Gr_22_8.mp3': {
+    primary_structure: 'S + once + V2 (Single past occurrence)',
+    structure_type: 'tense_reflex'
+  },
+  '1en_Gr_22_9.mp3': {
+    primary_structure: 'S + just + V2 vs have/has just + V3',
+    structure_type: 'tense_reflex'
+  },
+  '1en_Gr_22_10.mp3': {
+    primary_structure: 'S + went to + [School/University] (Past Simple)',
+    structure_type: 'tense_reflex'
   },
 
   // ==========================================
@@ -1109,23 +1161,47 @@ export const GRAMMAR_1TO1_ALIGNMENT: Record<string, AlignmentEntry> = {
   },
 
   // ==========================================
-  // Day 28: Day 28 - Never eat alone (4 Curated Manual)
+  // Day 28: Day 28 - Never eat alone (10 audios)
   // ==========================================
-  'curriculum_d28_1.manual': {
-    primary_structure: "If it weren't for + N, S + would (not) V",
+  '1en_Gr_28_1.mp3': {
+    primary_structure: 'thanks for + V-ing',
+    structure_type: 'verb_form'
+  },
+  '1en_Gr_28_2.mp3': {
+    primary_structure: "Don't act so + Adj (Don't act so surprised)",
     structure_type: 'sentence_structure'
   },
-  'curriculum_d28_2.manual': {
-    primary_structure: 'At first, I thought + S + had V3 (Past Perfect)',
+  '1en_Gr_28_3.mp3': {
+    primary_structure: 'try + V-ing (experiment vs effort)',
+    structure_type: 'verb_form'
+  },
+  '1en_Gr_28_4.mp3': {
+    primary_structure: 'Despite + N / V-ing vs Although + clause',
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_28_5.mp3': {
+    primary_structure: "There's a lot of + N",
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_28_6.mp3': {
+    primary_structure: "If it weren't for + N, S + would/wouldn't + V1",
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_28_7.mp3': {
+    primary_structure: 'How many + plural noun...?',
+    structure_type: 'sentence_structure'
+  },
+  '1en_Gr_28_8.mp3': {
+    primary_structure: "S + still don't/doesn't + V1 + yet (Present Simple with yet)",
     structure_type: 'tense_reflex'
   },
-  'curriculum_d28_3.manual': {
-    primary_structure: 'S + be + out of my hands',
-    structure_type: 'sentence_structure'
+  '1en_Gr_28_9.mp3': {
+    primary_structure: 'S + have/has + V3 + before (Present Perfect experience)',
+    structure_type: 'tense_reflex'
   },
-  'curriculum_d28_4.manual': {
-    primary_structure: 'Is there any way that you can + V1?',
-    structure_type: 'sentence_structure'
+  '1en_Gr_28_10.mp3': {
+    primary_structure: 'Who told you that? (Past Simple subject question)',
+    structure_type: 'tense_reflex'
   },
 
   // ==========================================
@@ -1287,15 +1363,25 @@ function alignGrammar() {
   // Update catalog metadata
   catalog.metadata = {
     ...catalog.metadata,
+    source_directory: "C:\\Users\\gensh\\Downloads\\chunks-grammar\\FULL 30 Topic_P@W\\Grammar Boost\\Grammar Boost",
     last_audit: new Date().toISOString(),
     audit_status: '1_to_1_aligned_verified',
-    total_structures: 269,
+    total_topics: 30,
+    audio_topics_count: 30,
+    pending_topics_count: 0,
+    total_audio_files: 288,
+    total_structures: 288,
     one_to_one_rule: '1 audio file = exactly 1 primary target grammar structure'
   };
 
   // Write updated grammar-boost-catalog.json
   fs.writeFileSync(CATALOG_JSON_PATH, JSON.stringify(catalog, null, 2), 'utf8');
   console.log(`💾 Saved updated: ${CATALOG_JSON_PATH}`);
+
+  // Write to src/data/grammarBoostCatalog.json
+  const SRC_DATA_CATALOG_PATH = path.resolve('src/data/grammarBoostCatalog.json');
+  fs.writeFileSync(SRC_DATA_CATALOG_PATH, JSON.stringify(catalog, null, 2), 'utf8');
+  console.log(`💾 Saved updated: ${SRC_DATA_CATALOG_PATH}`);
 
   // 2. Update grammar-grouped-catalog.json
   const topicMap = new Map<number, any>();
@@ -1309,7 +1395,35 @@ function alignGrammar() {
       l.tense = [...t.tense];
       l.updated_at = new Date().toISOString();
     }
+    if ([16, 19, 22, 28].includes(l.day_number)) {
+      l.status = 'active';
+      l.data_group = 'supplemental_11_lessons';
+      if (t && t.notes) {
+        l.notes = t.notes;
+      }
+    }
   });
+
+  grouped.metadata = {
+    ...grouped.metadata,
+    generated_at: new Date().toISOString(),
+    total_topics: 30,
+    total_structures: 288,
+    groups: {
+      core_19_lessons: {
+        count: 19,
+        description: 'Verified lessons from grammar.json mapped to 15-day intensive cohort schedule'
+      },
+      supplemental_11_lessons: {
+        count: 11,
+        description: 'Lessons transcribed from Audio Boost with reflex-oriented 1-to-1 canonical structures'
+      },
+      pending_0_lessons: {
+        count: 0,
+        description: 'All 30 lessons audio verified with zero pending'
+      }
+    }
+  };
 
   fs.writeFileSync(GROUPED_JSON_PATH, JSON.stringify(grouped, null, 2), 'utf8');
   console.log(`💾 Saved updated: ${GROUPED_JSON_PATH}`);
@@ -1334,7 +1448,7 @@ function alignGrammar() {
 /**
  * Level B - ERE (English Reflexes Enhancement - 30 Topics) Canonical Grammar Catalog
  * STRICT 1-TO-1 ALIGNMENT: 1 Audio Recording = Exactly 1 Primary Target Grammar Structure
- * Total 30 Days: 253 Audio Mini-Lessons + 16 Curated Manual Lessons = 269 Total Focus Formulas
+ * Total 30 Days: 288 Audio Mini-Lessons = 288 Total Focus Formulas (Zero Pending)
  * Partitioned cleanly into sentence_structures, verb_forms, and tense without duplicate bloat.
  * Last Audit & Update: ${new Date().toISOString()}
  */
@@ -1377,9 +1491,181 @@ export function getGrammarForLesson(lessonId: string): LessonGrammarDoc | undefi
   fs.writeFileSync(LEVEL_B_DATA_PATH, tsContent, 'utf8');
   console.log(`💾 Saved updated: ${LEVEL_B_DATA_PATH}`);
 
+  // 4. Regenerate Markdown Catalogs
+  generateBoostMarkdown(catalog);
+  generateGroupedMarkdown(grouped);
+
   console.log('\n=====================================================');
   console.log(`🎉 SUCCESS: All 30 Topics & ${totalMatched} Mini-Lessons are now 1-to-1 aligned!`);
   console.log('=====================================================');
+}
+
+function generateBoostMarkdown(catalog: any) {
+  const CATALOG_MD_PATH = path.resolve('scripts/grammar-boost-catalog.md');
+  const mdLines: string[] = [];
+  mdLines.push(`# 📚 CHUNKS Level B (ERE) Grammar Boost Catalog`);
+  mdLines.push(`\n> **Source**: \`${catalog.metadata.source_directory}\``);
+  mdLines.push(`> **Model**: \`gemini-2.5-flash\` | **Generated**: ${new Date().toLocaleDateString('vi-VN')}`);
+  mdLines.push(`> **Coverage**: ${catalog.topics.filter((s: any) => s.source_type === 'audio_boost').length}/30 Topics with native teacher audio (${catalog.metadata.total_audio_files} MP3 mini-lessons).\n`);
+
+  mdLines.push(`## 📊 Executive Summary Table\n`);
+  mdLines.push(`| Day | Lesson Title | Audio Files | Key Topics Covered | Top Structures / Patterns |`);
+  mdLines.push(`| :---: | :--- | :---: | :--- | :--- |`);
+
+  for (const s of catalog.topics) {
+    if (s.source_type === 'audio_boost') {
+      const topTopics = s.mini_lessons.map((m: any) => m.topic).filter(Boolean).slice(0, 3).join(', ');
+      const topStructs = s.sentence_structures.slice(0, 2).join('; ') || s.verb_forms.slice(0, 2).join('; ') || 'N/A';
+      mdLines.push(`| **Day ${s.day_number}** | ${s.lesson_title} | **${s.total_audio_files}** | ${topTopics} | \`${topStructs}\` |`);
+    } else {
+      mdLines.push(`| **Day ${s.day_number}** | ${s.lesson_title} | *0 (Pending)* | *Curriculum Chunks (Pending)* | *Pending* |`);
+    }
+  }
+
+  mdLines.push(`\n---\n`);
+  mdLines.push(`## 📖 Detailed Grammar Points by Topic\n`);
+
+  for (const s of catalog.topics) {
+    mdLines.push(`### Day ${s.day_number}: ${s.lesson_title}`);
+    if (s.source_type === 'pending') {
+      mdLines.push(`\n*Audio not included in Grammar Boost package. Curriculum chunk extraction pending for this topic.*\n`);
+      continue;
+    }
+
+    mdLines.push(`\n- **Audio Mini-Lessons**: ${s.total_audio_files} recordings`);
+    if (s.sentence_structures.length > 0) {
+      mdLines.push(`- **Sentence Structures**: ${s.sentence_structures.map((x: string) => `\`${x}\``).join(', ')}`);
+    }
+    if (s.verb_forms.length > 0) {
+      mdLines.push(`- **Verb Forms / Patterns**: ${s.verb_forms.map((x: string) => `\`${x}\``).join(', ')}`);
+    }
+    if (s.tense.length > 0) {
+      mdLines.push(`- **Tense & Aspect**: ${s.tense.map((x: string) => `\`${x}\``).join(', ')}`);
+    }
+
+    mdLines.push(`\n#### 🎙️ Verbatim Audio Lessons & Transcripts\n`);
+
+    for (let i = 0; i < s.mini_lessons.length; i++) {
+      const ml = s.mini_lessons[i];
+      mdLines.push(`##### ${i + 1}. \`${ml.file}\` — ${ml.primary_structure || ml.topic || 'Grammar Point'}`);
+      mdLines.push(`\n**Verbatim Teacher Explanation (Vietnamese + English):**`);
+      mdLines.push(`> "${ml.transcript}"\n`);
+
+      if (ml.structures && ml.structures.length > 0) {
+        mdLines.push(`- **Structures**: ${ml.structures.map((x: string) => `\`${x}\``).join(', ')}`);
+      }
+      if (ml.verb_forms && ml.verb_forms.length > 0) {
+        mdLines.push(`- **Verb Forms**: ${ml.verb_forms.map((x: string) => `\`${x}\``).join(', ')}`);
+      }
+      if (ml.tense && ml.tense.length > 0) {
+        mdLines.push(`- **Tense**: ${ml.tense.map((x: string) => `\`${x}\``).join(', ')}`);
+      }
+
+      if (ml.examples && ml.examples.length > 0) {
+        mdLines.push(`\n**Examples:**`);
+        for (const ex of ml.examples) {
+          mdLines.push(`- 🇬🇧 *${ex.en}* ${ex.vi ? `— 🇻🇳 ${ex.vi}` : ''}`);
+        }
+      }
+
+      if (ml.notes) {
+        mdLines.push(`\n**Teacher Notes:** ${ml.notes}`);
+      }
+      mdLines.push(`\n`);
+    }
+
+    mdLines.push(`\n---\n`);
+  }
+
+  fs.writeFileSync(CATALOG_MD_PATH, mdLines.join('\n'), 'utf-8');
+  console.log(`💾 Saved updated: ${CATALOG_MD_PATH}`);
+}
+
+function generateGroupedMarkdown(grouped: any) {
+  const OUTPUT_MD_PATH = path.resolve('scripts/grammar-grouped-catalog.md');
+  let mdContent = `# CHUNKS Level B ERE: Grammar Grouping & Partitioning Catalog
+**Canonical Reflex Structure & Dual-Index Curriculum Map**  
+*Audited and Generated: ${new Date().toISOString()}*
+
+---
+
+## 1. Executive Overview & Data Partitioning
+
+This catalog establishes the canonical grammar structure for all 30 days of the **Level B - ERE (English Reflexes Enhancement)** course, aligning with the punchy, reflex-oriented format of \`grammar.json\` (3–5 bullets per category with \`V1/V2/V3\` notations, eliminating academic jargon).
+
+### 📊 Dataset Breakdown
+
+| Data Group | Count | Status | Description & Pedagogy |
+| :--- | :---: | :---: | :--- |
+| **Group 1: Core 19 Lessons** | 19 | \`active\` | Directly extracted and verified from \`grammar.json\`. Maps to 10 teaching sessions in a 15-day cohort schedule. |
+| **Group 2: Supplemental 11 Lessons** | 11 | \`active\` | Transcribed from Grammar Boost audio, condensed into reflex-oriented patterns matching \`grammar.json\` format (Days 1, 2, 3, 4, 7, 8, 13, 16, 19, 22, 28). |
+| **Total Curriculum** | **30** | \`active\` | **100% complete coverage across 6 thematic modules with zero pending audio.** |
+
+---
+
+## 2. Dual-Index Master Curriculum Map
+
+Every lesson possesses a dual index:
+- **30-Day Master Schedule**: Sequential days 1 through 30.
+- **15-Day Cohort Schedule**: Intensive 2-lesson format covering 10 teaching days (Days 1, 2, 4, 5, 7, 8, 10, 11, 13, 14), with review/milestone days on Days 3, 6, 9, 12, 15.
+
+| Day (1–30) | Lesson Title | Thematic Module | Data Group | Status | 15-Day Cohort | 19-Lesson Index |
+| :---: | :--- | :--- | :---: | :---: | :---: | :---: |
+`;
+
+  grouped.lessons.forEach((l: any) => {
+    const cohortDay = l.cohort_day_15 ? `Day ${l.cohort_day_15}` : '—';
+    const lessonIdx = l.lesson_number_19 ? `Lesson ${l.lesson_number_19}` : '—';
+    const statusBadge = l.status === 'active' ? '🟢 `active`' : '🟡 `pending_audio`';
+    mdContent += `| **Day ${l.day_number}** | ${l.lesson_title} | ${l.thematic_module} | \`${l.data_group}\` | ${statusBadge} | ${cohortDay} | ${lessonIdx} |\n`;
+  });
+
+  mdContent += `\n---\n\n## 3. Thematic Pedagogical Modules (6 Modules)\n\n`;
+
+  const modules = [
+    'Onboarding',
+    'Office Culture',
+    'Operations & Management',
+    'Team & Leadership',
+    'Professional Acumen',
+    'Business & Sales'
+  ];
+
+  modules.forEach((mod, modIdx) => {
+    const modLessons = grouped.lessons.filter((l: any) => l.thematic_module === mod);
+    if (modLessons.length === 0) return;
+    mdContent += `### Module ${modIdx + 1}: ${mod} (Days ${modLessons[0].day_number}–${modLessons[modLessons.length - 1].day_number})\n\n`;
+    modLessons.forEach((l: any) => {
+      mdContent += `#### 📌 Day ${l.day_number}: ${l.lesson_title}\n`;
+      mdContent += `- **Group**: \`${l.data_group}\` | **Status**: \`${l.status}\`${l.lesson_number_19 ? ` | **Cohort**: Day ${l.cohort_day_15} (Lesson ${l.lesson_number_19})` : ''}\n`;
+      mdContent += `- **Verb Forms & Phrases**:\n`;
+      l.verb_forms.forEach((v: string) => mdContent += `  - \`${v}\`\n`);
+      mdContent += `- **Sentence Structures**:\n`;
+      if (l.sentence_structures.length === 0) {
+        mdContent += `  - *(Integrated into verb forms / no separate structures)*\n`;
+      } else {
+        l.sentence_structures.forEach((s: string) => mdContent += `  - \`${s}\`\n`);
+      }
+      mdContent += `- **Tense & Reflex Frames**:\n`;
+      l.tense.forEach((t: string) => mdContent += `  - \`${t}\`\n`);
+      mdContent += `\n`;
+    });
+  });
+
+  mdContent += `\n---\n\n## 4. Pedagogical Guidelines for Classroom Presentation
+
+1. **High-Contrast Slide 0 Presentation**:
+   - Each slide presents clean, readable cards for Sentence Structures, Verb Forms, and Tense & Reflex Frames.
+   - Elimination of academic labels enables students to drill oral reflexes directly without cognitive overload.
+2. **Pedagogical Drawer Notes**:
+   - Rich teacher guidance notes are preserved in the platform's data layer, accessible via drawers and tooltips without cluttering the projector stage.
+3. **Audio Boost Integration**:
+   - All 30 topics are 100% verified with native teacher audio recordings (288 mini-lessons). All structures map 1-to-1 to audio recordings.
+
+`;
+
+  fs.writeFileSync(OUTPUT_MD_PATH, mdContent, 'utf8');
+  console.log(`💾 Saved updated: ${OUTPUT_MD_PATH}`);
 }
 
 alignGrammar();

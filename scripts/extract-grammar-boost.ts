@@ -40,7 +40,7 @@ export interface TopicGrammarSummary {
   }>;
 }
 
-const AUDIO_ROOT = 'C:\\Users\\gensh\\Downloads\\chunks-grammar\\Grammar Boost\\Grammar Boost';
+const AUDIO_ROOT = 'C:\\Users\\gensh\\Downloads\\chunks-grammar\\FULL 30 Topic_P@W\\Grammar Boost\\Grammar Boost';
 const CACHE_FILE = path.join(__dirname, '.cache-grammar-transcripts.json');
 const CATALOG_JSON = path.join(__dirname, 'grammar-boost-catalog.json');
 const CATALOG_MD = path.join(__dirname, 'grammar-boost-catalog.md');
