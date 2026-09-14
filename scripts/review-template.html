@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CHUNKS Grammar Boost Reviewer — 26 Topics & 253 Teacher Recordings</title>
+  <title>CHUNKS Grammar Boost Reviewer & Live Editor — 30 Topics & 253 Teacher Recordings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -78,7 +78,7 @@
           <div class="flex items-center gap-2">
             <h1 class="font-bold text-base lg:text-lg tracking-tight text-white flex items-center gap-2">
               <span>CHUNKS Grammar Boost</span>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 font-semibold border border-brand-500/30">Reviewer v2.0</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 font-semibold border border-brand-500/30">Reviewer & Live Editor</span>
             </h1>
           </div>
           <p class="text-xs text-zinc-400 flex items-center gap-2">
@@ -94,7 +94,7 @@
       </div>
 
       <!-- Live Search Bar -->
-      <div class="flex-1 max-w-2xl relative">
+      <div class="flex-1 max-w-xl relative">
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@
           <input
             type="text"
             id="searchInput"
-            placeholder="Tìm kiếm transcript, cấu trúc ngữ pháp, ví dụ song ngữ... (Phím '/' để tìm)"
+            placeholder="Tìm kiếm transcript, cấu trúc, ví dụ... (Phím '/' để tìm)"
             class="w-full pl-10 pr-24 py-2 text-sm bg-zinc-900 dark:bg-zinc-900 border border-zinc-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-zinc-100 placeholder-zinc-500 shadow-inner"
           />
           <div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1.5">
@@ -121,8 +121,22 @@
 
       <!-- Action Controls & Filters -->
       <div class="flex items-center gap-2">
+        <!-- Live Server Status Indicator Badge -->
+        <div id="serverIndicatorBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-400 cursor-pointer hover:border-zinc-700 transition-colors" title="Trạng thái kết nối Bun server">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="font-medium text-emerald-300">Live Server</span>
+        </div>
+
+        <!-- Sync Cloud Firestore Button -->
+        <button id="topSyncFirestoreBtn" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/20 active:scale-95" title="Đồng bộ toàn bộ 30 chuyên đề ngữ pháp lên Cloud Firestore">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <span class="hidden md:inline">Đồng bộ Firestore</span>
+        </button>
+
         <!-- Status Filter Pills -->
-        <div class="hidden xl:flex items-center p-1 bg-zinc-900 border border-zinc-800 rounded-xl text-xs font-medium">
+        <div class="hidden 2xl:flex items-center p-1 bg-zinc-900 border border-zinc-800 rounded-xl text-xs font-medium">
           <button class="filter-status-btn px-3 py-1 rounded-lg transition-colors bg-brand-600 text-white shadow" data-status="all">Tất cả (30)</button>
           <button class="filter-status-btn px-3 py-1 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200" data-status="audio">🟢 Có Audio (26)</button>
           <button class="filter-status-btn px-3 py-1 rounded-lg transition-colors text-zinc-400 hover:text-zinc-200" data-status="pending">🟡 Chờ Thu (4)</button>
@@ -133,7 +147,7 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
-          <span class="hidden sm:inline">Thu gọn</span>
+          <span class="hidden lg:inline">Thu gọn</span>
         </button>
 
         <!-- Folder Picker Button (For offline file:/// usage) -->
@@ -141,7 +155,7 @@
           <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
-          <span class="hidden lg:inline">Audio Folder</span>
+          <span class="hidden xl:inline">Audio Folder</span>
         </label>
         <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden" />
 
@@ -163,7 +177,7 @@
   <div id="localNoticeBanner" class="bg-gradient-to-r from-indigo-950 via-zinc-900 to-indigo-950 border-b border-indigo-800/40 px-4 py-2 text-xs text-indigo-200 flex items-center justify-between">
     <div class="flex items-center gap-2 mx-auto">
       <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-      <span id="serverStatusText">Chạy server trực tiếp để stream audio: <code class="px-1.5 py-0.5 bg-indigo-900/60 text-indigo-300 rounded font-mono">bun run scripts/serve-grammar-review.ts</code> &rarr; mở <a href="http://localhost:3333" class="underline font-semibold hover:text-white">http://localhost:3333</a></span>
+      <span id="serverStatusText">Chạy server trực tiếp để stream audio & live editor: <code class="px-1.5 py-0.5 bg-indigo-900/60 text-indigo-300 rounded font-mono">bun run scripts/serve-grammar-review.ts</code> &rarr; mở <a href="http://localhost:3333" class="underline font-semibold hover:text-white">http://localhost:3333</a></span>
       <span id="localFolderStatus" class="ml-3 hidden text-emerald-400 font-medium">✓ Đã nạp audio từ folder cục bộ</span>
     </div>
     <button onclick="document.getElementById('localNoticeBanner').classList.add('hidden')" class="text-indigo-400 hover:text-white p-1">&times;</button>
@@ -331,6 +345,13 @@
             <span>Danh sách Mini-Lessons</span>
             <span id="miniLessonsCountBadge" class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 font-mono">9 bài</span>
           </h3>
+          <!-- Add Mini-Lesson Button -->
+          <button id="addMiniLessonBtn" class="px-3 py-1 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm active:scale-95" title="Thêm mini-lesson / cấu trúc mới cho chuyên đề này">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>+ Thêm Cấu Trúc</span>
+          </button>
         </div>
         <div class="flex items-center gap-3 text-xs text-zinc-400">
           <label class="flex items-center gap-1.5 cursor-pointer">
@@ -401,6 +422,235 @@
     </div>
   </footer>
 
+  <!-- ================= EDIT / ADD MINI-LESSON MODAL ================= -->
+  <div id="editModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/90 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-brand-600/20 border border-brand-500/30 text-brand-300 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </div>
+          <div>
+            <h3 id="modalTitle" class="text-base font-bold text-white tracking-tight">Chỉnh Sửa Mini-Lesson</h3>
+            <p id="modalSubTitle" class="text-xs text-zinc-400">Day 1 - First Day Of Work • Bài #1</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <kbd class="hidden sm:inline-block text-[11px] px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded border border-zinc-700 font-mono">Esc</kbd>
+          <button id="modalHeaderCloseBtn" type="button" class="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-6 overflow-y-auto space-y-5 flex-1">
+        
+        <!-- Mini-Audio Player right inside the modal -->
+        <div id="modalAudioBox" class="p-3.5 bg-zinc-950 rounded-xl border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-inner">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <div id="modalAudioName" class="text-xs font-semibold text-zinc-200 font-mono truncate">1en_Gr_01_1.mp3</div>
+              <div class="text-[11px] text-emerald-400/90 font-medium">🎧 Nghe và tua đối chiếu từng từ với audio của giáo viên</div>
+            </div>
+          </div>
+          <audio id="modalAudioElem" controls preload="none" class="w-full sm:w-72 h-8"></audio>
+        </div>
+
+        <!-- Form fields grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Tiêu đề nhỏ (topic) -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">
+              Tiêu đề / Chủ đề nhỏ (<span class="text-brand-400 font-mono">topic</span>) <span class="text-rose-400">*</span>
+            </label>
+            <input type="text" id="editTopicInput" class="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" placeholder="Ví dụ: Adjective usage: 'aware'">
+          </div>
+
+          <!-- Tên file audio / id -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">
+              File âm thanh (<span class="text-brand-400 font-mono">file</span>)
+            </label>
+            <input type="text" id="editFileInput" class="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-200 font-mono placeholder-zinc-500 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" placeholder="1en_Gr_01_1.mp3 hoặc curriculum_d16_1.manual">
+          </div>
+
+          <!-- Cấu trúc trọng tâm (primary_structure) -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">
+              🎯 Cấu trúc trọng tâm (<span class="text-brand-400 font-mono">primary_structure</span>) <span class="text-rose-400">*</span>
+            </label>
+            <input type="text" id="editPrimaryStructureInput" class="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs sm:text-sm text-amber-300 font-mono font-semibold placeholder-zinc-500 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none" placeholder="Ví dụ: S + spend + [time] + V-ing">
+          </div>
+
+          <!-- Phân loại cấu trúc (structure_type) with badges -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">
+              🏷️ Phân loại cấu trúc (<span class="text-brand-400 font-mono">structure_type</span>) <span class="text-rose-400">*</span>
+            </label>
+            <select id="editStructureTypeSelect" class="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none font-medium">
+              <option value="sentence_structure">🔵 Mẫu câu (sentence_structure)</option>
+              <option value="verb_form">🟢 Cụm động từ (verb_form)</option>
+              <option value="tense_reflex">🟠 Thì phản xạ (tense_reflex)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Lời giảng chi tiết của giáo viên (transcript) -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+              <span>🎙️ Lời giảng Verbatim của giáo viên (<span class="text-brand-400 font-mono">transcript</span>)</span>
+              <span class="text-rose-400">*</span>
+            </label>
+            <span id="editTranscriptCharCount" class="text-[11px] text-zinc-500 font-mono">0 ký tự</span>
+          </div>
+          <textarea id="editTranscriptTextarea" rows="4" class="w-full p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-xs sm:text-sm leading-relaxed text-zinc-100 placeholder-zinc-500 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none resize-y font-normal" placeholder="Ghi lại chính xác từng lời của giáo viên để khớp 100% với audio recording..."></textarea>
+        </div>
+
+        <!-- Cặp ví dụ song ngữ (examples) -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+              <span>💬 Cặp ví dụ song ngữ phản xạ (<span class="text-brand-400 font-mono">examples</span>)</span>
+            </label>
+            <button id="addExampleRowBtn" type="button" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>+ Thêm ví dụ</span>
+            </button>
+          </div>
+          <div id="editExamplesContainer" class="space-y-2.5">
+            <!-- Dynamic rows populated by JS -->
+          </div>
+        </div>
+
+        <!-- Ghi chú sư phạm (notes) -->
+        <div>
+          <label class="block text-xs font-semibold text-zinc-300 mb-1.5">
+            💡 Ghi chú Sư phạm chi tiết (<span class="text-brand-400 font-mono">notes</span>)
+          </label>
+          <textarea id="editNotesTextarea" rows="2" class="w-full p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-xs leading-relaxed text-zinc-300 placeholder-zinc-500 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none resize-y" placeholder="Giải thích ngữ pháp, lưu ý lỗi sai phổ biến của học viên..."></textarea>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-zinc-800 bg-zinc-900/90 flex items-center justify-between gap-3 shrink-0">
+        <div>
+          <button id="deleteMiniBtn" type="button" class="px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>Xóa bài này</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <button id="cancelModalBtn" type="button" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-xl transition-colors">
+            Hủy (Esc)
+          </button>
+          <button id="saveModalBtn" type="button" class="px-5 py-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-brand-600/25 active:scale-95">
+            <svg id="saveSpinner" class="w-4 h-4 animate-spin hidden" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span id="saveBtnText">💾 Lưu Thay Đổi (Ctrl+S)</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= FIRESTORE SYNC MODAL ================= -->
+  <div id="firestoreSyncModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-xl flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/90">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white tracking-tight">Đồng Bộ Cloud Firestore</h3>
+            <p class="text-xs text-zinc-400">Target: /lessons/level_b_day_1 .. level_b_day_30</p>
+          </div>
+        </div>
+        <button id="closeFirestoreModalBtn" type="button" class="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors">
+          &times;
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 space-y-4">
+        <!-- Confirmation Info -->
+        <div id="syncPromptBox" class="space-y-3">
+          <p class="text-xs text-zinc-300 leading-relaxed">
+            Hành động này sẽ đọc toàn bộ dữ liệu cấu trúc ngữ pháp (<strong class="text-emerald-400 font-semibold">269 cấu trúc trọng tâm</strong> từ cả 30 bài học Level B ERE) và đồng bộ trực tiếp vào cơ sở dữ liệu Cloud Firestore của CHUNKS.
+          </p>
+          <div class="p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-xs space-y-1 text-zinc-400 font-mono">
+            <div>• Project ID: <span class="text-zinc-200">chunks-voicecloning-genshai</span></div>
+            <div>• Target Collection: <span class="text-zinc-200">/lessons</span> (30 docs: level_b_day_1 .. 30)</div>
+            <div>• Partition: <span class="text-sky-300">sentence_structures</span>, <span class="text-emerald-300">verb_forms</span>, <span class="text-amber-300">tense</span></div>
+          </div>
+        </div>
+
+        <!-- Progress & Logs Box -->
+        <div id="syncProgressBox" class="hidden space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-emerald-400 font-semibold flex items-center gap-2">
+              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="syncProgressStatusText">Đang đồng bộ dữ liệu lên Firestore...</span>
+            </span>
+          </div>
+          <div id="syncLogTerminal" class="h-48 overflow-y-auto p-3 bg-zinc-950 border border-zinc-800 rounded-xl font-mono text-[11px] text-zinc-400 space-y-1 leading-relaxed shadow-inner">
+            <!-- Logs injected by JS -->
+          </div>
+        </div>
+
+        <!-- Success Box -->
+        <div id="syncSuccessBox" class="hidden p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-3">
+          <svg class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <div class="font-bold text-sm text-emerald-200" id="syncSuccessTitle">Đồng bộ thành công!</div>
+            <div class="mt-1 text-zinc-300" id="syncSuccessSubtitle">Tất cả 30 chuyên đề đã được cập nhật trên Cloud Firestore.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-zinc-800 bg-zinc-900/90 flex items-center justify-end gap-2.5">
+        <button id="cancelSyncModalBtn" type="button" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-xl transition-colors">
+          Đóng
+        </button>
+        <button id="startSyncBtn" type="button" class="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/25 active:scale-95 flex items-center gap-2">
+          <span>🚀 Bắt đầu Đồng Bộ</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-16 right-6 z-50 bg-zinc-800 border border-zinc-700 text-zinc-100 text-xs px-4 py-2.5 rounded-xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none flex items-center gap-2">
     <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -436,6 +686,15 @@
         reviewedLessons: new Set(JSON.parse(localStorage.getItem('chunks_grammar_reviewed') || '[]')),
         localFileMap: new Map(), // filename -> objectURL
         isTeacherNotesOpen: true,
+        isLiveServer: false,
+      };
+
+      // Modal State for Live Editor
+      const editState = {
+        isOpen: false,
+        mode: 'edit', // 'edit' | 'add'
+        topicNumber: 1,
+        miniIndex: 0,
       };
 
       // DOM Elements
@@ -458,6 +717,44 @@
       const playbackRateSelect = document.getElementById('playbackRateSelect');
       const playAllTopicBtn = document.getElementById('playAllTopicBtn');
       const toggleExpandAllBtn = document.getElementById('toggleExpandAllBtn');
+      const addMiniLessonBtn = document.getElementById('addMiniLessonBtn');
+      const topSyncFirestoreBtn = document.getElementById('topSyncFirestoreBtn');
+      const serverIndicatorBadge = document.getElementById('serverIndicatorBadge');
+
+      // Edit Modal Elements
+      const editModal = document.getElementById('editModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalSubTitle = document.getElementById('modalSubTitle');
+      const modalHeaderCloseBtn = document.getElementById('modalHeaderCloseBtn');
+      const cancelModalBtn = document.getElementById('cancelModalBtn');
+      const saveModalBtn = document.getElementById('saveModalBtn');
+      const saveSpinner = document.getElementById('saveSpinner');
+      const saveBtnText = document.getElementById('saveBtnText');
+      const deleteMiniBtn = document.getElementById('deleteMiniBtn');
+      const modalAudioName = document.getElementById('modalAudioName');
+      const modalAudioElem = document.getElementById('modalAudioElem');
+      const editTopicInput = document.getElementById('editTopicInput');
+      const editFileInput = document.getElementById('editFileInput');
+      const editPrimaryStructureInput = document.getElementById('editPrimaryStructureInput');
+      const editStructureTypeSelect = document.getElementById('editStructureTypeSelect');
+      const editTranscriptTextarea = document.getElementById('editTranscriptTextarea');
+      const editTranscriptCharCount = document.getElementById('editTranscriptCharCount');
+      const editNotesTextarea = document.getElementById('editNotesTextarea');
+      const editExamplesContainer = document.getElementById('editExamplesContainer');
+      const addExampleRowBtn = document.getElementById('addExampleRowBtn');
+
+      // Firestore Sync Modal Elements
+      const firestoreSyncModal = document.getElementById('firestoreSyncModal');
+      const closeFirestoreModalBtn = document.getElementById('closeFirestoreModalBtn');
+      const cancelSyncModalBtn = document.getElementById('cancelSyncModalBtn');
+      const startSyncBtn = document.getElementById('startSyncBtn');
+      const syncPromptBox = document.getElementById('syncPromptBox');
+      const syncProgressBox = document.getElementById('syncProgressBox');
+      const syncLogTerminal = document.getElementById('syncLogTerminal');
+      const syncSuccessBox = document.getElementById('syncSuccessBox');
+      const syncSuccessTitle = document.getElementById('syncSuccessTitle');
+      const syncSuccessSubtitle = document.getElementById('syncSuccessSubtitle');
+      const syncProgressStatusText = document.getElementById('syncProgressStatusText');
 
       // Initialize
       function init() {
@@ -469,11 +766,31 @@
       }
 
       // Check if running via server or file:///
-      function detectServerStatus() {
+      async function detectServerStatus() {
         const isFile = window.location.protocol === 'file:';
         const serverStatusText = document.getElementById('serverStatusText');
-        if (!isFile) {
-          serverStatusText.innerHTML = '🟢 <strong>Local Server Active:</strong> Đang stream trực tiếp từ <code class="px-1.5 py-0.5 bg-indigo-900/60 text-indigo-300 rounded font-mono">http://localhost:3333</code>';
+
+        if (isFile) {
+          serverIndicatorBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400"></span><span class="font-medium text-amber-300">Offline Mode</span>';
+          serverIndicatorBadge.classList.remove('hidden');
+          serverIndicatorBadge.onclick = () => {
+            alert('Bạn đang mở file trực tiếp (file:///).\n\nĐể sử dụng Live Editor (sửa/lưu file tự động) và đồng bộ Firestore, hãy mở terminal tại thư mục dự án và chạy:\n\nbun run review:grammar\n\nSau đó mở http://localhost:3333');
+          };
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/health');
+          if (res.ok) {
+            const data = await res.json();
+            state.isLiveServer = true;
+            serverIndicatorBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span class="font-medium text-emerald-300">Live Server (Port ' + data.port + ')</span>';
+            serverIndicatorBadge.classList.remove('hidden');
+            serverStatusText.innerHTML = '🟢 <strong>Live Server Active:</strong> Đang stream <strong class="text-indigo-300">' + data.audio_files_found + '</strong> audio clips & Live Editor sẵn sàng tại <code class="px-1.5 py-0.5 bg-indigo-900/60 text-indigo-300 rounded font-mono">http://localhost:' + data.port + '</code>';
+          }
+        } catch {
+          serverIndicatorBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400"></span><span class="font-medium text-amber-300">Server Disconnected</span>';
+          serverIndicatorBadge.classList.remove('hidden');
         }
       }
 
@@ -555,6 +872,7 @@
 
       // Get audio source for a given topic & filename
       function getAudioUrl(topicNum, filename) {
+        if (!filename) return '';
         if (state.localFileMap.has(filename)) {
           return state.localFileMap.get(filename);
         }
@@ -581,12 +899,13 @@
           if (t.notes && t.notes.toLowerCase().includes(query)) matches += 1;
 
           for (const m of t.mini_lessons) {
-            if (m.topic.toLowerCase().includes(query)) matches++;
-            if (m.transcript.toLowerCase().includes(query)) matches++;
+            if (m.topic && m.topic.toLowerCase().includes(query)) matches++;
+            if (m.transcript && m.transcript.toLowerCase().includes(query)) matches++;
+            if (m.primary_structure && m.primary_structure.toLowerCase().includes(query)) matches++;
             if (m.structures && m.structures.some(s => s.toLowerCase().includes(query))) matches++;
             if (m.verb_forms && m.verb_forms.some(v => v.toLowerCase().includes(query))) matches++;
             if (m.tense && m.tense.some(te => te.toLowerCase().includes(query))) matches++;
-            if (m.examples && m.examples.some(e => e.en.toLowerCase().includes(query) || e.vi.toLowerCase().includes(query))) matches++;
+            if (m.examples && m.examples.some(e => (e.en && e.en.toLowerCase().includes(query)) || (e.vi && e.vi.toLowerCase().includes(query)))) matches++;
           }
 
           if (matches > 0) {
@@ -696,7 +1015,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <span>Chờ phòng thu (4 Manual Specs)</span>
+            <span>Chờ phòng thu (${topic.mini_lessons.length} Manual Specs)</span>
           `;
           playAllTopicBtn.classList.add('hidden');
         }
@@ -724,7 +1043,7 @@
         }
 
         // Mini Lessons Count
-        document.getElementById('miniLessonsCountBadge').textContent = topic.mini_lessons.length + ' bài mini';
+        document.getElementById('miniLessonsCountBadge').textContent = topic.mini_lessons.length + ' bài';
 
         // Render Mini Lessons Cards
         renderMiniLessons(topic);
@@ -759,7 +1078,10 @@
         if (!topic.mini_lessons || topic.mini_lessons.length === 0) {
           miniLessonsContainer.innerHTML = `
             <div class="p-8 text-center bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-400 text-sm">
-              Chưa có mini-lesson nào trong chuyên đề này.
+              <p>Chưa có mini-lesson nào trong chuyên đề này.</p>
+              <button onclick="openAddModal(${topic.topic_number})" class="mt-3 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow">
+                <span>+ Thêm Mini-Lesson Đầu Tiên</span>
+              </button>
             </div>
           `;
           return;
@@ -770,7 +1092,7 @@
           const isExpanded = state.expandedCards.has(cardKey);
           const isReviewed = state.reviewedLessons.has('mini-' + cardKey);
           const audioUrl = getAudioUrl(topic.topic_number, mini.file);
-          const isPending = mini.file.endsWith('.manual') || !topic.has_audio;
+          const isPending = (mini.file && mini.file.endsWith('.manual')) || !topic.has_audio;
 
           const card = document.createElement('div');
           card.className = 'bg-zinc-900 border border-zinc-800 hover:border-zinc-700/80 rounded-2xl p-5 shadow-lg transition-all ' + (
@@ -778,8 +1100,7 @@
           );
           card.id = 'mini-card-' + idx;
 
-          // Safe transcript text for data attributes
-          const escapedTranscript = mini.transcript.replace(/"/g, '&quot;');
+          const escapedTranscript = (mini.transcript || '').replace(/"/g, '&quot;');
 
           card.innerHTML = `
             <!-- Card Header -->
@@ -787,16 +1108,16 @@
               <div class="flex items-center gap-3 min-w-0">
                 <span class="w-7 h-7 rounded-lg bg-zinc-800 text-brand-400 font-bold font-mono text-xs flex items-center justify-center shrink-0">#${idx + 1}</span>
                 <div class="min-w-0">
-                  <h4 class="text-base font-bold text-white tracking-tight truncate">${mini.topic}</h4>
+                  <h4 class="text-base font-bold text-white tracking-tight truncate">${mini.topic || 'Mini-Lesson #' + (idx + 1)}</h4>
                   <div class="flex items-center gap-2 text-xs text-zinc-400 mt-0.5">
-                    <span class="font-mono text-[11px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300">${mini.file}</span>
+                    <span class="font-mono text-[11px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300">${mini.file || 'Chưa có file'}</span>
                     ${isPending ? '<span class="text-amber-400 font-medium">• Chờ thu</span>' : '<span class="text-emerald-400 font-medium">• Audio sẵn sàng</span>'}
                   </div>
                 </div>
               </div>
 
               <!-- Action Buttons -->
-              <div class="flex items-center gap-2 shrink-0">
+              <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <!-- Mark Reviewed Checkbox -->
                 <button onclick="toggleReviewed('mini-${cardKey}')" class="px-2.5 py-1 text-xs rounded-lg border ${
                   isReviewed ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white'
@@ -805,6 +1126,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
                   <span>${isReviewed ? 'Đã duyệt' : 'Duyệt'}</span>
+                </button>
+
+                <!-- ✏️ Sửa Button -->
+                <button onclick="openEditModal(${topic.topic_number}, ${idx})" class="px-2.5 py-1 text-xs rounded-lg border bg-zinc-800 text-indigo-300 border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition-colors flex items-center gap-1" title="Chỉnh sửa chi tiết transcript, cấu trúc và ví dụ">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <span>Sửa</span>
                 </button>
 
                 <!-- Copy Transcript -->
@@ -877,7 +1206,7 @@
                   </svg>
                   <span>Lời giảng Verbatim (Transcript)</span>
                 </span>
-                <span class="text-[11px] text-zinc-500 font-mono">${mini.transcript.length} ký tự</span>
+                <span class="text-[11px] text-zinc-500 font-mono">${(mini.transcript || '').length} ký tự</span>
               </div>
               <p class="text-sm sm:text-base leading-relaxed text-zinc-200 font-normal selection:bg-brand-500">
                 ${formatTranscriptText(mini.transcript)}
@@ -966,11 +1295,9 @@
       }
 
       function formatTranscriptText(text) {
-        if (!text) return '';
-        // Escape HTML
+        if (!text) return '<span class="italic text-zinc-500">Chưa có nội dung transcript...</span>';
         let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         
-        // Highlight search query if active
         if (state.searchQuery && state.searchQuery.trim().length > 1) {
           const q = state.searchQuery.trim();
           const regex = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
@@ -1011,14 +1338,14 @@
           <div class="bg-zinc-950/80 p-3 rounded-xl border border-zinc-800 flex flex-col gap-1 text-xs">
             <div class="flex items-center justify-between">
               <span class="text-brand-400 font-semibold text-xs tracking-wide">Ví dụ #${i + 1}</span>
-              <button onclick="copyToClipboard('${ex.en.replace(/'/g, "\\'")}', 'Đã sao chép câu tiếng Anh!')" class="text-zinc-500 hover:text-zinc-300 p-0.5" title="Copy câu tiếng Anh">
+              <button onclick="copyToClipboard('${(ex.en || '').replace(/'/g, "\\'")}', 'Đã sao chép câu tiếng Anh!')" class="text-zinc-500 hover:text-zinc-300 p-0.5" title="Copy câu tiếng Anh">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               </button>
             </div>
-            <div class="text-sm font-semibold text-zinc-100">${ex.en}</div>
-            <div class="text-xs text-zinc-400 italic">${ex.vi}</div>
+            <div class="text-sm font-semibold text-zinc-100">${ex.en || ''}</div>
+            <div class="text-xs text-zinc-400 italic">${ex.vi || ''}</div>
           </div>
         `).join('');
 
@@ -1071,7 +1398,7 @@
         setTimeout(() => {
           toast.classList.remove('opacity-100');
           toast.classList.add('opacity-0', 'pointer-events-none');
-        }, 2200);
+        }, 2500);
       }
 
       // Teacher notes toggle
@@ -1101,8 +1428,8 @@
       // Synchronize floating bottom player
       function syncBottomPlayer(topic, mini, idx) {
         state.activeMiniIndex = idx;
-        bottomTrackTitle.textContent = mini.topic;
-        bottomTrackFile.textContent = mini.file;
+        bottomTrackTitle.textContent = mini.topic || ('Bài #' + (idx + 1));
+        bottomTrackFile.textContent = mini.file || '';
         bottomTrackTopic.textContent = 'Day ' + topic.day_number + ' (' + topic.lesson_title.replace(/^Day \d+\s*-\s*/i, '') + ')';
         
         const audioUrl = getAudioUrl(topic.topic_number, mini.file);
@@ -1142,7 +1469,331 @@
         }
       }
 
-      // Event Listeners
+      // ==========================================
+      // LIVE EDITOR LOGIC (MODALS & REST API)
+      // ==========================================
+
+      window.openEditModal = function (topicNumber, miniIndex) {
+        const topic = topics.find(t => t.topic_number === topicNumber || t.day_number === topicNumber);
+        if (!topic || !topic.mini_lessons || !topic.mini_lessons[miniIndex]) return;
+
+        const mini = topic.mini_lessons[miniIndex];
+        editState.isOpen = true;
+        editState.mode = 'edit';
+        editState.topicNumber = topicNumber;
+        editState.miniIndex = miniIndex;
+
+        // Modal titles
+        modalTitle.textContent = `Chỉnh Sửa Mini-Lesson #${miniIndex + 1}`;
+        modalSubTitle.textContent = `${topic.lesson_title} • ${mini.file || 'Manual Entry'}`;
+        saveBtnText.textContent = '💾 Lưu Thay Đổi (Ctrl+S)';
+        deleteMiniBtn.classList.remove('hidden');
+
+        // Form Fields
+        editTopicInput.value = mini.topic || '';
+        editFileInput.value = mini.file || '';
+        editPrimaryStructureInput.value = mini.primary_structure || '';
+        editStructureTypeSelect.value = mini.structure_type || 'sentence_structure';
+        editTranscriptTextarea.value = mini.transcript || '';
+        updateTranscriptCharCount();
+        editNotesTextarea.value = mini.notes || '';
+
+        // Audio inside modal
+        modalAudioName.textContent = mini.file || 'Chưa có file audio';
+        const audioUrl = getAudioUrl(topicNumber, mini.file);
+        modalAudioElem.src = audioUrl;
+
+        // Examples
+        renderEditExamples(mini.examples || []);
+
+        // Show modal
+        editModal.classList.remove('hidden');
+      };
+
+      window.openAddModal = function (topicNumber) {
+        const topic = topics.find(t => t.topic_number === topicNumber || t.day_number === topicNumber);
+        if (!topic) return;
+
+        const newIdx = (topic.mini_lessons || []).length;
+        editState.isOpen = true;
+        editState.mode = 'add';
+        editState.topicNumber = topicNumber;
+        editState.miniIndex = newIdx;
+
+        // Modal titles
+        modalTitle.textContent = `➕ Thêm Cấu Trúc / Mini-Lesson Mới`;
+        modalSubTitle.textContent = `${topic.lesson_title} • Bài #${newIdx + 1}`;
+        saveBtnText.textContent = '➕ Thêm Cấu Trúc (Ctrl+S)';
+        deleteMiniBtn.classList.add('hidden');
+
+        // Default Values
+        const defaultFilename = topic.has_audio
+          ? `1en_Gr_${String(topicNumber).padStart(2, '0')}_${newIdx + 1}.mp3`
+          : `curriculum_d${topicNumber}_${newIdx + 1}.manual`;
+
+        editTopicInput.value = '';
+        editFileInput.value = defaultFilename;
+        editPrimaryStructureInput.value = '';
+        editStructureTypeSelect.value = 'sentence_structure';
+        editTranscriptTextarea.value = '';
+        updateTranscriptCharCount();
+        editNotesTextarea.value = '';
+
+        // Audio
+        modalAudioName.textContent = defaultFilename;
+        modalAudioElem.src = getAudioUrl(topicNumber, defaultFilename);
+
+        // Examples: start with 1 empty row
+        renderEditExamples([{ en: '', vi: '' }]);
+
+        // Show modal
+        editModal.classList.remove('hidden');
+        editTopicInput.focus();
+      };
+
+      window.closeEditModal = function () {
+        modalAudioElem.pause();
+        modalAudioElem.src = '';
+        editModal.classList.add('hidden');
+        editState.isOpen = false;
+      };
+
+      function updateTranscriptCharCount() {
+        editTranscriptCharCount.textContent = `${editTranscriptTextarea.value.length} ký tự`;
+      }
+
+      function renderEditExamples(examples) {
+        editExamplesContainer.innerHTML = '';
+        if (!examples || examples.length === 0) {
+          addExampleRow('', '');
+          return;
+        }
+        examples.forEach(ex => addExampleRow(ex.en || '', ex.vi || ''));
+      }
+
+      window.addExampleRow = function (en = '', vi = '') {
+        const row = document.createElement('div');
+        row.className = 'example-row p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl grid grid-cols-1 sm:grid-cols-12 gap-2 items-center';
+        row.innerHTML = `
+          <div class="sm:col-span-6">
+            <input type="text" class="example-en-input w-full px-2.5 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder-zinc-500 focus:ring-1 focus:ring-brand-500 outline-none" placeholder="Câu phản xạ tiếng Anh..." value="${en.replace(/"/g, '&quot;')}">
+          </div>
+          <div class="sm:col-span-5">
+            <input type="text" class="example-vi-input w-full px-2.5 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-300 placeholder-zinc-500 focus:ring-1 focus:ring-brand-500 outline-none" placeholder="Dịch nghĩa tiếng Việt..." value="${vi.replace(/"/g, '&quot;')}">
+          </div>
+          <div class="sm:col-span-1 flex justify-end">
+            <button type="button" class="remove-example-btn p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors" title="Xóa ví dụ này">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        `;
+
+        row.querySelector('.remove-example-btn').addEventListener('click', () => {
+          row.remove();
+          if (editExamplesContainer.children.length === 0) {
+            addExampleRow('', '');
+          }
+        });
+
+        editExamplesContainer.appendChild(row);
+      };
+
+      // Save Mini-Lesson
+      window.saveMiniLesson = async function () {
+        const topicVal = editTopicInput.value.trim();
+        const primaryStructureVal = editPrimaryStructureInput.value.trim();
+        const structureTypeVal = editStructureTypeSelect.value;
+        const transcriptVal = editTranscriptTextarea.value.trim();
+        const fileVal = editFileInput.value.trim();
+        const notesVal = editNotesTextarea.value.trim();
+
+        if (!primaryStructureVal) {
+          alert('Vui lòng nhập Cấu trúc trọng tâm (primary_structure)!');
+          editPrimaryStructureInput.focus();
+          return;
+        }
+
+        // Collect examples
+        const examples = [];
+        editExamplesContainer.querySelectorAll('.example-row').forEach(row => {
+          const en = row.querySelector('.example-en-input').value.trim();
+          const vi = row.querySelector('.example-vi-input').value.trim();
+          if (en || vi) {
+            examples.push({ en, vi });
+          }
+        });
+
+        const miniPayload = {
+          file: fileVal,
+          topic: topicVal || primaryStructureVal,
+          primary_structure: primaryStructureVal,
+          structure_type: structureTypeVal,
+          transcript: transcriptVal,
+          examples,
+          notes: notesVal,
+        };
+
+        const isAdd = editState.mode === 'add';
+        const url = isAdd ? '/api/add-mini-lesson' : '/api/save-mini-lesson';
+        const bodyPayload = isAdd
+          ? { topic_number: editState.topicNumber, mini_lesson: miniPayload }
+          : { topic_number: editState.topicNumber, mini_lesson_index: editState.miniIndex, mini_lesson: miniPayload };
+
+        // UI Loading
+        saveSpinner.classList.remove('hidden');
+        saveModalBtn.disabled = true;
+        saveBtnText.textContent = isAdd ? 'Đang thêm...' : 'Đang lưu disk...';
+
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyPayload),
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({ error: 'HTTP ' + res.status }));
+            throw new Error(errData.error || 'Server error');
+          }
+
+          const data = await res.json();
+
+          if (!data.success) {
+            throw new Error(data.error || 'Lưu không thành công');
+          }
+
+          // Update in-memory topic
+          const targetTopic = topics.find(t => t.topic_number === editState.topicNumber || t.day_number === editState.topicNumber);
+          if (targetTopic && data.topic) {
+            Object.assign(targetTopic, data.topic);
+          }
+
+          closeEditModal();
+          renderSidebar();
+          renderActiveTopic();
+
+          showToast(isAdd ? '🎉 Đã thêm cấu trúc mới & đồng bộ disk thành công!' : '✅ Đã lưu thay đổi & đồng bộ disk thành công!');
+        } catch (err) {
+          console.error('Save failed:', err);
+          alert('❌ Lưu thất bại: ' + err.message + '\n\nHãy chắc chắn server Bun đang chạy: bun run review:grammar');
+        } finally {
+          saveSpinner.classList.add('hidden');
+          saveModalBtn.disabled = false;
+          saveBtnText.textContent = isAdd ? '➕ Thêm Cấu Trúc (Ctrl+S)' : '💾 Lưu Thay Đổi (Ctrl+S)';
+        }
+      };
+
+      // Delete Mini-Lesson
+      window.deleteMiniLesson = async function () {
+        if (editState.mode !== 'edit') return;
+
+        const confirmed = confirm('Bạn có chắc chắn muốn xóa mini-lesson này khỏi chuyên đề?\nHành động này sẽ cập nhật trực tiếp vào file JSON và TypeScript!');
+        if (!confirmed) return;
+
+        try {
+          const res = await fetch('/api/delete-mini-lesson', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              topic_number: editState.topicNumber,
+              mini_lesson_index: editState.miniIndex,
+            }),
+          });
+
+          const data = await res.json();
+          if (!data.success) {
+            throw new Error(data.error || 'Lỗi khi xóa');
+          }
+
+          // Update in-memory topic
+          const targetTopic = topics.find(t => t.topic_number === editState.topicNumber || t.day_number === editState.topicNumber);
+          if (targetTopic && data.topic) {
+            Object.assign(targetTopic, data.topic);
+          }
+
+          closeEditModal();
+          renderSidebar();
+          renderActiveTopic();
+          showToast('🗑️ Đã xóa mini-lesson thành công!');
+        } catch (err) {
+          console.error('Delete failed:', err);
+          alert('❌ Xóa thất bại: ' + err.message);
+        }
+      };
+
+      // ==========================================
+      // CLOUD FIRESTORE SYNC WORKFLOW
+      // ==========================================
+
+      window.openFirestoreModal = function () {
+        syncPromptBox.classList.remove('hidden');
+        syncProgressBox.classList.add('hidden');
+        syncSuccessBox.classList.add('hidden');
+        syncLogTerminal.innerHTML = '';
+        startSyncBtn.classList.remove('hidden');
+        startSyncBtn.disabled = false;
+        startSyncBtn.innerHTML = '<span>🚀 Bắt đầu Đồng Bộ</span>';
+        firestoreSyncModal.classList.remove('hidden');
+      };
+
+      window.closeFirestoreModal = function () {
+        firestoreSyncModal.classList.add('hidden');
+      };
+
+      window.startFirestoreSync = async function () {
+        syncPromptBox.classList.add('hidden');
+        syncProgressBox.classList.remove('hidden');
+        syncSuccessBox.classList.add('hidden');
+        syncLogTerminal.innerHTML = '<div class="text-zinc-500">Đang khởi tạo kết nối Cloud Firestore...</div>';
+        startSyncBtn.disabled = true;
+        startSyncBtn.innerHTML = '<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Đang đồng bộ...</span>';
+
+        try {
+          const res = await fetch('/api/sync-firestore', { method: 'POST' });
+          const data = await res.json();
+
+          if (!data.success) {
+            throw new Error(data.error || 'Lỗi đồng bộ Firestore');
+          }
+
+          // Populate terminal logs
+          syncLogTerminal.innerHTML = '';
+          (data.logs || []).forEach(log => {
+            const line = document.createElement('div');
+            line.textContent = log;
+            if (log.includes('✅')) line.className = 'text-emerald-400 font-semibold';
+            else if (log.includes('❌')) line.className = 'text-rose-400 font-semibold';
+            else if (log.includes('===')) line.className = 'text-indigo-400';
+            else line.className = 'text-zinc-400';
+            syncLogTerminal.appendChild(line);
+          });
+          syncLogTerminal.scrollTop = syncLogTerminal.scrollHeight;
+
+          // Success display
+          syncSuccessBox.classList.remove('hidden');
+          syncSuccessTitle.textContent = `🎉 Đồng bộ thành công ${data.total_synced}/30 bài học!`;
+          syncSuccessSubtitle.textContent = `Hoàn tất cập nhật Cloud Firestore trong ${data.duration_sec}s.`;
+          syncProgressStatusText.textContent = 'Hoàn tất!';
+
+          startSyncBtn.classList.add('hidden');
+          showToast('🎉 Đã đồng bộ thành công cả 30 bài học lên Cloud Firestore!');
+        } catch (err) {
+          console.error('Firestore sync error:', err);
+          const errLine = document.createElement('div');
+          errLine.className = 'text-rose-400 font-bold p-2 bg-rose-950/40 rounded';
+          errLine.textContent = '❌ Lỗi: ' + err.message;
+          syncLogTerminal.appendChild(errLine);
+          startSyncBtn.disabled = false;
+          startSyncBtn.innerHTML = '<span>Thử lại</span>';
+        }
+      };
+
+      // ==========================================
+      // EVENT LISTENERS & SHORTCUTS
+      // ==========================================
+
       function setupEventListeners() {
         // Search Input
         let debounceTimer;
@@ -1154,7 +1805,6 @@
             renderSidebar();
             renderActiveTopic();
 
-            // Update match count badge
             const filtered = getFilteredTopics();
             if (state.searchQuery.trim().length > 0) {
               searchMatchCount.classList.remove('hidden');
@@ -1261,9 +1911,52 @@
           }
         });
 
+        // Live Editor Buttons
+        addMiniLessonBtn.addEventListener('click', () => {
+          const activeTopic = topics[state.activeTopicIndex];
+          if (activeTopic) openAddModal(activeTopic.topic_number);
+        });
+        modalHeaderCloseBtn.addEventListener('click', closeEditModal);
+        cancelModalBtn.addEventListener('click', closeEditModal);
+        saveModalBtn.addEventListener('click', saveMiniLesson);
+        deleteMiniBtn.addEventListener('click', deleteMiniLesson);
+        addExampleRowBtn.addEventListener('click', () => addExampleRow('', ''));
+        editTranscriptTextarea.addEventListener('input', updateTranscriptCharCount);
+
+        // Firestore Sync Buttons
+        topSyncFirestoreBtn.addEventListener('click', openFirestoreModal);
+        closeFirestoreModalBtn.addEventListener('click', closeFirestoreModal);
+        cancelSyncModalBtn.addEventListener('click', closeFirestoreModal);
+        startSyncBtn.addEventListener('click', startFirestoreSync);
+
         // Global Keyboard Shortcuts
         window.addEventListener('keydown', (e) => {
-          // Ignore if user is typing in search input
+          // If Edit Modal is open
+          if (editState.isOpen) {
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              closeEditModal();
+              return;
+            }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+              e.preventDefault();
+              saveMiniLesson();
+              return;
+            }
+            return; // Suppress global navigation while in modal
+          }
+
+          // If Firestore Modal is open
+          if (!firestoreSyncModal.classList.contains('hidden')) {
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              closeFirestoreModal();
+              return;
+            }
+            return;
+          }
+
+          // If user is typing in search bar
           if (document.activeElement === searchInput) {
             if (e.key === 'Escape') {
               searchInput.blur();
@@ -1276,7 +1969,6 @@
             searchInput.focus();
             searchInput.select();
           } else if (e.key === ']') {
-            // Next Topic
             e.preventDefault();
             if (state.activeTopicIndex < topics.length - 1) {
               state.activeTopicIndex++;
@@ -1285,7 +1977,6 @@
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           } else if (e.key === '[') {
-            // Prev Topic
             e.preventDefault();
             if (state.activeTopicIndex > 0) {
               state.activeTopicIndex--;
@@ -1294,15 +1985,12 @@
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           } else if (e.key === 'j' || e.key === 'ArrowDown') {
-            // Next mini lesson
             e.preventDefault();
             playNextMiniLesson();
           } else if (e.key === 'k' || e.key === 'ArrowUp') {
-            // Prev mini lesson
             e.preventDefault();
             playPrevMiniLesson();
           } else if (e.key === ' ' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-            // Toggle global audio
             e.preventDefault();
             if (globalAudio.paused) {
               globalAudio.play();

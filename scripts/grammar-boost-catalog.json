@@ -8,7 +8,7 @@
     "total_audio_files": 253,
     "model_used": "gemini-2.5-flash",
     "verified_topics_count": 30,
-    "last_audit": "2026-09-14T09:18:03.002Z",
+    "last_audit": "2026-09-14T10:38:17.777Z",
     "audit_status": "1_to_1_aligned_verified",
     "total_structures": 269,
     "one_to_one_rule": "1 audio file = exactly 1 primary target grammar structure"
@@ -43,12 +43,10 @@
           "topic": "Adjective usage: 'aware'",
           "transcript": "Aware là tính từ, chứ không phải động từ. Cho nên các bạn hay sai theo kiểu là I aware mà thật ra là I'm aware. Ví dụ nói là tôi nhận thức rõ được rằng I'm aware that cái gì đó. Vậy ha.",
           "structures": [
-            "S + be + adjective"
+            "S + be + aware that..."
           ],
           "verb_forms": [],
-          "tense": [
-            "Present Simple (with 'be' verb)"
-          ],
+          "tense": [],
           "examples": [
             {
               "en": "I'm aware that...",
@@ -64,8 +62,7 @@
           "topic": "Distinction between 'because' and 'because of'",
           "transcript": "Cũng giống như thời học phổ thông vậy đó. Thì because mình cộng với một câu. Còn because of thì mình sẽ cộng với một cụm. Ví dụ như là tại vì tụi tôi, because of us. Hoặc là tại vì cái vẻ bề ngoài của tôi, because of my looks. Tức là sau because of mình sẽ không cộng với một câu. Vậy ha các bạn.",
           "structures": [
-            "because + clause (S + V + O)",
-            "because of + Noun / Noun phrase / V-ing"
+            "because + clause vs because of + Noun / V-ing"
           ],
           "verb_forms": [],
           "tense": [],
@@ -87,16 +84,11 @@
           "file": "1en_Gr_01_3.mp3",
           "topic": "The phrase 'be supposed to'",
           "transcript": "Trong cái quá trình mà dạy tiếng Anh thì mình thấy cái cụm từ be supposed to cũng rất là hay. Bởi vì để diễn tả cho cái này nó giống như là nó lai giữa chữ should và chữ have to gì đó. Tức là khi bạn nói là ê mày không được ở đây, thì ý là mày không nên ở đây và mày không được ở đây nó lai với nhau. Ví dụ như là mình nói hey you're not supposed to be here. Thì nó cũng giống như là hey you should not be here. Hoặc là hey you you're not allowed to be here. Hoặc là hey you must not be here. Nó na ná như các cái thần thái đó mix lại với nhau vậy đó. Như vậy thì các bạn có thể tập sử dụng be supposed to rất là hay. Ví dụ như là tôi nên nói gì với sếp đây? What am I supposed to tell boss now? Ví dụ như vậy.",
-          "structures": [
-            "S + be supposed to + V_inf (expected/obligated to do)",
-            "S + be not supposed to + V_inf (prohibited/not recommended to do)"
-          ],
+          "structures": [],
           "verb_forms": [
-            "be supposed to + base verb"
+            "be supposed to + V1"
           ],
-          "tense": [
-            "Present Simple (with 'be supposed to')"
-          ],
+          "tense": [],
           "examples": [
             {
               "en": "hey you're not supposed to be here",
@@ -127,13 +119,9 @@
           "file": "1en_Gr_01_4.mp3",
           "topic": "Verb pattern with 'spend'",
           "transcript": "Rồi kế tiếp là cái chữ các bạn cũng rất là hay bị sai đó là chữ spend. Các bạn hay làm theo kiểu là tôi tốn hai tiếng để đọc sách. Các bạn hay làm là I will spend two hours to read book. Tức là các bạn không dùng to verb ở đây mà các bạn phải dùng là verb in. Có nghĩa là I spend two hours reading books. Hoặc là bạn có thể nói là I spend two hours on books cũng được.",
-          "structures": [
-            "S + spend + time + V-ing",
-            "S + spend + time + on + Noun"
-          ],
+          "structures": [],
           "verb_forms": [
-            "spend + V-ing",
-            "spend + on + Noun"
+            "spend + [time] + V-ing"
           ],
           "tense": [],
           "examples": [
@@ -159,13 +147,10 @@
           "topic": "Expressing existence (There is/are) with 'a lot of'",
           "transcript": "Rồi, bây giờ là cái chữ mình gọi là có cái gì đó. Ví dụ như là có rất là nhiều sách ở trên bàn, có rất là nhiều đá ở trong hồ. Ví dụ như vậy. Thì mình không dùng having cái gì ở đây cả. Mà mình sẽ có cái cách nói là there's a lot of. Mình nhắc lại, there's a lot of. Ví dụ như là there's a lot of books on the table. Thật ra mình có thể nói là there are a lot of books on the table. Nhưng mà một cách nào đó ở ngoài người ta rất là hay nói là there is, tức là there's a lot of books on the table. Cách nói này vẫn được chấp nhận rất là rộng rãi ở bên ở bên ngoài. Nên các bạn có thể dùng.",
           "structures": [
-            "There's a lot of + Noun (singular/plural)",
-            "There are a lot of + Noun (plural)"
+            "There's a lot of + N"
           ],
           "verb_forms": [],
-          "tense": [
-            "Present Simple"
-          ],
+          "tense": [],
           "examples": [
             {
               "en": "there's a lot of books on the table",
@@ -185,7 +170,7 @@
           "topic": "Tag Questions with Imperatives",
           "transcript": "Kế tiếp là mình sẽ nói về cái gọi là câu hỏi đuôi, tức là tag questions. Mà cái câu hỏi đuôi này nó lại có liên quan đến cái vấn đề là ra lệnh, tức là imperatives. Ví dụ như câu là bạn đóng cửa lại được không? Close the door, please hoặc là close the door, would you? Thì cái câu hỏi đuôi ở đây là would you nhưng mà nó cái câu đó là một cái câu ra lệnh. Close the door, would you? Còn nếu mà mình dùng will you thì thật ra cũng được nhưng mà nó sẽ kém lịch sự hơn tẹo. Ví dụ như là close the door, will you? Ví dụ như vậy. Tức là will you, would you gì thì đều được trong trường hợp này.",
           "structures": [
-            "Imperative + tag question (would you/will you)"
+            "..., would you? (Polite tag questions with imperatives)"
           ],
           "verb_forms": [],
           "tense": [],
@@ -211,17 +196,11 @@
           "file": "1en_Gr_01_7.mp3",
           "topic": "Expressing 'years of experience'",
           "transcript": "Kế tiếp là một cái câu mà chúng ta rất là hay nói khi chúng ta đi phỏng vấn, ví dụ như là tôi có 5 năm hay là tôi có 3 năm kinh nghiệm làm cái gì đó thì mình hay nói là I have three years of experience working in sales. Or I have three years of experience in sales. Nếu chúng ta không dùng chữ 'of' ở giữa, thật ra chúng ta vẫn còn một cách khác. Đó là I have three years, tức là bạn phải dùng sở hữu, bạn phải dùng sở hữu, tức là bạn mình đọc như thế này nhé: là bạn 'three years' có cái chữ S cuối. Rồi bạn phẩy kế bên chữ S chứ không phải là nằm bên trái chữ S mà phẩy nằm bên phải chữ S. Tức là cái dấu đó cũng giống như là thay cho cái chữ 'of' vậy đó. Đấy, thì bạn có thể nói là I have three years' experience, nhưng mà nó có cái dấu phẩy ở trên. Còn không bạn phải nói là I have three years of experience working in sales. Làm việc trong ngành sales. Ví dụ như vậy. Vậy có chữ 'of' nhé. Còn không thì cho dễ nhớ là phải có chữ 'of'.",
-          "structures": [
-            "S + have + [number] years of experience + V-ing + in [field]",
-            "S + have + [number] years of experience + in [field]",
-            "S + have + [number] years' experience + in [field]"
-          ],
+          "structures": [],
           "verb_forms": [
-            "working in sales (gerund phrase)"
+            "have [X] years of experience V-ing"
           ],
-          "tense": [
-            "Present Simple (I have)"
-          ],
+          "tense": [],
           "examples": [
             {
               "en": "I have three years of experience working in sales.",
@@ -244,16 +223,11 @@
           "file": "1en_Gr_01_8.mp3",
           "topic": "Contraction 'gonna' and expressing future actions",
           "transcript": "Next one. Thì mình có một cái cụm từ mà phải nói là mình học cái khóa này mình dùng rất là nhiều đó là I'm gonna. Ví dụ như là I'm gonna go là tôi sẽ đi. Thì các bạn hay bị sai là I gonna mà đúng ra phải là I'm gonna go. Thật ra nó na ná với lại I will go với lại I will be going với lại I'm going gì đó. Thật ra I'm gonna go chữ gonna chính là viết tắt của chữ going to. Như vậy thì I'm gonna go tức là I'm going to go, tức là thể hiện một tương lai gần. Tức là I'm about to go. Vậy tóm lại, I'm gonna go chứ không phải là I gonna go. Vậy thôi.",
-          "structures": [
-            "S + be + gonna + V",
-            "S + be + going to + V"
-          ],
+          "structures": [],
           "verb_forms": [
-            "gonna (contraction of going to)"
+            "be gonna + V1 (I'm gonna V1)"
           ],
-          "tense": [
-            "Future (near future)"
-          ],
+          "tense": [],
           "examples": [
             {
               "en": "I'm gonna go",
@@ -292,16 +266,10 @@
           "file": "1en_Gr_01_9.mp3",
           "topic": "Present Perfect for asking about actions started or not yet started",
           "transcript": "Kế tiếp là nói về thì. Nói về thì thì trong cái bài này chúng ta có một cái thì tức là bạn mình hỏi là mình đã bạn đã bắt đầu cái gì chưa? Have you already started? Hoặc là has that event already started? Tức là cái buổi event đó bắt đầu chưa? Tức là cái gì đó bắt đầu chưa thì mình hay dùng cái thì hiện tại hoàn thành. Tức là have cái đó cộng với already started. Thật ra already bạn bỏ cũng được, không sao hết. Tóm lại, khi mình hỏi cái gì rồi, cái gì chưa thì mình rất là hay dùng thì hiện tại hoàn thành. Rồi có vậy thôi.",
-          "structures": [
-            "Have + S + already + V3/ed?",
-            "Has + S + already + V3/ed?",
-            "have + [subject] + already + started"
-          ],
-          "verb_forms": [
-            "started (past participle)"
-          ],
+          "structures": [],
+          "verb_forms": [],
           "tense": [
-            "Present Perfect (hiện tại hoàn thành)"
+            "Have you already V3?"
           ],
           "examples": [
             {
@@ -4820,7 +4788,7 @@
       "lesson_id": "level_b_day_16",
       "lesson_title": "Day 16 - Social media",
       "source_type": "curriculum_chunks_verified",
-      "total_audio_files": 4,
+      "total_audio_files": 0,
       "verb_forms": [
         "No one wants to get left behind (get + V3)"
       ],
@@ -4840,13 +4808,8 @@
           "structures": [
             "Unlike + Noun/Pronoun, S + V"
           ],
-          "verb_forms": [
-            "achieve sales target",
-            "3 days in a row"
-          ],
-          "tense": [
-            "Present Simple"
-          ],
+          "verb_forms": [],
+          "tense": [],
           "examples": [
             {
               "en": "Unlike us, they can't achieve their sales target 3 days in a row.",
@@ -4865,17 +4828,11 @@
           "file": "curriculum_d16_2.manual",
           "topic": "Colloquial passive with 'get left behind'",
           "transcript": "Trong môi trường công nghệ và kinh doanh hiện đại, cụm từ 'get left behind' được sử dụng phổ biến thay cho 'be left behind' để diễn tả trạng thái bị tụt hậu lại phía sau: No one wants to get left behind.",
-          "structures": [
-            "No one wants to + V (get left behind)",
-            "S + get + V3/ed"
-          ],
+          "structures": [],
           "verb_forms": [
-            "get left behind",
-            "adapt to change"
+            "No one wants to get left behind (get + V3)"
           ],
-          "tense": [
-            "Present Simple"
-          ],
+          "tense": [],
           "examples": [
             {
               "en": "No one wants to get left behind in this digital era.",
@@ -4894,15 +4851,10 @@
           "file": "curriculum_d16_3.manual",
           "topic": "Present Perfect Continuous for evolving trends",
           "transcript": "Để nhấn mạnh một xu hướng bắt đầu trong quá khứ và đang diễn ra liên tục, dồn dập ở hiện tại, ta dùng thì Hiện tại Hoàn thành Tiếp diễn: This world has been changing rapidly.",
-          "structures": [
-            "S + has/have + been + V-ing + (adverb)"
-          ],
-          "verb_forms": [
-            "has been changing",
-            "suffer the same fate"
-          ],
+          "structures": [],
+          "verb_forms": [],
           "tense": [
-            "Present Perfect Continuous"
+            "S + has/have been V-ing (Present Perfect Continuous)"
           ],
           "examples": [
             {
@@ -4923,17 +4875,10 @@
           "topic": "Information framing: 'From what I've gathered'",
           "transcript": "Khi báo cáo thông tin thu thập được từ nhiều nguồn khác nhau trước cuộc họp, hãy mở đầu bằng 'From what I've gathered': From what I've gathered, this thing must be taken seriously.",
           "structures": [
-            "From what I've gathered, S + V",
-            "S + must be + V3/ed"
+            "From what I've gathered, S + must be V3"
           ],
-          "verb_forms": [
-            "take seriously",
-            "benefit from"
-          ],
-          "tense": [
-            "Present Perfect",
-            "Modal Passive"
-          ],
+          "verb_forms": [],
+          "tense": [],
           "examples": [
             {
               "en": "From what I've gathered, this thing must be taken seriously.",

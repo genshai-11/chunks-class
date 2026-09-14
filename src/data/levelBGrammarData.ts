@@ -5,7 +5,7 @@ import { LessonGrammarDoc } from '../types';
  * STRICT 1-TO-1 ALIGNMENT: 1 Audio Recording = Exactly 1 Primary Target Grammar Structure
  * Total 30 Days: 253 Audio Mini-Lessons + 16 Curated Manual Lessons = 269 Total Focus Formulas
  * Partitioned cleanly into sentence_structures, verb_forms, and tense without duplicate bloat.
- * Last Audit & Update: 2026-09-14T09:18:03.012Z
+ * Last Audit & Update: 2026-09-14T10:38:17.800Z
  */
 export const LEVEL_B_ERE_GRAMMAR_CATALOG: LessonGrammarDoc[] = [
   {
