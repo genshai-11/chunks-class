@@ -1,12 +1,12 @@
-# CHUNKS Level B ERE: Grammar Grouping & Partitioning Catalog
-**Canonical Reflex Structure & Dual-Index Curriculum Map**  
-*Audited and Generated: 2026-09-14T15:14:17.562Z*
+# CHUNKS Level B ERE: Condensed Grammar Grouping & Partitioning Catalog
+**Canonical Reflex Structure Grounded in grammar.json Philosophy**  
+*Audited and Generated: 2026-09-14T15:33:14.826Z*
 
 ---
 
 ## 1. Executive Overview & Data Partitioning
 
-This catalog establishes the canonical grammar structure for all 30 days of the **Level B - ERE (English Reflexes Enhancement)** course, aligning with the punchy, reflex-oriented format of `grammar.json` (3–5 bullets per category with `V1/V2/V3` notations, eliminating academic jargon).
+This catalog establishes the canonical grammar structure for all 30 days of the **Level B - ERE (English Reflexes Enhancement)** course, aligning strictly with the punchy, reflex-oriented format of `grammar.json` (zero academic metalanguage like *(passive)*, *(gerund)*, *(adverb of time)*).
 
 ### 📊 Dataset Breakdown
 
@@ -14,15 +14,11 @@ This catalog establishes the canonical grammar structure for all 30 days of the 
 | :--- | :---: | :---: | :--- |
 | **Group 1: Core 19 Lessons** | 19 | `active` | Directly extracted and verified from `grammar.json`. Maps to 10 teaching sessions in a 15-day cohort schedule. |
 | **Group 2: Supplemental 11 Lessons** | 11 | `active` | Transcribed from Grammar Boost audio, condensed into reflex-oriented patterns matching `grammar.json` format (Days 1, 2, 3, 4, 7, 8, 13, 16, 19, 22, 28). |
-| **Total Curriculum** | **30** | `active` | **100% complete coverage across 6 thematic modules with zero pending audio.** |
+| **Total Curriculum** | **30** | `active` | **100% complete coverage across 6 thematic modules with zero pending audio (288/288 audios).** |
 
 ---
 
 ## 2. Dual-Index Master Curriculum Map
-
-Every lesson possesses a dual index:
-- **30-Day Master Schedule**: Sequential days 1 through 30.
-- **15-Day Cohort Schedule**: Intensive 2-lesson format covering 10 teaching days (Days 1, 2, 4, 5, 7, 8, 10, 11, 13, 14), with review/milestone days on Days 3, 6, 9, 12, 15.
 
 | Day (1–30) | Lesson Title | Thematic Module | Data Group | Status | 15-Day Cohort | 19-Lesson Index |
 | :---: | :--- | :--- | :---: | :---: | :---: | :---: |
@@ -66,491 +62,479 @@ Every lesson possesses a dual index:
 #### 📌 Day 1: Day 1 - First Day Of Work
 - **Group**: `supplemental_7_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `be supposed to + V1`
-  - `spend + [time] + V-ing`
-  - `have [X] years of experience V-ing`
-  - `be gonna + V1 (I'm gonna V1)`
+  - `Be supposed to V1`
+  - `Spend [time] V-ing`
+  - `Have [X] years of experience V-ing`
+  - `Be gonna V1`
 - **Sentence Structures**:
-  - `S + be + aware that...`
-  - `because + clause vs because of + Noun / V-ing`
-  - `There's a lot of + N`
-  - `..., would you? (Polite tag questions with imperatives)`
+  - `Be aware that…`
+  - `Because of + N`
+  - `There’s a lot of…`
+  - `…, would you?`
 - **Tense & Reflex Frames**:
   - `Have you already V3?`
 
 #### 📌 Day 2: Day 2 - Viettel
 - **Group**: `supplemental_7_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `S + do/does/did + V1 (Emphatic affirmative)`
-  - `V + Adverb (directly connect / conduct)`
-  - `be interested in + N / V-ing`
+  - `I do know…`
+  - `Directly connect`
+  - `Be interested in A`
 - **Sentence Structures**:
-  - `Would you mind + V-ing?`
-  - `have got news for you (uncountable 'news')`
-  - `have + O + V1 vs ask + O + to V1 (Causative)`
+  - `Would you mind V-ing?`
+  - `I’ve got news for you`
+  - `Have A V1`
   - `A has nothing to do with B`
-  - `What + S + V + was/is... (Pseudo-cleft)`
-  - `S + want to know + if/whether + clause`
+  - `What I want is…`
+  - `I want to know if…`
 - **Tense & Reflex Frames**:
-  - `It seemed that + S + V (Past Simple)`
-  - `S + would/will be + V-ing (Future Continuous)`
+  - `It seemed that…`
+  - `I will be V-ing`
 
 #### 📌 Day 3: Day 3 - Tell me about yourself
 - **Group**: `supplemental_7_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `-ically pronunciation: /ɪkli/ (specifically, basically)`
-  - `congratulations (always plural -s)`
-  - `love / like / hate + V-ing vs to V1`
-  - `preposition + V-ing (from listening to reading)`
-  - `had a year of V-ing (working as...)`
+  - `Specifically`
+  - `Congratulations!`
+  - `Love/like V-ing`
+  - `From V-ing to V-ing`
+  - `Have a year of V-ing`
 - **Sentence Structures**:
-  - `consider / see myself as + N (no redundant 'is')`
-  - `be in love with / be into + N`
-  - `Although + clause vs In spite of / Despite + N/V-ing`
+  - `See myself as A`
+  - `Be into A`
+  - `In spite of + N`
 - **Tense & Reflex Frames**:
-  - `have been V-ing (Present Perfect Continuous)`
-  - `Like I said / mentioned (Past Simple)`
-  - `What S just said excites me (Past action + Present impact)`
+  - `I’ve been V-ing`
+  - `Like I said,…`
+  - `What you just said excites me`
 
 #### 📌 Day 4: Day 4 - Smarketing
 - **Group**: `supplemental_7_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `have got to + V1 / gotta + V1`
-  - `be afraid of / scared of + N/V-ing`
-  - `want / need + someone + to V1`
+  - `Gotta V1`
+  - `Scared of A`
+  - `Want A to V1`
 - **Sentence Structures**:
-  - `adjective / adverb + enough`
-  - `It's + adj + (for someone) + to V1`
-  - `There is / There are (Existence reflex)`
-  - `It turns out that + clause / Turns out...`
+  - `Good enough`
+  - `It’s easy to V1`
+  - `There is / are…`
+  - `Turns out that…`
 - **Tense & Reflex Frames**:
-  - `as you were told (was/were + V3 Passive)`
-  - `I'll never + V1 + anymore (Future Simple negation)`
+  - `As you were told`
+  - `I’ll never V1 anymore`
 
 #### 📌 Day 5: Day 5 - Office Romance
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 1 (Lesson 1)
 - **Verb Forms & Phrases**:
-  - `nowadays vs these days (adverbs of time)`
-  - `a hundred percent / bucks (a hundred vs one hundred)`
-  - `-ate pronunciation: /eɪt/ (verb) vs /ət/ (noun/adj)`
-  - `become attracted to + N`
-  - `help + (someone) + (to) V1`
+  - `Nowadays`
+  - `100%`
+  - `Lots of = a lot of`
+  - `Subordinate`
 - **Sentence Structures**:
-  - `lots of / a lot of + N vs a lot (adv)`
-  - `... and yet ... (concession conjunction)`
-  - `Who knows?!? (singular verb with Who)`
+  - `… and yet…`
+  - `Become attracted to A`
+  - `Help A (to) V`
+  - `Who knows?!?`
 - **Tense & Reflex Frames**:
-  - `Have you ever + V3...?`
-  - `S + have/has been + V3 (You've been warned!)`
+  - `Have you ever V3…?`
+  - `You’ve been warned!`
 
 ### Module 2: Office Culture (Days 6–10)
 
 #### 📌 Day 6: Day 6 - Gossipy
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 1 (Lesson 2)
 - **Verb Forms & Phrases**:
-  - `S + look + adjective (look chubby)`
-  - `plan to / intend to + V1 vs be going to + V1`
-  - `refuse + to V1 vs deny + V-ing`
+  - `She looks…`
+  - `Plan to / be gonna move in?`
+  - `Refuse to V`
 - **Sentence Structures**:
-  - `Noun + V-ing (Reduced relative clause)`
-  - `not that + adjective (degree intensifier)`
-  - `Do you mind + my/me V-ing?`
-  - `There's a lot of + N`
+  - `There’s this guy V-ing`
+  - `Kim is not that tough`
+  - `If you don’t mind me asking`
+  - `There’s a lot of…`
 - **Tense & Reflex Frames**:
-  - `S + must have + V3 (Past deduction)`
-  - `I didn't do anything (Past negative action)`
-  - `We've been friends for [time]`
-  - `This is the first time + S + have/has V3`
+  - `I must have V3`
+  - `I didn’t do anything!`
+  - `We’ve been together for…`
+  - `This is the first time I’ve V3`
 
 #### 📌 Day 7: Day 7 - Electronic mail
 - **Group**: `supplemental_7_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `precise (adj) vs precisely (adv)`
+  - `Precisely`
 - **Sentence Structures**:
-  - `It seems / appears / looks like + clause`
-  - `find + O + adjective (I find it surprising)`
-  - `Wh-subject + V-s/es (Who knows / What happens)`
-  - `never heard of / about + N`
-  - `..., right? / Tag questions`
-  - `wondering if + S + would/could V1`
+  - `It seems like…`
+  - `Find A interesting`
+  - `What happens next?`
+  - `Never heard of A`
+  - `…, right?`
+  - `I was wondering if…`
 - **Tense & Reflex Frames**:
-  - `S + might be + V-ing (Modal Continuous)`
-  - `It has been [time] since + S + V2`
+  - `A might be V-ing`
+  - `It’s been [time] since… V2`
 
 #### 📌 Day 8: Day 8 - COVID-19
 - **Group**: `supplemental_7_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `will be able to + V1`
-  - `get + V3 (Passive voice with get)`
-  - `go + bare verb (go check / go get)`
-  - `suffer from + illness (bị bệnh)`
-  - `help + (someone) + V1`
+  - `Will be able to V1`
+  - `Get V3`
+  - `Go V1`
+  - `Suffer from A`
+  - `Help A V1`
 - **Sentence Structures**:
-  - `one of the + plural Nouns`
-  - `speaking of / when it comes to + N`
-  - `everybody / everyone + V-s/es`
+  - `One of the…`
+  - `Speaking of A`
+  - `Everybody knows…`
 - **Tense & Reflex Frames**:
-  - `S + have/has V3 + so far`
-  - `since + S + V2 / past time`
+  - `I’ve V3 so far`
+  - `Since I V2,…`
 
 #### 📌 Day 9: Day 9 - Business trip
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 2 (Lesson 3)
 - **Verb Forms & Phrases**:
-  - `make an effort to + V1 / on + N`
-  - `come up with + idea/solution`
-  - `end up + V-ing`
-  - `be late / get late (adjective usage of late)`
-  - `be not supposed to + V1`
-  - `I'm afraid of / scared of + N`
+  - `The inevitable`
+  - `In these kinds of trips`
+  - `End up V-ing`
+  - `don’t wanna be late`
 - **Sentence Structures**:
+  - `Be supposed to…`
+  - `I’m scared of…`
   - `What are you gonna do then?`
-  - `No matter how + adj/adv + S + V`
+  - `No matter how…`
 - **Tense & Reflex Frames**:
-  - `S + will soon have to + V1`
-  - `have been to (returned) vs have gone to (not yet returned)`
-  - `be + V-ing (Near future: where you're going)`
+  - `You’ll soon have to…`
+  - `I’ve been to…`
+  - `It depends on where you’re going`
 
 #### 📌 Day 10: Day 10 - Project management
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 2 (Lesson 4)
 - **Verb Forms & Phrases**:
-  - `how / what / where + to V1`
+  - `How to…?`
+  - `Being a… doesn’t mean…`
 - **Sentence Structures**:
-  - `Being + N/adj + doesn't mean + clause`
-  - `It's a good idea to + V1 / have no idea`
-  - `Why don't we + V1? / Let's + V1`
-  - `If + S + V2/ed, S + would + V1 (Conditional Type 2)`
-  - `Either A or B + verb agreement`
+  - `It’s not a good idea to…`
+  - `Why don’t we…?`
+  - `If we V2, we would V1`
+  - `Either A or B will…`
 - **Tense & Reflex Frames**:
-  - `When I was young / little + Past Simple`
-  - `decided to + V1 (Past Simple of decide)`
-  - `thought + S + would + V1 (Future in the Past)`
-  - `thought + S + would have + V3 (Past modal expectation)`
+  - `When I was little,…`
+  - `I decided to…`
+  - `I thought I would …`
+  - `I thought you would have V3 …`
 
 ### Module 3: Operations & Management (Days 11–15)
 
 #### 📌 Day 11: Day 11 - Stand up meeting
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 4 (Lesson 5)
 - **Verb Forms & Phrases**:
-  - `prevent + O + from + V-ing`
-  - `stay + adjective / V3 (stay focused / tuned)`
-  - `every day (adv) vs everyday (adj)`
-  - `be involved in + N / V-ing`
+  - `There’re plenty of …`
+  - `Prevent sth from V-ing`
+  - `Stay V-ed`
+  - `Every day`
 - **Sentence Structures**:
-  - `plenty of + N (countable / uncountable)`
-  - `under control / out of control`
-  - `all but / anything but / nothing but`
-  - `The police are / will be + V`
+  - `… is still under control`
+  - `Need nothing but …`
+  - `A’s deeply involved in …`
 - **Tense & Reflex Frames**:
-  - `S + have/has V3 + lately / recently`
-  - `S + have/has been V-ing + for years`
+  - `Before the police comes`
+  - `I’ve V3… lately`
+  - `I’ve V3… for years`
 
 #### 📌 Day 12: Day 12 - Electronic mail (Advanced)
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 4 (Lesson 6)
 - **Verb Forms & Phrases**:
-  - `try to V1 vs try V-ing`
-  - `get used to + V-ing / Noun`
-  - `like + V-ing (general preference)`
-  - `take a look at + N (delexical verb)`
+  - `Try V-ing`
+  - `Get used to it`
+  - `Life is like V-ing`
+  - `Take a look = look at`
 - **Sentence Structures**:
-  - `There's no easy way to + V1`
-  - `... for what? (Asking purpose)`
-  - `If I were you, I would + V1`
-  - `I don't see why + S + V`
+  - `There’s no easy way to…`
+  - `… for what?`
+  - `If I were in your shoes, I would…`
+  - `I don’t see why…`
 - **Tense & Reflex Frames**:
-  - `S + V2 + once (Single past occurrence)`
+  - `A once said…`
 
 #### 📌 Day 13: Day 13 - Chart analysis
 - **Group**: `supplemental_7_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `increase twofold / twofold increase`
+  - `Increase twofold`
 - **Sentence Structures**:
-  - `, which means + clause (sentential relative)`
-  - `S + be + nothing compared to + N`
-  - `It doesn't necessarily mean that + S + V`
-  - `What's going on (with)...?`
+  - `…, which means…`
+  - `Nothing compared to A`
+  - `It doesn’t necessarily mean that…`
+  - `What’s going on?`
 - **Tense & Reflex Frames**:
-  - `What did you do? vs What have you done?`
-  - `There has been + N (Present Perfect existence)`
+  - `What have you done?`
+  - `There has been…`
 
 #### 📌 Day 14: Day 14 - Customer complaint
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 5 (Lesson 7)
 - **Verb Forms & Phrases**:
-  - `remain / keep + adjective`
-  - `keep + someone + posted / updated (V3)`
-  - `prove somebody wrong`
-  - `work like a charm (Idiom & Present Simple)`
+  - `Remain courteous`
+  - `I’ll keep you V3`
+  - `Prove A wrong`
+  - `It works like a charm`
+  - `No worries`
 - **Sentence Structures**:
-  - `no worries vs don't worry`
-  - `All you need to do is + V1`
-  - `It's totally understandable that...`
-  - `There's a saying that goes...`
-  - `I'm not sure if/whether + clause`
-  - `You mean... / Are you saying that...?`
+  - `All you need to do is…`
+  - `It’s totally understandable that…`
+  - `There’s a famous saying that goes …`
+  - `I’m not sure`
 - **Tense & Reflex Frames**:
-  - `in case + S + have/has V3`
-  - `who put... (Past Simple of irregular 'put')`
+  - `In case you haven’t noticed`
+  - `I don’t know who put…`
+  - `Are you saying that…?`
 
 #### 📌 Day 15: Day 15 - Close the deal!
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 5 (Lesson 8)
 - **Verb Forms & Phrases**:
-  - `close the deal / go bankrupt`
-  - `It's very intimidating (Participle adjective)`
-  - `be flooded with + N (Passive expression)`
-  - `keep / stop + V-ing`
+  - `Go bankrupt`
+  - `Very intimidating`
+  - `… is flooded with…`
+  - `Why bother?`
+  - `Keep V-ing`
 - **Sentence Structures**:
-  - `Why / Why not + base verb?`
-  - `How did it go? (Asking past outcome)`
-  - `Wh-word + Noun (What time, which option)`
-  - `Do you know + Wh-word + S + V? (Embedded question)`
+  - `How’d it go?`
+  - `I’ve invested so much time in V-ing`
+  - `What value will you add…?`
+  - `Do you know who my dad is?`
 - **Tense & Reflex Frames**:
-  - `have invested time/effort in + V-ing`
-  - `That's not gonna happen (Future negation)`
-  - `I've been thinking about + N/V-ing`
-  - `be + V-ing (Present Continuous for future)`
+  - `That’s not gonna happen`
+  - `I’ve been thinking a lot about…`
+  - `Is he coming?`
 
 ### Module 4: Team & Leadership (Days 16–20)
 
 #### 📌 Day 16: Day 16 - Social media
 - **Group**: `supplemental_11_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `get left behind (get + V3)`
-  - `must be V3 (must be taken seriously)`
-  - `spend + [time] + (in) V-ing`
+  - `Get left behind`
+  - `Must be taken seriously`
+  - `Spend [time] V-ing`
 - **Sentence Structures**:
-  - `look + Adj (look identical)`
-  - `A little bird told me that + clause`
-  - `There's [Noun] + V-ing (Participial clause)`
+  - `Look identical`
+  - `A little bird told me that…`
+  - `There’s A V-ing`
 - **Tense & Reflex Frames**:
-  - `Hasn't anyone told you...? (Present Perfect question)`
+  - `Hasn’t anyone told you…?`
 
 #### 📌 Day 17: Day 17 - Teamwork
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 7 (Lesson 9)
 - **Verb Forms & Phrases**:
-  - `want someone to be + adj (aware)`
-  - `let / make + someone + V1 (Causative)`
+  - `I want you to be aware of that`
+  - `Let A V1`
+  - `Here comes…`
 - **Sentence Structures**:
-  - `Here comes + N / Here is + N (Inversion)`
   - `What are you up to?`
-  - `There's something wrong with + N`
-  - `From now on, I will + V1`
-  - `You know what I'm saying? / You know what I mean?`
+  - `There is something wrong with...`
+  - `From now on, I will…`
 - **Tense & Reflex Frames**:
-  - `didn't say it would + V1 (Reported speech backshift)`
-  - `S + has/have been V-ing + all morning`
-  - `The moment + S + V2, S + V2`
-  - `Why haven't I been told (about)...?`
-  - `Who told you that...? (Past Simple subject question)`
+  - `I didn’t say it would be…`
+  - `Did you hear?`
+  - `A has been V-ing all morning`
+  - `The moment I walked in…`
+  - `Why haven’t I been told?`
+  - `Who told you…?`
 
 #### 📌 Day 18: Day 18 - Salary negotiation
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 7 (Lesson 10)
 - **Verb Forms & Phrases**:
-  - `to put it bluntly / mildly (adv modifying verb)`
-  - `be worth + V-ing / Noun`
-  - `feel hurt / offended (feel + participle adjective)`
-  - `keep + V-ing (keep asking myself)`
+  - `To put it politely`
+  - `Worth V-ing`
+  - `Let’s V1`
+  - `If my memory serves`
 - **Sentence Structures**:
-  - `Let's + V1 (Suggestions)`
-  - `if my memory serves me right`
-  - `Why + V1 (Why make a big deal out of it?)`
-  - `There's nothing to be scared of`
-  - `adj + enough + to V1`
+  - `Why make a big deal…?`
+  - `I don’t feel heard`
+  - `There’s nothing to be scared of`
+  - `I keep asking myself`
+  - `A is young enough to…`
 - **Tense & Reflex Frames**:
-  - `have come too far (Present Perfect)`
+  - `I’ve come too far`
 
 #### 📌 Day 19: Day 19 - EXCEL
 - **Group**: `supplemental_11_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `be not allowed to + V1 / won't allow me to + V1`
-  - `finish + V-ing`
-  - `except + V1 / except + to V1`
+  - `Finish V-ing`
+  - `Except (to) V1`
 - **Sentence Structures**:
-  - `May I + V1? (Polite request)`
-  - `It usually takes + [time] + to V1`
-  - `Is there a possibility that + clause?`
-  - `There's nothing to + V1 (worry about / be scared of)`
+  - `You’re not allowed to…`
+  - `May I V1?`
+  - `It takes [time] to V1`
+  - `Is there a possibility that…`
+  - `There’s nothing to worry about`
 - **Tense & Reflex Frames**:
-  - `S + V2 + all day yesterday (Past Simple duration)`
+  - `I V2 all day yesterday`
 
 #### 📌 Day 20: Day 20 - Year-end party
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 8 (Lesson 11)
 - **Verb Forms & Phrases**:
-  - `chip in (Phrasal verb)`
-  - `getting + comparative + and + comparative`
-  - `stop + V-ing`
-  - `be not allowed to + V1`
-  - `I did ask him, but... (Emphatic did)`
+  - `Sounds like a plan`
+  - `If everybody chips in`
+  - `… is getting bigger`
+  - `Stop V-ing`
 - **Sentence Structures**:
-  - `Sounds like a plan / Sounds good`
-  - `There's a lot of + N`
+  - `There’s a lot of…`
   - `(Do) you still remember?`
+  - `You’re not allowed to…`
+  - `I did ask him but…`
 - **Tense & Reflex Frames**:
-  - `This time I won't + V1 (Future negation)`
-  - `since the last time + S + V2`
-  - `Whenever + S + V, S + will V`
-  - `forgot to bring / forgot + O (Past Simple)`
+  - `This time I’m not gonna…`
+  - `It’s been a long time since the last time… V2`
+  - `Whenever A V1, A will…`
+  - `I forgot to…`
 
 ### Module 5: Professional Acumen (Days 21–25)
 
 #### 📌 Day 21: Day 21 - Compensation and benefits
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 8 (Lesson 12)
 - **Verb Forms & Phrases**:
-  - `enjoy / love + V-ing`
-  - `after / before + V-ing`
-  - `be brilliant / supposed to + V1`
-  - `must be based on + N (Passive modal deduction)`
-  - `didn't even bother to V1`
+  - `Enjoy/love + V-ing`
+  - `After V-ing`
+  - `More specifically`
 - **Sentence Structures**:
-  - `more specifically (adv discourse marker)`
-  - `It takes + [courage/effort] + to V1`
-  - `How come + S + V? (Why...)`
+  - `What are we supposed to...?`
+  - `It takes lots of guts to…`
+  - `Salary was deducted from …`
+  - `He didn’t even bother to …`
 - **Tense & Reflex Frames**:
-  - `I've never + V3 (Present Perfect experience)`
+  - `How come you V2!`
+  - `I’ve never V3`
 
 #### 📌 Day 22: Day 22 - Nepotism
 - **Group**: `supplemental_11_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `Verb + not (fear not / worry not)`
-  - `promise + (not) + to V1`
-  - `want + to be V3 (Passive infinitive)`
+  - `Fear not`
+  - `Promise (not) to V1`
+  - `Want to be V3`
 - **Sentence Structures**:
-  - `There's no such thing as + N`
-  - `Do you know what it means? (it means)`
-  - `It's no shame to + V1`
-  - `There's a thing called + N (Reduced relative)`
+  - `There’s no such thing as A`
+  - `Do you know what it means?`
+  - `It’s no shame to V1`
+  - `There’s a thing called A`
 - **Tense & Reflex Frames**:
-  - `S + once + V2 (Single past occurrence)`
-  - `S + just + V2 vs have/has just + V3`
-  - `S + went to + [School/University] (Past Simple)`
+  - `A once V2…`
+  - `I just V2`
+  - `I went to [School]`
 
 #### 📌 Day 23: Day 23 - What KPI stands for?
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 10 (Lesson 13)
 - **Verb Forms & Phrases**:
-  - `V + more effectively (Verb + Adverb)`
-  - `demanding (participle adjective: a demanding boss)`
-  - `be known as + N`
-  - `S + enable + O + to V1`
+  - `… more effectively`
+  - `A demanding boss`
+  - `When it comes to…`
 - **Sentence Structures**:
-  - `speaking of / in terms of + N`
-  - `There's still room for + N/V-ing`
-  - `This must be the reason why + clause`
-  - `better left unsaid (Idiom)`
+  - `There’s still room for…`
+  - `This must be the reason why…`
+  - `Some things are better left unsaid`
+  - `A is known as…`
+  - `A tool that enables us to…`
 - **Tense & Reflex Frames**:
-  - `S + haven't/hasn't V3 + yet`
-  - `S + should have + V3 (Past regret)`
+  - `You haven’t V3 yet?`
+  - `I should have V3 in advance`
 
 #### 📌 Day 24: Day 24 - How to write a CV?
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 10 (Lesson 14)
 - **Verb Forms & Phrases**:
-  - `be no longer used (Passive with no longer)`
-  - `came looking for + someone`
+  - `That explains it`
+  - `It’s no longer used`
 - **Sentence Structures**:
-  - `That explains it (No wonder)`
-  - `Why would + S + V1...?`
-  - `What's wrong with + N/Pronoun?`
+  - `A just came looking for…`
+  - `Why would…?`
+  - `What’s wrong with…?`
 - **Tense & Reflex Frames**:
-  - `Don't tell me you're gonna + V1`
+  - `Don’t tell me you’re gonna…`
 
 #### 📌 Day 25: Day 25 - Small talk
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 11 (Lesson 15)
 - **Verb Forms & Phrases**:
-  - `quit + V-ing`
-  - `hate someone's guts (Idiom)`
+  - `Easier said than done`
+  - `Who cares!`
+  - `Quit V-ing`
 - **Sentence Structures**:
-  - `Easier said than done (Idiom)`
-  - `Who cares?!? (Subject-verb agreement)`
-  - `There's no doubt that + clause`
-  - `Who knows what happened? (Embedded question)`
+  - `There’s no doubt that…`
+  - `A hates my guts`
+  - `Who knows what happened?`
 - **Tense & Reflex Frames**:
-  - `Did you hear anything? vs Have you heard anything?`
-  - `didn't know S had V3 (Past Perfect)`
-  - `has been ... ever since (Present Perfect)`
-  - `must have + V3 (Past deduction)`
+  - `Did you hear anything?`
+  - `A didn’t know I had seen everything`
+  - `A has V3 ever since`
+  - `A must have V3`
 
 ### Module 6: Business & Sales (Days 26–30)
 
 #### 📌 Day 26: Day 26 - Financial picture
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 11 (Lesson 16)
 - **Verb Forms & Phrases**:
-  - `relatively speaking (adverbial participle)`
+  - `Relatively speaking`
 - **Sentence Structures**:
-  - `such a + adj + N vs so + adj`
-  - `no sign of + N (sign of vs size of)`
+  - `It’s such a…`
+  - `There’s still no signs of…`
 - **Tense & Reflex Frames**:
-  - `have/has been V-ing recently (Present Perfect Continuous)`
+  - `… have been raising recently`
 
 #### 📌 Day 27: Day 27 - Shark Tank
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 13 (Lesson 17)
 - **Verb Forms & Phrases**:
-  - `sounds familiar (sound + adj)`
-  - `be here + V-ing (Expressing purpose)`
-  - `was/were born and raised in [place]`
-  - `be sick of + N/V-ing`
-  - `be familiar with + N/V-ing`
+  - `Sounds familiar?`
+  - `Who wants to…?`
 - **Sentence Structures**:
-  - `Who wants to + V1? / Who doesn't want to + V1?`
-  - `What + V + O + is + Complement (What-clause subject)`
-  - `For those reasons I just mentioned`
+  - `I’m here seeking…`
+  - `I was born and raised in…`
+  - `I’m sick of…`
+  - `I’m familiar with…`
+  - `What concerns me is…`
+  - `… was valued at…`
+  - `… is valued at…`
 - **Tense & Reflex Frames**:
-  - `was valued at [amount] (Valuation passive)`
-  - `was valued at vs is valued at`
-  - `didn't say (that) S would + V1 (Reported speech)`
+  - `For those reasons I just mentioned,…`
+  - `I didn’t say…`
 
 #### 📌 Day 28: Day 28 - Never eat alone
 - **Group**: `supplemental_11_lessons` | **Status**: `active`
 - **Verb Forms & Phrases**:
-  - `thanks for + V-ing`
-  - `try + V-ing (experiment vs effort)`
+  - `Thanks for V-ing`
+  - `Try V-ing`
 - **Sentence Structures**:
-  - `Don't act so + Adj (Don't act so surprised)`
-  - `Despite + N / V-ing vs Although + clause`
-  - `There's a lot of + N`
-  - `If it weren't for + N, S + would/wouldn't + V1`
-  - `How many + plural noun...?`
+  - `Don’t act so surprised`
+  - `Despite + N`
+  - `There’s a lot of…`
+  - `If it weren’t for A, I would V1`
+  - `How many [plural]…?`
 - **Tense & Reflex Frames**:
-  - `S + still don't/doesn't + V1 + yet (Present Simple with yet)`
-  - `S + have/has + V3 + before (Present Perfect experience)`
-  - `Who told you that? (Past Simple subject question)`
+  - `I still don’t know yet`
+  - `We’ve V3 before`
+  - `Who told you that?`
 
 #### 📌 Day 29: Day 29 - LinkedIn
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 13 (Lesson 18)
 - **Verb Forms & Phrases**:
-  - `convincing (active/thing) vs convinced (passive/person)`
-  - `get hired / get employed (Passive with get)`
-  - `increase chances of + V-ing`
+  - `It’s way more convincing`
+  - `Get hired`
+  - `It’s simply a…`
 - **Sentence Structures**:
-  - `simply + Noun phrase (It's simply a rule)`
-  - `That's all I'm saying`
-  - `Would it kill you just to + V1?`
-  - `I wish + S + could/would + V1 (Subjunctive wish)`
+  - `That’s all I’m saying`
+  - `Would it kill you just to…?`
+  - `Increase your chances of V-ing`
+  - `I used to V1`
+  - `I wish I could…`
 - **Tense & Reflex Frames**:
-  - `used to + V1 (Past habit/state)`
-  - `How have you been? vs How are you?`
-  - `heard that S had V3 (Past Perfect)`
-  - `have had that happen (Causative/experiential have)`
+  - `How have you been?`
+  - `I heard that you had V3`
+  - `I’ve had that happen`
 
 #### 📌 Day 30: Day 30 - Farewell party
 - **Group**: `core_19_lessons` | **Status**: `active` | **Cohort**: Day 14 (Lesson 19)
 - **Verb Forms & Phrases**:
+  - `May I have your…?`
+  - `Are you in a hurry to…?`
+  - `There’s a very thin line between A and B`
 - **Sentence Structures**:
-  - `May I have your [Noun]?`
-  - `Are you in a hurry to + V1?`
-  - `There's a very thin line between A and B`
+  - *(Integrated into verb forms / no separate structures)*
 - **Tense & Reflex Frames**:
-  - `thought it through (think through in Past Simple)`
-  - `This is the last time + S + will V / be V-ing`
-  - `It's not that I didn't + V1`
-  - `the most [adj] I've ever V3 (Superlative + Present Perfect)`
-
-
----
-
-## 4. Pedagogical Guidelines for Classroom Presentation
-
-1. **High-Contrast Slide 0 Presentation**:
-   - Each slide presents clean, readable cards for Sentence Structures, Verb Forms, and Tense & Reflex Frames.
-   - Elimination of academic labels enables students to drill oral reflexes directly without cognitive overload.
-2. **Pedagogical Drawer Notes**:
-   - Rich teacher guidance notes are preserved in the platform's data layer, accessible via drawers and tooltips without cluttering the projector stage.
-3. **Audio Boost Integration**:
-   - All 30 topics are 100% verified with native teacher audio recordings (288 mini-lessons). All structures map 1-to-1 to audio recordings.
+  - `I’ve thought it through`
+  - `This is the last time I V1/will V1`
+  - `It’s not that I didn’t V1`
+  - `A is the most… (that) I’ve ever V3`
 
