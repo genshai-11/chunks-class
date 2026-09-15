@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   FileSpreadsheet,
   Play,
-  Library
+  Library,
+  CheckCircle2
 } from 'lucide-react';
 
 interface TeacherSidebarProps {
@@ -55,6 +56,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
     { id: 'curriculum', label: 'Curriculum & Chunks', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'audio-manager', label: 'Audio Management', icon: <Volume2 className="w-4 h-4" /> },
     { id: 'resource-manager', label: 'Manage Resources', icon: <Library className="w-4 h-4 text-indigo-500" />, badge: 'GRAMMAR' },
+    { id: 'grammar-portal', label: 'Grammar Curator Studio', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, badge: 'STUDIO' },
     { id: 'settings', label: 'Modules Settings', icon: <Settings className="w-4 h-4" /> }
   ];
 

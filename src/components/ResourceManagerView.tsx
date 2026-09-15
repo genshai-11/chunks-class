@@ -58,6 +58,7 @@ export interface TopicResourceData {
 
 interface ResourceManagerViewProps {
   onLaunchProjectorForLesson?: (lessonId: string, dayNumber: number) => void;
+  onNavigateToPortal?: () => void;
 }
 
 const THEMATIC_MODULES = [
@@ -127,7 +128,8 @@ function recomputeTopic(topic: TopicResourceData): TopicResourceData {
 }
 
 export const ResourceManagerView: React.FC<ResourceManagerViewProps> = ({
-  onLaunchProjectorForLesson
+  onLaunchProjectorForLesson,
+  onNavigateToPortal
 }) => {
   // --------------------------------------------------------------------------
   // State Initialization
@@ -532,6 +534,26 @@ export const ResourceManagerView: React.FC<ResourceManagerViewProps> = ({
           </button>
         </div>
       </header>
+
+      {/* Standalone Curator Studio Callout Banner */}
+      <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border-b border-emerald-500/20 px-6 py-2.5 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5 text-xs text-zinc-700">
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="font-bold text-emerald-800">Chế độ Mới: Grammar Curator Studio</span>
+          <span className="text-zinc-500 hidden md:inline">— Xem cấu trúc tinh gọn, KHÔNG transcript, icon audio mini, quét Google Drive & duyệt nhanh 1-click.</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => onNavigateToPortal ? onNavigateToPortal() : window.location.assign('/grammar-portal')}
+          className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-2xs transition-all active:scale-95 cursor-pointer"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+          <span>Mở Grammar Curator Studio &rarr;</span>
+        </button>
+      </div>
 
       {/* Main Workspace: Left Sidebar + Center Editing Surface */}
       <div className="flex-1 flex overflow-hidden">
