@@ -11,7 +11,6 @@ import { SettingsView } from './components/SettingsView';
 import { ImprovManagerView } from './components/ImprovManagerView';
 import { ImprovPresentation } from './components/ImprovPresentation';
 import { LessonExcelUploader } from './components/LessonExcelUploader';
-import { ResourceManagerView } from './components/ResourceManagerView';
 import { GrammarReviewPortal } from './components/GrammarReviewPortal';
 import { getFirestoreCohorts, saveFirestoreCohort, deleteFirestoreCohort, DEFAULT_COURSES } from './services/firestoreService';
 import { useAppRouter } from './hooks/useAppRouter';
@@ -343,17 +342,10 @@ export const App: React.FC = () => {
         />
       )}
 
-      {activeTab === 'resource-manager' && (
-        <ResourceManagerView
-          onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
-          onNavigateToPortal={() => setActiveTab('grammar-portal')}
-        />
-      )}
-
-      {activeTab === 'grammar-portal' && (
+      {(activeTab === 'grammar-portal' || (activeTab as any) === 'resource-manager') && (
         <GrammarReviewPortal
           onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
-          onExitToApp={() => setActiveTab('resource-manager')}
+          onExitToApp={() => setActiveTab('schedule')}
         />
       )}
 

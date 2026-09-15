@@ -770,15 +770,15 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             <span className="hidden sm:inline">Agent Review</span>
           </button>
 
-          {/* Google Drive Auto-Sync */}
+          {/* Prominent Action: Sync Audio Từ Google Drive API */}
           <button
             type="button"
             onClick={() => setIsDriveModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-xs font-bold text-blue-700 shadow-2xs cursor-pointer active:scale-95 transition-all"
-            title="Quét Google Drive hoặc thư mục âm thanh trên máy tính để auto-map"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-xs font-bold text-blue-700 shadow-2xs cursor-pointer active:scale-95 transition-all"
+            title="Quét & Đồng bộ audio từ Google Drive API lên Firestore"
           >
             <FolderSync className="w-3.5 h-3.5 text-blue-600" />
-            <span className="hidden sm:inline">Google Drive Sync</span>
+            <span>Sync Audio Từ Google Drive API</span>
           </button>
 
           {/* JSON Export / Import */}
@@ -999,17 +999,16 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-zinc-50/80 border-b border-[#E8E8EC] text-[11px] font-mono font-bold uppercase text-zinc-500 tracking-wider">
-                <th className="py-3 px-3 w-16 text-center">Audio</th>
-                <th className="py-3 px-4 min-w-[260px]">Cấu Trúc Ngữ Pháp Trích Xuất (Formula)</th>
-                <th className="py-3 px-3 w-52">Phân Loại (Category)</th>
-                <th className="py-3 px-4">Ví Dụ Song Ngữ (Bilingual Examples)</th>
-                <th className="py-3 px-3 w-36 text-right">Thao Tác</th>
+                <th className="py-3 px-3 w-16 text-center">#</th>
+                <th className="py-3 px-4">Cấu Trúc Ngữ Pháp Phản Xạ (Primary Structure)</th>
+                <th className="py-3 px-3 w-48">Phân Loại Category</th>
+                <th className="py-3 px-3 w-40 text-right">Thao Tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-xs">
               {filteredMiniLessons.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-zinc-400">
+                  <td colSpan={4} className="py-12 text-center text-zinc-400">
                     <p className="font-semibold text-sm">Không tìm thấy cấu trúc nào phù hợp với bộ lọc.</p>
                     <p className="text-xs mt-1">Thử xoá tìm kiếm hoặc chọn bộ lọc "Tất cả".</p>
                   </td>
@@ -1031,6 +1030,9 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                       {/* COL 1: Index + Compact Audio Button */}
                       <td className="py-3 px-3 align-top text-center">
                         <div className="flex flex-col items-center gap-1">
+                          <span className="text-[11px] font-mono font-bold text-zinc-400">
+                            #{originalIndex + 1}
+                          </span>
                           <button
                             type="button"
                             onClick={() => handleTogglePlayAudio(item.audio_url)}
@@ -1075,7 +1077,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                         </div>
                       </td>
 
-                      {/* COL 2: Primary Structure / Formula (Editable) */}
+                      {/* COL 2: Cấu Trúc Ngữ Pháp Phản Xạ (Primary Structure) */}
                       <td className="py-3 px-4 align-top">
                         {isEditingThis ? (
                           <div className="flex items-center gap-1.5">
@@ -1139,7 +1141,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                         )}
                       </td>
 
-                      {/* COL 3: Category (Dropdown / Switcher) */}
+                      {/* COL 3: Phân Loại Category (Dropdown 1-chạm: Mẫu câu, Cụm ĐT, Thì phản xạ) */}
                       <td className="py-3 px-3 align-top">
                         <select
                           value={item.structure_type || 'sentence_structure'}
@@ -1153,33 +1155,12 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                           }`}
                         >
                           <option value="sentence_structure">🔵 Mẫu câu</option>
-                          <option value="verb_form">🟢 Cụm động từ</option>
+                          <option value="verb_form">🟢 Cụm ĐT</option>
                           <option value="tense_reflex">🟠 Thì phản xạ</option>
                         </select>
                       </td>
 
-                      {/* COL 4: Bilingual Examples (Clean, Compact, No Transcript) */}
-                      <td className="py-3 px-4 align-top">
-                        {item.examples && item.examples.length > 0 ? (
-                          <div className="space-y-1.5">
-                            {item.examples.slice(0, 2).map((ex, exIdx) => (
-                              <div key={exIdx} className="text-xs leading-relaxed">
-                                <div className="font-bold text-zinc-900">{ex.en}</div>
-                                <div className="text-zinc-500 italic text-[11px]">{ex.vi}</div>
-                              </div>
-                            ))}
-                            {item.examples.length > 2 && (
-                              <span className="text-[10px] text-zinc-400 font-mono">
-                                +{item.examples.length - 2} ví dụ khác
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-zinc-400 italic text-[11px]">Chưa có ví dụ</span>
-                        )}
-                      </td>
-
-                      {/* COL 5: Actions (Approve, Edit, Delete) */}
+                      {/* COL 4: Thao Tác (Approve, Edit, Delete) */}
                       <td className="py-3 px-3 align-top text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Approve Button */}
@@ -1194,7 +1175,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                             title={isApproved ? 'Click để bỏ duyệt' : 'Click để phê duyệt cấu trúc này'}
                           >
                             <Check className="w-3.5 h-3.5" />
-                            <span>{isApproved ? 'Đã duyệt' : 'Chờ duyệt'}</span>
+                            <span>{isApproved ? '✓ Đã duyệt' : 'Chờ duyệt'}</span>
                           </button>
 
                           {/* Edit Modal Button */}
@@ -1286,6 +1267,13 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             setTopics(updatedTopics.map(recomputeTopic));
             setHasUnsavedChanges(true);
             showToast('Đã ánh xạ audio thành công vào danh mục Topics!');
+          }}
+          onSyncComplete={(msg) => {
+            const now = new Date().toLocaleString('vi-VN');
+            setLastSyncTime(now);
+            localStorage.setItem(LOCAL_STORAGE_LAST_SYNC_KEY, now);
+            setHasUnsavedChanges(false);
+            showToast(msg, 'success');
           }}
         />
       )}
@@ -1555,6 +1543,7 @@ interface GoogleDriveSyncModalProps {
   topics: TopicResourceData[];
   selectedDay: number;
   onApplyUpdatedTopics: (topics: TopicResourceData[]) => void;
+  onSyncComplete?: (message: string) => void;
 }
 
 const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
@@ -1562,10 +1551,13 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
   onClose,
   topics,
   selectedDay,
-  onApplyUpdatedTopics
+  onApplyUpdatedTopics,
+  onSyncComplete
 }) => {
-  const [activeTab, setActiveTab] = useState<'scan_drive' | 'local_folder' | 'upload_file'>('scan_drive');
-  const [folderUrl, setFolderUrl] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'scan_drive' | 'upload_to_drive' | 'local_folder'>('scan_drive');
+  const [folderUrl, setFolderUrl] = useState<string>(() => {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem('chunks_gdrive_folder_id') || '' : '';
+  });
   const [apiKey, setApiKey] = useState<string>(() => {
     return typeof localStorage !== 'undefined' ? localStorage.getItem('chunks_gdrive_api_key') || '' : '';
   });
@@ -1576,11 +1568,147 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
   const [mapScope, setMapScope] = useState<'all_topics' | 'current_day'>('all_topics');
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSyncingFirestore, setIsSyncingFirestore] = useState<boolean>(false);
+  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; percent: number; message: string } | null>(null);
+  const [completionSummary, setCompletionSummary] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [matchedCount, setMatchedCount] = useState<number>(0);
+  const [selectedUploadFiles, setSelectedUploadFiles] = useState<File[]>([]);
 
-  // Scan Drive Folder
-  const handleScanDrive = async () => {
+  // Persistent Input Handlers
+  const handleFolderUrlChange = (val: string) => {
+    setFolderUrl(val);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('chunks_gdrive_folder_id', val.trim());
+    }
+  };
+
+  const handleApiKeyChange = (val: string) => {
+    setApiKey(val);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('chunks_gdrive_api_key', val.trim());
+    }
+  };
+
+  const handleAccessTokenChange = (val: string) => {
+    setAccessToken(val);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('chunks_gdrive_access_token', val.trim());
+    }
+  };
+
+  // 1-Click: Quét Google Drive & Sync Trực Tiếp Lên Firestore
+  const handleScanAndDirectSyncFirestore = async () => {
+    if (!folderUrl.trim()) {
+      alert('Vui lòng nhập Google Drive Folder URL hoặc Folder ID.');
+      return;
+    }
+
+    setIsLoading(true);
+    setIsSyncingFirestore(true);
+    setLogs([]);
+    setMatchedCount(0);
+    setCompletionSummary(null);
+
+    try {
+      const parsed = parseGoogleDriveUrl(folderUrl, 'folder');
+      const folderId = parsed.id || folderUrl.trim();
+
+      // Persist in localStorage
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('chunks_gdrive_folder_id', folderUrl.trim());
+        if (apiKey) localStorage.setItem('chunks_gdrive_api_key', apiKey.trim());
+        if (accessToken) localStorage.setItem('chunks_gdrive_access_token', accessToken.trim());
+      }
+
+      setLogs(prev => [...prev, `[INIT] Đang kết nối tới Google Drive API với Folder ID: ${folderId}...`]);
+      setSyncProgress({ current: 0, total: 100, percent: 10, message: 'Đang quét files audio từ Google Drive API...' });
+
+      const scanResult = await fetchDriveFolderFiles(folderId, apiKey, accessToken);
+
+      setLogs(prev => [
+        ...prev,
+        `[FETCH] Đã tìm thấy ${scanResult.audioFiles.length} file audio hợp lệ trên Google Drive.`
+      ]);
+
+      const mapOptions = {
+        targetDayNumber: mapScope === 'current_day' ? selectedDay : undefined,
+        overwriteExisting
+      };
+
+      setSyncProgress({ current: 0, total: 100, percent: 30, message: 'Đang tự động map audio với các cấu trúc ngữ pháp...' });
+      const mapResult = autoMapDriveFilesToTopics(scanResult.audioFiles, topics, mapOptions);
+
+      setLogs(prev => [...prev, ...mapResult.logs]);
+      setMatchedCount(mapResult.matchedCount);
+
+      if (mapResult.matchedCount === 0) {
+        setLogs(prev => [...prev, '[WARN] Không có file audio nào khớp với cấu trúc trong topic. Huỷ đồng bộ Firestore.']);
+        setIsLoading(false);
+        setIsSyncingFirestore(false);
+        setSyncProgress(null);
+        return;
+      }
+
+      // Update in-memory state
+      onApplyUpdatedTopics(mapResult.updatedTopics);
+
+      // Direct Batch Sync to Firestore!
+      setLogs(prev => [...prev, `[FIRESTORE] Đang đồng bộ trực tiếp ${mapResult.updatedTopics.length} topics lên Firebase Firestore...`]);
+
+      const targetTopicsToSync = mapScope === 'current_day'
+        ? mapResult.updatedTopics.filter((t: any) => t.day_number === selectedDay || t.topic_number === selectedDay)
+        : mapResult.updatedTopics;
+
+      const totalSync = targetTopicsToSync.length;
+
+      for (let i = 0; i < totalSync; i++) {
+        const t = targetTopicsToSync[i];
+        const docId = t.lesson_id || `level_b_day_${t.day_number || t.topic_number}`;
+        const pct = 30 + Math.round(((i + 1) / totalSync) * 70);
+
+        setSyncProgress({
+          current: i + 1,
+          total: totalSync,
+          percent: pct,
+          message: `[${i + 1}/${totalSync}] Đang lưu Day ${t.day_number || t.topic_number} (${t.lesson_title}) lên Firestore...`
+        });
+
+        const grammarPayload: LessonGrammar = {
+          verb_forms: t.verb_forms || [],
+          sentence_structures: t.sentence_structures || [],
+          tense: t.tense || [],
+          notes: t.notes || '',
+          mini_lessons: t.mini_lessons || [],
+          total_audio_files: t.total_audio_files || 0,
+          source_type: 'google_drive',
+          thematic_module: t.thematic_module,
+          status: 'active'
+        };
+
+        const res = await saveLessonGrammar(docId, grammarPayload);
+        if (!res.success) {
+          throw new Error(`Lỗi lưu Firestore tại ${docId}: ${res.error}`);
+        }
+        curriculumRegistry.updateLessonGrammar(docId, grammarPayload);
+        setLogs(prev => [...prev, `[FIRESTORE ✓] Day ${t.day_number || t.topic_number} (${docId}) đã đồng bộ thành công!`]);
+      }
+
+      const summary = `Đã map và sync thành công ${mapResult.matchedCount} audio files từ Google Drive lên Firestore!`;
+      setCompletionSummary(summary);
+      setLogs(prev => [...prev, `[SUCCESS 🎉] ${summary}`]);
+      setSyncProgress({ current: totalSync, total: totalSync, percent: 100, message: 'Hoàn tất đồng bộ 100% lên Firestore!' });
+      onSyncComplete?.(summary);
+    } catch (err: any) {
+      setLogs(prev => [...prev, `[ERROR ❌] ${err?.message || String(err)}`]);
+    } finally {
+      setIsLoading(false);
+      setIsSyncingFirestore(false);
+    }
+  };
+
+  // Quét & Xem Trước (Không Sync Firestore)
+  const handleScanPreviewOnly = async () => {
     if (!folderUrl.trim()) {
       alert('Vui lòng nhập Google Drive Folder URL hoặc Folder ID.');
       return;
@@ -1589,13 +1717,18 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
     setIsLoading(true);
     setLogs([]);
     setMatchedCount(0);
+    setCompletionSummary(null);
+    setSyncProgress(null);
 
     try {
-      if (apiKey) localStorage.setItem('chunks_gdrive_api_key', apiKey);
-      if (accessToken) localStorage.setItem('chunks_gdrive_access_token', accessToken);
-
       const parsed = parseGoogleDriveUrl(folderUrl, 'folder');
       const folderId = parsed.id || folderUrl.trim();
+
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('chunks_gdrive_folder_id', folderUrl.trim());
+        if (apiKey) localStorage.setItem('chunks_gdrive_api_key', apiKey.trim());
+        if (accessToken) localStorage.setItem('chunks_gdrive_access_token', accessToken.trim());
+      }
 
       setLogs(prev => [...prev, `[INIT] Đang kết nối tới Google Drive Folder ID: ${folderId}...`]);
       const scanResult = await fetchDriveFolderFiles(folderId, apiKey, accessToken);
@@ -1617,15 +1750,129 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
 
       if (mapResult.matchedCount > 0) {
         onApplyUpdatedTopics(mapResult.updatedTopics);
+        setCompletionSummary(`Đã map thành công ${mapResult.matchedCount} files vào danh mục (Chưa lưu Firestore).`);
       }
     } catch (err: any) {
-      setLogs(prev => [...prev, `[ERROR] ${err?.message || String(err)}`]);
+      setLogs(prev => [...prev, `[ERROR ❌] ${err?.message || String(err)}`]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Local Folder Auto-Map
+  // Upload Thư Mục Lên Google Drive & Sync Firestore
+  const handleSelectFilesForDriveUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const audioExtensions = /\.(mp3|wav|m4a|ogg|aac|flac)$/i;
+    const filtered = Array.from(files).filter((f: File) => audioExtensions.test(f.name));
+    setSelectedUploadFiles(filtered);
+    setLogs([`Đã chọn ${filtered.length} file audio hợp lệ từ máy tính.`]);
+  };
+
+  const handleStartUploadToDriveAndSync = async () => {
+    if (selectedUploadFiles.length === 0) {
+      alert('Vui lòng chọn thư mục chứa file audio trước khi bắt đầu upload.');
+      return;
+    }
+
+    if (!accessToken.trim()) {
+      alert('OAuth Access Token là bắt buộc để upload file lên Google Drive qua REST API.');
+      return;
+    }
+
+    const parsed = parseGoogleDriveUrl(folderUrl, 'folder');
+    const folderId = parsed.id || folderUrl.trim();
+    if (!folderId) {
+      alert('Vui lòng nhập Google Drive Folder URL hoặc Folder ID đích.');
+      return;
+    }
+
+    setIsLoading(true);
+    setLogs([]);
+    setMatchedCount(0);
+    setCompletionSummary(null);
+
+    try {
+      setLogs(prev => [
+        ...prev,
+        `[UPLOAD INIT] Bắt đầu upload ${selectedUploadFiles.length} files lên Google Drive Folder: ${folderId}...`
+      ]);
+
+      const uploadedDriveItems: DriveFileItem[] = [];
+
+      for (let i = 0; i < selectedUploadFiles.length; i++) {
+        const file = selectedUploadFiles[i];
+        const pct = Math.round(((i + 1) / selectedUploadFiles.length) * 50);
+        setSyncProgress({
+          current: i + 1,
+          total: selectedUploadFiles.length,
+          percent: pct,
+          message: `[${i + 1}/${selectedUploadFiles.length}] Đang upload "${file.name}" lên Google Drive...`
+        });
+
+        const uploadedItem = await uploadFileToDrive(file, folderId, accessToken);
+        uploadedDriveItems.push(uploadedItem);
+        setLogs(prev => [...prev, `[UPLOADED ✓] ${file.name} (Drive ID: ${uploadedItem.id})`]);
+      }
+
+      setLogs(prev => [
+        ...prev,
+        `[MAP] Đã upload thành công ${uploadedDriveItems.length} file lên Google Drive. Đang auto-map vào 30 topics...`
+      ]);
+
+      const mapResult = autoMapDriveFilesToTopics(uploadedDriveItems, topics, { overwriteExisting: true });
+      setLogs(prev => [...prev, ...mapResult.logs]);
+      setMatchedCount(mapResult.matchedCount);
+
+      if (mapResult.matchedCount > 0) {
+        onApplyUpdatedTopics(mapResult.updatedTopics);
+
+        // Directly sync to Firestore!
+        setLogs(prev => [...prev, `[FIRESTORE] Đang đồng bộ trực tiếp cấu trúc mới lên Firebase Firestore...`]);
+        const totalSync = mapResult.updatedTopics.length;
+
+        for (let i = 0; i < totalSync; i++) {
+          const t = mapResult.updatedTopics[i];
+          const docId = t.lesson_id || `level_b_day_${t.day_number || t.topic_number}`;
+          const pct = 50 + Math.round(((i + 1) / totalSync) * 50);
+
+          setSyncProgress({
+            current: i + 1,
+            total: totalSync,
+            percent: pct,
+            message: `[${i + 1}/${totalSync}] Đang lưu Firestore Day ${t.day_number || t.topic_number}...`
+          });
+
+          const grammarPayload: LessonGrammar = {
+            verb_forms: t.verb_forms || [],
+            sentence_structures: t.sentence_structures || [],
+            tense: t.tense || [],
+            notes: t.notes || '',
+            mini_lessons: t.mini_lessons || [],
+            total_audio_files: t.total_audio_files || 0,
+            source_type: 'google_drive',
+            thematic_module: t.thematic_module,
+            status: 'active'
+          };
+
+          await saveLessonGrammar(docId, grammarPayload);
+          curriculumRegistry.updateLessonGrammar(docId, grammarPayload);
+        }
+
+        const summary = `Đã upload ${uploadedDriveItems.length} audio files lên Google Drive và sync thành công ${mapResult.matchedCount} cấu trúc lên Firestore!`;
+        setCompletionSummary(summary);
+        setLogs(prev => [...prev, `[SUCCESS 🎉] ${summary}`]);
+        setSyncProgress({ current: totalSync, total: totalSync, percent: 100, message: 'Hoàn tất upload và sync Firestore 100%!' });
+        onSyncComplete?.(summary);
+      }
+    } catch (err: any) {
+      setLogs(prev => [...prev, `[ERROR ❌] ${err?.message || String(err)}`]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Local Folder Auto-Map (Instant Blob Preview)
   const handleSelectLocalFolder = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -1633,6 +1880,7 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
     setIsLoading(true);
     setLogs([]);
     setMatchedCount(0);
+    setCompletionSummary(null);
 
     try {
       setLogs(prev => [...prev, `[LOCAL] Đang xử lý ${files.length} files từ máy tính...`]);
@@ -1648,9 +1896,10 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
 
       if (mapResult.matchedCount > 0) {
         onApplyUpdatedTopics(mapResult.updatedTopics);
+        setCompletionSummary(`Đã map ${mapResult.matchedCount} audio files từ máy tính để nghe thử ngay!`);
       }
     } catch (err: any) {
-      setLogs(prev => [...prev, `[ERROR] ${err?.message || String(err)}`]);
+      setLogs(prev => [...prev, `[ERROR ❌] ${err?.message || String(err)}`]);
     } finally {
       setIsLoading(false);
     }
@@ -1658,19 +1907,19 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-white rounded-2xl max-w-2xl w-full border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
-              <FolderSync className="w-4 h-4" />
+            <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700 shadow-2xs">
+              <FolderSync className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-zinc-900">Google Drive & Local Audio Auto-Sync</h3>
-              <p className="text-xs text-zinc-500">Tự động nhận diện filename và gắn audio vào cấu trúc ngữ pháp</p>
+              <h3 className="text-sm font-bold text-zinc-900">Google Drive API & Audio Auto-Sync</h3>
+              <p className="text-xs text-zinc-500">Tự động quét, gắn audio Google Drive trực tiếp lên Firestore 1-chạm</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600">
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -1685,7 +1934,17 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
                 : 'border-transparent text-zinc-500 hover:text-zinc-800'
             }`}
           >
-            Quét Thư Mục Google Drive
+            Quét Google Drive & Sync Firestore
+          </button>
+          <button
+            onClick={() => setActiveTab('upload_to_drive')}
+            className={`pb-2.5 px-2 border-b-2 transition-all cursor-pointer ${
+              activeTab === 'upload_to_drive'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            Upload Thư Mục Lên Drive qua API & Sync
           </button>
           <button
             onClick={() => setActiveTab('local_folder')}
@@ -1695,12 +1954,13 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
                 : 'border-transparent text-zinc-500 hover:text-zinc-800'
             }`}
           >
-            Chọn Folder Audio Từ Máy Tính (Instant Preview)
+            Nghe Thử Offline (File Máy Tính)
           </button>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-4 overflow-y-auto">
+          {/* TAB 1: Scan Drive & 1-Click Sync */}
           {activeTab === 'scan_drive' && (
             <div className="space-y-3.5">
               <div>
@@ -1710,36 +1970,45 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
                 <input
                   type="text"
                   value={folderUrl}
-                  onChange={e => setFolderUrl(e.target.value)}
-                  placeholder="https://drive.google.com/drive/folders/1aBcDeFgHiJkLmNoPqRs..."
-                  className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-500"
+                  onChange={e => handleFolderUrlChange(e.target.value)}
+                  placeholder="https://drive.google.com/drive/folders/1aBcDeFgHiJkLmNoPqRs... hoặc ID folder"
+                  className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-500 shadow-2xs"
                 />
+                <span className="text-[10px] text-zinc-400 mt-0.5 block">
+                  Được tự động lưu vào trình duyệt (localStorage: chunks_gdrive_folder_id)
+                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-zinc-700 mb-1">
-                    Google Drive API Key (Tuỳ chọn nếu folder công khai)
+                    Google Drive API Key (Folder công khai)
                   </label>
                   <input
                     type="password"
                     value={apiKey}
-                    onChange={e => setApiKey(e.target.value)}
+                    onChange={e => handleApiKeyChange(e.target.value)}
                     placeholder="AIzaSy..."
-                    className="w-full px-3 py-1.5 bg-white border border-zinc-300 rounded-xl text-xs font-mono focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-1.5 bg-white border border-zinc-300 rounded-xl text-xs font-mono focus:outline-none focus:border-blue-500 shadow-2xs"
                   />
+                  <span className="text-[10px] text-zinc-400 mt-0.5 block">
+                    (localStorage: chunks_gdrive_api_key)
+                  </span>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-zinc-700 mb-1">
-                    OAuth Access Token (Tuỳ chọn nếu folder riêng tư)
+                    OAuth Access Token (Folder riêng tư)
                   </label>
                   <input
                     type="password"
                     value={accessToken}
-                    onChange={e => setAccessToken(e.target.value)}
+                    onChange={e => handleAccessTokenChange(e.target.value)}
                     placeholder="ya29.a0..."
-                    className="w-full px-3 py-1.5 bg-white border border-zinc-300 rounded-xl text-xs font-mono focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-1.5 bg-white border border-zinc-300 rounded-xl text-xs font-mono focus:outline-none focus:border-blue-500 shadow-2xs"
                   />
+                  <span className="text-[10px] text-zinc-400 mt-0.5 block">
+                    (localStorage: chunks_gdrive_access_token)
+                  </span>
                 </div>
               </div>
 
@@ -1776,47 +2045,108 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
                 </label>
               </div>
 
-              <button
-                type="button"
-                onClick={handleScanDrive}
-                disabled={isLoading}
-                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isLoading ? 'Đang quét Google Drive...' : 'Bắt Đầu Quét & Auto-Map Ngay'}
-              </button>
+              {/* Primary 1-Click Sync Button */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleScanAndDirectSyncFirestore}
+                  disabled={isLoading}
+                  className="flex-1 w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 active:scale-98"
+                >
+                  <FolderSync className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span>{isLoading ? 'Đang Quét & Đồng Bộ...' : '⚡ Quét & Sync Trực Tiếp Lên Firestore (1-Click)'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleScanPreviewOnly}
+                  disabled={isLoading}
+                  className="w-full sm:w-auto py-2.5 px-4 border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                  title="Chỉ map và gắn vào bảng review hiện tại mà không tự động lưu lên Firestore"
+                >
+                  Chỉ Quét & Xem Trước
+                </button>
+              </div>
             </div>
           )}
 
-          {activeTab === 'local_folder' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-blue-50/50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed">
-                <p className="font-bold mb-1">💡 Nghe thử ngay lập tức không cần upload lên mạng!</p>
-                <p className="text-zinc-600">
-                  Chọn thư mục chứa file MP3 trên máy tính của bạn (VD: <code>Topic 1 - 01.mp3</code>, <code>Day 1 - 02.mp3</code>, <code>T01_03.mp3</code>). Hệ thống sẽ tạo Blob URL và gắn trực tiếp vào các cấu trúc tương ứng để bạn kiểm tra và duyệt ngay.
+          {/* TAB 2: Upload to Drive & Sync */}
+          {activeTab === 'upload_to_drive' && (
+            <div className="space-y-3.5">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed">
+                <p className="font-bold mb-0.5">📂 Upload tự động thư mục audio lên Google Drive & Sync Firestore:</p>
+                <p className="text-zinc-600 text-[11px]">
+                  Chọn thư mục máy tính chứa audio (VD: <code>C:\Users\gensh\Downloads\chunks-grammar\FULL 30 Topic_P@W\Grammar Boost\Grammar Boost</code>). Hệ thống sẽ upload từng file lên Google Drive, lấy direct URL và đồng bộ 1-click lên Firestore!
                 </p>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-1.5 cursor-pointer font-medium text-zinc-700">
-                    <input
-                      type="radio"
-                      name="localMapScope"
-                      checked={mapScope === 'all_topics'}
-                      onChange={() => setMapScope('all_topics')}
-                    />
-                    <span>Map cả 30 Topics</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer font-medium text-zinc-700">
-                    <input
-                      type="radio"
-                      name="localMapScope"
-                      checked={mapScope === 'current_day'}
-                      onChange={() => setMapScope('current_day')}
-                    />
-                    <span>Chỉ map cho Day {selectedDay}</span>
-                  </label>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  Google Drive Folder Đích (URL hoặc Folder ID) *
+                </label>
+                <input
+                  type="text"
+                  value={folderUrl}
+                  onChange={e => handleFolderUrlChange(e.target.value)}
+                  placeholder="https://drive.google.com/drive/folders/..."
+                  className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-500 shadow-2xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1">
+                  OAuth Access Token (Bắt buộc để upload) *
+                </label>
+                <input
+                  type="password"
+                  value={accessToken}
+                  onChange={e => handleAccessTokenChange(e.target.value)}
+                  placeholder="ya29.a0..."
+                  className="w-full px-3 py-1.5 bg-white border border-zinc-300 rounded-xl text-xs font-mono focus:outline-none focus:border-blue-500 shadow-2xs"
+                />
+              </div>
+
+              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-300 hover:border-blue-500 rounded-2xl bg-zinc-50 hover:bg-blue-50/30 transition-all cursor-pointer">
+                <FolderOpen className="w-8 h-8 text-blue-500 mb-1.5" />
+                <span className="text-xs font-bold text-zinc-800">Chọn Thư Mục Chứa File MP3 Cần Upload</span>
+                <span className="text-[11px] text-zinc-400 mt-0.5">
+                  {selectedUploadFiles.length > 0
+                    ? `Đã chọn ${selectedUploadFiles.length} file audio sẵn sàng upload`
+                    : 'Hỗ trợ cấu trúc thư mục Topic 1..30 hoặc toàn bộ thư mục audio'}
+                </span>
+                <input
+                  type="file"
+                  // @ts-ignore
+                  webkitdirectory=""
+                  directory=""
+                  multiple
+                  onChange={handleSelectFilesForDriveUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {selectedUploadFiles.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleStartUploadToDriveAndSync}
+                  disabled={isLoading}
+                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 active:scale-98"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{isLoading ? 'Đang Upload & Sync...' : `Bắt Đầu Upload ${selectedUploadFiles.length} File Lên Google Drive & Sync Firestore`}</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: Local Folder Instant Preview */}
+          {activeTab === 'local_folder' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50/50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed">
+                <p className="font-bold mb-1">💡 Nghe thử ngay lập tức không cần mạng!</p>
+                <p className="text-zinc-600">
+                  Chọn thư mục chứa file MP3 trên máy tính. Hệ thống sẽ tạo Blob URL và gắn trực tiếp vào các cấu trúc tương ứng để bạn kiểm tra và duyệt ngay.
+                </p>
               </div>
 
               <label className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-300 hover:border-blue-500 rounded-2xl bg-zinc-50 hover:bg-blue-50/30 transition-all cursor-pointer">
@@ -1836,18 +2166,58 @@ const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
             </div>
           )}
 
+          {/* Progress Bar */}
+          {syncProgress && (
+            <div className="space-y-1.5 p-3.5 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="flex items-center justify-between text-xs font-bold text-blue-900">
+                <span className="truncate max-w-[80%]">{syncProgress.message}</span>
+                <span className="font-mono">{syncProgress.percent}%</span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${syncProgress.percent}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Completion Summary Card */}
+          {completionSummary && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <Check className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-emerald-900">Đồng Bộ Hoàn Tất!</div>
+                <div className="text-xs text-emerald-700">{completionSummary}</div>
+              </div>
+            </div>
+          )}
+
           {/* Real-time Logs Console */}
           {logs.length > 0 && (
-            <div className="space-y-1.5 pt-2">
+            <div className="space-y-1.5 pt-1">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-700">
-                <span>Nhật Ký Auto-Mapping:</span>
+                <span>Nhật Ký Auto-Mapping & Sync:</span>
                 {matchedCount > 0 && (
-                  <span className="text-emerald-600">Đã khớp {matchedCount} file audio!</span>
+                  <span className="text-emerald-600">Đã khớp {matchedCount} audio files!</span>
                 )}
               </div>
-              <div className="bg-zinc-950 text-emerald-400 p-3.5 rounded-xl font-mono text-[11px] max-h-48 overflow-y-auto space-y-1">
+              <div className="bg-zinc-950 text-emerald-400 p-3.5 rounded-xl font-mono text-[11px] max-h-44 overflow-y-auto space-y-1">
                 {logs.map((log, lIdx) => (
-                  <div key={lIdx} className={log.includes('[ERROR]') ? 'text-rose-400' : log.includes('[MATCH]') ? 'text-emerald-300' : 'text-zinc-300'}>
+                  <div
+                    key={lIdx}
+                    className={
+                      log.includes('[ERROR')
+                        ? 'text-rose-400'
+                        : log.includes('[SUCCESS') || log.includes('[FIRESTORE ✓]') || log.includes('[MATCH]') || log.includes('[EXACT MATCH]')
+                        ? 'text-emerald-300'
+                        : log.includes('[FETCH') || log.includes('[UPLOADED')
+                        ? 'text-blue-300'
+                        : 'text-zinc-300'
+                    }
+                  >
                     {log}
                   </div>
                 ))}

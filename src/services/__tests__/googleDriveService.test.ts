@@ -197,6 +197,24 @@ describe('googleDriveService', () => {
     });
 
     it('returns nulls for unrelated names', () => {
+      expect(extractTopicAndItemNumber('1en_Gr_01_1.mp3')).toEqual({
+        topicNumber: 1,
+        dayNumber: 1,
+        itemNumber: 1,
+      });
+
+      expect(extractTopicAndItemNumber('1en_Gr_10_2.mp3')).toEqual({
+        topicNumber: 10,
+        dayNumber: 10,
+        itemNumber: 2,
+      });
+
+      expect(extractTopicAndItemNumber('1en_Gr_30_9.mp3')).toEqual({
+        topicNumber: 30,
+        dayNumber: 30,
+        itemNumber: 9,
+      });
+
       expect(extractTopicAndItemNumber('background_music.mp3')).toEqual({
         topicNumber: null,
         dayNumber: null,
@@ -321,6 +339,24 @@ describe('googleDriveService', () => {
       const topic3 = result.updatedTopics.find((t) => t.topic_number === 3);
       expect(topic3!.mini_lessons[0].audio_url).toBe(driveFiles[0].directStreamUrl);
       expect(topic3!.mini_lessons[0].gdrive_file_id).toBe('file_id_custom');
+    });
+
+    it('matches 1en_Gr_XX_Y naming and maps directly to matching ml.file or topic/item indices', () => {
+      const driveFiles: DriveFileItem[] = [
+        {
+          id: 'file_id_engr_1',
+          name: '1en_Gr_01_1.mp3',
+          mimeType: 'audio/mpeg',
+          directStreamUrl: getGoogleDriveStreamUrl('file_id_engr_1'),
+          previewUrl: getGoogleDrivePreviewUrl('file_id_engr_1'),
+        },
+      ];
+
+      const result = autoMapDriveFilesToTopics(driveFiles, mockTopics);
+      expect(result.matchedCount).toBe(1);
+      const topic1 = result.updatedTopics.find((t) => t.topic_number === 1);
+      expect(topic1!.mini_lessons[0].audio_url).toBe(driveFiles[0].directStreamUrl);
+      expect(topic1!.mini_lessons[0].gdrive_file_id).toBe('file_id_engr_1');
     });
 
     it('falls back to targetTopicNumber for item-only files (01.mp3, 02.mp3)', () => {

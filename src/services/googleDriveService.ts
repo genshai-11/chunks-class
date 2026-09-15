@@ -155,7 +155,19 @@ export function extractTopicAndItemNumber(filename: string): FilenameParsedIndic
   // Strip extension
   const nameWithoutExt = filename.replace(/\.[a-zA-Z0-9]+$/, '').trim();
 
-  // 1. Topic pattern: Topic\s*0?(\d+)[^0-9]+0?(\d+)
+  // 1. en_Gr pattern: e.g. 1en_Gr_01_1, 1en_Gr_10_2, 1en_Gr_30_9
+  const enGrMatch = nameWithoutExt.match(/(?:\d+)?en_Gr_0?(\d+)_0?(\d+)/i);
+  if (enGrMatch) {
+    const topicNum = parseInt(enGrMatch[1], 10);
+    const itemNum = parseInt(enGrMatch[2], 10);
+    return {
+      topicNumber: topicNum,
+      dayNumber: topicNum,
+      itemNumber: itemNum,
+    };
+  }
+
+  // 2. Topic pattern: Topic\s*0?(\d+)[^0-9]+0?(\d+)
   const topicMatch = nameWithoutExt.match(/Topic\s*0?(\d+)[^0-9]+0?(\d+)/i);
   if (topicMatch) {
     const topicNum = parseInt(topicMatch[1], 10);
@@ -167,7 +179,7 @@ export function extractTopicAndItemNumber(filename: string): FilenameParsedIndic
     };
   }
 
-  // 2. Day pattern: Day\s*0?(\d+)[^0-9]+0?(\d+)
+  // 3. Day pattern: Day\s*0?(\d+)[^0-9]+0?(\d+)
   const dayMatch = nameWithoutExt.match(/Day\s*0?(\d+)[^0-9]+0?(\d+)/i);
   if (dayMatch) {
     const dayNum = parseInt(dayMatch[1], 10);
@@ -179,7 +191,7 @@ export function extractTopicAndItemNumber(filename: string): FilenameParsedIndic
     };
   }
 
-  // 3. T-prefix: T0?(\d+)[_-]0?(\d+)
+  // 4. T-prefix: T0?(\d+)[_-]0?(\d+)
   const tMatch = nameWithoutExt.match(/\bT0?(\d+)[_\-\s]+0?(\d+)\b/i);
   if (tMatch) {
     const tNum = parseInt(tMatch[1], 10);
@@ -191,7 +203,7 @@ export function extractTopicAndItemNumber(filename: string): FilenameParsedIndic
     };
   }
 
-  // 4. Standalone item number: "01", "02", "item 1", "1"
+  // 5. Standalone item number: "01", "02", "item 1", "1"
   const itemOnlyMatch = nameWithoutExt.match(/^(?:item\s*)?0?(\d+)$/i);
   if (itemOnlyMatch) {
     return {
@@ -409,8 +421,51 @@ export function autoMapDriveFilesToTopics<T = any>(
   let unmatchedCount = 0;
 
   for (const file of driveFiles) {
-    const parsed = extractTopicAndItemNumber(file.name);
     let matched = false;
+    const lowerFileName = file.name.trim().toLowerCase();
+    const fileNameNoExt = lowerFileName.replace(/\.[a-zA-Z0-9]+$/, '').trim();
+
+    // Priority 1: Exact match on ml.file across topics (scoped to target topic if specified)
+    const candidateTopics = (options?.targetTopicNumber !== undefined || options?.targetDayNumber !== undefined)
+      ? updatedTopics.filter(
+          (t: any) =>
+            t.topic_number === (options?.targetTopicNumber ?? options?.targetDayNumber) ||
+            t.day_number === (options?.targetTopicNumber ?? options?.targetDayNumber)
+        )
+      : updatedTopics;
+
+    for (const t of candidateTopics) {
+      if (!Array.isArray(t.mini_lessons)) continue;
+      const mlIndex = t.mini_lessons.findIndex((m: GrammarMiniLesson) => {
+        if (!m.file) return false;
+        const mf = m.file.trim().toLowerCase();
+        const mfNoExt = mf.replace(/\.[a-zA-Z0-9]+$/, '').trim();
+        return mf === lowerFileName || mfNoExt === fileNameNoExt;
+      });
+
+      if (mlIndex >= 0) {
+        const targetMl = t.mini_lessons[mlIndex];
+        if (!overwriteExisting && targetMl.audio_url) {
+          logs.push(`[SKIPPED] Skipped "${file.name}" because Topic ${t.topic_number || t.day_number} Item #${mlIndex + 1} already has audio.`);
+        } else {
+          targetMl.audio_url = file.directStreamUrl;
+          targetMl.gdrive_file_id = file.id;
+          targetMl.file = file.name;
+          targetMl.audio_source = 'google_drive';
+          matchedCount++;
+          matched = true;
+          logs.push(
+            `[EXACT MATCH] Mapped "${file.name}" to Topic ${t.topic_number || t.day_number} - Item #${mlIndex + 1} (${targetMl.primary_structure || targetMl.topic || 'Item ' + (mlIndex + 1)})`
+          );
+        }
+        break;
+      }
+    }
+
+    if (matched) continue;
+
+    // Priority 2: Pattern-based matching (Topic X - Y, Day X - Y, en_Gr, T-prefix, Item index)
+    const parsed = extractTopicAndItemNumber(file.name);
 
     // Resolve target topic number
     let targetTopicNum: number | null = null;
