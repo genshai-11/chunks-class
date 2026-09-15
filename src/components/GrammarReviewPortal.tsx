@@ -124,12 +124,47 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
   // 1. Core State
   // --------------------------------------------------------------------------
   const [topics, setTopics] = useState<TopicResourceData[]>(() => {
+    // Build lookup map from initialCatalogData (pre-populated with 288/288 Google Drive audio URLs)
+    const initialTopics: any[] = (initialCatalogData as any).topics || [];
+    const initialAudioMap = new Map<string, { audio_url: string; audio_source: string; gdrive_file_id?: string }>();
+    for (const it of initialTopics) {
+      const day = it.day_number || it.topic_number || 1;
+      for (const iml of it.mini_lessons || []) {
+        if (iml.file && iml.audio_url) {
+          initialAudioMap.set(`${day}_${iml.file}`, {
+            audio_url: iml.audio_url,
+            audio_source: iml.audio_source || 'google_drive',
+            gdrive_file_id: iml.gdrive_file_id
+          });
+        }
+      }
+    }
+
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_CATALOG_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(recomputeTopic);
+          return parsed.map((t: any) => {
+            const dayNum = t.day_number || t.topic_number || 1;
+            const updatedMini = (t.mini_lessons || []).map((ml: any) => {
+              const key = `${dayNum}_${ml.file}`;
+              const cloudAudio = initialAudioMap.get(key);
+              if (cloudAudio && (cloudAudio.audio_source === 'google_drive' || !ml.audio_url || ml.audio_source !== 'google_drive')) {
+                return {
+                  ...ml,
+                  audio_url: cloudAudio.audio_url,
+                  audio_source: cloudAudio.audio_source,
+                  gdrive_file_id: cloudAudio.gdrive_file_id || ml.gdrive_file_id
+                };
+              }
+              return ml;
+            });
+            return recomputeTopic({
+              ...t,
+              mini_lessons: updatedMini
+            });
+          });
         }
       }
     } catch (e) {
@@ -266,7 +301,12 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
       audioPlayerRef.current = new Audio();
     }
 
+    // Stop and reset any current playback to ensure smooth Google Drive streaming
+    audioPlayerRef.current.pause();
+    audioPlayerRef.current.currentTime = 0;
     audioPlayerRef.current.src = url;
+    audioPlayerRef.current.preload = 'auto';
+
     audioPlayerRef.current.onended = () => {
       setIsPlaying(false);
       setCurrentlyPlayingUrl(null);
@@ -750,6 +790,10 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Standalone Review Ready</span>
               </span>
+              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 inline-flex items-center gap-1.5 shadow-2xs">
+                <HardDrive className="w-3 h-3 text-emerald-600" />
+                <span>{globalStats.totalWithAudio}/{globalStats.totalStructures} Audio Google Drive Sẵn Sàng</span>
+              </span>
             </div>
             <p className="text-[11px] text-zinc-500 hidden md:block">
               Audit 30 Topics • Compact Audio • Auto-Map Drive • Không Transcript • Đồng bộ Firestore 1-Click
@@ -908,7 +952,8 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             <span className="font-mono font-bold">{topicStats.approved}/{topicStats.total}</span>
             {topicStats.total > 0 && topicStats.approved === topicStats.total && <Check className="w-3 h-3 text-emerald-600" />}
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 text-xs font-semibold border border-blue-200">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200">
+            <HardDrive className="w-3.5 h-3.5 text-emerald-600" />
             <span>Audio:</span>
             <span className="font-mono font-bold">{topicStats.withAudio}/{topicStats.total}</span>
           </div>
@@ -1064,8 +1109,11 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
 
                           {/* Audio Source Badge */}
                           <div className="text-[9px] font-mono font-bold uppercase">
-                            {item.audio_source === 'google_drive' || (item.audio_url && item.audio_url.includes('drive.google')) ? (
-                              <span className="text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200">Drive</span>
+                            {item.audio_source === 'google_drive' || (item.audio_url && (item.audio_url.includes('drive.google.com') || item.audio_url.includes('docs.google.com'))) ? (
+                              <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline-flex items-center gap-0.5">
+                                <HardDrive className="w-2.5 h-2.5 text-emerald-600" />
+                                <span>[Drive]</span>
+                              </span>
                             ) : item.audio_source === 'local_blob' || (item.audio_url && item.audio_url.startsWith('blob:')) ? (
                               <span className="text-blue-600 bg-blue-50 px-1 py-0.5 rounded border border-blue-200">Local</span>
                             ) : hasAudio ? (
