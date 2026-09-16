@@ -860,6 +860,74 @@ export async function saveLessonGrammar(
   }
 }
 
+export async function getLessonGrammar(lessonId: string): Promise<LessonGrammar | null> {
+  try {
+    if (!lessonId) return null;
+    const cleanId = lessonId.trim();
+    const docId = cleanId.startsWith('level_b_ere_day_') 
+      ? cleanId.replace('level_b_ere_day_', 'level_b_day_')
+      : cleanId;
+
+    let snap = await getDoc(doc(db, 'lessons', docId));
+    if (snap.exists() && snap.data()?.grammar) {
+      return snap.data().grammar as LessonGrammar;
+    }
+    if (docId !== cleanId) {
+      snap = await getDoc(doc(db, 'lessons', cleanId));
+      if (snap.exists() && snap.data()?.grammar) {
+        return snap.data().grammar as LessonGrammar;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn(`[Firestore] getLessonGrammar error for ${lessonId}:`, err);
+    return null;
+  }
+}
+
+export async function getAllLevelBGrammarFromFirestore(): Promise<{
+  success: boolean;
+  grammarByDay: Record<number, LessonGrammar>;
+  error?: string;
+}> {
+  try {
+    const grammarByDay: Record<number, LessonGrammar> = {};
+    const days = Array.from({ length: 30 }, (_, i) => i + 1);
+
+    await Promise.all(
+      days.map(async (day) => {
+        const primaryDocId = `level_b_day_${day}`;
+        try {
+          let snap = await getDoc(doc(db, 'lessons', primaryDocId));
+          if (snap.exists() && snap.data()?.grammar) {
+            grammarByDay[day] = snap.data().grammar as LessonGrammar;
+            return;
+          }
+          const fallbackDocId = `level_b_ere_day_${day}`;
+          snap = await getDoc(doc(db, 'lessons', fallbackDocId));
+          if (snap.exists() && snap.data()?.grammar) {
+            grammarByDay[day] = snap.data().grammar as LessonGrammar;
+          }
+        } catch (fetchErr) {
+          console.warn(`[Firestore] Could not load grammar for Day ${day}:`, fetchErr);
+        }
+      })
+    );
+
+    return {
+      success: true,
+      grammarByDay
+    };
+  } catch (err: any) {
+    console.error('[Firestore] getAllLevelBGrammarFromFirestore error:', err);
+    return {
+      success: false,
+      grammarByDay: {},
+      error: err?.message || String(err)
+    };
+  }
+}
+
 export async function syncAllLevelBGrammarToFirestore(
   onProgress?: (current: number, total: number, message: string) => void
 ): Promise<{ success: boolean; totalSynced: number; error?: string }> {
