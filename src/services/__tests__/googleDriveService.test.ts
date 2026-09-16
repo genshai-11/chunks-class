@@ -63,6 +63,12 @@ describe('googleDriveService', () => {
         type: 'file',
         id: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
       });
+
+      const apiV3Url = 'https://www.googleapis.com/drive/v3/files/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms?alt=media&key=AIzaSyBQlHgIjzrnC9ZaQL8rSzb3OQEU7fhz5D4';
+      expect(parseGoogleDriveUrl(apiV3Url)).toEqual({
+        type: 'file',
+        id: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+      });
     });
 
     it('parses raw alphanumeric Google Drive IDs', () => {
@@ -94,7 +100,14 @@ describe('googleDriveService', () => {
     it('constructs direct streaming URL', () => {
       const fileId = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
       expect(getGoogleDriveStreamUrl(fileId)).toBe(
-        'https://docs.google.com/uc?export=download&id=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms'
+        'https://www.googleapis.com/drive/v3/files/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms?alt=media&key=AIzaSyBQlHgIjzrnC9ZaQL8rSzb3OQEU7fhz5D4'
+      );
+    });
+
+    it('constructs direct streaming URL with custom apiKey', () => {
+      const fileId = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
+      expect(getGoogleDriveStreamUrl(fileId, 'custom_api_key')).toBe(
+        'https://www.googleapis.com/drive/v3/files/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms?alt=media&key=custom_api_key'
       );
     });
 
@@ -481,7 +494,9 @@ describe('googleDriveService', () => {
       expect(result.totalFiles).toBe(3);
       expect(result.audioFiles.length).toBe(2);
       expect(result.audioFiles[0].id).toBe('f1');
-      expect(result.audioFiles[0].directStreamUrl).toContain('docs.google.com/uc?export=download&id=f1');
+      expect(result.audioFiles[0].directStreamUrl).toBe(
+        'https://www.googleapis.com/drive/v3/files/f1?alt=media&key=test_api_key'
+      );
       expect(result.audioFiles[1].id).toBe('f3');
     });
 
@@ -528,7 +543,7 @@ describe('googleDriveService', () => {
       expect(result.id).toBe('new_drive_file_id');
       expect(result.name).toBe('test_audio.mp3');
       expect(result.directStreamUrl).toBe(
-        'https://docs.google.com/uc?export=download&id=new_drive_file_id'
+        'https://www.googleapis.com/drive/v3/files/new_drive_file_id?alt=media&key=AIzaSyBQlHgIjzrnC9ZaQL8rSzb3OQEU7fhz5D4'
       );
     });
 

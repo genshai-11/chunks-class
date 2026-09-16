@@ -285,6 +285,23 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
     };
   }, []);
 
+  /**
+   * Safely resolves any audio URL: Converts legacy Google Drive download/view URLs
+   * (docs.google.com/uc?export=download&id=... or drive.google.com/uc?id=... or drive.google.com/file/d/...)
+   * into direct Google Drive API v3 media stream URLs with CORS and HTTP 206 byte-range support.
+   */
+  const resolvePlayableAudioUrl = (inputUrl?: string): string => {
+    if (!inputUrl) return '';
+    const trimmed = inputUrl.trim();
+    const legacyGdriveMatch = trimmed.match(
+      /(?:docs\.google\.com\/uc\?export=download&id=|drive\.google\.com\/uc\?id=|drive\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)/i
+    );
+    if (legacyGdriveMatch && legacyGdriveMatch[1]) {
+      return getGoogleDriveStreamUrl(legacyGdriveMatch[1]);
+    }
+    return trimmed;
+  };
+
   const handleTogglePlayAudio = (url?: string) => {
     if (!url) {
       showToast('Mục này chưa có audio! Vui lòng gán audio hoặc dùng Google Drive Auto-Sync.', 'info');
@@ -297,6 +314,8 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
       return;
     }
 
+    const resolvedUrl = resolvePlayableAudioUrl(url);
+
     if (!audioPlayerRef.current) {
       audioPlayerRef.current = new Audio();
     }
@@ -304,7 +323,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
     // Stop and reset any current playback to ensure smooth Google Drive streaming
     audioPlayerRef.current.pause();
     audioPlayerRef.current.currentTime = 0;
-    audioPlayerRef.current.src = url;
+    audioPlayerRef.current.src = resolvedUrl;
     audioPlayerRef.current.preload = 'auto';
 
     audioPlayerRef.current.onended = () => {
@@ -1109,7 +1128,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
 
                           {/* Audio Source Badge */}
                           <div className="text-[9px] font-mono font-bold uppercase">
-                            {item.audio_source === 'google_drive' || (item.audio_url && (item.audio_url.includes('drive.google.com') || item.audio_url.includes('docs.google.com'))) ? (
+                            {item.audio_source === 'google_drive' || (item.audio_url && (item.audio_url.includes('drive.google.com') || item.audio_url.includes('docs.google.com') || item.audio_url.includes('googleapis.com/drive'))) ? (
                               <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline-flex items-center gap-0.5">
                                 <HardDrive className="w-2.5 h-2.5 text-emerald-600" />
                                 <span>[Drive]</span>

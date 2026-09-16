@@ -105,14 +105,20 @@ export function parseGoogleDriveUrl(
     return { type: 'file', id: fileMatch[1] };
   }
 
-  // 3. Query param id=... (open?id=, uc?id=, etc.)
+  // 3. Google Drive API v3 URLs: e.g. /drive/v3/files/{FILE_ID}
+  const apiFileMatch = trimmed.match(/\/drive\/v3\/files\/([a-zA-Z0-9_-]+)/i);
+  if (apiFileMatch) {
+    return { type: 'file', id: apiFileMatch[1] };
+  }
+
+  // 4. Query param id=... (open?id=, uc?id=, etc.)
   const queryIdMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
   if (queryIdMatch) {
     const isFolder = /folder/i.test(trimmed);
     return { type: isFolder ? 'folder' : 'file', id: queryIdMatch[1] };
   }
 
-  // 4. Raw alphanumeric ID (standard Google Drive IDs are 25-50 chars base64url)
+  // 5. Raw alphanumeric ID (standard Google Drive IDs are 25-50 chars base64url)
   if (/^[a-zA-Z0-9_-]{25,50}$/.test(trimmed)) {
     return { type: defaultType, id: trimmed };
   }
@@ -121,11 +127,13 @@ export function parseGoogleDriveUrl(
 }
 
 /**
- * Returns direct audio streaming / download URL for a Google Drive file.
+ * Returns direct audio streaming / download URL for a Google Drive file via Google Drive API v3.
+ * Supports CORS * and HTTP 206 byte-range requests for seamless browser playback.
  */
-export function getGoogleDriveStreamUrl(fileId: string): string {
+export function getGoogleDriveStreamUrl(fileId: string, apiKey?: string): string {
   const cleanId = (fileId || '').trim();
-  return `https://docs.google.com/uc?export=download&id=${cleanId}`;
+  const key = apiKey || 'AIzaSyBQlHgIjzrnC9ZaQL8rSzb3OQEU7fhz5D4';
+  return `https://www.googleapis.com/drive/v3/files/${cleanId}?alt=media&key=${key}`;
 }
 
 /**
@@ -288,7 +296,7 @@ export async function fetchDriveFolderFiles(
       size: file.size ? Number(file.size) : undefined,
       webViewLink: file.webViewLink,
       webContentLink: file.webContentLink,
-      directStreamUrl: getGoogleDriveStreamUrl(file.id),
+      directStreamUrl: getGoogleDriveStreamUrl(file.id, effectiveApiKey),
       previewUrl: getGoogleDrivePreviewUrl(file.id),
     }));
 
