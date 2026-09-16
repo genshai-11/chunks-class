@@ -102,6 +102,9 @@ export interface GrammarMiniLesson {
   notes?: string;
   primary_structure?: string;
   structure_type?: GrammarStructureType;
+  audio_url?: string;
+  gdrive_file_id?: string;
+  audio_source?: 'google_drive' | 'local_blob' | 'gcs' | 'tts' | string;
 }
 
 export interface LessonGrammar {
@@ -224,7 +227,8 @@ export type NavTab =
   | 'settings'
   | 'improv-manager'
   | 'improv-presentation'
-  | 'resource-manager';
+  | 'resource-manager'
+  | 'grammar-portal';
 
 // --------------------------------------------------------------------------
 // 4. CHUNKS Improv Domain Models

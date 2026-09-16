@@ -11,7 +11,7 @@ import { SettingsView } from './components/SettingsView';
 import { ImprovManagerView } from './components/ImprovManagerView';
 import { ImprovPresentation } from './components/ImprovPresentation';
 import { LessonExcelUploader } from './components/LessonExcelUploader';
-import { ResourceManagerView } from './components/ResourceManagerView';
+import { GrammarReviewPortal } from './components/GrammarReviewPortal';
 import { getFirestoreCohorts, saveFirestoreCohort, deleteFirestoreCohort, DEFAULT_COURSES } from './services/firestoreService';
 import { useAppRouter } from './hooks/useAppRouter';
 import { IMPROV_SET_01 } from './data/improvSet01And02';
@@ -223,6 +223,25 @@ export const App: React.FC = () => {
     );
   }
 
+  // Dedicated Standalone Grammar Curator Studio Mode
+  const isStandalonePortal = activeTab === 'grammar-portal' && (
+    typeof window !== 'undefined' && (
+      window.location.pathname.includes('/grammar-portal') ||
+      window.location.pathname.includes('/curator') ||
+      window.location.search.includes('standalone=true')
+    )
+  );
+
+  if (isStandalonePortal) {
+    return (
+      <GrammarReviewPortal
+        isStandalone={true}
+        onExitToApp={() => setActiveTab('resource-manager')}
+        onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
+      />
+    );
+  }
+
   return (
     <AppLayout
       activeTab={activeTab}
@@ -323,9 +342,10 @@ export const App: React.FC = () => {
         />
       )}
 
-      {activeTab === 'resource-manager' && (
-        <ResourceManagerView
+      {(activeTab === 'grammar-portal' || (activeTab as any) === 'resource-manager') && (
+        <GrammarReviewPortal
           onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
+          onExitToApp={() => setActiveTab('schedule')}
         />
       )}
 
