@@ -190,6 +190,7 @@ export interface Cohort {
   total_sessions: number;          // Dynamic N sessions
   sessions: ClassSession[];
   audio_settings?: CohortAudioSettings;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 }

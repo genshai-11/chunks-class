@@ -326,7 +326,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
           // Sync to localStorage
           try {
             localStorage.setItem(LOCAL_STORAGE_CATALOG_KEY, JSON.stringify(updatedTopics));
-            const now = new Date().toLocaleString('vi-VN');
+            const now = new Date().toLocaleString('en-US');
             setLastSyncTime(now);
             localStorage.setItem(LOCAL_STORAGE_LAST_SYNC_KEY, now);
           } catch (e) {
@@ -338,15 +338,15 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
 
         const count = Object.keys(res.grammarByDay).length;
         if (isManualRefresh) {
-          showToast(`✅ Đã tải lại thành công ${count} Topics từ Cloud Firestore!`, 'success');
+          showToast(`✅ Successfully reloaded ${count} Topics from Cloud Firestore!`, 'success');
         }
       } else if (!res.success && isManualRefresh) {
-        showToast(`❌ Lỗi khi tải dữ liệu từ Firestore: ${res.error}`, 'error');
+        showToast(`❌ Error loading data from Firestore: ${res.error}`, 'error');
       }
     } catch (err: any) {
       console.error('[GrammarReviewPortal] loadLiveGrammarFromFirestore error:', err);
       if (isManualRefresh) {
-        showToast(`❌ Lỗi khi tải dữ liệu từ Firestore: ${err?.message || String(err)}`, 'error');
+        showToast(`❌ Error loading data from Firestore: ${err?.message || String(err)}`, 'error');
       }
     } finally {
       setIsLoadingFirestore(false);
@@ -389,7 +389,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
 
   const handleTogglePlayAudio = (url?: string) => {
     if (!url) {
-      showToast('Mục này chưa có audio!', 'info');
+      showToast('This item does not have audio yet!', 'info');
       return;
     }
 
@@ -445,7 +445,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
       setLoadingAudioUrl(null);
       setIsPlaying(false);
       setCurrentlyPlayingUrl(null);
-      showToast('Không thể phát file audio này. Vui lòng kiểm tra quyền truy cập Google Drive hoặc đường dẫn.', 'error');
+      showToast('Cannot play this audio file. Please check Google Drive permissions or URL.', 'error');
     };
 
     audio.play()
@@ -459,7 +459,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
         setLoadingAudioUrl(null);
         setIsPlaying(false);
         setCurrentlyPlayingUrl(null);
-        showToast('Trình duyệt chặn autoplay hoặc URL audio không hợp lệ.', 'error');
+        showToast('Browser blocked autoplay or invalid audio URL.', 'error');
       });
   };
 
@@ -500,7 +500,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
       return { ...t, mini_lessons: lessons };
     });
     setInlineEditingKey(null);
-    showToast(`Đã cập nhật cấu trúc: "${trimmed}"`);
+    showToast(`Updated structure: "${trimmed}"`);
   };
 
   // Category Switch
@@ -515,7 +515,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
       };
       return { ...t, mini_lessons: lessons };
     });
-    showToast(`Đã đổi category sang: ${getCategoryLabel(newCategory)}`);
+    showToast(`Changed category to: ${getCategoryLabel(newCategory)}`);
   };
 
   // Approve Toggle
@@ -547,7 +547,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
       } catch {}
       return next;
     });
-    showToast(`Đã duyệt toàn bộ ${currentTopic.mini_lessons.length} cấu trúc của Day ${selectedDay}!`);
+    showToast(`Approved all ${currentTopic.mini_lessons.length} structures for Day ${selectedDay}!`);
   };
 
   // Local Storage Save
@@ -569,9 +569,9 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
         curriculumRegistry.updateLessonGrammar(t.lesson_id || `level_b_day_${t.day_number}`, grammarDoc);
       });
       setHasUnsavedChanges(false);
-      showToast('Đã lưu nháp vào Local Storage & Bộ nhớ Web!');
+      showToast('Saved draft to Local Storage & Web Memory!');
     } catch (e: any) {
-      showToast(`Lỗi khi lưu nháp: ${e?.message || String(e)}`, 'error');
+      showToast(`Error saving draft: ${e?.message || String(e)}`, 'error');
     }
   };
 
@@ -596,21 +596,21 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
       const lessonDocId = currentTopic.lesson_id || `level_b_day_${currentTopic.day_number}`;
       const res = await saveLessonGrammar(lessonDocId, grammarPayload);
       if (!res.success) {
-        throw new Error(res.error || 'Lỗi không xác định khi lưu Firestore');
+        throw new Error(res.error || 'Unknown error saving to Firestore');
       }
 
       curriculumRegistry.updateLessonGrammar(lessonDocId, grammarPayload);
-      const now = new Date().toLocaleString('vi-VN');
+      const now = new Date().toLocaleString('en-US');
       setLastSyncTime(now);
       localStorage.setItem(LOCAL_STORAGE_LAST_SYNC_KEY, now);
       localStorage.setItem(LOCAL_STORAGE_CATALOG_KEY, JSON.stringify(topics));
       setHasUnsavedChanges(false);
 
-      const msg = `✅ Đã đồng bộ thành công Day ${currentTopic.day_number} (${currentTopic.lesson_title}) lên Cloud Firestore!`;
+      const msg = `✅ Successfully synced Day ${currentTopic.day_number} (${currentTopic.lesson_title}) to Cloud Firestore!`;
       setSyncBanner({ type: 'success', message: msg });
       showToast(msg, 'success');
     } catch (err: any) {
-      const errMsg = `❌ Lỗi đồng bộ Firestore: ${err?.message || String(err)}`;
+      const errMsg = `❌ Firestore sync error: ${err?.message || String(err)}`;
       setSyncBanner({ type: 'error', message: errMsg });
       showToast(errMsg, 'error');
     } finally {
@@ -629,7 +629,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
       for (let i = 0; i < total; i++) {
         const t = topics[i];
         const docId = t.lesson_id || `level_b_day_${t.day_number}`;
-        const msg = `[${i + 1}/${total}] Đang đồng bộ Day ${t.day_number} (${t.lesson_title})...`;
+        const msg = `[${i + 1}/${total}] Syncing Day ${t.day_number} (${t.lesson_title})...`;
         setSyncProgress({ current: i + 1, total, message: msg });
         setSyncLogs(prev => [...prev, msg]);
 
@@ -647,7 +647,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
 
         const res = await saveLessonGrammar(docId, grammarPayload);
         if (!res.success) {
-          const errMsg = `❌ Lỗi tại Day ${t.day_number}: ${res.error}`;
+          const errMsg = `❌ Error at Day ${t.day_number}: ${res.error}`;
           setSyncLogs(prev => [...prev, errMsg]);
           throw new Error(res.error);
         }
@@ -657,16 +657,16 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
       // Update localStorage with current topics!
       localStorage.setItem(LOCAL_STORAGE_CATALOG_KEY, JSON.stringify(topics));
 
-      const successMsg = `✅ Đã đồng bộ thành công toàn bộ ${total} Topics lên Cloud Firestore!`;
+      const successMsg = `✅ Successfully synced all ${total} Topics to Cloud Firestore!`;
       setSyncLogs(prev => [...prev, successMsg]);
-      const now = new Date().toLocaleString('vi-VN');
+      const now = new Date().toLocaleString('en-US');
       setLastSyncTime(now);
       localStorage.setItem(LOCAL_STORAGE_LAST_SYNC_KEY, now);
       setHasUnsavedChanges(false);
       setSyncBanner({ type: 'success', message: successMsg });
       showToast(successMsg, 'success');
     } catch (err: any) {
-      const errMsg = `❌ Lỗi đồng bộ Firestore: ${err?.message || String(err)}`;
+      const errMsg = `❌ Firestore sync error: ${err?.message || String(err)}`;
       setSyncBanner({ type: 'error', message: errMsg });
       showToast(errMsg, 'error');
     } finally {
@@ -696,7 +696,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('Đã tải xuống bản sao lưu JSON hoàn chỉnh!');
+    showToast('Downloaded complete JSON backup!');
   };
 
   const handleImportJsonFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -709,16 +709,16 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
         const parsed = JSON.parse(content);
         const importedTopics: TopicResourceData[] = parsed.topics || (Array.isArray(parsed) ? parsed : null);
         if (!importedTopics || !Array.isArray(importedTopics)) {
-          throw new Error('Định dạng JSON không hợp lệ. Cần chứa mảng topics.');
+          throw new Error('Invalid JSON format. Expected an array of topics.');
         }
         const recomputed = importedTopics.map(recomputeTopic);
         setTopics(recomputed);
         localStorage.setItem(LOCAL_STORAGE_CATALOG_KEY, JSON.stringify(recomputed));
         setHasUnsavedChanges(false);
-        showToast(`Đã import thành công ${recomputed.length} topics từ file JSON!`);
+        showToast(`Successfully imported ${recomputed.length} topics from JSON file!`);
         setIsJsonModalOpen(false);
       } catch (err: any) {
-        showToast(`Lỗi khi đọc file JSON: ${err?.message || String(err)}`, 'error');
+        showToast(`Error reading JSON file: ${err?.message || String(err)}`, 'error');
       }
     };
     reader.readAsText(file);
@@ -818,7 +818,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
           TOP HEADER BAR
          -------------------------------------------------------------------------- */}
       <header className="h-16 border-b border-[#E8E8EC] bg-white px-5 flex items-center justify-between shrink-0 z-20 shadow-2xs">
-        {/* Brand & Mode Badges */}
+        {/* Brand */}
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-xs">
             <CheckCircle2 className="w-5 h-5" />
@@ -828,17 +828,9 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
               <h1 className="text-sm md:text-base font-black tracking-tight text-zinc-900">
                 CHUNKS Grammar Curator Studio
               </h1>
-              <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 hidden sm:inline-flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Standalone Review Ready</span>
-              </span>
-              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 inline-flex items-center gap-1.5 shadow-2xs">
-                <HardDrive className="w-3 h-3 text-emerald-600" />
-                <span>{globalStats.totalWithAudio}/{globalStats.totalStructures} Audio Google Drive Sẵn Sàng</span>
-              </span>
             </div>
             <p className="text-[11px] text-zinc-500 hidden md:block">
-              30 Topics • Compact Audio • Stream Trực Tiếp Google Drive • Đồng Bộ Firestore 1-Click
+              30 Topics • Compact Audio • Direct Google Drive Streaming • 1-Click Firestore Sync
             </p>
           </div>
         </div>
@@ -851,21 +843,10 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             onClick={() => loadLiveGrammarFromFirestore(true)}
             disabled={isLoadingFirestore}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold text-emerald-800 shadow-2xs cursor-pointer active:scale-95 transition-all disabled:opacity-50"
-            title="Tải lại dữ liệu mới nhất trực tiếp từ Cloud Firestore"
+            title="Reload latest data directly from Cloud Firestore"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${isLoadingFirestore ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{isLoadingFirestore ? 'Đang tải Firestore...' : 'Tải lại từ Firestore'}</span>
-          </button>
-
-          {/* JSON Export / Import */}
-          <button
-            type="button"
-            onClick={() => setIsJsonModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 shadow-2xs cursor-pointer active:scale-95 transition-all"
-            title="Xuất hoặc Nhập dữ liệu JSON"
-          >
-            <Download className="w-3.5 h-3.5 text-zinc-500" />
-            <span className="hidden lg:inline">JSON</span>
+            <span className="hidden sm:inline">{isLoadingFirestore ? 'Loading Firestore...' : 'Reload from Firestore'}</span>
           </button>
 
           {/* Save Draft */}
@@ -877,10 +858,10 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                 ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
                 : 'border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700'
             }`}
-            title="Lưu các thay đổi nháp vào trình duyệt"
+            title="Save draft changes to browser storage"
           >
             <Save className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{hasUnsavedChanges ? 'Lưu Nháp *' : 'Lưu Nháp'}</span>
+            <span className="hidden sm:inline">{hasUnsavedChanges ? 'Save Draft *' : 'Save Draft'}</span>
           </button>
 
           {/* Sync to Firestore */}
@@ -891,10 +872,10 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
               setIsSyncModalOpen(true);
             }}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
-            title="Đồng bộ trực tiếp lên Firebase Firestore"
+            title="Sync directly to Firebase Firestore"
           >
             <Cloud className="w-3.5 h-3.5 text-emerald-100" />
-            <span>Đồng bộ Firestore</span>
+            <span>Sync Firestore</span>
           </button>
 
           {/* Standalone Toggle / Exit Button */}
@@ -908,7 +889,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
               }
             }}
             className="p-1.5 rounded-lg border border-zinc-200 text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 active:scale-95 transition-all cursor-pointer ml-1"
-            title={isFullStandalone ? 'Trở về Classroom' : 'Mở toàn màn hình Standalone'}
+            title={isFullStandalone ? 'Return to Classroom' : 'Fullscreen Standalone'}
           >
             {isFullStandalone ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -926,7 +907,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             disabled={selectedDay <= 1}
             onClick={() => setSelectedDay(prev => Math.max(1, prev - 1))}
             className="p-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-100 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-            title="Topic trước (Day - 1)"
+            title="Previous Topic (Day - 1)"
           >
             <ChevronLeft className="w-4 h-4 text-zinc-600" />
           </button>
@@ -957,7 +938,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             disabled={selectedDay >= topics.length}
             onClick={() => setSelectedDay(prev => Math.min(topics.length, prev + 1))}
             className="p-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-100 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-            title="Topic kế tiếp (Day + 1)"
+            title="Next Topic (Day + 1)"
           >
             <ChevronRight className="w-4 h-4 text-zinc-600" />
           </button>
@@ -968,7 +949,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
               type="button"
               onClick={() => onLaunchProjectorForLesson(currentTopic.lesson_id || `level_b_day_${selectedDay}`, selectedDay)}
               className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold text-zinc-600 hover:text-emerald-700 bg-zinc-100 hover:bg-emerald-50 rounded-lg transition-all cursor-pointer"
-              title="Mở bài học này trong Classroom Focus Projector"
+              title="Open lesson in Classroom Focus Projector"
             >
               <Play className="w-3 h-3 fill-current" />
               <span>Projector</span>
@@ -979,11 +960,11 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
         {/* Stats Chips */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 text-zinc-700 text-xs font-semibold">
-            <span>Tổng số:</span>
+            <span>Total:</span>
             <span className="font-mono font-bold text-zinc-900">{topicStats.total}</span>
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200">
-            <span>Đã duyệt:</span>
+            <span>Approved:</span>
             <span className="font-mono font-bold">{topicStats.approved}/{topicStats.total}</span>
             {topicStats.total > 0 && topicStats.approved === topicStats.total && <Check className="w-3 h-3 text-emerald-600" />}
           </div>
@@ -998,10 +979,10 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             type="button"
             onClick={handleApproveAllInTopic}
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition-all active:scale-95 cursor-pointer ml-1"
-            title="Duyệt tất cả các cấu trúc của Day hiện tại"
+            title="Approve all structures in the current day"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>Duyệt cả Day {selectedDay}</span>
+            <span>Approve Day {selectedDay}</span>
           </button>
         </div>
       </div>
@@ -1017,7 +998,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo công thức, mô tả, ví dụ, tên file..."
+            placeholder="Search by pattern, description, example, file..."
             className="w-full pl-8 pr-3 py-1 bg-white border border-zinc-200 rounded-lg text-xs font-medium placeholder-zinc-400 focus:outline-none focus:border-emerald-500 shadow-2xs"
           />
           {searchQuery && (
@@ -1034,38 +1015,38 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
         <div className="flex items-center gap-2 text-xs">
           {/* Category Filter */}
           <div className="flex items-center gap-1">
-            <span className="text-zinc-400 text-[11px] font-semibold">Phân loại:</span>
+            <span className="text-zinc-400 text-[11px] font-semibold">Category:</span>
             <select
               value={categoryFilter}
               onChange={e => setCategoryFilter(e.target.value as any)}
               className="bg-white border border-zinc-200 rounded-lg px-2 py-1 text-xs font-medium text-zinc-700 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
             >
-              <option value="all">Tất cả Category</option>
-              <option value="sentence_structure">🔵 Mẫu câu (Sentence Structure)</option>
-              <option value="verb_form">🟢 Cụm động từ (Verb Form)</option>
-              <option value="tense_reflex">🟠 Thì phản xạ (Tense Reflex)</option>
+              <option value="all">All Categories</option>
+              <option value="sentence_structure">🔵 Sentence Structure</option>
+              <option value="verb_form">🟢 Word Form</option>
+              <option value="tense_reflex">🟠 Tense</option>
             </select>
           </div>
 
           {/* Status Filter */}
           <div className="flex items-center gap-1">
-            <span className="text-zinc-400 text-[11px] font-semibold">Trạng thái:</span>
+            <span className="text-zinc-400 text-[11px] font-semibold">Status:</span>
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value as any)}
               className="bg-white border border-zinc-200 rounded-lg px-2 py-1 text-xs font-medium text-zinc-700 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
             >
-              <option value="all">Tất cả</option>
-              <option value="approved">✓ Đã duyệt</option>
-              <option value="pending">⏳ Chờ duyệt</option>
-              <option value="has_audio">🎵 Có Audio</option>
-              <option value="no_audio">⚠️ Thiếu Audio</option>
+              <option value="all">All</option>
+              <option value="approved">✓ Approved</option>
+              <option value="pending">⏳ Pending</option>
+              <option value="has_audio">🎵 With Audio</option>
+              <option value="no_audio">⚠️ Missing Audio</option>
             </select>
           </div>
 
           {lastSyncTime && (
             <div className="text-[11px] text-zinc-400 font-mono hidden xl:block ml-2">
-              Sync Firestore gần nhất: {lastSyncTime}
+              Last Firestore Sync: {lastSyncTime}
             </div>
           )}
         </div>
@@ -1080,17 +1061,17 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             <thead>
               <tr className="bg-zinc-50/80 border-b border-[#E8E8EC] text-[11px] font-mono font-bold uppercase text-zinc-500 tracking-wider">
                 <th className="py-3 px-3 w-16 text-center">#</th>
-                <th className="py-3 px-4">Cấu Trúc Ngữ Pháp Phản Xạ (Primary Structure)</th>
-                <th className="py-3 px-3 w-48">Phân Loại Category</th>
-                <th className="py-3 px-3 w-40 text-right">Thao Tác</th>
+                <th className="py-3 px-4">Primary Spoken Grammar Structure</th>
+                <th className="py-3 px-3 w-48">Category</th>
+                <th className="py-3 px-3 w-40 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-xs">
               {filteredMiniLessons.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-12 text-center text-zinc-400">
-                    <p className="font-semibold text-sm">Không tìm thấy cấu trúc nào phù hợp với bộ lọc.</p>
-                    <p className="text-xs mt-1">Thử xoá tìm kiếm hoặc chọn bộ lọc "Tất cả".</p>
+                    <p className="font-semibold text-sm">No structures found matching filter.</p>
+                    <p className="text-xs mt-1">Try clearing the search or selecting "All".</p>
                   </td>
                 </tr>
               ) : (
@@ -1104,7 +1085,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
 
                   return (
                     <tr 
-                      key={originalIndex}
+                      key={originalIndex} 
                       className={`hover:bg-zinc-50/70 transition-colors ${
                         isApproved ? 'bg-emerald-50/20' : ''
                       }`}
@@ -1130,12 +1111,12 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                             }`}
                             title={
                               isThisAudioLoading
-                                ? 'Đang tải audio từ Google Drive...'
+                                ? 'Loading audio from Google Drive...'
                                 : isThisAudioPlaying
-                                ? 'Tạm dừng audio'
+                                ? 'Pause audio'
                                 : hasAudio
-                                ? `Phát audio (${item.file || 'Google Drive stream'})`
-                                : 'Chưa có file audio'
+                                ? `Play audio (${item.file || 'Google Drive stream'})`
+                                : 'No audio file'
                             }
                           >
                             {isThisAudioLoading ? (
@@ -1169,7 +1150,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                         </div>
                       </td>
 
-                      {/* COL 2: Cấu Trúc Ngữ Pháp Phản Xạ (Primary Structure) */}
+                      {/* COL 2: Primary Spoken Grammar Structure */}
                       <td className="py-3 px-4 align-top">
                         {isEditingThis ? (
                           <div className="flex items-center gap-1.5">
@@ -1188,7 +1169,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                               type="button"
                               onClick={() => handleSaveInlineFormula(originalIndex)}
                               className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md cursor-pointer"
-                              title="Lưu (Enter)"
+                              title="Save (Enter)"
                             >
                               <Check className="w-3.5 h-3.5" />
                             </button>
@@ -1196,7 +1177,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                               type="button"
                               onClick={() => setInlineEditingKey(null)}
                               className="p-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-700 rounded-md cursor-pointer"
-                              title="Huỷ (Esc)"
+                              title="Cancel (Esc)"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -1205,7 +1186,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                           <div className="group">
                             <div className="flex items-start gap-2">
                               <span className="text-xs font-bold text-zinc-900 leading-snug">
-                                {item.primary_structure || item.topic || 'Chưa đặt tên cấu trúc'}
+                                {item.primary_structure || item.topic || 'Unnamed structure'}
                               </span>
                               <button
                                 type="button"
@@ -1214,16 +1195,11 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                                   setInlineEditingVal(item.primary_structure || item.topic || '');
                                 }}
                                 className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-emerald-600 transition-opacity cursor-pointer p-0.5"
-                                title="Chỉnh sửa trực tiếp công thức"
+                                title="Edit pattern inline"
                               >
                                 <Edit3 className="w-3 h-3" />
                               </button>
                             </div>
-                            {item.topic && item.topic !== item.primary_structure && (
-                              <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-1">
-                                {item.topic}
-                              </p>
-                            )}
                             {item.file && (
                               <p className="text-[10px] font-mono text-zinc-400 mt-0.5">
                                 File: {item.file}
@@ -1233,7 +1209,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                         )}
                       </td>
 
-                      {/* COL 3: Phân Loại Category (Dropdown 1-chạm: Mẫu câu, Cụm ĐT, Thì phản xạ) */}
+                      {/* COL 3: Category Dropdown */}
                       <td className="py-3 px-3 align-top">
                         <select
                           value={item.structure_type || 'sentence_structure'}
@@ -1246,13 +1222,13 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                               : 'bg-amber-50 text-amber-800 border-amber-200 focus:border-amber-400'
                           }`}
                         >
-                          <option value="sentence_structure">🔵 Mẫu câu</option>
-                          <option value="verb_form">🟢 Cụm ĐT</option>
-                          <option value="tense_reflex">🟠 Thì phản xạ</option>
+                          <option value="sentence_structure">🔵 Sentence Structure</option>
+                          <option value="verb_form">🟢 Word Form</option>
+                          <option value="tense_reflex">🟠 Tense</option>
                         </select>
                       </td>
 
-                      {/* COL 4: Thao Tác (Approve, Edit, Delete) */}
+                      {/* COL 4: Actions (Approve, Edit, Delete) */}
                       <td className="py-3 px-3 align-top text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Approve Button */}
@@ -1264,10 +1240,10 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                                 ? 'bg-emerald-600 text-white shadow-xs'
                                 : 'border border-zinc-200 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-zinc-600'
                             }`}
-                            title={isApproved ? 'Click để bỏ duyệt' : 'Click để phê duyệt cấu trúc này'}
+                            title={isApproved ? 'Click to unapprove' : 'Click to approve'}
                           >
                             <Check className="w-3.5 h-3.5" />
-                            <span>{isApproved ? '✓ Đã duyệt' : 'Chờ duyệt'}</span>
+                            <span>{isApproved ? '✓ Approved' : 'Pending'}</span>
                           </button>
 
                           {/* Edit Modal Button */}
@@ -1275,7 +1251,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                             type="button"
                             onClick={() => setEditingItem({ topicIdx: currentTopicIndex, itemIdx: originalIndex, item })}
                             className="p-1 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-md transition-colors cursor-pointer"
-                            title="Sửa chi tiết (modal)"
+                            title="Edit details (modal)"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
@@ -1284,16 +1260,16 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              if (window.confirm(`Xoá cấu trúc "${item.primary_structure || item.topic}"?`)) {
+                              if (window.confirm(`Delete structure "${item.primary_structure || item.topic}"?`)) {
                                 updateCurrentTopic(t => {
                                   const lessons = (t.mini_lessons || []).filter((_, i) => i !== originalIndex);
                                   return { ...t, mini_lessons: lessons };
                                 });
-                                showToast('Đã xoá cấu trúc khỏi topic.');
+                                showToast('Deleted structure from topic.');
                               }
                             }}
                             className="p-1 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                            title="Xoá cấu trúc này"
+                            title="Delete structure"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1337,7 +1313,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                   ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
                   : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
               }`}
-              title={`Day ${day}: ${approvedCount}/${totalInDay} đã duyệt`}
+              title={`Day ${day}: ${approvedCount}/${totalInDay} approved`}
             >
               <span>D{day}</span>
               {isComplete && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
@@ -1358,8 +1334,8 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                   <Cloud className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-900">Đồng Bộ Cloud Firestore</h3>
-                  <p className="text-xs text-zinc-500">Cập nhật dữ liệu trực tiếp vào Firebase collection /lessons</p>
+                  <h3 className="text-sm font-bold text-zinc-900">Sync Cloud Firestore</h3>
+                  <p className="text-xs text-zinc-500">Update data directly into Firebase collection /lessons</p>
                 </div>
               </div>
               <button
@@ -1373,16 +1349,16 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
             <div className="p-6 space-y-4 overflow-y-auto">
               <div className="bg-zinc-50 p-3.5 rounded-xl border border-zinc-200 text-xs space-y-1.5">
                 <div className="flex justify-between text-zinc-600">
-                  <span>Topic hiện tại:</span>
+                  <span>Current Topic:</span>
                   <span className="font-bold text-zinc-900">Day {selectedDay} ({currentTopic?.lesson_title})</span>
                 </div>
                 <div className="flex justify-between text-zinc-600">
-                  <span>Đích lưu Firestore:</span>
+                  <span>Firestore Target:</span>
                   <span className="font-mono text-zinc-900">/lessons/{currentTopic?.lesson_id || `level_b_day_${selectedDay}`}</span>
                 </div>
                 <div className="flex justify-between text-zinc-600">
-                  <span>Lần sync gần nhất:</span>
-                  <span className="font-mono text-zinc-900">{lastSyncTime || 'Chưa ghi nhận'}</span>
+                  <span>Last Sync:</span>
+                  <span className="font-mono text-zinc-900">{lastSyncTime || 'Not recorded'}</span>
                 </div>
               </div>
 
@@ -1408,7 +1384,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                   <div className="flex justify-between text-xs font-bold text-zinc-700">
                     <span className="flex items-center gap-1.5">
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
-                      <span>{syncProgress.message || 'Đang đồng bộ...'}</span>
+                      <span>{syncProgress.message || 'Syncing...'}</span>
                     </span>
                     <span>{syncProgress.current} / {syncProgress.total}</span>
                   </div>
@@ -1439,7 +1415,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                   className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   <Cloud className="w-4 h-4" />
-                  <span>Sync Riêng Day {selectedDay}</span>
+                  <span>Sync Day {selectedDay}</span>
                 </button>
 
                 <button
@@ -1449,7 +1425,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                   className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
                 >
                   <Database className="w-4 h-4" />
-                  <span>Sync Cả 30 Topics</span>
+                  <span>Sync All 30 Topics</span>
                 </button>
               </div>
             </div>
@@ -1464,14 +1440,14 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full border border-zinc-200 shadow-2xl overflow-hidden p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-              <h3 className="text-sm font-bold text-zinc-900">Sao Lưu & Phục Hồi JSON</h3>
+              <h3 className="text-sm font-bold text-zinc-900">Backup & Restore JSON</h3>
               <button onClick={() => setIsJsonModalOpen(false)} className="text-zinc-400 hover:text-zinc-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <p className="text-xs text-zinc-500 leading-relaxed">
-              Bạn có thể tải xuống file JSON toàn bộ 30 Topics đã review hoặc import file JSON đã chỉnh sửa từ bên ngoài vào.
+              Download the complete reviewed JSON for all 30 Topics or import an externally edited JSON file.
             </p>
 
             <div className="space-y-3">
@@ -1481,12 +1457,12 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-zinc-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Download className="w-4 h-4" />
-                <span>Xuất File JSON (Backup)</span>
+                <span>Export JSON (Backup)</span>
               </button>
 
               <label className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-zinc-200 hover:bg-zinc-50 text-zinc-800 text-xs font-bold rounded-xl transition-all cursor-pointer">
                 <Upload className="w-4 h-4 text-zinc-500" />
-                <span>Nhập File JSON Từ Máy Tính</span>
+                <span>Import JSON File</span>
                 <input
                   type="file"
                   accept=".json"
@@ -1514,7 +1490,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
               return { ...t, mini_lessons: lessons };
             });
             setEditingItem(null);
-            showToast('Đã lưu chi tiết cấu trúc!');
+            showToast('Structure details saved!');
           }}
         />
       )}
@@ -1567,7 +1543,7 @@ const EditMiniLessonModal: React.FC<EditMiniLessonModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-lg w-full border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-zinc-900">Chỉnh Sửa Chi Tiết Cấu Trúc</h3>
+          <h3 className="text-sm font-bold text-zinc-900">Edit Structure Details</h3>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600">
             <X className="w-4 h-4" />
           </button>
@@ -1575,7 +1551,7 @@ const EditMiniLessonModal: React.FC<EditMiniLessonModalProps> = ({
 
         <div className="p-6 space-y-4 overflow-y-auto text-xs">
           <div>
-            <label className="block font-bold text-zinc-700 mb-1">Cấu Trúc Ngữ Pháp (Primary Formula) *</label>
+            <label className="block font-bold text-zinc-700 mb-1">Grammar Structure (Primary Formula) *</label>
             <input
               type="text"
               value={formData.primary_structure || ''}
@@ -1586,19 +1562,19 @@ const EditMiniLessonModal: React.FC<EditMiniLessonModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-zinc-700 mb-1">Category (Phân loại)</label>
+              <label className="block font-bold text-zinc-700 mb-1">Category</label>
               <select
                 value={formData.structure_type || 'sentence_structure'}
                 onChange={e => setFormData({ ...formData, structure_type: e.target.value as GrammarStructureType })}
                 className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-xl font-medium focus:outline-none focus:border-emerald-500"
               >
-                <option value="sentence_structure">🔵 Mẫu câu (Sentence Structure)</option>
-                <option value="verb_form">🟢 Cụm động từ (Verb Form)</option>
-                <option value="tense_reflex">🟠 Thì phản xạ (Tense Reflex)</option>
+                <option value="sentence_structure">🔵 Sentence Structure</option>
+                <option value="verb_form">🟢 Word Form (Verb Form)</option>
+                <option value="tense_reflex">🟠 Tense Reflex</option>
               </select>
             </div>
             <div>
-              <label className="block font-bold text-zinc-700 mb-1">Tên File Audio</label>
+              <label className="block font-bold text-zinc-700 mb-1">Audio File Name</label>
               <input
                 type="text"
                 value={formData.file || ''}
@@ -1610,7 +1586,7 @@ const EditMiniLessonModal: React.FC<EditMiniLessonModalProps> = ({
           </div>
 
           <div>
-            <label className="block font-bold text-zinc-700 mb-1">URL Audio Trực Tiếp / Google Drive Stream</label>
+            <label className="block font-bold text-zinc-700 mb-1">Direct Audio URL / Google Drive Stream</label>
             <input
               type="text"
               value={formData.audio_url || ''}
@@ -1623,14 +1599,14 @@ const EditMiniLessonModal: React.FC<EditMiniLessonModalProps> = ({
           {/* Bilingual Examples */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-zinc-700">Ví Dụ Song Ngữ</label>
+              <label className="font-bold text-zinc-700">Bilingual Examples</label>
               <button
                 type="button"
                 onClick={handleAddExample}
                 className="flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-bold"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Thêm ví dụ</span>
+                <span>Add Example</span>
               </button>
             </div>
 
@@ -1647,14 +1623,14 @@ const EditMiniLessonModal: React.FC<EditMiniLessonModalProps> = ({
                   type="text"
                   value={ex.vi}
                   onChange={e => handleUpdateExample(idx, 'vi', e.target.value)}
-                  placeholder="Dịch nghĩa tiếng Việt..."
+                  placeholder="Vietnamese translation..."
                   className="w-full px-2.5 py-1 bg-white border border-zinc-300 rounded-lg italic text-zinc-600"
                 />
                 <button
                   type="button"
                   onClick={() => handleDeleteExample(idx)}
                   className="absolute top-2 right-2 text-zinc-400 hover:text-rose-600 p-1"
-                  title="Xoá ví dụ này"
+                  title="Delete this example"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -1667,16 +1643,16 @@ const EditMiniLessonModal: React.FC<EditMiniLessonModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-bold rounded-xl"
+              className="px-4 py-2 border border-zinc-300 hover:bg-zinc-50 text-zinc-700 font-bold rounded-xl cursor-pointer"
             >
-              Huỷ
+              Cancel
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
-              Lưu Thay Đổi
+              Save Changes
             </button>
           </div>
         </div>
@@ -1687,10 +1663,10 @@ const EditMiniLessonModal: React.FC<EditMiniLessonModalProps> = ({
 
 // Helper for category label
 function getCategoryLabel(cat?: GrammarStructureType): string {
-  if (cat === 'sentence_structure') return 'Mẫu câu (Sentence Structure)';
-  if (cat === 'verb_form') return 'Cụm động từ (Verb Form)';
-  if (cat === 'tense_reflex') return 'Thì phản xạ (Tense Reflex)';
-  return 'Mẫu câu';
+  if (cat === 'sentence_structure') return 'Sentence Structure';
+  if (cat === 'verb_form') return 'Word Form';
+  if (cat === 'tense_reflex') return 'Tense Reflex';
+  return 'Sentence Structure';
 }
 
 export default GrammarReviewPortal;

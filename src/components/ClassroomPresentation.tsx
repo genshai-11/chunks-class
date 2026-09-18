@@ -169,8 +169,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       clearTimeout(audioSwitchToastTimeoutRef.current);
     }
     const message = nextSource === 'human' 
-      ? '🎙️ Đã bật: Giọng Phòng Thu (Human Studio Audio)' 
-      : '🤖 Đã bật: Giọng AI Tổng Hợp (AI Voice TTS)';
+      ? '🎙️ Active: Human Studio Audio' 
+      : '🤖 Active: AI Voice TTS';
     setAudioSwitchToast(message);
     audioSwitchToastTimeoutRef.current = setTimeout(() => {
       setAudioSwitchToast(null);
@@ -948,9 +948,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         <div className="w-12 h-12 rounded-full bg-red-50 text-[#DC2626] flex items-center justify-center mx-auto">
           <BookOpen className="w-6 h-6" />
         </div>
-        <div className="text-lg font-bold text-[#DC2626]">Không tìm thấy Chunks cho bài học này</div>
+        <div className="text-lg font-bold text-[#DC2626]">No Chunks Found for this Lesson</div>
         <p className="text-xs text-[#6B6B6B] max-w-md">
-          Bài học hiện tại chưa có dữ liệu chunk. Vui lòng chọn bài học khác từ danh mục bên dưới:
+          The current lesson has no chunk data. Please select another lesson from the catalog below:
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <select
@@ -959,7 +959,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             }}
             className="text-xs font-bold px-3 py-2 rounded-xl border border-zinc-300 bg-zinc-50 hover:bg-white cursor-pointer"
           >
-            <option value="">-- Chọn bài học khác --</option>
+            <option value="">-- Select another lesson --</option>
             {groupedCourses.map(({ course, lessons }) => (
               <optgroup key={course.id} label={course.title}>
                 {lessons.map(l => (
@@ -975,7 +975,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               onClick={onExit}
               className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-bold hover:bg-zinc-800 transition-all cursor-pointer"
             >
-              Về Lịch Học
+              Back to Schedule
             </button>
           )}
         </div>
@@ -1010,9 +1010,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       {audioError && (
         <div role="alert" className="z-30 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 px-4 py-2.5 flex flex-wrap gap-3 items-center text-xs border-b border-amber-200 dark:border-amber-800">
           <span className="flex-1">{audioError}</span>
-          <button onClick={() => { setPrepTarget(languageMode === 'EN_ONLY' ? 'ENGLISH' : languageMode === 'VI_ONLY' ? 'VIETNAMESE' : 'BOTH'); setIsSoundSettingsOpen(true); }} className="text-xs underline text-amber-900 dark:text-amber-100 cursor-pointer">Cài đặt âm thanh</button>
-          <button onClick={() => playCurrentChunkAudio()} className="text-xs underline font-semibold text-amber-900 dark:text-amber-100 cursor-pointer">Thử phát lại</button>
-          <button onClick={() => setAudioError(null)} className="p-1 text-amber-700 hover:text-amber-900 dark:text-amber-300 cursor-pointer" title="Đóng"><X className="w-3.5 h-3.5" /></button>
+          <button onClick={() => { setPrepTarget(languageMode === 'EN_ONLY' ? 'ENGLISH' : languageMode === 'VI_ONLY' ? 'VIETNAMESE' : 'BOTH'); setIsSoundSettingsOpen(true); }} className="text-xs underline text-amber-900 dark:text-amber-100 cursor-pointer">Audio Settings</button>
+          <button onClick={() => playCurrentChunkAudio()} className="text-xs underline font-semibold text-amber-900 dark:text-amber-100 cursor-pointer">Retry Audio</button>
+          <button onClick={() => setAudioError(null)} className="p-1 text-amber-700 hover:text-amber-900 dark:text-amber-300 cursor-pointer" title="Close"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
       {/* 1. PROGRESS BAR AT THE TOP OF PRESENTATION */}
@@ -1058,7 +1058,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             </div>
             <div>
               <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-400">
-                Chuyển Phần · Part Announcement
+                Part Announcement
               </div>
               <div className="text-sm sm:text-base font-extrabold font-display text-white">
                 Part {partAnnounceBanner.partNumber} · {partAnnounceBanner.title}
@@ -1135,14 +1135,14 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   ? 'border-zinc-700 bg-zinc-900 text-zinc-100 hover:border-zinc-500'
                   : 'border-zinc-200 bg-zinc-50 text-zinc-900 hover:bg-white hover:border-zinc-300'
               }`}
-              title="Đổi Bài Học / Switch Lesson"
+              title="Switch Lesson"
             >
               <BookOpen className="w-4 h-4 text-[#DC2626] shrink-0" />
               <span className="truncate font-semibold text-left">
-                {activeLesson?.day_number === 0 ? 'Day 0: Word List' : `Day ${activeLesson?.day_number ?? 1}`}: {activeLesson?.lesson_title || 'Chọn bài học'}
+                {activeLesson?.day_number === 0 ? 'Day 0: Word List' : `Day ${activeLesson?.day_number ?? 1}`}: {activeLesson?.lesson_title || 'Select Lesson'}
               </span>
               {isCurrentLessonAudioReady && (
-                <Volume2 className="w-4 h-4 text-emerald-500 shrink-0 animate-in fade-in" title="Audio bài học đã sẵn sàng" />
+                <Volume2 className="w-4 h-4 text-emerald-500 shrink-0 animate-in fade-in" title="Lesson audio ready" />
               )}
               <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform ${isLessonSwitcherOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -1161,8 +1161,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       <BookOpen className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold leading-tight">Danh Mục Bài Học</h4>
-                      <p className="text-[10px] text-zinc-500">Chọn nhanh bài học để chuyển ngay trên lớp</p>
+                      <h4 className="text-xs font-bold leading-tight">Lesson Catalog</h4>
+                      <p className="text-[10px] text-zinc-500">Quickly switch lessons during class</p>
                     </div>
                   </div>
                   <button
@@ -1182,7 +1182,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       type="text"
                       value={lessonSearchQuery}
                       onChange={(e) => setLessonSearchQuery(e.target.value)}
-                      placeholder="Tìm theo Day hoặc tên bài học..."
+                      placeholder="Search by Day or lesson title..."
                       className={`w-full text-xs pl-8.5 pr-8 py-2 rounded-xl border transition-all outline-none ${
                         highContrastDark
                           ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-[#DC2626]'
@@ -1206,7 +1206,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 <div className="overflow-y-auto p-2 space-y-3 divide-y divide-zinc-100 dark:divide-zinc-800/60 max-h-[50vh]">
                   {filteredGroupedCourses.length === 0 ? (
                     <div className="p-6 text-center text-xs text-zinc-400">
-                      Không tìm thấy bài học nào phù hợp với từ khóa "{lessonSearchQuery}".
+                      No lessons found matching "{lessonSearchQuery}".
                     </div>
                   ) : (
                     filteredGroupedCourses.map(({ course, lessons }, gIdx) => (
@@ -1220,7 +1220,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                              course.title}
                           </span>
                           <span className="font-mono text-[10px] lowercase font-normal bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                            {lessons.length} bài
+                            {lessons.length} lessons
                           </span>
                         </div>
 
@@ -1261,7 +1261,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
                                 <div className="flex items-center gap-1.5 shrink-0">
                                   {isLessonReady && (
-                                    <Volume2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" title="Audio đã sẵn sàng" />
+                                    <Volume2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" title="Audio ready" />
                                   )}
                                   <span className="font-mono text-[10px] text-zinc-400">
                                     {l.total_chunks || l.chunks?.length || 0} chunks
@@ -1304,7 +1304,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                     ? 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
                     : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
                 }`}
-                title={`Nhấp để chuyển nhanh giữa Topic 1 (${topic1Title}) và Topic 2 (${topic2Title})`}
+                title={`Click to switch between Topic 1 (${topic1Title}) and Topic 2 (${topic2Title})`}
               >
                 <span>{currentTopicNumber === 1 ? '📘 Topic 1' : '📗 Topic 2'}: {currentTopicNumber === 1 ? topic1Title : topic2Title}</span>
               </button>
@@ -1322,7 +1322,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 title={`Part ${currentPart.part_in_topic || currentPart.part_index}: ${currentPart.category.toUpperCase()} (${partChunkCurrent}/${partChunkTotal} chunks, ${partProgressPercent}%)`}
               >
                 <Layers className="w-3.5 h-3.5 text-[#DC2626]" />
-                <span>{currentPart.part_in_topic ? `Phần ${currentPart.part_in_topic}` : `Part ${currentPart.part_index}`}: {partProgressPercent}%</span>
+                <span>Part {currentPart.part_in_topic || currentPart.part_index}: {partProgressPercent}%</span>
               </button>
             )}
 
@@ -1334,7 +1334,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800 hover:bg-emerald-900/60'
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
               }`}
-              title={`Tổng tiến độ bài học: ${currentChunkIndex + 1}/${chunks.length} chunks (${classProgressPercent}%)`}
+              title={`Lesson progression: ${currentChunkIndex + 1}/${chunks.length} chunks (${classProgressPercent}%)`}
             >
               <span>{currentChunkIndex + 1}/{chunks.length}</span>
             </button>
@@ -1352,7 +1352,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 ring-1 ring-amber-400/20'
                 : 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700/60 text-blue-800 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 ring-1 ring-blue-400/20'
             }`}
-            title={`Chế độ phát hiện tại: ${preferredAudioSource === 'human' ? 'Giọng phòng thu người thật' : 'Giọng AI TTS'}. Nhấp để chuyển đổi ngay lập tức.`}
+            title={`Current playback mode: ${preferredAudioSource === 'human' ? 'Human Studio Audio' : 'AI TTS'}. Click to switch.`}
           >
             <span>{preferredAudioSource === 'human' ? '🎙️ Human Studio' : '🤖 AI Voice'}</span>
           </button>
@@ -1372,7 +1372,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200'
                   : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700'
               }`}
-              title="Cài Đặt Âm Thanh / Audio Setup"
+              title="Audio Setup"
             >
               {isCurrentLessonAudioReady ? (
                 <Volume2 className="w-4 h-4 text-emerald-500" />
@@ -1398,7 +1398,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       <Sliders className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-xs font-extrabold tracking-tight">Cài Đặt Bộ Tổng Hợp Âm Thanh</h3>
+                      <h3 className="text-xs font-extrabold tracking-tight">Audio Synthesis Engine Settings</h3>
                       <p className="text-[10px] text-zinc-500">Human Studio & AI TTS Dual Engine</p>
                     </div>
                   </div>
@@ -1419,7 +1419,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   }`}>
                     <div className="flex items-center justify-between">
                       <span className="font-extrabold text-[11px] uppercase tracking-wider text-zinc-500">
-                        Nguồn Giọng Phát (Voice Mode)
+                        Voice Playback Mode
                       </span>
                       <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
                         preferredAudioSource === 'human'
@@ -1459,8 +1459,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                     </div>
                     <p className="text-[10px] text-zinc-500 leading-tight">
                       {preferredAudioSource === 'human'
-                        ? 'Đang phát giọng đọc phòng thu người thật (3,150 chunks). Tự động fallback sang TTS nếu cần.'
-                        : 'Đang phát qua bộ tổng hợp AI Deepgram Aura & Google Cloud TTS.'}
+                        ? 'Playing human studio recordings (3,150 chunks). Automatically falls back to TTS if needed.'
+                        : 'Playing via AI synthesizer (Deepgram Aura & Google Cloud TTS).'}
                     </p>
                   </div>
 
@@ -1472,11 +1472,11 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5">
-                          <span>Studio Audio Đã Sẵn Sàng</span>
+                          <span>Studio Audio Ready</span>
                           <span className="text-[10px] px-1.5 py-0.2 rounded font-mono bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">Human Studio</span>
                         </div>
                         <div className="text-[11px] text-emerald-600 dark:text-emerald-400 leading-snug mt-0.5">
-                          Bài học đang phát từ audio phòng thu người thật chất lượng cao.
+                          Lesson is playing from high-quality human studio audio.
                         </div>
                       </div>
                     </div>
@@ -1485,7 +1485,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       {/* 1. Audio Engine Provider Switcher */}
                       <div>
                         <label className="block font-bold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5">
-                          1. Chọn Engine Tổng Hợp Giọng (Provider)
+                          1. Select Speech Synthesis Engine (Provider)
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                           <button
@@ -1505,7 +1505,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                               <span className="font-extrabold text-xs">Deepgram Flux & Aura</span>
                               <Zap className="w-3.5 h-3.5 text-purple-600 fill-purple-500" />
                             </div>
-                            <p className="text-[10px] text-zinc-500 leading-tight">Neural Natural Voice AI (Khuyên dùng)</p>
+                            <p className="text-[10px] text-zinc-500 leading-tight">Neural Natural Voice AI (Recommended)</p>
                           </button>
 
                           <button
@@ -1534,7 +1534,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
-                            2. Giọng Đọc Tiếng Anh (English Model)
+                            2. English Voice Model
                           </label>
                           <button
                             type="button"
@@ -1554,10 +1554,10 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                               }
                             }}
                             className="inline-flex items-center gap-1 text-[11px] font-bold text-[#DC2626] hover:text-red-700 cursor-pointer disabled:opacity-50"
-                            title="Nghe thử giọng tiếng Anh đã chọn"
+                            title="Audition selected English voice"
                           >
                             <Play className={`w-3 h-3 fill-current ${isAuditioningEn ? 'animate-pulse' : ''}`} />
-                            <span>{isAuditioningEn ? 'Đang phát...' : 'Nghe thử EN'}</span>
+                            <span>{isAuditioningEn ? 'Playing...' : 'Audition EN'}</span>
                           </button>
                         </div>
 
@@ -1590,7 +1590,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
-                            3. Giọng Đọc Tiếng Việt (Vietnamese Model)
+                            3. Vietnamese Voice Model
                           </label>
                           <button
                             type="button"
@@ -1610,10 +1610,10 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                               }
                             }}
                             className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer disabled:opacity-50"
-                            title="Nghe thử giọng tiếng Việt đã chọn"
+                            title="Audition selected Vietnamese voice"
                           >
                             <Play className={`w-3 h-3 fill-current ${isAuditioningVi ? 'animate-pulse' : ''}`} />
-                            <span>{isAuditioningVi ? 'Đang phát...' : 'Nghe thử VI'}</span>
+                            <span>{isAuditioningVi ? 'Playing...' : 'Audition VI'}</span>
                           </button>
                         </div>
 
@@ -1651,7 +1651,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                     {/* Language Mode Selector */}
                     <div>
                       <label className="block font-bold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5">
-                        Chế độ phát âm thanh (Language Mode)
+                        Language Mode
                       </label>
                       <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl">
                         <button
@@ -1663,7 +1663,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                               : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                           }`}
                         >
-                          Chỉ Tiếng Anh (EN)
+                          English Only (EN)
                         </button>
                         <button
                           type="button"
@@ -1674,7 +1674,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                               : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                           }`}
                         >
-                          Chỉ Tiếng Việt (VI)
+                          Vietnamese Only (VI)
                         </button>
                         <button
                           type="button"
@@ -1685,7 +1685,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                               : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                           }`}
                         >
-                          Song ngữ (EN ➔ VI)
+                          Bilingual (EN ➔ VI)
                         </button>
                         <button
                           type="button"
@@ -1696,7 +1696,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                               : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                           }`}
                         >
-                          Song ngữ (VI ➔ EN)
+                          Bilingual (VI ➔ EN)
                         </button>
                       </div>
                     </div>
@@ -1704,7 +1704,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="font-bold text-[10px] uppercase tracking-wider text-zinc-500">
-                          Tốc độ đọc (Speed)
+                          Playback Speed
                         </label>
                         <span className="font-mono text-xs font-extrabold text-[#DC2626]">
                           {speed.toFixed(1)}x
@@ -1723,7 +1723,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
                     <div>
                       <label className="block font-bold text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5">
-                        Số lần lặp (Repeat)
+                        Repeat Count
                       </label>
                       <div className="grid grid-cols-3 gap-1.5">
                         {[1, 2, 3].map((r) => (
@@ -1739,7 +1739,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                                 : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
                             }`}
                           >
-                            {r} lần ({r}x)
+                            {r}x
                           </button>
                         ))}
                       </div>
@@ -1750,10 +1750,10 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       <div className="flex items-center justify-between">
                         <div className="pr-2">
                           <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                            Giới thiệu Part (Part Intro Audio)
+                            Part Intro Audio
                           </div>
                           <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
-                            Tự động đọc thông báo khi bắt đầu phần mới (VD: "Part 1: Vietnamese slangs")
+                            Automatically announce part transitions (e.g. "Part 1: Vietnamese slangs")
                           </div>
                         </div>
                         <button
@@ -1766,7 +1766,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                           className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
                             isPartAnnounceEnabled ? 'bg-[#DC2626]' : 'bg-zinc-300 dark:bg-zinc-600'
                           }`}
-                          title="Bật/Tắt âm thanh giới thiệu phần mới"
+                          title="Toggle part transition audio"
                         >
                           <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
                             isPartAnnounceEnabled ? 'translate-x-4' : 'translate-x-0'
@@ -1777,9 +1777,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       {isPartAnnounceEnabled && (
                         <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-700/80 space-y-1.5 animate-fade-in">
                           <div className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
-                            <span>Chế độ phát sau khi giới thiệu Part</span>
+                            <span>Playback mode after Part intro</span>
                             <span className="text-[10px] font-mono font-medium text-[#DC2626]">
-                              {isPartAutoplayChunk ? 'Tự động' : 'Thủ công'}
+                              {isPartAutoplayChunk ? 'Automatic' : 'Manual'}
                             </span>
                           </div>
                           <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-zinc-200/60 dark:bg-zinc-900/60">
@@ -1794,9 +1794,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                                   ? 'bg-[#DC2626] text-white shadow-xs'
                                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                               }`}
-                              title="Tự động phát audio của Chunk đầu tiên ngay sau khi giới thiệu Part"
+                              title="Automatically play first chunk audio right after Part intro"
                             >
-                              Tự động (Auto-play)
+                              Automatic (Auto-play)
                             </button>
                             <button
                               type="button"
@@ -1809,15 +1809,15 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                                   ? 'bg-[#DC2626] text-white shadow-xs'
                                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                               }`}
-                              title="Dừng lại để giáo viên giảng giải, bấm Next/Space để phát"
+                              title="Pause for teacher explanation, press Next/Space to play"
                             >
-                              Thủ công (Manual)
+                              Manual (Wait)
                             </button>
                           </div>
                           <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-snug">
                             {isPartAutoplayChunk
-                              ? '⚡ Tự động phát audio của Chunk đầu tiên ngay sau khi giới thiệu Part'
-                              : '⏸️ Dừng lại để giáo viên giảng giải, bấm Next/Space để phát'}
+                              ? '⚡ Automatically plays first chunk audio after Part intro'
+                              : '⏸️ Pauses for teacher explanation, press Next/Space to play'}
                           </div>
                         </div>
                       )}
@@ -1864,7 +1864,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             className={`p-1.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
               highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700'
             }`}
-            title="Toàn Màn Hình / Fullscreen (F / F5)"
+            title="Fullscreen (F / F5)"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -1876,7 +1876,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             className={`p-1.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
               highContrastDark ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-amber-400' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-600'
             }`}
-            title="Giao Diện Sáng / Tối (High Contrast Theme)"
+            title="Toggle High Contrast Theme"
           >
             {highContrastDark ? <SunMedium className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
@@ -1887,7 +1887,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               type="button"
               onClick={onExit}
               className="p-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-[#DC2626] hover:text-red-700 transition-colors cursor-pointer shadow-2xs"
-              title="Thoát Chế Độ Trình Chiếu (Exit Presentation)"
+              title="Exit Presentation (Esc)"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1907,13 +1907,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               🎉
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-mono font-bold uppercase tracking-wider mb-2">
-              <span>📘 CỔNG CHUYỂN TOPIC</span>
+              <span>📘 TOPIC GATEWAY</span>
             </div>
             <h2 className="font-display font-black text-2xl md:text-3xl text-zinc-950 dark:text-white tracking-tight mb-2">
-              ĐÃ HOÀN THÀNH TOPIC 1: {topic1Title.toUpperCase()}!
+              TOPIC 1 COMPLETED: {topic1Title.toUpperCase()}!
             </h2>
             <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-300 max-w-lg mb-8">
-              Bấm <span className="font-bold text-[#DC2626]">Next</span> (Phím <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono text-xs">Space</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono text-xs">➔</kbd> trên bút clicker) để bắt đầu <span className="font-bold text-emerald-600 dark:text-emerald-400">Topic 2: {topic2Title}</span>
+              Press <span className="font-bold text-[#DC2626]">Next</span> (<kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono text-xs">Space</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 font-mono text-xs">➔</kbd> on remote clicker) to begin <span className="font-bold text-emerald-600 dark:text-emerald-400">Topic 2: {topic2Title}</span>
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <button
@@ -1925,7 +1925,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 }}
                 className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm md:text-base shadow-lg hover:shadow-xl transition-all cursor-pointer active:scale-95 animate-pulse"
               >
-                <span>Bắt đầu Topic 2 ({topic2Title})</span>
+                <span>Start Topic 2 ({topic2Title})</span>
                 <ChevronRight className="w-5 h-5" />
               </button>
               <button
@@ -1938,7 +1938,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 className="flex items-center gap-2 px-5 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 text-zinc-800 dark:text-zinc-200 font-bold text-xs md:text-sm transition-all cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>Luyện lại Topic 1</span>
+                <span>Review Topic 1</span>
               </button>
             </div>
           </div>
@@ -1948,16 +1948,16 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               🏆
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-xs font-mono font-bold uppercase tracking-wider mb-2">
-              <span>Xuất sắc · {chunks.length} Chunks Hoàn Tất</span>
+              <span>🎉 LESSON COMPLETED!</span>
             </div>
             <h2 className="font-display font-black text-2xl md:text-3xl text-zinc-950 dark:text-white tracking-tight mb-2">
-              Chúc Mừng! Đã Hoàn Thành Toàn Bộ Bài Học
+              ALL {chunks.length} CHUNKS OF DAY {activeLesson?.day_number} COMPLETED!
             </h2>
             <p className="text-base font-bold text-[#DC2626] mb-2">
               {activeLesson?.lesson_title}
             </p>
             <p className="text-xs md:text-sm text-zinc-600 dark:text-zinc-300 max-w-lg mb-8">
-              Tất cả các phần trong {hasMultipleTopics ? `Topic 1 (${topic1Title}) và Topic 2 (${topic2Title})` : 'bài học'} đã được hoàn tất trọn vẹn!
+              Press <span className="font-bold text-[#DC2626]">Replay (R)</span> to review again, or select next lesson from the navigation bar.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
@@ -1970,7 +1970,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white font-extrabold text-xs md:text-sm shadow-lg transition-all cursor-pointer active:scale-95"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>Luyện lại từ đầu</span>
+                <span>Review This Lesson</span>
               </button>
               {hasMultipleTopics && (
                 <button
@@ -1982,7 +1982,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   }}
                   className="flex items-center gap-2 px-5 py-3 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 font-bold text-xs md:text-sm transition-all cursor-pointer"
                 >
-                  <span>Luyện lại Topic 2</span>
+                  <span>Review Topic 2</span>
                 </button>
               )}
               <button
@@ -1994,7 +1994,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 className="flex items-center gap-2 px-5 py-3 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-bold text-xs md:text-sm transition-all cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-amber-600" />
-                <span>Ăn mừng (Confetti)</span>
+                <span>Celebrate (Confetti)</span>
               </button>
             </div>
           </div>
@@ -2141,7 +2141,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             {isAwaitingFirstChunkPlay && !isPlayingAudio && (
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/80 font-mono text-xs font-bold mt-3 animate-pulse shadow-xs">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                <span>⏸️ Chế độ thủ công: Bấm Next / Space (hoặc click Phát lại) để phát audio Chunk đầu tiên</span>
+                <span>⏸️ Manual mode: Press Next / Space (or click Replay) to play first Chunk audio</span>
               </div>
             )}
           </>
@@ -2200,43 +2200,43 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Next Chunk (Manual Step)</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.next?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.next?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Previous Chunk</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.prev?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.prev?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Replay Audio</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.replay?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.replay?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Blackout (Blank Screen)</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.blackout?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.blackout?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Toggle Vietnamese Translation</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.subtitle?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.subtitle?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Open Parts Navigation Drawer</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.drawer?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.drawer?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Fullscreen Toggle</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.fullscreen?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.fullscreen?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
@@ -2264,7 +2264,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             onClick={handlePrev}
             disabled={currentChunkIndex === 0 && isGrammarSlide}
             className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-white text-xs font-bold text-zinc-900 disabled:opacity-30 transition-all cursor-pointer shadow-xs"
-            title={isGrammarSlide ? "Slide 0 (Đầu bài học)" : (currentChunkIndex === 0 ? "Về Slide 0 (Ngữ pháp)" : "Previous Chunk (PageUp / Left)")}
+            title={isGrammarSlide ? "Slide 0 (Lesson Overview)" : (currentChunkIndex === 0 ? "To Slide 0 (Grammar)" : "Previous Chunk (PageUp / Left)")}
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">{currentChunkIndex === 0 && !isGrammarSlide ? 'Grammar' : 'Prev'}</span>
@@ -2277,7 +2277,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             title="Replay Audio (Key R)"
           >
             <Volume2 className="w-4 h-4" />
-            <span>Phát Lại (R)</span>
+            <span>Replay (R)</span>
           </button>
 
           <button
@@ -2293,18 +2293,18 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 ? 'bg-[#DC2626] text-white animate-pulse shadow-red-500/30 ring-2 ring-red-400/50'
                 : 'bg-zinc-900 text-white hover:bg-zinc-800'
             }`}
-            title={isAwaitingFirstChunkPlay ? "Phát audio Chunk đầu tiên (Space / Next)" : "Next Chunk (PageDown / Right / Space)"}
+            title={isAwaitingFirstChunkPlay ? "Play first chunk audio (Space / Next)" : "Next Chunk (PageDown / Right / Space)"}
           >
             <span>
               {isGrammarSlide
-                ? 'Bắt đầu Chunks ➔'
+                ? 'Start Chunks ➔'
                 : isTopicCompleteGate
-                ? 'Bắt đầu Topic 2 ➔'
+                ? 'Start Topic 2 ➔'
                 : (isLessonCompleteGate || currentChunkIndex === chunks.length - 1)
-                ? 'Hoàn Tất 🎉'
+                ? 'Finished 🎉'
                 : isAwaitingFirstChunkPlay
-                ? 'Phát Audio (Space) ▶'
-                : 'Tiếp (Next)'}
+                ? 'Play Audio ▶'
+                : 'Next ➔'}
             </span>
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -2320,7 +2320,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] ${
                 languageMode === 'EN_ONLY' ? 'bg-[#DC2626] text-white shadow-xs font-extrabold' : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
               }`}
-              title="Chế độ Tiếng Anh (EN Only - Primary EN, Subtitle VI)"
+              title="English Mode (EN Only - Primary EN, Subtitle VI)"
             >
               EN
             </button>
@@ -2330,7 +2330,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer text-[11px] ${
                 languageMode === 'VI_ONLY' ? 'bg-[#DC2626] text-white shadow-xs font-extrabold' : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
               }`}
-              title="Chế độ Tiếng Việt (VI Only - Primary VI, Subtitle EN)"
+              title="Vietnamese Mode (VI Only - Primary VI, Subtitle EN)"
             >
               VI
             </button>
@@ -2349,7 +2349,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               value={speed}
               onChange={(e) => setSpeed(parseFloat(e.target.value))}
               className="w-20 sm:w-24 accent-[#DC2626] cursor-pointer h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg"
-              title={`Tốc độ đọc: ${speed.toFixed(1)}x (0.8x - 2.0x)`}
+              title={`Playback speed: ${speed.toFixed(1)}x (0.8x - 2.0x)`}
             />
             <span className="text-[11px] font-mono font-extrabold text-[#DC2626] min-w-[30px] text-right">
               {speed.toFixed(1)}x
@@ -2365,7 +2365,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 className={`px-2 py-1 rounded-md transition-colors cursor-pointer text-[11px] ${
                   repeatCount === r ? 'bg-amber-500 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900'
                 }`}
-                title={`Lặp lại ${r} lần (Phím ${r})`}
+                title={`Repeat ${r} times (Key ${r})`}
               >
                 {r}x
               </button>
@@ -2386,7 +2386,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             title="Toggle Vietnamese Subtitle (Key: V)"
           >
             {showSubtitle ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Phụ Đề (V)</span>
+            <span className="hidden sm:inline">Subtitles (V)</span>
           </button>
 
           {/* Words List Drawer */}
@@ -2504,7 +2504,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               {/* Target Audio Selector */}
               <div>
                 <label className="block text-[11px] font-bold text-zinc-700 mb-1.5">
-                  Mục tiêu tổng hợp (Target Chunks):
+                  Target Chunks:
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -2516,7 +2516,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                         : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
                     }`}
                   >
-                    Cả EN & VI
+                    Both EN & VI
                   </button>
                   <button
                     type="button"
@@ -2527,7 +2527,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                         : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
                     }`}
                   >
-                    Chỉ EN
+                    EN Only
                   </button>
                   <button
                     type="button"
@@ -2538,7 +2538,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                         : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
                     }`}
                   >
-                    Chỉ VI
+                    VI Only
                   </button>
                 </div>
               </div>
