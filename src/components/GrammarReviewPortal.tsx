@@ -1200,11 +1200,6 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                                 <Edit3 className="w-3 h-3" />
                               </button>
                             </div>
-                            {item.topic && item.topic !== item.primary_structure && (
-                              <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-1">
-                                {item.topic}
-                              </p>
-                            )}
                             {item.file && (
                               <p className="text-[10px] font-mono text-zinc-400 mt-0.5">
                                 File: {item.file}

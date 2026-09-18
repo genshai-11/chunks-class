@@ -48,6 +48,54 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
   isCollapsed = false,
   onToggleCollapse
 }) => {
+  const [visibleCourseIds, setVisibleCourseIds] = React.useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('chunks_visible_course_ids');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to read chunks_visible_course_ids:', e);
+    }
+    return (courses || []).map(c => c.id);
+  });
+
+  React.useEffect(() => {
+    const handleVisibilityChange = () => {
+      try {
+        const stored = localStorage.getItem('chunks_visible_course_ids');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setVisibleCourseIds(parsed);
+            return;
+          }
+        }
+      } catch (err) {}
+      setVisibleCourseIds((courses || []).map(c => c.id));
+    };
+
+    try {
+      const stored = localStorage.getItem('chunks_visible_course_ids');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setVisibleCourseIds(parsed);
+        }
+      } else if (courses.length > 0) {
+        setVisibleCourseIds(courses.map(c => c.id));
+      }
+    } catch (e) {}
+
+    window.addEventListener('chunks_course_visibility_changed', handleVisibilityChange);
+    window.addEventListener('storage', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('chunks_course_visibility_changed', handleVisibilityChange);
+      window.removeEventListener('storage', handleVisibilityChange);
+    };
+  }, [courses]);
+
   const menuItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'schedule', label: 'Cohort Schedule', icon: <Calendar className="w-4 h-4" /> },
     { id: 'projector', label: 'Focus Mode', icon: <Mic2 className="w-4 h-4" />, badge: 'LIVE' },
@@ -106,7 +154,9 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
                 onChange={(e) => onSelectCourse?.(e.target.value)}
                 className="w-full bg-white border border-[#E8E8EC] rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626] cursor-pointer shadow-xs"
               >
-                {(courses || []).map(c => (
+                {(courses || [])
+                  .filter(c => visibleCourseIds.includes(c.id) || c.id === selectedCourseId)
+                  .map(c => (
                   <option key={c.id} value={c.id}>
                     {c.level_code === 'LEVEL_A'
                       ? '📗 Level A (Foundation)'

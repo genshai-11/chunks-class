@@ -949,21 +949,21 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             {/* Audio Settings Button */}
             <button
               onClick={() => setIsAudioSettingsOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E8EC] bg-white text-xs font-bold text-zinc-700 hover:bg-zinc-50 transition-all cursor-pointer shadow-2xs active:scale-95"
-              title="Cấu hình giọng đọc Deepgram / Google Cloud, tốc độ & chế độ phát"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 hover:text-zinc-950 hover:border-zinc-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+              title="Audio Settings: Cấu hình giọng đọc Deepgram / Google Cloud, tốc độ & chế độ phát"
             >
-              <Volume2 className="w-3.5 h-3.5 text-[#DC2626]" />
-              <span>Cài Đặt Audio</span>
+              <Volume2 className="w-3.5 h-3.5 text-[#DC2626] shrink-0" />
+              <span>Audio Settings</span>
             </button>
 
             {/* Sync Cloud Audio (All Cached Sessions) */}
             <button
               disabled={isSyncingAllCloud}
               onClick={handleSyncAllCachedSessionsToCloud}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 ${
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
                 isSyncingAllCloud 
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-700 cursor-wait'
-                  : 'border-[#E8E8EC] bg-white text-zinc-700 hover:bg-zinc-50'
+                  : 'border-emerald-200 bg-emerald-50/70 hover:bg-emerald-50 text-emerald-800 hover:border-emerald-300'
               }`}
               title={
                 sessionsWithCachedCount > 0
@@ -972,15 +972,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               }
             >
               {isSyncingAllCloud ? (
-                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin shrink-0" />
               ) : (
-                <CloudUpload className="w-3.5 h-3.5 text-emerald-600" />
+                <CloudUpload className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               )}
               <span>
                 {isSyncingAllCloud 
-                  ? 'Đang Sync Cloud...' 
+                  ? 'Syncing Cloud...' 
                   : sessionsWithCachedCount > 0 
-                    ? `Sync Tất Cả (${sessionsWithCachedCount} buổi ready)` 
+                    ? `Sync Cloud (${sessionsWithCachedCount})` 
                     : 'Sync Cloud'}
               </span>
             </button>
@@ -995,30 +995,31 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 setEditEndTime(cohort.schedule_pattern?.end_time || '21:00');
                 setIsEditModalOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E8EC] bg-white text-xs font-bold text-zinc-700 hover:bg-zinc-50 transition-all cursor-pointer shadow-2xs active:scale-95"
-              title="Thay đổi ngày bắt đầu, giờ học và tính lại 15 buổi"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 hover:text-zinc-950 hover:border-zinc-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+              title="Edit Schedule: Thay đổi ngày bắt đầu, giờ học và tính lại lịch học"
             >
-              <Edit3 className="w-3.5 h-3.5 text-[#DC2626]" />
+              <Edit3 className="w-3.5 h-3.5 text-[#DC2626] shrink-0" />
               <span>Edit Schedule</span>
             </button>
 
             {/* Export iCal */}
             <button
               onClick={handleExportICS}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E8EC] bg-white text-xs font-bold text-zinc-700 hover:bg-zinc-50 transition-all cursor-pointer shadow-2xs active:scale-95"
-              title="Xuất file đồng bộ lịch (.ics) cho Google Calendar hoặc Apple Calendar"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 hover:text-zinc-950 hover:border-zinc-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
+              title="Export iCal: Xuất file đồng bộ lịch (.ics) cho Google Calendar hoặc Apple Calendar"
             >
-              <Download className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Export iCal (.ics)</span>
+              <Download className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
+              <span>Export iCal</span>
             </button>
 
             {/* Launch Presenter */}
             {inProgressSession && (
               <button
                 onClick={() => handleLaunchSession(inProgressSession.lesson_id, inProgressSession.session_number)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold rounded-lg shadow-sm hover:shadow transition-all cursor-pointer"
+                className="bg-[#DC2626] text-white px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
+                title={`Launch Session ${inProgressSession.session_number} in Focus Mode`}
               >
-                <Play className="w-3.5 h-3.5 fill-current" />
+                <Play className="w-3.5 h-3.5 fill-current shrink-0" />
                 <span>Launch Session {inProgressSession.session_number}</span>
               </button>
             )}
