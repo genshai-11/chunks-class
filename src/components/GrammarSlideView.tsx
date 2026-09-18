@@ -144,35 +144,17 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
   const tenses = grammar?.tense || [];
   const hasContent = sentenceStructures.length > 0 || verbForms.length > 0 || tenses.length > 0;
 
-  // Font size levels 1..5 for each of the 3 cards, persisted to localStorage
-  const [structuresSize, setStructuresSize] = React.useState<FontSizeLevel>(() =>
-    getStoredFontSize('chunks_grammar_size_structures', 3)
-  );
-  const [verbsSize, setVerbsSize] = React.useState<FontSizeLevel>(() =>
-    getStoredFontSize('chunks_grammar_size_verbs', 3)
-  );
-  const [tensesSize, setTensesSize] = React.useState<FontSizeLevel>(() =>
-    getStoredFontSize('chunks_grammar_size_tenses', 3)
+  const capitalizeFirst = (s: string) => s ? s.trim().charAt(0).toUpperCase() + s.trim().slice(1) : '';
+
+  // Unified font size level 1..5 controlling all 3 columns simultaneously
+  const [grammarFontSize, setGrammarFontSize] = React.useState<FontSizeLevel>(() =>
+    getStoredFontSize('chunks_grammar_font_size', 3)
   );
 
-  const updateStructuresSize = (newLevel: FontSizeLevel) => {
-    setStructuresSize(newLevel);
+  const updateGrammarFontSize = (newLevel: FontSizeLevel) => {
+    setGrammarFontSize(newLevel);
     try {
-      localStorage.setItem('chunks_grammar_size_structures', String(newLevel));
-    } catch {}
-  };
-
-  const updateVerbsSize = (newLevel: FontSizeLevel) => {
-    setVerbsSize(newLevel);
-    try {
-      localStorage.setItem('chunks_grammar_size_verbs', String(newLevel));
-    } catch {}
-  };
-
-  const updateTensesSize = (newLevel: FontSizeLevel) => {
-    setTensesSize(newLevel);
-    try {
-      localStorage.setItem('chunks_grammar_size_tenses', String(newLevel));
+      localStorage.setItem('chunks_grammar_font_size', String(newLevel));
     } catch {}
   };
 
@@ -211,8 +193,13 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
             )}
           </div>
 
-          {/* Day & Slide indicator Right */}
+          {/* Day, Slide indicator & Unified Stepper Right */}
           <div className="flex items-center gap-2 font-mono text-xs font-bold">
+            <FontSizeStepper
+              level={grammarFontSize}
+              onChange={updateGrammarFontSize}
+              highContrastDark={highContrastDark}
+            />
             <span className="px-2.5 py-1 rounded-lg bg-[#DC2626] text-white shadow-xs">
               Slide 0 · Grammar
             </span>
@@ -271,17 +258,11 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                     <Layers className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-blue-600 dark:text-blue-300">
-                      SENTENCE STRUCTURES
+                    <h3 className="font-black text-sm sm:text-base tracking-wider text-blue-600 dark:text-blue-300">
+                      Sentence Structures
                     </h3>
                   </div>
                 </div>
-
-                <FontSizeStepper
-                  level={structuresSize}
-                  onChange={updateStructuresSize}
-                  highContrastDark={highContrastDark}
-                />
               </div>
 
               <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 scrollbar-thin pt-2">
@@ -289,14 +270,14 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                   sentenceStructures.map((struct, idx) => (
                     <div 
                       key={idx} 
-                      className={`${STRUCTURES_SIZE_CLASSES[structuresSize]} transition-all ${
+                      className={`${STRUCTURES_SIZE_CLASSES[grammarFontSize]} transition-all ${
                         highContrastDark 
                           ? 'bg-zinc-900/90 border-blue-500/30 text-blue-100 shadow-md' 
                           : 'bg-blue-50/80 border-blue-300 text-blue-950 shadow-xs'
                       }`}
                     >
                       <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0 mt-1.5 shadow-xs" />
-                      <span className="break-words leading-snug">{struct}</span>
+                      <span className="break-words leading-snug">{capitalizeFirst(struct)}</span>
                     </div>
                   ))
                 ) : (
@@ -311,7 +292,7 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
               </div>
             </div>
 
-            {/* Column 2: Verb Forms & Phrases */}
+            {/* Column 2: Word Forms */}
             <div className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col justify-between h-full min-h-0 overflow-hidden shadow-md transition-all ${
               highContrastDark 
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
@@ -323,17 +304,11 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-300">
-                      VERB FORMS & PHRASES
+                    <h3 className="font-black text-sm sm:text-base tracking-wider text-emerald-600 dark:text-emerald-300">
+                      Word Forms
                     </h3>
                   </div>
                 </div>
-
-                <FontSizeStepper
-                  level={verbsSize}
-                  onChange={updateVerbsSize}
-                  highContrastDark={highContrastDark}
-                />
               </div>
 
               <div className="flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin pt-2">
@@ -342,30 +317,30 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                     verbForms.map((vf, idx) => (
                       <span 
                         key={idx}
-                        className={`${VERBS_SIZE_CLASSES[verbsSize]} shadow-xs transition-all ${
+                        className={`${VERBS_SIZE_CLASSES[grammarFontSize]} shadow-xs transition-all ${
                           highContrastDark 
                             ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-100 shadow-md' 
                             : 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xs'
                         }`}
                       >
                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span className="break-words">{vf}</span>
+                        <span className="break-words">{capitalizeFirst(vf)}</span>
                       </span>
                     ))
                   ) : (
                     <div className="text-xs sm:text-sm text-zinc-400 italic py-2">
-                      (Standard verb forms)
+                      (Standard word forms)
                     </div>
                   )}
                 </div>
               </div>
 
               <div className="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs font-mono font-medium text-zinc-400 shrink-0">
-                {verbForms.length} verb {verbForms.length === 1 ? 'phrase' : 'phrases'}
+                {verbForms.length} word {verbForms.length === 1 ? 'form' : 'forms'}
               </div>
             </div>
 
-            {/* Column 3: Tenses & Patterns */}
+            {/* Column 3: Tenses */}
             <div className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col justify-between h-full min-h-0 overflow-hidden shadow-md transition-all ${
               highContrastDark 
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
@@ -377,32 +352,26 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                     <FileText className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-purple-600 dark:text-purple-300">
-                      TENSES & PATTERNS
+                    <h3 className="font-black text-sm sm:text-base tracking-wider text-purple-600 dark:text-purple-300">
+                      Tenses
                     </h3>
                   </div>
                 </div>
-
-                <FontSizeStepper
-                  level={tensesSize}
-                  onChange={updateTensesSize}
-                  highContrastDark={highContrastDark}
-                />
               </div>
 
               <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 scrollbar-thin pt-2">
                 {tenses.length > 0 ? (
                   tenses.map((tense, idx) => (
                     <div 
-                      key={idx}
-                      className={`${TENSES_SIZE_CLASSES[tensesSize]} transition-all ${
+                      key={idx} 
+                      className={`${TENSES_SIZE_CLASSES[grammarFontSize]} transition-all ${
                         highContrastDark 
                           ? 'bg-purple-950/30 border-purple-700/60 text-purple-100 shadow-md' 
                           : 'bg-purple-50/80 border-purple-300 text-purple-950 shadow-xs'
                       }`}
                     >
                       <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0 shadow-xs" />
-                      <span className="break-words">{tense}</span>
+                      <span className="break-words">{capitalizeFirst(tense)}</span>
                     </div>
                   ))
                 ) : (

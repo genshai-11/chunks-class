@@ -62,6 +62,7 @@ export const App: React.FC = () => {
   const [improvPackageId, setImprovPackageId] = useState<string>(IMPROV_SET_01.id);
   const [improvSessionNumber, setImprovSessionNumber] = useState<number>(1);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState<boolean>(false);
+  const [projectorReturnTab, setProjectorReturnTab] = useState<NavTab>('schedule');
 
   // Load cohorts on mount
   useEffect(() => {
@@ -171,8 +172,24 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleToggleCohortActive = async (cohortId: string, active: boolean) => {
+    const target = cohorts.find(c => c.id === cohortId);
+    if (!target) return;
+    const updated = { ...target, is_active: active, updated_at: new Date().toISOString() };
+    await handleUpdateCohort(updated);
+  };
+
   const handleSelectCourse = (courseId: string) => {
-    const matchingCohort = cohorts.find(c => c.course_id === courseId);
+    const matchingCohorts = cohorts.filter(c => {
+      if (c.course_id && c.course_id === courseId) return true;
+      if (courseId === 'course_level_a') return c.level_code === 'LEVEL_A';
+      if (courseId === 'course_level_b') return c.level_code === 'LEVEL_B' || c.level_code === 'LEVEL_B_ERE';
+      if (courseId === 'course_level_b_erel') return c.level_code === 'LEVEL_B_EREL';
+      if (courseId === 'course_level_b_eres') return c.level_code === 'LEVEL_B_ERES';
+      return false;
+    });
+    // Prefer selecting an active cohort
+    const matchingCohort = matchingCohorts.find(c => c.is_active !== false) || matchingCohorts[0];
     if (matchingCohort) {
       setActiveCohortId(matchingCohort.id);
       const firstSession = matchingCohort.sessions?.[0];
@@ -186,11 +203,17 @@ export const App: React.FC = () => {
       const title = course?.title || `Cohort - ${courseId}`;
       const newCohort = createDefaultCohort(title, level);
       newCohort.course_id = courseId;
+      newCohort.is_active = true;
       handleCreateCohort(newCohort);
     }
   };
 
   const handleLaunchProjectorForLesson = (lessonId: string, sessionNumber: number) => {
+    if (activeTab === 'grammar-portal' || (activeTab as any) === 'resource-manager') {
+      setProjectorReturnTab('grammar-portal');
+    } else {
+      setProjectorReturnTab(activeTab || 'schedule');
+    }
     setDrillLessonId(lessonId);
     setDrillSessionNumber(sessionNumber);
     setActiveTab('projector');
@@ -237,7 +260,10 @@ export const App: React.FC = () => {
       <GrammarReviewPortal
         isStandalone={true}
         onExitToApp={() => setActiveTab('resource-manager')}
-        onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
+        onLaunchProjectorForLesson={(lessonId, sessionNumber) => {
+          setProjectorReturnTab('grammar-portal');
+          handleLaunchProjectorForLesson(lessonId, sessionNumber);
+        }}
       />
     );
   }
@@ -276,7 +302,7 @@ export const App: React.FC = () => {
         <ClassroomPresentation
           initialLessonId={drillLessonId}
           sessionNumber={drillSessionNumber}
-          onExit={() => setActiveTab('schedule')}
+          onExit={() => setActiveTab(projectorReturnTab || 'schedule')}
           audioSettings={activeCohort.audio_settings}
           courseLevel={activeCohort.level_code}
           onSelectLesson={(newLessonId, sessionNumber) => {
@@ -339,12 +365,18 @@ export const App: React.FC = () => {
           cohort={activeCohort}
           onUpdateCohort={handleUpdateCohort}
           onResetToDefault={handleResetToDefault}
+          allCohorts={cohorts}
+          onSelectCohort={(id) => setActiveCohortId(id)}
+          onToggleCohortActive={handleToggleCohortActive}
         />
       )}
 
       {(activeTab === 'grammar-portal' || (activeTab as any) === 'resource-manager') && (
         <GrammarReviewPortal
-          onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
+          onLaunchProjectorForLesson={(lessonId, sessionNumber) => {
+            setProjectorReturnTab('grammar-portal');
+            handleLaunchProjectorForLesson(lessonId, sessionNumber);
+          }}
           onExitToApp={() => setActiveTab('schedule')}
         />
       )}

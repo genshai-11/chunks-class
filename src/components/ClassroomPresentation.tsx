@@ -2200,43 +2200,43 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Next Chunk (Manual Step)</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.next?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.next?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Previous Chunk</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.prev?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.prev?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Replay Audio</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.replay?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.replay?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Blackout (Blank Screen)</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.blackout?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.blackout?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Toggle Vietnamese Translation</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.subtitle?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.subtitle?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Open Parts Navigation Drawer</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.drawer?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.drawer?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
                 <span className="font-semibold text-zinc-800">Fullscreen Toggle</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
-                  {shortcutConfig.keyBindings.fullscreen?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                  {shortcutConfig.keyBindings.fullscreen?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Not assigned'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">

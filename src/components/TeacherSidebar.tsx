@@ -127,17 +127,36 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
               <label className="text-[10px] font-mono font-bold text-[#6B6B6B] uppercase tracking-wider block mb-1">
                 Active Cohort
               </label>
-              <select
-                value={selectedCohortId}
-                onChange={(e) => onSelectCohort?.(e.target.value)}
-                className="w-full bg-white border border-[#E8E8EC] rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626] cursor-pointer shadow-xs truncate"
-              >
-                {(cohorts || []).map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
+              {(() => {
+                const activeCohorts = (cohorts || []).filter(c => c.is_active !== false);
+                const courseFilteredCohorts = activeCohorts.filter(c => {
+                  if (c.course_id && c.course_id === selectedCourseId) return true;
+                  if (selectedCourseId === 'course_level_a') return c.level_code === 'LEVEL_A';
+                  if (selectedCourseId === 'course_level_b') return c.level_code === 'LEVEL_B' || c.level_code === 'LEVEL_B_ERE';
+                  if (selectedCourseId === 'course_level_b_erel') return c.level_code === 'LEVEL_B_EREL';
+                  if (selectedCourseId === 'course_level_b_eres') return c.level_code === 'LEVEL_B_ERES';
+                  return false;
+                });
+                const availableCohorts = courseFilteredCohorts.length > 0 
+                  ? courseFilteredCohorts 
+                  : activeCohorts.length > 0 
+                  ? activeCohorts 
+                  : (cohorts || []);
+
+                return (
+                  <select
+                    value={selectedCohortId}
+                    onChange={(e) => onSelectCohort?.(e.target.value)}
+                    className="w-full bg-white border border-[#E8E8EC] rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626] cursor-pointer shadow-xs truncate"
+                  >
+                    {availableCohorts.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                );
+              })()}
             </div>
           </div>
         )}
