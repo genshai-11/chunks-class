@@ -62,8 +62,12 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
   });
 
   React.useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = (e?: any) => {
       try {
+        if (e && e.detail && Array.isArray(e.detail)) {
+          setVisibleCourseIds(e.detail);
+          return;
+        }
         const stored = localStorage.getItem('chunks_visible_course_ids');
         if (stored) {
           const parsed = JSON.parse(stored);
@@ -95,6 +99,21 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
       window.removeEventListener('storage', handleVisibilityChange);
     };
   }, [courses]);
+
+  const visibleCourses = (courses || []).filter(c => visibleCourseIds.includes(c.id));
+  const displayedCourses = visibleCourses.length > 0 ? visibleCourses : (courses || []);
+
+  // Auto-switch to first visible course if the selected course is hidden
+  React.useEffect(() => {
+    if (
+      visibleCourseIds.length > 0 &&
+      selectedCourseId &&
+      !visibleCourseIds.includes(selectedCourseId) &&
+      displayedCourses.length > 0
+    ) {
+      onSelectCourse?.(displayedCourses[0].id);
+    }
+  }, [visibleCourseIds, selectedCourseId, displayedCourses, onSelectCourse]);
 
   const menuItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'schedule', label: 'Cohort Schedule', icon: <Calendar className="w-4 h-4" /> },
@@ -154,9 +173,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
                 onChange={(e) => onSelectCourse?.(e.target.value)}
                 className="w-full bg-white border border-[#E8E8EC] rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626] cursor-pointer shadow-xs"
               >
-                {(courses || [])
-                  .filter(c => visibleCourseIds.includes(c.id) || c.id === selectedCourseId)
-                  .map(c => (
+                {displayedCourses.map(c => (
                   <option key={c.id} value={c.id}>
                     {c.level_code === 'LEVEL_A'
                       ? '📗 Level A (Foundation)'
@@ -178,7 +195,18 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
                 Active Cohort
               </label>
               {(() => {
-                const activeCohorts = (cohorts || []).filter(c => c.is_active !== false);
+                const isCohortCourseVisible = (c: Cohort) => {
+                  if (visibleCourseIds.length === 0) return true;
+                  const cid = c.course_id || (
+                    c.level_code === 'LEVEL_A' ? 'course_level_a' :
+                    c.level_code === 'LEVEL_B_EREL' ? 'course_level_b_erel' :
+                    c.level_code === 'LEVEL_B_ERES' ? 'course_level_b_eres' : 'course_level_b'
+                  );
+                  return visibleCourseIds.includes(cid);
+                };
+                const activeCohorts = (cohorts || [])
+                  .filter(c => c.is_active !== false)
+                  .filter(isCohortCourseVisible);
                 const courseFilteredCohorts = activeCohorts.filter(c => {
                   if (c.course_id && c.course_id === selectedCourseId) return true;
                   if (selectedCourseId === 'course_level_a') return c.level_code === 'LEVEL_A';
@@ -187,11 +215,13 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
                   if (selectedCourseId === 'course_level_b_eres') return c.level_code === 'LEVEL_B_ERES';
                   return false;
                 });
+                const visibleAllCohorts = (cohorts || []).filter(isCohortCourseVisible);
+                const fallbackCohorts = visibleAllCohorts.length > 0 ? visibleAllCohorts : (cohorts || []);
                 const availableCohorts = courseFilteredCohorts.length > 0 
                   ? courseFilteredCohorts 
                   : activeCohorts.length > 0 
                   ? activeCohorts 
-                  : (cohorts || []);
+                  : fallbackCohorts;
 
                 return (
                   <select

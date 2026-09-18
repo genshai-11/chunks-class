@@ -46,6 +46,26 @@ function sanitizeCohort(cohort: Cohort): Cohort {
   };
 }
 
+function getCohortCourseId(cohort?: Cohort): string {
+  if (!cohort) return 'course_level_b';
+  return cohort.course_id || (
+    cohort.level_code === 'LEVEL_A' ? 'course_level_a' :
+    cohort.level_code === 'LEVEL_B_EREL' ? 'course_level_b_erel' :
+    cohort.level_code === 'LEVEL_B_ERES' ? 'course_level_b_eres' : 'course_level_b'
+  );
+}
+
+function getStoredVisibleCourseIds(): string[] {
+  try {
+    const stored = localStorage.getItem('chunks_visible_course_ids');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
 export const App: React.FC = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -68,11 +88,21 @@ export const App: React.FC = () => {
   useEffect(() => {
     async function loadData() {
       try {
+        const visibleIds = getStoredVisibleCourseIds();
+        const isCourseVisible = (c: Cohort) => {
+          if (visibleIds.length === 0) return true;
+          return visibleIds.includes(getCohortCourseId(c));
+        };
+
         const loadedCohorts = await getFirestoreCohorts();
         if (loadedCohorts.length > 0) {
           const sanitized = loadedCohorts.map(sanitizeCohort);
           setCohorts(sanitized);
-          const defaultActive = sanitized.find(c => c.level_code === 'LEVEL_B' || c.course_id === 'course_level_b') || sanitized.find(c => c.level_code === 'LEVEL_B_ERE') || sanitized[0];
+          const visibleCohorts = sanitized.filter(isCourseVisible);
+          const cohortsToSearch = visibleCohorts.length > 0 ? visibleCohorts : sanitized;
+          const defaultActive = cohortsToSearch.find(c => c.level_code === 'LEVEL_B' || c.course_id === 'course_level_b') 
+            || cohortsToSearch.find(c => c.level_code === 'LEVEL_B_ERE') 
+            || cohortsToSearch[0];
           setActiveCohortId(defaultActive.id);
           if (defaultActive.sessions?.[0]) {
             setDrillLessonId(defaultActive.sessions[0].lesson_id);
@@ -83,11 +113,14 @@ export const App: React.FC = () => {
           const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
           const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
           const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
-          setCohorts([defaultB, defaultA, defaultErel, defaultEres]);
-          setActiveCohortId(defaultB.id);
-          if (defaultB.sessions?.[0]) {
-            setDrillLessonId(defaultB.sessions[0].lesson_id);
-            setDrillSessionNumber(defaultB.sessions[0].session_number);
+          const allDefaults = [defaultB, defaultA, defaultErel, defaultEres];
+          setCohorts(allDefaults);
+          const visibleDefaults = allDefaults.filter(isCourseVisible);
+          const chosenDefault = visibleDefaults.length > 0 ? visibleDefaults[0] : defaultB;
+          setActiveCohortId(chosenDefault.id);
+          if (chosenDefault.sessions?.[0]) {
+            setDrillLessonId(chosenDefault.sessions[0].lesson_id);
+            setDrillSessionNumber(chosenDefault.sessions[0].session_number);
           }
           await saveFirestoreCohort(defaultB);
           await saveFirestoreCohort(defaultA);
@@ -96,15 +129,23 @@ export const App: React.FC = () => {
         }
       } catch (e) {
         console.error('Error loading cohorts:', e);
+        const visibleIds = getStoredVisibleCourseIds();
+        const isCourseVisible = (c: Cohort) => {
+          if (visibleIds.length === 0) return true;
+          return visibleIds.includes(getCohortCourseId(c));
+        };
         const defaultB = createDefaultCohort("Level B - ERE Spoken Reflexes K30", "LEVEL_B");
         const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
         const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
         const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
-        setCohorts([defaultB, defaultA, defaultErel, defaultEres]);
-        setActiveCohortId(defaultB.id);
-        if (defaultB.sessions?.[0]) {
-          setDrillLessonId(defaultB.sessions[0].lesson_id);
-          setDrillSessionNumber(defaultB.sessions[0].session_number);
+        const allDefaults = [defaultB, defaultA, defaultErel, defaultEres];
+        setCohorts(allDefaults);
+        const visibleDefaults = allDefaults.filter(isCourseVisible);
+        const chosenDefault = visibleDefaults.length > 0 ? visibleDefaults[0] : defaultB;
+        setActiveCohortId(chosenDefault.id);
+        if (chosenDefault.sessions?.[0]) {
+          setDrillLessonId(chosenDefault.sessions[0].lesson_id);
+          setDrillSessionNumber(chosenDefault.sessions[0].session_number);
         }
       } finally {
         setIsLoading(false);
@@ -208,6 +249,48 @@ export const App: React.FC = () => {
     }
   };
 
+  // Listen for course visibility changes and auto-switch if active cohort's course is turned off
+  useEffect(() => {
+    const handleVisibilityChange = (e?: Event) => {
+      try {
+        let visibleIds: string[] = [];
+        if (e && 'detail' in e && Array.isArray((e as CustomEvent).detail)) {
+          visibleIds = (e as CustomEvent).detail;
+        } else {
+          visibleIds = getStoredVisibleCourseIds();
+        }
+
+        if (visibleIds.length > 0) {
+          const currentCourseId = getCohortCourseId(activeCohort);
+          if (currentCourseId && !visibleIds.includes(currentCourseId)) {
+            const isVisible = (c: Cohort) => visibleIds.includes(getCohortCourseId(c));
+            const visibleCohorts = cohorts.filter(isVisible);
+            const nextCohort = visibleCohorts.find(c => c.is_active !== false) || visibleCohorts[0];
+            if (nextCohort) {
+              setActiveCohortId(nextCohort.id);
+              const firstSession = nextCohort.sessions?.[0];
+              if (firstSession) {
+                setDrillLessonId(firstSession.lesson_id);
+                setDrillSessionNumber(firstSession.session_number);
+              }
+            } else if (visibleIds[0]) {
+              handleSelectCourse(visibleIds[0]);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to handle course visibility change in App:', err);
+      }
+    };
+
+    window.addEventListener('chunks_course_visibility_changed', handleVisibilityChange);
+    window.addEventListener('storage', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('chunks_course_visibility_changed', handleVisibilityChange);
+      window.removeEventListener('storage', handleVisibilityChange);
+    };
+  }, [cohorts, activeCohort]);
+
   const handleLaunchProjectorForLesson = (lessonId: string, sessionNumber: number) => {
     if (activeTab === 'grammar-portal' || (activeTab as any) === 'resource-manager') {
       setProjectorReturnTab('grammar-portal');
@@ -275,7 +358,7 @@ export const App: React.FC = () => {
       activeCohort={activeCohort}
       allCohorts={cohorts}
       courses={DEFAULT_COURSES}
-      selectedCourseId={activeCohort?.course_id || 'course_level_b'}
+      selectedCourseId={getCohortCourseId(activeCohort)}
       onSelectCourse={handleSelectCourse}
       onSelectCohort={(c) => {
         setActiveCohortId(c.id);
