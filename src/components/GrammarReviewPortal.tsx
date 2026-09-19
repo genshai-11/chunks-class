@@ -1024,7 +1024,7 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
               <option value="all">All Categories</option>
               <option value="sentence_structure">🔵 Sentence Structure</option>
               <option value="verb_form">🟢 Word Form</option>
-              <option value="tense_reflex">🟠 Tense</option>
+              <option value="tense_reflex">🔴 Tense</option>
             </select>
           </div>
 
@@ -1219,12 +1219,12 @@ export const GrammarReviewPortal: React.FC<GrammarReviewPortalProps> = ({
                               ? 'bg-blue-50 text-blue-800 border-blue-200 focus:border-blue-400'
                               : item.structure_type === 'verb_form'
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-200 focus:border-emerald-400'
-                              : 'bg-amber-50 text-amber-800 border-amber-200 focus:border-amber-400'
+                              : 'bg-rose-50 text-rose-800 border-rose-200 focus:border-rose-400'
                           }`}
                         >
                           <option value="sentence_structure">🔵 Sentence Structure</option>
                           <option value="verb_form">🟢 Word Form</option>
-                          <option value="tense_reflex">🟠 Tense</option>
+                          <option value="tense_reflex">🔴 Tense</option>
                         </select>
                       </td>
 
@@ -1570,7 +1570,7 @@ const EditMiniLessonModal: React.FC<EditMiniLessonModalProps> = ({
               >
                 <option value="sentence_structure">🔵 Sentence Structure</option>
                 <option value="verb_form">🟢 Word Form (Verb Form)</option>
-                <option value="tense_reflex">🟠 Tense Reflex</option>
+                <option value="tense_reflex">🔴 Tense Reflex</option>
               </select>
             </div>
             <div>
