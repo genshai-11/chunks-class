@@ -899,7 +899,7 @@ export const ResourceManagerView: React.FC<ResourceManagerViewProps> = ({
                             >
                               <option value="sentence_structure">🔵 Mẫu câu (Sentence Structure)</option>
                               <option value="verb_form">🟢 Cụm động từ (Verb Form)</option>
-                              <option value="tense_reflex">🟠 Thì phản xạ (Tense Reflex)</option>
+                              <option value="tense_reflex">🔴 Thì phản xạ (Tense Reflex)</option>
                             </select>
                           </div>
 
