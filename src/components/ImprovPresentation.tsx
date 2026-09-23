@@ -1890,9 +1890,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                               ? 'text-zinc-400 hover:text-zinc-200 bg-zinc-800 border-zinc-700' 
                               : 'text-zinc-500 hover:text-zinc-800 bg-zinc-100 hover:bg-zinc-200 border-zinc-300'
                           }`}
-                          title="Bấm để hiện chữ gợi ý"
+                          title="Click to reveal main text"
                         >
-                          [Gợi ý đã ẩn — Bấm để hiện]
+                          [Main Text Hidden — Click to reveal]
                         </button>
                       ) : (
                         <div
@@ -2119,13 +2119,13 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                   ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-dashed border-zinc-300 dark:border-zinc-700'
             }`}
-            title="Chế độ chữ gợi ý (Phím M / H) — Bình thường / Thu nhỏ / Ẩn"
+            title="Main Text Display (Key M / H) — Normal / Compact / Hidden"
           >
             {mainTextMode === 'normal' && <Eye className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
             {mainTextMode === 'compact' && <Minimize2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
             {mainTextMode === 'hidden' && <EyeOff className="w-3.5 h-3.5 text-zinc-400" />}
             <span className="hidden sm:inline">
-              {mainTextMode === 'normal' ? 'Chữ gợi ý' : mainTextMode === 'compact' ? 'Thu nhỏ' : 'Ẩn chữ'}
+              {mainTextMode === 'normal' ? 'Main Text' : mainTextMode === 'compact' ? 'Compact' : 'Hidden'}
             </span>
             <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
               M
@@ -2351,7 +2351,7 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="text-zinc-500">Chế độ chữ gợi ý (Lớn / Thu nhỏ / Ẩn)</span>
+                <span className="text-zinc-500">Main text display mode (Normal / Compact / Hidden)</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
                   Key M / Key H
                 </span>

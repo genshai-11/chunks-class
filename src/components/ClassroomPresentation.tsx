@@ -1746,11 +1746,11 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                             ? 'text-zinc-400 hover:text-zinc-200 bg-zinc-900 border-zinc-700' 
                             : 'text-zinc-500 hover:text-zinc-800 bg-zinc-100 hover:bg-zinc-200/80 border-zinc-300'
                         }`}
-                        title="Bấm để hiện chữ chính"
+                        title="Click to reveal main text"
                       >
                         {isViMode 
-                          ? "[Chữ Tiếng Việt Đã Ẩn — Bấm để hiện]" 
-                          : "[Chữ Tiếng Anh Đã Ẩn — Bấm để hiện]"}
+                          ? "[Vietnamese Text Hidden — Click to reveal]" 
+                          : "[English Text Hidden — Click to reveal]"}
                       </button>
                     </div>
                   ) : (
@@ -1887,7 +1887,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
-                <span className="font-semibold text-zinc-800">Chế độ chữ chính (Lớn / Thu nhỏ / Ẩn)</span>
+                <span className="font-semibold text-zinc-800">Cycle Main Text Display (Normal / Compact / Hidden)</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
                   Key M / Key H
                 </span>
@@ -2042,7 +2042,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             title="Toggle Vietnamese Subtitle (Key: V)"
           >
             {showSubtitle ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Phụ Đề (V)</span>
+            <span className="hidden sm:inline">Subtitles (V)</span>
           </button>
 
           {/* Main Text Focus Mode Toggle */}
@@ -2055,24 +2055,24 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   ? 'bg-amber-50 text-amber-800 border-amber-300'
                   : 'bg-zinc-100 text-zinc-500 border-zinc-300'
             }`}
-            title="Chế Độ Chữ Chính (Key: M) — Bình Thường / Thu Nhỏ / Ẩn"
+            title="Main Text Display (Key: M) — Normal / Compact / Hidden"
           >
             {mainTextMode === 'normal' && (
               <>
                 <Eye className="w-3.5 h-3.5 text-blue-600" />
-                <span className="hidden sm:inline">Chữ Chính (M)</span>
+                <span className="hidden sm:inline">Main Text (M)</span>
               </>
             )}
             {mainTextMode === 'compact' && (
               <>
                 <Minimize2 className="w-3.5 h-3.5 text-amber-600" />
-                <span className="hidden sm:inline">Thu Nhỏ (M)</span>
+                <span className="hidden sm:inline">Compact (M)</span>
               </>
             )}
             {mainTextMode === 'hidden' && (
               <>
                 <EyeOff className="w-3.5 h-3.5 text-zinc-400" />
-                <span className="hidden sm:inline">Ẩn Chữ (M)</span>
+                <span className="hidden sm:inline">Hidden (M)</span>
               </>
             )}
           </button>

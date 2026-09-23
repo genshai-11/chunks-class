@@ -119,7 +119,8 @@ import {
   Moon,
   Sun,
   CloudUpload,
-  Languages
+  Languages,
+  MoreHorizontal
 } from 'lucide-react';
 
 // --------------------------------------------------------------------------
@@ -248,6 +249,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [isSavingRename, setIsSavingRename] = useState<boolean>(false);
   const [renameSuccessToast, setRenameSuccessToast] = useState<string | null>(null);
   const [isBatchAudioModalOpen, setIsBatchAudioModalOpen] = useState<boolean>(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<ImprovItem | null>(null);
   const [newItem, setNewItem] = useState<ImprovItem | null>(null);
@@ -364,6 +367,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     document.addEventListener('fullscreenchange', handleFsChange);
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+    if (isMoreMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isMoreMenuOpen]);
 
   const toggleFullscreen = async () => {
     try {
@@ -2374,105 +2389,58 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       {/* ==================================================================== */}
       {/* 1. HEADER & PACKAGE SELECTOR TOOLBAR */}
       {/* ==================================================================== */}
-      <div className="sticky top-0 z-10 bg-white border-b border-[#E8E8EC] px-6 py-4 shadow-2xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Left: Package Switcher & Info */}
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-50 text-[#DC2626] border border-red-100 shrink-0">
-              <Sparkles className="w-5 h-5" />
+      <div className="sticky top-0 z-20 bg-white dark:bg-zinc-900 border-b border-[#E8E8EC] dark:border-zinc-800 px-6 py-3.5 shadow-2xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Left: Sparkles icon + Package Selector + inline metadata badge */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#DC2626] dark:text-red-400 border border-red-100 dark:border-red-900/50 shrink-0">
+              <Sparkles className="w-4 h-4" />
             </div>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#DC2626] bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                  Improv Studio
-                </span>
-                <span className="text-xs text-zinc-400">•</span>
-                <span className="text-xs text-zinc-500 font-mono">
-                  {activePackage?.sessionsCount || 0} Sessions ({stats.totalItems} Items)
-                </span>
-              </div>
-
-              {/* Dropdown switcher */}
-              <div className="relative mt-1 flex items-center gap-1.5">
+            <div className="flex items-center gap-2.5 min-w-0 flex-wrap sm:flex-nowrap">
+              <div className="relative flex items-center">
                 <select
                   value={activePackageId}
                   onChange={(e) => {
                     setActivePackageId(e.target.value);
                     setActiveSessionTab('all');
                   }}
-                  className="text-base font-bold text-zinc-900 bg-transparent hover:bg-zinc-50 border-0 focus:ring-2 focus:ring-[#DC2626]/20 rounded-lg cursor-pointer transition-all pr-8 py-0.5 truncate max-w-[320px] sm:max-w-[450px]"
+                  className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100 bg-transparent hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 focus:border-zinc-300 dark:focus:border-zinc-600 focus:ring-2 focus:ring-[#DC2626]/20 rounded-lg cursor-pointer transition-all pr-8 py-1 truncate max-w-[240px] sm:max-w-[360px] md:max-w-[420px]"
                 >
                   {packages.map(p => (
-                    <option key={p.id} value={p.id} className="bg-white text-zinc-900">
-                      {p.title} ({p.sessionsCount} Sessions - {p.totalItems} Items)
+                    <option key={p.id} value={p.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
+                      {p.title}
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={handleOpenRenameModal}
-                  className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer shrink-0"
-                  title="Đổi tên & mô tả gói bài tập này"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 pointer-events-none" />
+              </div>
+
+              {/* Inline Metadata Badge */}
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 text-[11px] font-mono text-zinc-600 dark:text-zinc-300 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
+                <span>{activePackage?.sessionsCount || 0} Sessions · {stats.totalItems} Items</span>
               </div>
             </div>
           </div>
 
-          {/* Right: Primary Action Buttons */}
+          {/* Right: Clean visual hierarchy for buttons */}
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
-            {/* Quick View Controls: Fullscreen & Theme */}
-            <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200">
-              <button onClick={toggleFullscreen} className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-white transition-all cursor-pointer" title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}>
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </button>
-              <button onClick={toggleDarkMode} className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-white transition-all cursor-pointer" title={isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'}>
-                {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
-              </button>
-            </div>
-
-            {/* Create New Package AI */}
+            {/* Primary CTA: + Tạo Package AI */}
             <button
               onClick={() => setIsGeneratorOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
               title="Tạo Package Mới với AI Generator"
             >
-              <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
-              <span>Tạo Package AI</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+              <span>+ Tạo Package AI</span>
             </button>
 
-            {/* Rename Package */}
-            <button
-              onClick={handleOpenRenameModal}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
-              title="Đổi tên & mô tả Package hiện tại"
-            >
-              <Edit3 className="w-3.5 h-3.5 text-zinc-500" />
-              <span className="hidden sm:inline">Đổi Tên</span>
-            </button>
-
-            {/* Audit & Sanitize Language Button */}
-            <button
-              onClick={handleAuditAndSanitizePackageLanguage}
-              disabled={isSanitizingLanguage || !activePackage}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/80 text-xs font-semibold text-emerald-800 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-              title="Đánh giá và tự động sửa các lỗi lẫn lộn tiếng Anh/tiếng Việt (ví dụ: 'nếu không' bị đặt nhầm vào ô EN)"
-            >
-              {isSanitizingLanguage ? (
-                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin shrink-0" />
-              ) : (
-                <Languages className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              )}
-              <span className="hidden sm:inline">Chuẩn Hóa Ngôn Ngữ</span>
-            </button>
-
-            {/* Import / Export Excel */}
+            {/* Action buttons group: Import / Export */}
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsImportModalOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
                 title="Import danh sách từ Excel"
               >
                 <Upload className="w-3.5 h-3.5 text-zinc-500" />
@@ -2480,7 +2448,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </button>
               <button
                 onClick={handleExportExcel}
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
                 title="Export danh sách ra file Excel"
               >
                 <Download className="w-3.5 h-3.5 text-zinc-500" />
@@ -2488,62 +2456,132 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </button>
             </div>
 
-            {/* Delete Package */}
+            {/* Chuẩn Hóa */}
             <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="p-2 rounded-xl border border-[#E8E8EC] hover:border-red-200 hover:bg-red-50 text-zinc-400 hover:text-red-600 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
-              title="Xóa Package hiện tại"
+              onClick={handleAuditAndSanitizePackageLanguage}
+              disabled={isSanitizingLanguage || !activePackage}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/70 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+              title="Đánh giá và tự động sửa các lỗi lẫn lộn tiếng Anh/tiếng Việt"
             >
-              <Trash2 className="w-4 h-4" />
+              {isSanitizingLanguage ? (
+                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin shrink-0" />
+              ) : (
+                <Languages className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              )}
+              <span className="hidden sm:inline">Chuẩn Hóa</span>
             </button>
+
+            {/* More Actions dropdown menu */}
+            <div className="relative" ref={moreMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsMoreMenuOpen(prev => !prev)}
+                className="p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                title="Thao tác khác"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+
+              {isMoreMenuOpen && (
+                <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-800 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleOpenRenameModal();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-left cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4 text-zinc-500" />
+                    <span>Đổi Tên Package</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isSyncingToCloud || isBatchRunning || !activePackage}
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleSyncActivePackageToCloud();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-left cursor-pointer disabled:opacity-50"
+                  >
+                    <CloudUpload className="w-4 h-4 text-emerald-600" />
+                    <span>{isSyncingToCloud ? (cloudSyncProgress || 'Đang sync...') : 'Sync Cloud Storage'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isBatchRunning || isResettingAudio || !activePackage}
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleResetPackageAudioUrls(activeSessionTab === 'all' ? undefined : activeSessionTab);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors text-left cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className="w-4 h-4 text-amber-600" />
+                    <span>Xóa Link Audio ({activeSessionTab === 'all' ? 'Tất cả' : `Session ${activeSessionTab}`})</span>
+                  </button>
+
+                  <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                    <span>Xóa Package</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Quick View Controls: Fullscreen & Theme */}
+            <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
+              <button onClick={toggleFullscreen} className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer" title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}>
+                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
+              <button onClick={toggleDarkMode} className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer" title={isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'}>
+                {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-zinc-500" />}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Stats Summary Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-zinc-100">
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center gap-3">
-            <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
-              <Layers className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Total Items</div>
-              <div className="text-sm font-bold text-zinc-800">{stats.totalItems} Items</div>
-            </div>
+        {/* Stats Summary Strip (Minimal Compact Pill Bar) */}
+        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+            <span>📦</span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">{stats.totalItems}</span>
+            <span>câu</span>
           </div>
 
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center gap-3">
-            <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
-              <Clock className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Total Sessions</div>
-              <div className="text-sm font-bold text-zinc-800">{stats.totalSessions} Sessions</div>
-            </div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+            <span>📑</span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">{stats.totalSessions}</span>
+            <span>sessions</span>
           </div>
 
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center gap-3">
-            <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
-              <BarChart3 className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Total Hints</div>
-              <div className="text-sm font-bold text-zinc-800">{stats.totalHints} Clues</div>
-            </div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+            <span>💡</span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">{stats.totalHints}</span>
+            <span>hints</span>
           </div>
 
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
-                <Headphones className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Audio Prepared</div>
-                <div className="text-sm font-bold text-zinc-800">
-                  {stats.audioPreparedPercent}% ({stats.audioPreparedCount}/{stats.totalItems})
-                </div>
-              </div>
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+            <div className="flex items-center gap-1.5">
+              <span>🎧</span>
+              <span>Audio:</span>
+              <span className={`font-semibold ${stats.audioPreparedPercent === 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                {stats.audioPreparedPercent}%
+              </span>
+              <span className="text-zinc-400 font-mono text-[11px]">({stats.audioPreparedCount}/{stats.totalItems})</span>
             </div>
             <button
+              type="button"
               onClick={() => {
                 if (activeSessionTab !== 'all') {
                   setBatchScope('session');
@@ -2556,7 +2594,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 setCloudSyncSummary(null);
                 setIsBatchAudioModalOpen(true);
               }}
-              className="px-2 py-1 text-[11px] font-bold text-[#DC2626] bg-red-50 hover:bg-red-100 rounded-md border border-red-200 cursor-pointer transition-all"
+              className="px-2 py-0.5 text-[11px] font-bold text-[#DC2626] bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60 rounded-md border border-red-200 dark:border-red-900/50 cursor-pointer transition-all"
             >
               Batch TTS
             </button>
@@ -2569,11 +2607,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       {/* ==================================================================== */}
       <div className="flex-1 p-6 space-y-6">
         {/* Session Navigation Tabs & Filter Bar */}
-        <div className="bg-white rounded-2xl border border-[#E8E8EC] p-4 shadow-2xs space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Session Dropdown Selector & Segmented Audio Filter */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E8E8EC] dark:border-zinc-800 p-4 shadow-2xs space-y-3">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+            {/* Left: Sleek Session Selector + Segmented Audio Filter */}
             <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl">
                 <Filter className="w-3.5 h-3.5 text-[#DC2626]" />
                 <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Session:</span>
                 <select
@@ -2582,13 +2620,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     const val = e.target.value;
                     setActiveSessionTab(val === 'all' ? 'all' : Number(val));
                   }}
-                  className="bg-transparent text-xs font-bold text-zinc-900 border-0 focus:ring-0 cursor-pointer pr-4"
+                  className="bg-transparent text-xs font-bold text-zinc-900 dark:text-zinc-100 border-0 focus:ring-0 cursor-pointer pr-4"
                 >
-                  <option value="all" className="bg-white text-zinc-900">
+                  <option value="all" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
                     Tất Cả Sessions ({activePackage?.totalItems || 0} Items)
                   </option>
                   {(activePackage?.sessions || []).map(s => (
-                    <option key={s.sessionNumber} value={s.sessionNumber} className="bg-white text-zinc-900">
+                    <option key={s.sessionNumber} value={s.sessionNumber} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
                       Session {s.sessionNumber} ({s.hcTotal} Hints - {s.items.length} Items)
                     </option>
                   ))}
@@ -2596,57 +2634,79 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </div>
 
               {/* Segmented Audio Readiness Filter */}
-              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-bold">
+              <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setAudioFilter('all')}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                     audioFilter === 'all'
-                      ? 'bg-white text-zinc-900 shadow-xs'
-                      : 'text-zinc-600 hover:text-zinc-900'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-xs font-bold'
+                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                   title="Hiển thị tất cả câu"
                 >
-                  <span>🔘 Tất Cả ({audioCounts.allCount})</span>
+                  <span>Tất Cả ({audioCounts.allCount})</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setAudioFilter('ready')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                     audioFilter === 'ready'
-                      ? 'bg-white text-emerald-700 shadow-xs'
-                      : 'text-zinc-600 hover:text-emerald-700'
+                      ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-bold'
+                      : 'text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400'
                   }`}
-                  title="Chỉ hiển thị các câu đã có đủ audio EN & VI"
+                  title="Chỉ hiển thị các câu đã có đủ audio"
                 >
-                  <span>🟢 Đã Có Audio ({audioCounts.readyCount})</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>Đã có audio ({audioCounts.readyCount})</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setAudioFilter('missing')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                     audioFilter === 'missing'
-                      ? 'bg-white text-red-600 shadow-xs'
-                      : 'text-zinc-600 hover:text-red-600'
+                      ? 'bg-white dark:bg-zinc-700 text-red-600 dark:text-red-400 shadow-xs font-bold'
+                      : 'text-zinc-500 hover:text-red-600 dark:hover:text-red-400'
                   }`}
                   title="Chỉ hiển thị các câu chưa có hoặc thiếu audio"
                 >
-                  <span>🔴 Chưa Có Audio ({audioCounts.missingCount})</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  <span>Chưa có ({audioCounts.missingCount})</span>
                 </button>
               </div>
             </div>
 
-            {/* Quick Controls: View Switcher, Add Item, Subtitle Toggle & Batch Audio Trigger */}
-            <div className="flex items-center gap-2 flex-wrap justify-end">
+            {/* Center/Right: Search, View Toggle, Subtitle Toggle, Consolidated Audio Batch TTS, + Thêm Câu */}
+            <div className="flex items-center gap-2 flex-wrap xl:flex-nowrap justify-between xl:justify-end">
+              {/* Search input */}
+              <div className="relative min-w-[200px] max-w-xs flex-1">
+                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm hint, tiếng Việt..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-7 py-1.5 bg-zinc-50 dark:bg-zinc-800/70 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-zinc-200 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
               {/* View Mode Toggle */}
-              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200">
+              <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shrink-0">
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'table' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                  className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'table' ? 'bg-white dark:bg-zinc-700 text-[#DC2626] dark:text-red-400 shadow-xs' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                   }`}
-                  title="Chế độ xem bảng danh sách chi tiết"
+                  title="Chế độ xem bảng chi tiết"
                 >
                   <TableIcon className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Bảng</span>
@@ -2654,62 +2714,32 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setViewMode('cards')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'cards' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                  className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'cards' ? 'bg-white dark:bg-zinc-700 text-[#DC2626] dark:text-red-400 shadow-xs' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                   }`}
-                  title="Chế độ xem dạng thẻ dòng chảy"
+                  title="Chế độ xem thẻ dòng chảy"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Thẻ</span>
                 </button>
               </div>
 
-              {/* Subtitle Toggle */}
+              {/* Subtitle Minimal Pill Toggle */}
               <button
                 type="button"
                 onClick={() => setShowVietnamese(!showVietnamese)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                  showVietnamese ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-50 text-zinc-500 border-zinc-200'
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shrink-0 ${
+                  showVietnamese 
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' 
+                    : 'bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 border-zinc-200 dark:border-zinc-700'
                 }`}
                 title="Bật/Tắt hiển thị nghĩa tiếng Việt"
               >
-                {showVietnamese ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5" />}
-                <span className="hidden md:inline">{showVietnamese ? 'Hiện VI' : 'Ẩn VI'}</span>
+                {showVietnamese ? <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5" />}
+                <span>VI</span>
               </button>
 
-              {/* Cloud Sync */}
-              <button
-                type="button"
-                disabled={isSyncingToCloud || isBatchRunning || !activePackage}
-                onClick={handleSyncActivePackageToCloud}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
-                title="Tải toàn bộ audio Improv đã có trong cache trình duyệt lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app để dùng vĩnh viễn"
-              >
-                <CloudUpload className={`w-3.5 h-3.5 ${isSyncingToCloud ? 'animate-bounce' : ''}`} />
-                <span>{isSyncingToCloud ? (cloudSyncProgress || 'Đang sync...') : 'Sync Cloud'}</span>
-              </button>
-
-              {/* Quick Session Audio Generator */}
-              {activeSessionTab !== 'all' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBatchScope('session');
-                    setBatchSessionNum(activeSessionTab);
-                    setBatchCompleted(false);
-                    setBatchErrors([]);
-                    setCloudSyncSummary(null);
-                    setIsBatchAudioModalOpen(true);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-2xs cursor-pointer transition-all"
-                  title={`Tạo âm thanh hàng loạt cho riêng Session ${activeSessionTab}`}
-                >
-                  <Zap className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Tạo Audio Session {activeSessionTab}</span>
-                </button>
-              )}
-
-              {/* Batch TTS */}
+              {/* One prominent Batch TTS Button */}
               <button
                 type="button"
                 onClick={() => {
@@ -2724,30 +2754,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   setCloudSyncSummary(null);
                   setIsBatchAudioModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
-                title="Tạo âm thanh hàng loạt cho Session / Package"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-black dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-bold shadow-xs cursor-pointer transition-all shrink-0"
+                title={`Tạo âm thanh hàng loạt (${activeSessionTab !== 'all' ? `Session ${activeSessionTab}` : 'Toàn bộ Package'})`}
               >
-                <Zap className="w-3.5 h-3.5 text-amber-300" />
+                <Headphones className="w-3.5 h-3.5 text-amber-400 dark:text-amber-600" />
                 <span>Batch TTS</span>
               </button>
 
-              {/* Reset Audio URLs */}
-              <button
-                type="button"
-                disabled={isBatchRunning || isResettingAudio || !activePackage}
-                onClick={() => handleResetPackageAudioUrls(activeSessionTab === 'all' ? undefined : activeSessionTab)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold shadow-2xs cursor-pointer transition-all disabled:opacity-50"
-                title="Xóa link audio đã có để tạo lại từ đầu"
-              >
-                {isResettingAudio ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-red-600" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
-                <span>Xóa link audio</span>
-              </button>
-
-              {/* Add Item Button */}
+              {/* Clean Primary Add Item Button */}
               <button
                 type="button"
                 onClick={() => handleOpenAddItemModal()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0"
                 title="Thêm câu hỏi mới vào session"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -2756,51 +2774,29 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             </div>
           </div>
 
-          {/* Search & Sub-Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-zinc-100">
-            <div className="relative flex-1 w-full">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm hint tiếng Anh, nghĩa tiếng Việt, hoặc từ loại..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-zinc-50/80 border border-zinc-200 rounded-xl text-xs text-zinc-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 transition-all"
-              />
-              {searchQuery && (
+          {/* Sub-bar: Range Display & Page Size Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+            <span className="text-zinc-500 dark:text-zinc-400">
+              Hiển thị <span className="font-bold text-zinc-800 dark:text-zinc-200 font-mono">{startDisplayIdx} - {endDisplayIdx}</span> trên <span className="font-bold text-zinc-800 dark:text-zinc-200 font-mono">{totalFilteredCount}</span> items
+            </span>
+
+            {/* Page size toggle buttons: 15 | 20 | 50 | Tất cả */}
+            <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-semibold">
+              <span className="px-2 text-[10px] uppercase font-mono text-zinc-400 font-bold hidden sm:inline">Mỗi trang:</span>
+              {([15, 20, 50, 'all'] as const).map((sz) => (
                 <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
+                  key={sz}
+                  type="button"
+                  onClick={() => setPageSize(sz)}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    pageSize === sz 
+                      ? 'bg-[#DC2626] text-white shadow-xs' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                  }`}
                 >
-                  <X className="w-3.5 h-3.5" />
+                  {sz === 'all' ? 'Tất cả' : `${sz}`}
                 </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3 flex-wrap justify-between sm:justify-end shrink-0">
-              {/* Range & Total Count */}
-              <span className="text-xs text-zinc-600 font-medium">
-                Hiển thị <span className="font-bold text-zinc-900 font-mono">{startDisplayIdx} - {endDisplayIdx}</span> trên <span className="font-bold text-zinc-900 font-mono">{totalFilteredCount}</span> items
-              </span>
-
-              {/* Page size toggle buttons: 15 | 20 | 50 | Tất cả */}
-              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-semibold">
-                <span className="px-2 text-[10px] uppercase font-mono text-zinc-500 font-bold hidden md:inline">Mỗi trang:</span>
-                {([15, 20, 50, 'all'] as const).map((sz) => (
-                  <button
-                    key={sz}
-                    type="button"
-                    onClick={() => setPageSize(sz)}
-                    className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      pageSize === sz 
-                        ? 'bg-[#DC2626] text-white shadow-xs' 
-                        : 'text-zinc-600 hover:text-zinc-900'
-                    }`}
-                  >
-                    {sz === 'all' ? 'Tất cả' : `${sz}`}
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
         </div>
