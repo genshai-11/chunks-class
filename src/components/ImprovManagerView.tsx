@@ -2426,33 +2426,21 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
           {/* Right: Clean visual hierarchy for buttons */}
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
-            {/* Primary CTA: + Tạo Package AI */}
-            <button
-              onClick={() => setIsGeneratorOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
-              title="Tạo Package Mới với AI Generator"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-              <span>+ Tạo Package AI</span>
-            </button>
-
             {/* Action buttons group: Import / Export */}
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsImportModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Import danh sách từ Excel"
+                className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                title="Import danh sách từ Excel (.xlsx)"
               >
-                <Upload className="w-3.5 h-3.5 text-zinc-500" />
-                <span className="hidden sm:inline">Import</span>
+                <Upload className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
               </button>
               <button
                 onClick={handleExportExcel}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Export danh sách ra file Excel"
+                className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                title="Export danh sách ra file Excel (.xlsx)"
               >
-                <Download className="w-3.5 h-3.5 text-zinc-500" />
-                <span className="hidden sm:inline">Export</span>
+                <Download className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
               </button>
             </div>
 
@@ -2460,15 +2448,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             <button
               onClick={handleAuditAndSanitizePackageLanguage}
               disabled={isSanitizingLanguage || !activePackage}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/70 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-              title="Đánh giá và tự động sửa các lỗi lẫn lộn tiếng Anh/tiếng Việt"
+              className="p-2 rounded-xl border border-emerald-200 dark:border-emerald-800/70 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+              title="Chuẩn Hóa Ngôn Ngữ (Đánh giá và tự động sửa các lỗi lẫn lộn EN/VI)"
             >
               {isSanitizingLanguage ? (
-                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin shrink-0" />
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
               ) : (
-                <Languages className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <Languages className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               )}
-              <span className="hidden sm:inline">Chuẩn Hóa</span>
             </button>
 
             {/* More Actions dropdown menu */}
@@ -2599,6 +2586,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               Batch TTS
             </button>
           </div>
+
+          {/* Primary CTA: + Tạo Package AI */}
+          <button
+            onClick={() => setIsGeneratorOpen(true)}
+            className="ml-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+            title="Tạo Package Mới với AI Generator"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+            <span>+ Tạo Package AI</span>
+          </button>
         </div>
       </div>
 
