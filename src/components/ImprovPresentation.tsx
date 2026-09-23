@@ -107,6 +107,15 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
   const [highContrastDark, setHighContrastDark] = useState<boolean>(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState<boolean>(false);
   const [isListDrawerOpen, setIsListDrawerOpen] = useState<boolean>(false);
+  const [mainTextMode, setMainTextMode] = useState<'normal' | 'compact' | 'hidden'>('normal');
+
+  const cycleMainTextMode = () => {
+    setMainTextMode(prev => {
+      if (prev === 'normal') return 'compact';
+      if (prev === 'compact') return 'hidden';
+      return 'normal';
+    });
+  };
 
   const [shortcutConfig, setShortcutConfig] = useState(() => shortcutConfigService.getConfig());
   useEffect(() => {
@@ -938,6 +947,9 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
         setLanguageMode('EN_ONLY');
       } else if (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') {
         setLanguageMode('VI_ONLY');
+      } else if (e.code === 'KeyM' || e.code === 'KeyH') {
+        e.preventDefault();
+        cycleMainTextMode();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -1870,15 +1882,35 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
 
                     {/* Center: Responsive Typography (Zero-Overflow Projector Display) */}
                     <div className="my-auto py-2.5 flex-1 flex flex-col justify-center items-center text-center w-full">
-                      <div
-                        className={`${getResponsiveHintTypography(mainText)} transition-colors duration-150 text-center w-full ${
-                          isCurrentlySpeaking
-                            ? 'text-[#DC2626] animate-pulse'
-                            : 'text-zinc-950 dark:text-zinc-50'
-                        }`}
-                      >
-                        {mainText}
-                      </div>
+                      {mainTextMode === 'hidden' ? (
+                        <button
+                          onClick={() => setMainTextMode('normal')}
+                          className={`text-xs sm:text-sm font-mono px-3.5 py-2 rounded-xl border border-dashed cursor-pointer transition-colors ${
+                            highContrastDark 
+                              ? 'text-zinc-400 hover:text-zinc-200 bg-zinc-800 border-zinc-700' 
+                              : 'text-zinc-500 hover:text-zinc-800 bg-zinc-100 hover:bg-zinc-200 border-zinc-300'
+                          }`}
+                          title="Bấm để hiện chữ gợi ý"
+                        >
+                          [Gợi ý đã ẩn — Bấm để hiện]
+                        </button>
+                      ) : (
+                        <div
+                          className={`transition-colors duration-150 text-center w-full ${
+                            mainTextMode === 'compact'
+                              ? `text-sm sm:text-base font-semibold leading-relaxed ${
+                                  highContrastDark ? 'text-zinc-300' : 'text-zinc-600 dark:text-zinc-300'
+                                }`
+                              : getResponsiveHintTypography(mainText)
+                          } ${
+                            isCurrentlySpeaking
+                              ? '!text-[#DC2626] animate-pulse'
+                              : mainTextMode === 'compact' ? '' : 'text-zinc-950 dark:text-zinc-50'
+                          }`}
+                        >
+                          {mainText}
+                        </div>
+                      )}
 
                       {/* Bottom Subtitle / Transcript: Clearly Sized & Toggleable (Key V) */}
                       {showSubtitle && subText && subText !== mainText && (
@@ -2074,6 +2106,29 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
             <span className="hidden sm:inline">Vietsub</span>
             <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
               V
+            </span>
+          </button>
+
+          {/* Main Text / Hint Focus Mode Toggle (Key M / Key H) */}
+          <button
+            onClick={cycleMainTextMode}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+              mainTextMode === 'normal'
+                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                : mainTextMode === 'compact'
+                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-dashed border-zinc-300 dark:border-zinc-700'
+            }`}
+            title="Chế độ chữ gợi ý (Phím M / H) — Bình thường / Thu nhỏ / Ẩn"
+          >
+            {mainTextMode === 'normal' && <Eye className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+            {mainTextMode === 'compact' && <Minimize2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
+            {mainTextMode === 'hidden' && <EyeOff className="w-3.5 h-3.5 text-zinc-400" />}
+            <span className="hidden sm:inline">
+              {mainTextMode === 'normal' ? 'Chữ gợi ý' : mainTextMode === 'compact' ? 'Thu nhỏ' : 'Ẩn chữ'}
+            </span>
+            <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
+              M
             </span>
           </button>
 
@@ -2293,6 +2348,12 @@ export const ImprovPresentation: React.FC<ImprovPresentationProps> = ({
                 <span className="text-zinc-500">Bật / tắt dịch nghĩa tiếng Việt</span>
                 <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
                   {shortcutConfig.keyBindings.subtitle?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500">Chế độ chữ gợi ý (Lớn / Thu nhỏ / Ẩn)</span>
+                <span className="font-mono font-bold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
+                  Key M / Key H
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-zinc-100 dark:border-zinc-800">

@@ -30,6 +30,7 @@ import {
   DEFAULT_IMPROV_LLM_CONFIG, 
   GOOGLE_GENAI_DEFAULT_CONFIG, 
   generateImprovPackage,
+  generateOfflineFallbackPackage,
   executeLlmGeneration, 
   testLlmConnection,
   evaluateAndSanitizePackage,
@@ -149,6 +150,32 @@ export function getHintTypeBadgeClasses(type: string): HintTypeBadgeInfo {
 }
 
 const HINT_TYPE_OPTIONS = ['Keyword', 'Logic word', 'Fancy word', 'Ending'];
+
+const TOPIC_PRESETS = [
+  'Giao tiếp hàng ngày',
+  'Công sở & Đàm phán',
+  'Du lịch & Ẩm thực',
+  'Phỏng vấn xin việc',
+  'Đời sống đại học & Du học',
+  'Small Talk & Làm quen'
+];
+
+const TARGET_GRAMMAR_PRESETS = [
+  'Collocations & Phrasal Verbs',
+  'Câu điều kiện',
+  'Thì quá khứ kể chuyện',
+  'Phản xạ câu hỏi WH',
+  'Động từ khuyết thiếu (Modals)',
+  'Mệnh đề quan hệ'
+];
+
+const TONE_PRESETS = [
+  'Thân thiện đời thường',
+  'Chuyên nghiệp công sở',
+  'Hài hước hóm hỉnh',
+  'Phản xạ nhanh & Tranh luận',
+  'Tự nhiên & Bản xứ'
+];
 
 // --------------------------------------------------------------------------
 // 2. Default Seed Sample Packages (Zero-Empty State Guarantee)
@@ -425,6 +452,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   // Pedagogy controls
   const [genDifficulty, setGenDifficulty] = useState<'Easy (A1-A2)' | 'Medium (B1)' | 'Hard (B2-C1)'>('Medium (B1)');
   const [genRelevance, setGenRelevance] = useState<'Thấp (Brainstorming ngẫu nhiên)' | 'Vừa (Tương quan ngữ cảnh)' | 'Cao (Gắn kết câu chuyện logic)'>('Cao (Gắn kết câu chuyện logic)');
+  const [genTopic, setGenTopic] = useState<string>('');
+  const [genTargetGrammar, setGenTargetGrammar] = useState<string>('');
+  const [genConversationalTone, setGenConversationalTone] = useState<string>('Thân thiện đời thường');
+  const [genPedagogicalNotes, setGenPedagogicalNotes] = useState<string>('');
+  const [isPedagogicalNotesOpen, setIsPedagogicalNotesOpen] = useState<boolean>(false);
 
   // Dynamic Title & Description generator helper
   const computeDynamicTitleAndDescription = useCallback((
@@ -846,31 +878,55 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   }, [allAvailableSeedChunks]);
 
 
-  // Update session configs when total sessions count changes
+  // Dynamically compute and sync genTotalItems and genSessionsCount from genSessionConfigs
   useEffect(() => {
-    setGenSessionConfigs(prev => {
-      const result: ImprovSessionConfig[] = [];
-      const baseItemsPerSession = Math.floor(genTotalItems / genSessionsCount);
-      const remainder = genTotalItems % genSessionsCount;
+    const total = genSessionConfigs.reduce((sum, c) => sum + (c.itemsCount || 0), 0);
+    setGenTotalItems(total);
+    setGenSessionsCount(genSessionConfigs.length);
+  }, [genSessionConfigs]);
 
-      for (let s = 1; s <= genSessionsCount; s++) {
-        const existing = prev.find(c => c.sessionNumber === s);
-        const defaultHc = Math.min(4, s + 1); // e.g. S1: 2 hints, S2: 3 hints, S3: 4 hints, S4: 4 hints
-        let defaultTypes: string[] = ['Keyword'];
-        if (defaultHc === 2) defaultTypes = ['Danh từ · Keyword', 'Động từ · Ending'];
-        if (defaultHc === 3) defaultTypes = ['Keyword', 'Từ nối · Logic word', 'Ending'];
-        if (defaultHc >= 4) defaultTypes = ['Keyword', 'Từ nối · Logic word', 'Fancy word / Ẩn dụ', 'Ending'];
-
-        result.push({
-          sessionNumber: s,
-          hcTotal: existing?.hcTotal || defaultHc,
-          hintTypes: existing?.hintTypes || defaultTypes,
-          itemsCount: baseItemsPerSession + (s <= remainder ? 1 : 0)
-        });
+  const handleAddSessionConfig = () => {
+    if (genSessionConfigs.length >= 8) return;
+    const nextNum = genSessionConfigs.length + 1;
+    const defaultHc = 3;
+    const defaultTypes = ['Keyword', 'Logic word', 'Ending'];
+    setGenSessionConfigs(prev => [
+      ...prev,
+      {
+        sessionNumber: nextNum,
+        hcTotal: defaultHc,
+        hintTypes: defaultTypes,
+        itemsCount: 10
       }
-      return result;
-    });
-  }, [genSessionsCount, genTotalItems]);
+    ]);
+  };
+
+  const handleRemoveSessionConfig = () => {
+    if (genSessionConfigs.length <= 1) return;
+    setGenSessionConfigs(prev => prev.slice(0, prev.length - 1));
+  };
+
+  const handleTopicChipClick = (preset: string) => {
+    if (!genTopic.trim()) {
+      setGenTopic(preset);
+    } else if (genTopic.includes(preset)) {
+      const parts = genTopic.split(',').map(s => s.trim()).filter(s => s && s !== preset);
+      setGenTopic(parts.join(', '));
+    } else {
+      setGenTopic(`${genTopic.trim()}, ${preset}`);
+    }
+  };
+
+  const handleGrammarChipClick = (preset: string) => {
+    if (!genTargetGrammar.trim()) {
+      setGenTargetGrammar(preset);
+    } else if (genTargetGrammar.includes(preset)) {
+      const parts = genTargetGrammar.split(',').map(s => s.trim()).filter(s => s && s !== preset);
+      setGenTargetGrammar(parts.join(', '));
+    } else {
+      setGenTargetGrammar(`${genTargetGrammar.trim()}, ${preset}`);
+    }
+  };
 
   // Active Package Object
   const activePackage = useMemo(() => {
@@ -1806,6 +1862,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           sourceLevel: genSourceLevel,
           sourceLessonIds: genSelectedLessonIds,
           selectedVocabIds: genSelectedVocabIds,
+          topic: genTopic,
+          targetGrammar: genTargetGrammar,
+          conversationalTone: genConversationalTone,
+          pedagogicalNotes: genPedagogicalNotes,
           llmConfig: {
             provider: genProvider,
             endpoint: genEndpoint,
@@ -1864,6 +1924,68 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       if (timerGenRef.current) clearInterval(timerGenRef.current);
       setIsGenerating(false);
       abortGenRef.current = null;
+    }
+  };
+
+  const handleGenerateOfflineFallback = async () => {
+    setIsGenerating(true);
+    setGenError(null);
+    addGenLog('info', `Đang tạo gói bài tập ngoại tuyến (Offline Fallback) cho "${genTitle}"...`);
+    try {
+      const offlinePkg = generateOfflineFallbackPackage({
+        packageTitle: genTitle,
+        packageDescription: genDescription,
+        totalItems: genTotalItems,
+        sessionsCount: genSessionsCount,
+        sessionsConfig: genSessionConfigs,
+        sourceLevel: genSourceLevel,
+        sourceLessonIds: genSelectedLessonIds,
+        selectedVocabIds: genSelectedVocabIds,
+        difficulty: genDifficulty,
+        relevance: genRelevance,
+        llmConfig: {
+          provider: genProvider,
+          endpoint: genEndpoint,
+          apiKey: genApiKey,
+          model: genModel,
+          masterPrompt: genMasterPrompt,
+          temperature: 0.7,
+          maxTokens: 16384
+        },
+        topic: genTopic,
+        targetGrammar: genTargetGrammar,
+        conversationalTone: genConversationalTone,
+        pedagogicalNotes: genPedagogicalNotes
+      });
+      await saveImprovPackage(offlinePkg);
+      setPackages(prev => [offlinePkg, ...prev.filter(p => p.id !== offlinePkg.id)]);
+      setActivePackageId(offlinePkg.id);
+      setActiveSessionTab('all');
+      setViewMode('table');
+      setGenProgress({
+        percent: 100,
+        current: offlinePkg.totalItems,
+        total: offlinePkg.totalItems,
+        message: 'Đã tạo gói bài tập ngoại tuyến thành công!'
+      });
+      addGenLog('success', `Đã lưu thành công gói ngoại tuyến "${offlinePkg.title}" với ${offlinePkg.totalItems} items!`);
+      setGenCompletionSummary({
+        title: offlinePkg.title,
+        totalItems: offlinePkg.totalItems,
+        sessionsCount: offlinePkg.sessionsCount,
+        level: String(genSourceLevel),
+        difficulty: genDifficulty,
+        relevance: genRelevance,
+        successBatches: offlinePkg.sessionsCount,
+        failedBatches: 0
+      });
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+    } catch (err: any) {
+      const msg = err?.message || 'Không thể tạo gói ngoại tuyến';
+      setGenError(msg);
+      addGenLog('error', `Lỗi tạo ngoại tuyến: ${msg}`);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -3777,19 +3899,36 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               {/* 2. Total Items & Number of Sessions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-zinc-50/80 rounded-2xl border border-zinc-200/60">
                 <div>
-                  <label className="font-bold text-zinc-700 block mb-1.5 uppercase font-mono tracking-wider text-[10px]">
-                    Tổng Số Items Dự Kiến
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-bold text-zinc-700 uppercase font-mono tracking-wider text-[10px]">
+                      Tổng Số Items Dự Kiến
+                    </label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626] font-mono font-bold">
+                      {genTotalItems} câu
+                    </span>
+                  </div>
                   <input
                     type="number"
-                    min={10}
-                    max={200}
+                    min={1}
+                    max={400}
                     value={genTotalItems}
-                    onChange={(e) => setGenTotalItems(Math.max(5, parseInt(e.target.value) || 50))}
+                    onChange={(e) => {
+                      const newTotal = parseInt(e.target.value) || 0;
+                      if (newTotal <= 0) return;
+                      setGenSessionConfigs(prev => {
+                        const count = prev.length;
+                        const base = Math.floor(newTotal / count);
+                        const rem = newTotal % count;
+                        return prev.map((c, i) => ({
+                          ...c,
+                          itemsCount: Math.max(1, base + (i < rem ? 1 : 0))
+                        }));
+                      });
+                    }}
                     className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl font-bold font-mono focus:ring-2 focus:ring-[#DC2626]/20"
                   />
                   <span className="text-[10px] text-zinc-400 mt-1 block font-mono">
-                    Mặc định: 50 items (Phân bổ đều qua các session)
+                    Tự động đồng bộ từ cấu hình từng session bên dưới.
                   </span>
                 </div>
 
@@ -3799,7 +3938,25 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   </label>
                   <select
                     value={genSessionsCount}
-                    onChange={(e) => setGenSessionsCount(parseInt(e.target.value) || 4)}
+                    onChange={(e) => {
+                      const targetCount = parseInt(e.target.value) || 4;
+                      if (targetCount === genSessionConfigs.length) return;
+                      setGenSessionConfigs(prev => {
+                        if (targetCount < prev.length) {
+                          return prev.slice(0, targetCount);
+                        }
+                        const next = [...prev];
+                        for (let s = prev.length + 1; s <= targetCount; s++) {
+                          next.push({
+                            sessionNumber: s,
+                            hcTotal: 3,
+                            hintTypes: ['Keyword', 'Logic word', 'Ending'],
+                            itemsCount: 10
+                          });
+                        }
+                        return next;
+                      });
+                    }}
                     className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl font-bold font-mono focus:ring-2 focus:ring-[#DC2626]/20"
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
@@ -3809,21 +3966,45 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     ))}
                   </select>
                   <span className="text-[10px] text-zinc-400 mt-1 block font-mono">
-                    Mỗi session có thể tùy chỉnh số lượng gợi ý (hcTotal) riêng biệt.
+                    Mỗi session có thể tùy chỉnh số lượng gợi ý (hcTotal) và số câu riêng biệt.
                   </span>
                 </div>
               </div>
 
               {/* 3. Dynamic Session Configs Table */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-zinc-800 uppercase font-mono tracking-wider text-[10px] flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
                     <Sliders className="w-3.5 h-3.5 text-[#DC2626]" />
-                    <span>Cấu Hình Bậc Thang Gợi Ý Từng Session (Dynamic Matrix)</span>
-                  </label>
-                  <span className="text-[10px] text-zinc-400 font-mono">
-                    {genSessionConfigs.length} Sessions Configured
-                  </span>
+                    <label className="font-bold text-zinc-800 uppercase font-mono tracking-wider text-[10px]">
+                      Cấu Hình Bậc Thang Gợi Ý Từng Session (Dynamic Matrix)
+                    </label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626] font-mono font-bold">
+                      Tổng: {genTotalItems} câu across {genSessionConfigs.length} sessions
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={handleAddSessionConfig}
+                      disabled={genSessionConfigs.length >= 8}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                      title="Thêm Session mới (tối đa 8 sessions)"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Thêm Session (+)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveSessionConfig}
+                      disabled={genSessionConfigs.length <= 1}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                      title="Xóa Session cuối (tối thiểu 1 session)"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                      <span>Xóa Session (-)</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="border border-zinc-200 rounded-2xl overflow-hidden shadow-2xs">
@@ -3833,11 +4014,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <th className="p-3">Session</th>
                         <th className="p-3">Số Gợi Ý (hcTotal)</th>
                         <th className="p-3">Hint Types Phân Bổ</th>
-                        <th className="p-3 text-right">Items Dự Kiến</th>
+                        <th className="p-3">Số Câu (Items)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 bg-white">
-                      {genSessionConfigs.map((cfg, idx) => (
+                      {genSessionConfigs.map((cfg) => (
                         <tr key={cfg.sessionNumber} className="hover:bg-zinc-50/60">
                           <td className="p-3 font-bold text-zinc-800">
                             Session {cfg.sessionNumber}
@@ -3893,13 +4074,171 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                               })}
                             </div>
                           </td>
-                          <td className="p-3 text-right font-mono font-bold text-zinc-700">
-                            ~{cfg.itemsCount} items
+                          <td className="p-3">
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                min={1}
+                                max={50}
+                                value={cfg.itemsCount}
+                                onChange={(e) => {
+                                  const val = Math.max(1, Math.min(50, parseInt(e.target.value) || 1));
+                                  setGenSessionConfigs(prev => prev.map(c => 
+                                    c.sessionNumber === cfg.sessionNumber ? { ...c, itemsCount: val } : c
+                                  ));
+                                }}
+                                className="w-16 p-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-center font-mono font-bold focus:bg-white focus:ring-2 focus:ring-[#DC2626]/20"
+                              />
+                              <span className="text-[11px] text-zinc-500 font-mono">câu</span>
+                            </div>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              {/* 3B. Pedagogical Context & Conversational Focus */}
+              <div className="space-y-4 p-4.5 bg-zinc-50/90 rounded-2xl border border-zinc-200/80">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-zinc-800 uppercase font-mono tracking-wider text-[10px] flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-[#DC2626]" />
+                    <span>Ngữ Cảnh Giao Tiếp & Mục Tiêu Sư Phạm (Pedagogical Focus)</span>
+                  </label>
+                  <span className="text-[10px] text-zinc-400 font-mono">
+                    Định hướng AI sinh ngữ cảnh & phong cách tự nhiên
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Topic / Situation */}
+                  <div className="space-y-2">
+                    <label className="font-bold text-zinc-700 block uppercase font-mono tracking-wider text-[10px]">
+                      Chủ Đề / Tình Huống (Topic)
+                    </label>
+                    <input
+                      type="text"
+                      value={genTopic}
+                      onChange={(e) => setGenTopic(e.target.value)}
+                      placeholder="VD: Giao tiếp hàng ngày, Phỏng vấn xin việc..."
+                      className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#DC2626]/20"
+                    />
+                    {/* Quick Preset Chips */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {TOPIC_PRESETS.map(preset => {
+                        const isSelected = genTopic.includes(preset);
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleTopicChipClick(preset)}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-red-50 text-[#DC2626] border-red-300 ring-1 ring-red-200'
+                                : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Target Grammar */}
+                  <div className="space-y-2">
+                    <label className="font-bold text-zinc-700 block uppercase font-mono tracking-wider text-[10px]">
+                      Cấu Trúc Ngữ Pháp Trọng Tâm (Target Grammar)
+                    </label>
+                    <input
+                      type="text"
+                      value={genTargetGrammar}
+                      onChange={(e) => setGenTargetGrammar(e.target.value)}
+                      placeholder="VD: Collocations & Phrasal Verbs, Câu điều kiện..."
+                      className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#DC2626]/20"
+                    />
+                    {/* Quick Preset Chips */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {TARGET_GRAMMAR_PRESETS.map(preset => {
+                        const isSelected = genTargetGrammar.includes(preset);
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleGrammarChipClick(preset)}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-red-50 text-[#DC2626] border-red-300 ring-1 ring-red-200'
+                                : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Conversational Tone */}
+                <div className="space-y-2 pt-2 border-t border-zinc-200/60">
+                  <label className="font-bold text-zinc-700 block uppercase font-mono tracking-wider text-[10px]">
+                    Ngữ Điệu / Phong Cách Đàm Thoại (Conversational Tone)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {TONE_PRESETS.map(tone => {
+                      const isSelected = genConversationalTone === tone;
+                      return (
+                        <button
+                          key={tone}
+                          type="button"
+                          onClick={() => setGenConversationalTone(tone)}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
+                              : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                          }`}
+                        >
+                          {tone}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Collapsible Custom Pedagogical Notes */}
+                <div className="pt-2 border-t border-zinc-200/60">
+                  <button
+                    type="button"
+                    onClick={() => setIsPedagogicalNotesOpen(prev => !prev)}
+                    className="flex items-center justify-between w-full py-1 text-left text-xs font-bold text-zinc-700 hover:text-zinc-900 cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Edit3 className="w-3.5 h-3.5 text-[#DC2626]" />
+                      <span>Chỉ Dẫn Sư Phạm Bổ Sung (Custom Pedagogical Notes)</span>
+                      {genPedagogicalNotes && (
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-100 text-[#DC2626]">
+                          Đã nhập
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isPedagogicalNotesOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isPedagogicalNotesOpen && (
+                    <div className="mt-2">
+                      <textarea
+                        rows={3}
+                        value={genPedagogicalNotes}
+                        onChange={(e) => setGenPedagogicalNotes(e.target.value)}
+                        placeholder="VD: Ưu tiên các câu đàm thoại ngắn có ngắt nhịp // rõ ràng; từ ngữ phù hợp trình độ học viên; tập trung vào mẫu câu phản xạ nhanh..."
+                        className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#DC2626]/20 leading-relaxed"
+                      />
+                      <span className="text-[10px] text-zinc-400 font-mono mt-1 block">
+                        Chỉ dẫn này sẽ được gửi trực tiếp đến AI engine trong system prompt.
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -4353,12 +4692,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
               {/* Error Banner */}
               {genError && (
-                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-200 text-xs flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <div className="font-bold text-red-100">Không thể hoàn tất sinh dữ liệu AI:</div>
-                    <div className="font-mono text-[11px] text-red-300 break-words leading-relaxed">{genError}</div>
+                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="font-bold text-red-100">Không thể hoàn tất sinh dữ liệu AI:</div>
+                      <div className="font-mono text-[11px] text-red-300 break-words leading-relaxed">{genError}</div>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleGenerateOfflineFallback}
+                    disabled={isGenerating}
+                    className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Zap className="w-4 h-4 fill-current text-zinc-950" />
+                    <span>⚡ Tạo Ngoại Tuyến (Offline Fallback)</span>
+                  </button>
                 </div>
               )}
 

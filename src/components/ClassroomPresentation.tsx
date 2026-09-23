@@ -122,6 +122,15 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [activeSpeechStep, setActiveSpeechStep] = useState<'en' | 'vi' | 'idle'>('idle');
   const [highContrastDark, setHighContrastDark] = useState<boolean>(false);
   const [showKeyboardGuide, setShowKeyboardGuide] = useState<boolean>(false);
+  const [mainTextMode, setMainTextMode] = useState<'normal' | 'compact' | 'hidden'>('normal');
+
+  const cycleMainTextMode = useCallback(() => {
+    setMainTextMode(prev => {
+      if (prev === 'normal') return 'compact';
+      if (prev === 'compact') return 'hidden';
+      return 'normal';
+    });
+  }, []);
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState<boolean>(false);
   const [activeAudioSource, setActiveAudioSource] = useState<AudioSourceType>(audioPlayer.getLastSource());
   
@@ -803,6 +812,24 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     onSetLoop: handleSetLoop,
     isModalOpen: isLessonSwitcherOpen || isSoundSettingsOpen || isPrepModalOpen || isDiagnosticOpen || showKeyboardGuide || isPartsDrawerOpen || isChunkListOpen
   }, true);
+
+  // Keybinding listener for Main Text Focus Mode (Key M or Key H)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+      if (isLessonSwitcherOpen || isSoundSettingsOpen || isPrepModalOpen || isDiagnosticOpen || showKeyboardGuide || isPartsDrawerOpen || isChunkListOpen) return;
+
+      if (e.code === 'KeyM' || e.code === 'KeyH') {
+        e.preventDefault();
+        cycleMainTextMode();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [cycleMainTextMode, isLessonSwitcherOpen, isSoundSettingsOpen, isPrepModalOpen, isDiagnosticOpen, showKeyboardGuide, isPartsDrawerOpen, isChunkListOpen]);
 
   // Play audio when lesson changes or first mounts
   useEffect(() => {
@@ -1709,18 +1736,42 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
               return (
                 <div className="my-auto py-4 w-full">
-                  {/* Primary Large Text */}
-                  <h1
-                    className={`font-display font-bold leading-tight md:leading-tight tracking-tight transition-colors duration-150 transform-gpu ${
-                      primaryText.length > 70 
-                        ? 'text-3xl md:text-5xl' 
-                        : primaryText.length > 40 
-                          ? 'text-4xl md:text-6xl' 
-                          : 'text-5xl md:text-7xl'
-                    } ${isPrimarySpeaking ? 'text-[#DC2626]' : ''}`}
-                  >
-                    {primaryText}
-                  </h1>
+                  {/* Primary Large Text / Focus Mode */}
+                  {mainTextMode === 'hidden' ? (
+                    <div className="flex items-center justify-center my-4">
+                      <button
+                        onClick={() => setMainTextMode('normal')}
+                        className={`text-sm md:text-base font-mono px-5 py-3 rounded-2xl border border-dashed cursor-pointer transition-colors ${
+                          highContrastDark 
+                            ? 'text-zinc-400 hover:text-zinc-200 bg-zinc-900 border-zinc-700' 
+                            : 'text-zinc-500 hover:text-zinc-800 bg-zinc-100 hover:bg-zinc-200/80 border-zinc-300'
+                        }`}
+                        title="Bấm để hiện chữ chính"
+                      >
+                        {isViMode 
+                          ? "[Chữ Tiếng Việt Đã Ẩn — Bấm để hiện]" 
+                          : "[Chữ Tiếng Anh Đã Ẩn — Bấm để hiện]"}
+                      </button>
+                    </div>
+                  ) : (
+                    <h1
+                      className={`font-display transition-colors duration-150 transform-gpu ${
+                        mainTextMode === 'compact'
+                          ? `text-xl md:text-2xl font-semibold leading-relaxed tracking-normal ${
+                              highContrastDark ? 'text-zinc-300' : 'text-zinc-600 dark:text-zinc-300'
+                            }`
+                          : `font-bold leading-tight md:leading-tight tracking-tight ${
+                              primaryText.length > 70 
+                                ? 'text-3xl md:text-5xl' 
+                                : primaryText.length > 40 
+                                  ? 'text-4xl md:text-6xl' 
+                                  : 'text-5xl md:text-7xl'
+                            }`
+                      } ${isPrimarySpeaking ? '!text-[#DC2626]' : ''}`}
+                    >
+                      {primaryText}
+                    </h1>
+                  )}
 
                   {/* Subtitle (Toggleable via Key V, Font size +20% enlarged: text-2xl md:text-3xl font-medium) */}
                   <div className="min-h-[4rem] mt-6 flex items-center justify-center">
@@ -1833,6 +1884,12 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                 <span className="font-semibold text-zinc-800">Toggle Vietnamese Translation</span>
                 <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
                   {shortcutConfig.keyBindings.subtitle?.map(k => shortcutConfigService.getKeyFriendlyName(k)).join(' / ') || 'Chưa gán'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
+                <span className="font-semibold text-zinc-800">Chế độ chữ chính (Lớn / Thu nhỏ / Ẩn)</span>
+                <span className="font-mono font-bold px-2 py-0.5 bg-zinc-200 rounded text-zinc-900">
+                  Key M / Key H
                 </span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 border border-zinc-200">
@@ -1986,6 +2043,38 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
           >
             {showSubtitle ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5" />}
             <span className="hidden sm:inline">Phụ Đề (V)</span>
+          </button>
+
+          {/* Main Text Focus Mode Toggle */}
+          <button
+            onClick={cycleMainTextMode}
+            className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer ${
+              mainTextMode === 'normal'
+                ? 'bg-blue-50 text-blue-800 border-blue-300'
+                : mainTextMode === 'compact'
+                  ? 'bg-amber-50 text-amber-800 border-amber-300'
+                  : 'bg-zinc-100 text-zinc-500 border-zinc-300'
+            }`}
+            title="Chế Độ Chữ Chính (Key: M) — Bình Thường / Thu Nhỏ / Ẩn"
+          >
+            {mainTextMode === 'normal' && (
+              <>
+                <Eye className="w-3.5 h-3.5 text-blue-600" />
+                <span className="hidden sm:inline">Chữ Chính (M)</span>
+              </>
+            )}
+            {mainTextMode === 'compact' && (
+              <>
+                <Minimize2 className="w-3.5 h-3.5 text-amber-600" />
+                <span className="hidden sm:inline">Thu Nhỏ (M)</span>
+              </>
+            )}
+            {mainTextMode === 'hidden' && (
+              <>
+                <EyeOff className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="hidden sm:inline">Ẩn Chữ (M)</span>
+              </>
+            )}
           </button>
 
           {/* Words List Drawer */}
