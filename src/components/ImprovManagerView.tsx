@@ -30,6 +30,7 @@ import {
   DEFAULT_IMPROV_LLM_CONFIG, 
   GOOGLE_GENAI_DEFAULT_CONFIG, 
   generateImprovPackage,
+  generateOfflineFallbackPackage,
   executeLlmGeneration, 
   testLlmConnection,
   evaluateAndSanitizePackage,
@@ -121,7 +122,8 @@ import {
   Moon,
   Sun,
   CloudUpload,
-  Languages
+  Languages,
+  MoreHorizontal
 } from 'lucide-react';
 
 // --------------------------------------------------------------------------
@@ -152,6 +154,32 @@ export function getHintTypeBadgeClasses(type: string): HintTypeBadgeInfo {
 }
 
 const HINT_TYPE_OPTIONS = ['Keyword', 'Logic word', 'Fancy word', 'Ending'];
+
+const TOPIC_PRESETS = [
+  'Giao tiếp hàng ngày',
+  'Công sở & Đàm phán',
+  'Du lịch & Ẩm thực',
+  'Phỏng vấn xin việc',
+  'Đời sống đại học & Du học',
+  'Small Talk & Làm quen'
+];
+
+const TARGET_GRAMMAR_PRESETS = [
+  'Collocations & Phrasal Verbs',
+  'Câu điều kiện',
+  'Thì quá khứ kể chuyện',
+  'Phản xạ câu hỏi WH',
+  'Động từ khuyết thiếu (Modals)',
+  'Mệnh đề quan hệ'
+];
+
+const TONE_PRESETS = [
+  'Thân thiện đời thường',
+  'Chuyên nghiệp công sở',
+  'Hài hước hóm hỉnh',
+  'Phản xạ nhanh & Tranh luận',
+  'Tự nhiên & Bản xứ'
+];
 
 // --------------------------------------------------------------------------
 // 2. Default Seed Sample Packages (Zero-Empty State Guarantee)
@@ -224,6 +252,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [isSavingRename, setIsSavingRename] = useState<boolean>(false);
   const [renameSuccessToast, setRenameSuccessToast] = useState<string | null>(null);
   const [isBatchAudioModalOpen, setIsBatchAudioModalOpen] = useState<boolean>(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<ImprovItem | null>(null);
   const [newItem, setNewItem] = useState<ImprovItem | null>(null);
@@ -348,6 +378,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+    if (isMoreMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isMoreMenuOpen]);
+
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -435,6 +477,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   // Pedagogy controls
   const [genDifficulty, setGenDifficulty] = useState<'Easy (A1-A2)' | 'Medium (B1)' | 'Hard (B2-C1)'>('Medium (B1)');
   const [genRelevance, setGenRelevance] = useState<'Thấp (Brainstorming ngẫu nhiên)' | 'Vừa (Tương quan ngữ cảnh)' | 'Cao (Gắn kết câu chuyện logic)'>('Cao (Gắn kết câu chuyện logic)');
+  const [genTopic, setGenTopic] = useState<string>('');
+  const [genTargetGrammar, setGenTargetGrammar] = useState<string>('');
+  const [genConversationalTone, setGenConversationalTone] = useState<string>('Thân thiện đời thường');
+  const [genPedagogicalNotes, setGenPedagogicalNotes] = useState<string>('');
+  const [isPedagogicalNotesOpen, setIsPedagogicalNotesOpen] = useState<boolean>(false);
 
   // Dynamic Title & Description generator helper
   const computeDynamicTitleAndDescription = useCallback((
@@ -858,31 +905,55 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   }, [allAvailableSeedChunks]);
 
 
-  // Update session configs when total sessions count changes
+  // Dynamically compute and sync genTotalItems and genSessionsCount from genSessionConfigs
   useEffect(() => {
-    setGenSessionConfigs(prev => {
-      const result: ImprovSessionConfig[] = [];
-      const baseItemsPerSession = Math.floor(genTotalItems / genSessionsCount);
-      const remainder = genTotalItems % genSessionsCount;
+    const total = genSessionConfigs.reduce((sum, c) => sum + (c.itemsCount || 0), 0);
+    setGenTotalItems(total);
+    setGenSessionsCount(genSessionConfigs.length);
+  }, [genSessionConfigs]);
 
-      for (let s = 1; s <= genSessionsCount; s++) {
-        const existing = prev.find(c => c.sessionNumber === s);
-        const defaultHc = Math.min(4, s + 1); // e.g. S1: 2 hints, S2: 3 hints, S3: 4 hints, S4: 4 hints
-        let defaultTypes: string[] = ['Keyword'];
-        if (defaultHc === 2) defaultTypes = ['Danh từ · Keyword', 'Động từ · Ending'];
-        if (defaultHc === 3) defaultTypes = ['Keyword', 'Từ nối · Logic word', 'Ending'];
-        if (defaultHc >= 4) defaultTypes = ['Keyword', 'Từ nối · Logic word', 'Fancy word / Ẩn dụ', 'Ending'];
-
-        result.push({
-          sessionNumber: s,
-          hcTotal: existing?.hcTotal || defaultHc,
-          hintTypes: existing?.hintTypes || defaultTypes,
-          itemsCount: baseItemsPerSession + (s <= remainder ? 1 : 0)
-        });
+  const handleAddSessionConfig = () => {
+    if (genSessionConfigs.length >= 8) return;
+    const nextNum = genSessionConfigs.length + 1;
+    const defaultHc = 3;
+    const defaultTypes = ['Keyword', 'Logic word', 'Ending'];
+    setGenSessionConfigs(prev => [
+      ...prev,
+      {
+        sessionNumber: nextNum,
+        hcTotal: defaultHc,
+        hintTypes: defaultTypes,
+        itemsCount: 10
       }
-      return result;
-    });
-  }, [genSessionsCount, genTotalItems]);
+    ]);
+  };
+
+  const handleRemoveSessionConfig = () => {
+    if (genSessionConfigs.length <= 1) return;
+    setGenSessionConfigs(prev => prev.slice(0, prev.length - 1));
+  };
+
+  const handleTopicChipClick = (preset: string) => {
+    if (!genTopic.trim()) {
+      setGenTopic(preset);
+    } else if (genTopic.includes(preset)) {
+      const parts = genTopic.split(',').map(s => s.trim()).filter(s => s && s !== preset);
+      setGenTopic(parts.join(', '));
+    } else {
+      setGenTopic(`${genTopic.trim()}, ${preset}`);
+    }
+  };
+
+  const handleGrammarChipClick = (preset: string) => {
+    if (!genTargetGrammar.trim()) {
+      setGenTargetGrammar(preset);
+    } else if (genTargetGrammar.includes(preset)) {
+      const parts = genTargetGrammar.split(',').map(s => s.trim()).filter(s => s && s !== preset);
+      setGenTargetGrammar(parts.join(', '));
+    } else {
+      setGenTargetGrammar(`${genTargetGrammar.trim()}, ${preset}`);
+    }
+  };
 
   // Active Package Object
   const activePackage = useMemo(() => {
@@ -1829,6 +1900,10 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
           sourceLevel: genSourceLevel,
           sourceLessonIds: genSelectedLessonIds,
           selectedVocabIds: genSelectedVocabIds,
+          topic: genTopic,
+          targetGrammar: genTargetGrammar,
+          conversationalTone: genConversationalTone,
+          pedagogicalNotes: genPedagogicalNotes,
           llmConfig: {
             provider: genProvider,
             endpoint: genEndpoint,
@@ -1887,6 +1962,68 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       if (timerGenRef.current) clearInterval(timerGenRef.current);
       setIsGenerating(false);
       abortGenRef.current = null;
+    }
+  };
+
+  const handleGenerateOfflineFallback = async () => {
+    setIsGenerating(true);
+    setGenError(null);
+    addGenLog('info', `Đang tạo gói bài tập ngoại tuyến (Offline Fallback) cho "${genTitle}"...`);
+    try {
+      const offlinePkg = generateOfflineFallbackPackage({
+        packageTitle: genTitle,
+        packageDescription: genDescription,
+        totalItems: genTotalItems,
+        sessionsCount: genSessionsCount,
+        sessionsConfig: genSessionConfigs,
+        sourceLevel: genSourceLevel,
+        sourceLessonIds: genSelectedLessonIds,
+        selectedVocabIds: genSelectedVocabIds,
+        difficulty: genDifficulty,
+        relevance: genRelevance,
+        llmConfig: {
+          provider: genProvider,
+          endpoint: genEndpoint,
+          apiKey: genApiKey,
+          model: genModel,
+          masterPrompt: genMasterPrompt,
+          temperature: 0.7,
+          maxTokens: 16384
+        },
+        topic: genTopic,
+        targetGrammar: genTargetGrammar,
+        conversationalTone: genConversationalTone,
+        pedagogicalNotes: genPedagogicalNotes
+      });
+      await saveImprovPackage(offlinePkg);
+      setPackages(prev => [offlinePkg, ...prev.filter(p => p.id !== offlinePkg.id)]);
+      setActivePackageId(offlinePkg.id);
+      setActiveSessionTab('all');
+      setViewMode('table');
+      setGenProgress({
+        percent: 100,
+        current: offlinePkg.totalItems,
+        total: offlinePkg.totalItems,
+        message: 'Đã tạo gói bài tập ngoại tuyến thành công!'
+      });
+      addGenLog('success', `Đã lưu thành công gói ngoại tuyến "${offlinePkg.title}" với ${offlinePkg.totalItems} items!`);
+      setGenCompletionSummary({
+        title: offlinePkg.title,
+        totalItems: offlinePkg.totalItems,
+        sessionsCount: offlinePkg.sessionsCount,
+        level: String(genSourceLevel),
+        difficulty: genDifficulty,
+        relevance: genRelevance,
+        successBatches: offlinePkg.sessionsCount,
+        failedBatches: 0
+      });
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+    } catch (err: any) {
+      const msg = err?.message || 'Không thể tạo gói ngoại tuyến';
+      setGenError(msg);
+      addGenLog('error', `Lỗi tạo ngoại tuyến: ${msg}`);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -2275,176 +2412,186 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       {/* ==================================================================== */}
       {/* 1. HEADER & PACKAGE SELECTOR TOOLBAR */}
       {/* ==================================================================== */}
-      <div className="sticky top-0 z-10 bg-white border-b border-[#E8E8EC] px-6 py-4 shadow-2xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Left: Package Switcher & Info */}
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-50 text-[#DC2626] border border-red-100 shrink-0">
-              <Sparkles className="w-5 h-5" />
+      <div className="sticky top-0 z-20 bg-white dark:bg-zinc-900 border-b border-[#E8E8EC] dark:border-zinc-800 px-6 py-3.5 shadow-2xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Left: Sparkles icon + Package Selector + inline metadata badge */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#DC2626] dark:text-red-400 border border-red-100 dark:border-red-900/50 shrink-0">
+              <Sparkles className="w-4 h-4" />
             </div>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#DC2626] bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                  Improv Studio
-                </span>
-                <span className="text-xs text-zinc-400">•</span>
-                <span className="text-xs text-zinc-500 font-mono">
-                  {activePackage?.sessionsCount || 0} Sessions ({stats.totalItems} Items)
-                </span>
-              </div>
-
-              {/* Dropdown switcher */}
-              <div className="relative mt-1 flex items-center gap-1.5">
+            <div className="flex items-center gap-2.5 min-w-0 flex-wrap sm:flex-nowrap">
+              <div className="relative flex items-center">
                 <select
                   value={activePackageId}
                   onChange={(e) => {
                     setActivePackageId(e.target.value);
                     setActiveSessionTab('all');
                   }}
-                  className="text-base font-bold text-zinc-900 bg-transparent hover:bg-zinc-50 border-0 focus:ring-2 focus:ring-[#DC2626]/20 rounded-lg cursor-pointer transition-all pr-8 py-0.5 truncate max-w-[320px] sm:max-w-[450px]"
+                  className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100 bg-transparent hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 focus:border-zinc-300 dark:focus:border-zinc-600 focus:ring-2 focus:ring-[#DC2626]/20 rounded-lg cursor-pointer transition-all pr-8 py-1 truncate max-w-[240px] sm:max-w-[360px] md:max-w-[420px]"
                 >
                   {packages.map(p => (
-                    <option key={p.id} value={p.id} className="bg-white text-zinc-900">
-                      {p.title} ({p.sessionsCount} Sessions - {p.totalItems} Items)
+                    <option key={p.id} value={p.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
+                      {p.title}
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={handleOpenRenameModal}
-                  className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer shrink-0"
-                  title="Đổi tên & mô tả gói bài tập này"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 pointer-events-none" />
+              </div>
+
+              {/* Inline Metadata Badge */}
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 text-[11px] font-mono text-zinc-600 dark:text-zinc-300 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
+                <span>{activePackage?.sessionsCount || 0} Sessions · {stats.totalItems} Items</span>
               </div>
             </div>
           </div>
 
-          {/* Right: Primary Action Buttons */}
+          {/* Right: Clean visual hierarchy for buttons */}
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
-            {/* Quick View Controls: Fullscreen & Theme */}
-            <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200">
-              <button onClick={toggleFullscreen} className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-white transition-all cursor-pointer" title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}>
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </button>
-              <button onClick={toggleDarkMode} className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 hover:bg-white transition-all cursor-pointer" title={isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'}>
-                {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-600" />}
-              </button>
-            </div>
-
-            {/* Create New Package AI */}
-            <button
-              onClick={() => setIsGeneratorOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
-              title="Tạo Package Mới với AI Generator"
-            >
-              <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
-              <span>Tạo Package AI</span>
-            </button>
-
-            {/* Rename Package */}
-            <button
-              onClick={handleOpenRenameModal}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
-              title="Đổi tên & mô tả Package hiện tại"
-            >
-              <Edit3 className="w-3.5 h-3.5 text-zinc-500" />
-              <span className="hidden sm:inline">Đổi Tên</span>
-            </button>
-
-            {/* Audit & Sanitize Language Button */}
-            <button
-              onClick={handleAuditAndSanitizePackageLanguage}
-              disabled={isSanitizingLanguage || !activePackage}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/80 text-xs font-semibold text-emerald-800 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-              title="Đánh giá và tự động sửa các lỗi lẫn lộn tiếng Anh/tiếng Việt (ví dụ: 'nếu không' bị đặt nhầm vào ô EN)"
-            >
-              {isSanitizingLanguage ? (
-                <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin shrink-0" />
-              ) : (
-                <Languages className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              )}
-              <span className="hidden sm:inline">Chuẩn Hóa Ngôn Ngữ</span>
-            </button>
-
-            {/* Import / Export Excel */}
+            {/* Action buttons group: Import / Export */}
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsImportModalOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Import danh sách từ Excel"
+                className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                title="Import danh sách từ Excel (.xlsx)"
               >
-                <Upload className="w-3.5 h-3.5 text-zinc-500" />
-                <span className="hidden sm:inline">Import</span>
+                <Upload className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
               </button>
               <button
                 onClick={handleExportExcel}
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl border border-[#E8E8EC] hover:border-zinc-300 hover:bg-zinc-50 text-xs font-semibold text-zinc-700 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
-                title="Export danh sách ra file Excel"
+                className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                title="Export danh sách ra file Excel (.xlsx)"
               >
-                <Download className="w-3.5 h-3.5 text-zinc-500" />
-                <span className="hidden sm:inline">Export</span>
+                <Download className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
               </button>
             </div>
 
-            {/* Delete Package */}
+            {/* Chuẩn Hóa */}
             <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="p-2 rounded-xl border border-[#E8E8EC] hover:border-red-200 hover:bg-red-50 text-zinc-400 hover:text-red-600 bg-white active:scale-95 transition-all cursor-pointer shadow-2xs"
-              title="Xóa Package hiện tại"
+              onClick={handleAuditAndSanitizePackageLanguage}
+              disabled={isSanitizingLanguage || !activePackage}
+              className="p-2 rounded-xl border border-emerald-200 dark:border-emerald-800/70 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+              title="Chuẩn Hóa Ngôn Ngữ (Đánh giá và tự động sửa các lỗi lẫn lộn EN/VI)"
             >
-              <Trash2 className="w-4 h-4" />
+              {isSanitizingLanguage ? (
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+              ) : (
+                <Languages className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              )}
             </button>
+
+            {/* More Actions dropdown menu */}
+            <div className="relative" ref={moreMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsMoreMenuOpen(prev => !prev)}
+                className="p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 bg-white dark:bg-zinc-800/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                title="Thao tác khác"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+
+              {isMoreMenuOpen && (
+                <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-800 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleOpenRenameModal();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-left cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4 text-zinc-500" />
+                    <span>Đổi Tên Package</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isSyncingToCloud || isBatchRunning || !activePackage}
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleSyncActivePackageToCloud();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-left cursor-pointer disabled:opacity-50"
+                  >
+                    <CloudUpload className="w-4 h-4 text-emerald-600" />
+                    <span>{isSyncingToCloud ? (cloudSyncProgress || 'Đang sync...') : 'Sync Cloud Storage'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isBatchRunning || isResettingAudio || !activePackage}
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleResetPackageAudioUrls(activeSessionTab === 'all' ? undefined : activeSessionTab);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors text-left cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className="w-4 h-4 text-amber-600" />
+                    <span>Xóa Link Audio ({activeSessionTab === 'all' ? 'Tất cả' : `Session ${activeSessionTab}`})</span>
+                  </button>
+
+                  <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                    <span>Xóa Package</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Quick View Controls: Fullscreen & Theme */}
+            <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
+              <button onClick={toggleFullscreen} className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer" title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}>
+                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
+              <button onClick={toggleDarkMode} className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer" title={isDarkMode ? 'Chế độ sáng' : 'Chế độ tối'}>
+                {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-zinc-500" />}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Stats Summary Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-zinc-100">
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center gap-3">
-            <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
-              <Layers className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Total Items</div>
-              <div className="text-sm font-bold text-zinc-800">{stats.totalItems} Items</div>
-            </div>
+        {/* Stats Summary Strip (Minimal Compact Pill Bar) */}
+        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+            <span>📦</span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">{stats.totalItems}</span>
+            <span>câu</span>
           </div>
 
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center gap-3">
-            <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
-              <Clock className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Total Sessions</div>
-              <div className="text-sm font-bold text-zinc-800">{stats.totalSessions} Sessions</div>
-            </div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+            <span>📑</span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">{stats.totalSessions}</span>
+            <span>sessions</span>
           </div>
 
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center gap-3">
-            <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
-              <BarChart3 className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Total Hints</div>
-              <div className="text-sm font-bold text-zinc-800">{stats.totalHints} Clues</div>
-            </div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+            <span>💡</span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">{stats.totalHints}</span>
+            <span>hints</span>
           </div>
 
-          <div className="bg-zinc-50/80 rounded-lg p-2.5 border border-zinc-200/60 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white rounded-md border border-zinc-200 text-zinc-600">
-                <Headphones className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-[10px] font-mono uppercase text-zinc-400 font-bold">Audio Prepared</div>
-                <div className="text-sm font-bold text-zinc-800">
-                  {stats.audioPreparedPercent}% ({stats.audioPreparedCount}/{stats.totalItems})
-                </div>
-              </div>
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300">
+            <div className="flex items-center gap-1.5">
+              <span>🎧</span>
+              <span>Audio:</span>
+              <span className={`font-semibold ${stats.audioPreparedPercent === 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                {stats.audioPreparedPercent}%
+              </span>
+              <span className="text-zinc-400 font-mono text-[11px]">({stats.audioPreparedCount}/{stats.totalItems})</span>
             </div>
             <button
+              type="button"
               onClick={() => {
                 if (activeSessionTab !== 'all') {
                   setBatchScope('session');
@@ -2457,11 +2604,21 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 setCloudSyncSummary(null);
                 setIsBatchAudioModalOpen(true);
               }}
-              className="px-2 py-1 text-[11px] font-bold text-[#DC2626] bg-red-50 hover:bg-red-100 rounded-md border border-red-200 cursor-pointer transition-all"
+              className="px-2 py-0.5 text-[11px] font-bold text-[#DC2626] bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60 rounded-md border border-red-200 dark:border-red-900/50 cursor-pointer transition-all"
             >
               Batch TTS
             </button>
           </div>
+
+          {/* Primary CTA: + Tạo Package AI */}
+          <button
+            onClick={() => setIsGeneratorOpen(true)}
+            className="ml-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+            title="Tạo Package Mới với AI Generator"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+            <span>+ Tạo Package AI</span>
+          </button>
         </div>
       </div>
 
@@ -2470,11 +2627,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       {/* ==================================================================== */}
       <div className="flex-1 p-6 space-y-6">
         {/* Session Navigation Tabs & Filter Bar */}
-        <div className="bg-white rounded-2xl border border-[#E8E8EC] p-4 shadow-2xs space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Session Dropdown Selector & Segmented Audio Filter */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E8E8EC] dark:border-zinc-800 p-4 shadow-2xs space-y-3">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+            {/* Left: Sleek Session Selector + Segmented Audio Filter */}
             <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl">
                 <Filter className="w-3.5 h-3.5 text-[#DC2626]" />
                 <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Session:</span>
                 <select
@@ -2483,13 +2640,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     const val = e.target.value;
                     setActiveSessionTab(val === 'all' ? 'all' : Number(val));
                   }}
-                  className="bg-transparent text-xs font-bold text-zinc-900 border-0 focus:ring-0 cursor-pointer pr-4"
+                  className="bg-transparent text-xs font-bold text-zinc-900 dark:text-zinc-100 border-0 focus:ring-0 cursor-pointer pr-4"
                 >
-                  <option value="all" className="bg-white text-zinc-900">
+                  <option value="all" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
                     Tất Cả Sessions ({activePackage?.totalItems || 0} Items)
                   </option>
                   {(activePackage?.sessions || []).map(s => (
-                    <option key={s.sessionNumber} value={s.sessionNumber} className="bg-white text-zinc-900">
+                    <option key={s.sessionNumber} value={s.sessionNumber} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100">
                       Session {s.sessionNumber} ({s.hcTotal} Hints - {s.items.length} Items)
                     </option>
                   ))}
@@ -2497,57 +2654,79 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               </div>
 
               {/* Segmented Audio Readiness Filter */}
-              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-bold">
+              <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setAudioFilter('all')}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                     audioFilter === 'all'
-                      ? 'bg-white text-zinc-900 shadow-xs'
-                      : 'text-zinc-600 hover:text-zinc-900'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-xs font-bold'
+                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                   title="Hiển thị tất cả câu"
                 >
-                  <span>🔘 Tất Cả ({audioCounts.allCount})</span>
+                  <span>Tất Cả ({audioCounts.allCount})</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setAudioFilter('ready')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                     audioFilter === 'ready'
-                      ? 'bg-white text-emerald-700 shadow-xs'
-                      : 'text-zinc-600 hover:text-emerald-700'
+                      ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-bold'
+                      : 'text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400'
                   }`}
-                  title="Chỉ hiển thị các câu đã có đủ audio EN & VI"
+                  title="Chỉ hiển thị các câu đã có đủ audio"
                 >
-                  <span>🟢 Đã Có Audio ({audioCounts.readyCount})</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>Đã có audio ({audioCounts.readyCount})</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setAudioFilter('missing')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                     audioFilter === 'missing'
-                      ? 'bg-white text-red-600 shadow-xs'
-                      : 'text-zinc-600 hover:text-red-600'
+                      ? 'bg-white dark:bg-zinc-700 text-red-600 dark:text-red-400 shadow-xs font-bold'
+                      : 'text-zinc-500 hover:text-red-600 dark:hover:text-red-400'
                   }`}
                   title="Chỉ hiển thị các câu chưa có hoặc thiếu audio"
                 >
-                  <span>🔴 Chưa Có Audio ({audioCounts.missingCount})</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  <span>Chưa có ({audioCounts.missingCount})</span>
                 </button>
               </div>
             </div>
 
-            {/* Quick Controls: View Switcher, Add Item, Subtitle Toggle & Batch Audio Trigger */}
-            <div className="flex items-center gap-2 flex-wrap justify-end">
+            {/* Center/Right: Search, View Toggle, Subtitle Toggle, Consolidated Audio Batch TTS, + Thêm Câu */}
+            <div className="flex items-center gap-2 flex-wrap xl:flex-nowrap justify-between xl:justify-end">
+              {/* Search input */}
+              <div className="relative min-w-[200px] max-w-xs flex-1">
+                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm hint, tiếng Việt..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-7 py-1.5 bg-zinc-50 dark:bg-zinc-800/70 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-zinc-200 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
               {/* View Mode Toggle */}
-              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200">
+              <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shrink-0">
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'table' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                  className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'table' ? 'bg-white dark:bg-zinc-700 text-[#DC2626] dark:text-red-400 shadow-xs' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                   }`}
-                  title="Chế độ xem bảng danh sách chi tiết"
+                  title="Chế độ xem bảng chi tiết"
                 >
                   <TableIcon className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Bảng</span>
@@ -2555,60 +2734,32 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setViewMode('cards')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'cards' ? 'bg-white text-[#DC2626] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+                  className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'cards' ? 'bg-white dark:bg-zinc-700 text-[#DC2626] dark:text-red-400 shadow-xs' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
                   }`}
-                  title="Chế độ xem dạng thẻ dòng chảy"
+                  title="Chế độ xem thẻ dòng chảy"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Thẻ</span>
                 </button>
               </div>
 
-              {/* Subtitle Toggle */}
+              {/* Subtitle Minimal Pill Toggle */}
               <button
                 type="button"
                 onClick={() => setShowVietnamese(!showVietnamese)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                  showVietnamese ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-50 text-zinc-500 border-zinc-200'
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shrink-0 ${
+                  showVietnamese 
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' 
+                    : 'bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 border-zinc-200 dark:border-zinc-700'
                 }`}
                 title="Bật/Tắt hiển thị nghĩa tiếng Việt"
               >
-                {showVietnamese ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5" />}
-                <span className="hidden md:inline">{showVietnamese ? 'Hiện VI' : 'Ẩn VI'}</span>
+                {showVietnamese ? <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5" />}
+                <span>VI</span>
               </button>
 
-              {/* Cloud Sync */}
-              <button
-                type="button"
-                disabled={isSyncingToCloud || isBatchRunning || !activePackage}
-                onClick={handleSyncActivePackageToCloud}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
-                title="Tải toàn bộ audio Improv đã có trong cache trình duyệt lên Cloud Storage bucket gs://chunks-voicecloning-genshai.firebasestorage.app để dùng vĩnh viễn"
-              >
-                <CloudUpload className={`w-3.5 h-3.5 ${isSyncingToCloud ? 'animate-bounce' : ''}`} />
-                <span>{isSyncingToCloud ? (cloudSyncProgress || 'Đang sync...') : 'Sync Cloud'}</span>
-              </button>
-
-              {/* Quick Session Audio Generator */}
-              {activeSessionTab !== 'all' && (
-                <button
-                  type="button"
-                  disabled={isBatchRunning}
-                  onClick={() => handleQuickCreateSessionAudio(activeSessionTab)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white border border-amber-400 text-xs font-bold shadow-xs cursor-pointer transition-all disabled:opacity-50"
-                  title={`1-Click: Tạo âm thanh hàng loạt ngay cho Session ${activeSessionTab}`}
-                >
-                  {isBatchRunning && batchScope === 'session' && batchSessionNum === activeSessionTab ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                  ) : (
-                    <Zap className="w-3.5 h-3.5 text-amber-100 fill-current" />
-                  )}
-                  <span>⚡ Tạo audio Session {activeSessionTab}</span>
-                </button>
-              )}
-
-              {/* Batch TTS */}
+              {/* One prominent Batch TTS Button */}
               <button
                 type="button"
                 onClick={() => {
@@ -2623,30 +2774,18 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   setCloudSyncSummary(null);
                   setIsBatchAudioModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
-                title="Tạo âm thanh hàng loạt cho Session / Package"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-black dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-bold shadow-xs cursor-pointer transition-all shrink-0"
+                title={`Tạo âm thanh hàng loạt (${activeSessionTab !== 'all' ? `Session ${activeSessionTab}` : 'Toàn bộ Package'})`}
               >
-                <Zap className="w-3.5 h-3.5 text-amber-300" />
+                <Headphones className="w-3.5 h-3.5 text-amber-400 dark:text-amber-600" />
                 <span>Batch TTS</span>
               </button>
 
-              {/* Reset Audio URLs */}
-              <button
-                type="button"
-                disabled={isBatchRunning || isResettingAudio || !activePackage}
-                onClick={() => handleResetPackageAudioUrls(activeSessionTab === 'all' ? undefined : activeSessionTab)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold shadow-2xs cursor-pointer transition-all disabled:opacity-50"
-                title="Xóa link audio đã có để tạo lại từ đầu"
-              >
-                {isResettingAudio ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-red-600" /> : <Trash2 className="w-3.5 h-3.5 text-red-600" />}
-                <span>Xóa link audio</span>
-              </button>
-
-              {/* Add Item Button */}
+              {/* Clean Primary Add Item Button */}
               <button
                 type="button"
                 onClick={() => handleOpenAddItemModal()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold shadow-xs transition-all cursor-pointer shrink-0"
                 title="Thêm câu hỏi mới vào session"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -2655,106 +2794,29 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
             </div>
           </div>
 
-          {/* Horizontal Session Quick Tabs & 1-Click Audio Actions */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin pt-2 border-t border-zinc-100">
-            <button
-              type="button"
-              onClick={() => setActiveSessionTab('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeSessionTab === 'all'
-                  ? 'bg-zinc-900 text-white shadow-xs'
-                  : 'bg-zinc-100 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/70'
-              }`}
-            >
-              Tất Cả ({activePackage?.totalItems || 0})
-            </button>
-            {(activePackage?.sessions || []).map(s => {
-              const isCurrent = activeSessionTab === s.sessionNumber;
-              const isThisSessionRunning = isBatchRunning && batchScope === 'session' && batchSessionNum === s.sessionNumber;
-              return (
-                <div
-                  key={s.sessionNumber}
-                  className={`flex items-center gap-1.5 p-1 rounded-xl border transition-all shrink-0 ${
-                    isCurrent
-                      ? 'bg-red-50/90 border-red-200 text-[#DC2626]'
-                      : 'bg-zinc-50 border-zinc-200 text-zinc-700 hover:bg-zinc-100'
+          {/* Sub-bar: Range Display & Page Size Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+            <span className="text-zinc-500 dark:text-zinc-400">
+              Hiển thị <span className="font-bold text-zinc-800 dark:text-zinc-200 font-mono">{startDisplayIdx} - {endDisplayIdx}</span> trên <span className="font-bold text-zinc-800 dark:text-zinc-200 font-mono">{totalFilteredCount}</span> items
+            </span>
+
+            {/* Page size toggle buttons: 15 | 20 | 50 | Tất cả */}
+            <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-semibold">
+              <span className="px-2 text-[10px] uppercase font-mono text-zinc-400 font-bold hidden sm:inline">Mỗi trang:</span>
+              {([15, 20, 50, 'all'] as const).map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => setPageSize(sz)}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    pageSize === sz 
+                      ? 'bg-[#DC2626] text-white shadow-xs' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                   }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => setActiveSessionTab(s.sessionNumber)}
-                    className="px-2 py-1 text-xs font-bold cursor-pointer"
-                    title={`Xem Session ${s.sessionNumber}`}
-                  >
-                    Session {s.sessionNumber} ({s.items.length})
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isBatchRunning}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleQuickCreateSessionAudio(s.sessionNumber);
-                    }}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                    title={`1-Click: Tạo audio cho toàn bộ Session ${s.sessionNumber}`}
-                  >
-                    {isThisSessionRunning ? (
-                      <Loader2 className="w-3 h-3 animate-spin text-white" />
-                    ) : (
-                      <Zap className="w-3 h-3 text-white fill-current" />
-                    )}
-                    <span>⚡ Tạo audio S{s.sessionNumber}</span>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Search & Sub-Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-zinc-100">
-            <div className="relative flex-1 w-full">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm hint tiếng Anh, nghĩa tiếng Việt, hoặc từ loại..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-zinc-50/80 border border-zinc-200 rounded-xl text-xs text-zinc-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#DC2626]/20 transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-0.5 cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
+                  {sz === 'all' ? 'Tất cả' : `${sz}`}
                 </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3 flex-wrap justify-between sm:justify-end shrink-0">
-              {/* Range & Total Count */}
-              <span className="text-xs text-zinc-600 font-medium">
-                Hiển thị <span className="font-bold text-zinc-900 font-mono">{startDisplayIdx} - {endDisplayIdx}</span> trên <span className="font-bold text-zinc-900 font-mono">{totalFilteredCount}</span> items
-              </span>
-
-              {/* Page size toggle buttons: 15 | 20 | 50 | Tất cả */}
-              <div className="flex items-center p-0.5 bg-zinc-100 rounded-xl border border-zinc-200 text-xs font-semibold">
-                <span className="px-2 text-[10px] uppercase font-mono text-zinc-500 font-bold hidden md:inline">Mỗi trang:</span>
-                {([15, 20, 50, 'all'] as const).map((sz) => (
-                  <button
-                    key={sz}
-                    type="button"
-                    onClick={() => setPageSize(sz)}
-                    className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      pageSize === sz 
-                        ? 'bg-[#DC2626] text-white shadow-xs' 
-                        : 'text-zinc-600 hover:text-zinc-900'
-                    }`}
-                  >
-                    {sz === 'all' ? 'Tất cả' : `${sz}`}
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -3797,19 +3859,36 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               {/* 2. Total Items & Number of Sessions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-zinc-50/80 rounded-2xl border border-zinc-200/60">
                 <div>
-                  <label className="font-bold text-zinc-700 block mb-1.5 uppercase font-mono tracking-wider text-[10px]">
-                    Tổng Số Items Dự Kiến
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-bold text-zinc-700 uppercase font-mono tracking-wider text-[10px]">
+                      Tổng Số Items Dự Kiến
+                    </label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626] font-mono font-bold">
+                      {genTotalItems} câu
+                    </span>
+                  </div>
                   <input
                     type="number"
-                    min={10}
-                    max={200}
+                    min={1}
+                    max={400}
                     value={genTotalItems}
-                    onChange={(e) => setGenTotalItems(Math.max(5, parseInt(e.target.value) || 50))}
+                    onChange={(e) => {
+                      const newTotal = parseInt(e.target.value) || 0;
+                      if (newTotal <= 0) return;
+                      setGenSessionConfigs(prev => {
+                        const count = prev.length;
+                        const base = Math.floor(newTotal / count);
+                        const rem = newTotal % count;
+                        return prev.map((c, i) => ({
+                          ...c,
+                          itemsCount: Math.max(1, base + (i < rem ? 1 : 0))
+                        }));
+                      });
+                    }}
                     className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl font-bold font-mono focus:ring-2 focus:ring-[#DC2626]/20"
                   />
                   <span className="text-[10px] text-zinc-400 mt-1 block font-mono">
-                    Mặc định: 50 items (Phân bổ đều qua các session)
+                    Tự động đồng bộ từ cấu hình từng session bên dưới.
                   </span>
                 </div>
 
@@ -3819,7 +3898,25 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                   </label>
                   <select
                     value={genSessionsCount}
-                    onChange={(e) => setGenSessionsCount(parseInt(e.target.value) || 4)}
+                    onChange={(e) => {
+                      const targetCount = parseInt(e.target.value) || 4;
+                      if (targetCount === genSessionConfigs.length) return;
+                      setGenSessionConfigs(prev => {
+                        if (targetCount < prev.length) {
+                          return prev.slice(0, targetCount);
+                        }
+                        const next = [...prev];
+                        for (let s = prev.length + 1; s <= targetCount; s++) {
+                          next.push({
+                            sessionNumber: s,
+                            hcTotal: 3,
+                            hintTypes: ['Keyword', 'Logic word', 'Ending'],
+                            itemsCount: 10
+                          });
+                        }
+                        return next;
+                      });
+                    }}
                     className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl font-bold font-mono focus:ring-2 focus:ring-[#DC2626]/20"
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
@@ -3829,21 +3926,45 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     ))}
                   </select>
                   <span className="text-[10px] text-zinc-400 mt-1 block font-mono">
-                    Mỗi session có thể tùy chỉnh số lượng gợi ý (hcTotal) riêng biệt.
+                    Mỗi session có thể tùy chỉnh số lượng gợi ý (hcTotal) và số câu riêng biệt.
                   </span>
                 </div>
               </div>
 
               {/* 3. Dynamic Session Configs Table */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-zinc-800 uppercase font-mono tracking-wider text-[10px] flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
                     <Sliders className="w-3.5 h-3.5 text-[#DC2626]" />
-                    <span>Cấu Hình Bậc Thang Gợi Ý Từng Session (Dynamic Matrix)</span>
-                  </label>
-                  <span className="text-[10px] text-zinc-400 font-mono">
-                    {genSessionConfigs.length} Sessions Configured
-                  </span>
+                    <label className="font-bold text-zinc-800 uppercase font-mono tracking-wider text-[10px]">
+                      Cấu Hình Bậc Thang Gợi Ý Từng Session (Dynamic Matrix)
+                    </label>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626] font-mono font-bold">
+                      Tổng: {genTotalItems} câu across {genSessionConfigs.length} sessions
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={handleAddSessionConfig}
+                      disabled={genSessionConfigs.length >= 8}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-[#DC2626] border border-red-200 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                      title="Thêm Session mới (tối đa 8 sessions)"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Thêm Session (+)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveSessionConfig}
+                      disabled={genSessionConfigs.length <= 1}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+                      title="Xóa Session cuối (tối thiểu 1 session)"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                      <span>Xóa Session (-)</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="border border-zinc-200 rounded-2xl overflow-hidden shadow-2xs">
@@ -3853,11 +3974,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <th className="p-3">Session</th>
                         <th className="p-3">Số Gợi Ý (hcTotal)</th>
                         <th className="p-3">Hint Types Phân Bổ</th>
-                        <th className="p-3 text-right">Items Dự Kiến</th>
+                        <th className="p-3">Số Câu (Items)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 bg-white">
-                      {genSessionConfigs.map((cfg, idx) => (
+                      {genSessionConfigs.map((cfg) => (
                         <tr key={cfg.sessionNumber} className="hover:bg-zinc-50/60">
                           <td className="p-3 font-bold text-zinc-800">
                             Session {cfg.sessionNumber}
@@ -3913,13 +4034,171 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                               })}
                             </div>
                           </td>
-                          <td className="p-3 text-right font-mono font-bold text-zinc-700">
-                            ~{cfg.itemsCount} items
+                          <td className="p-3">
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                min={1}
+                                max={50}
+                                value={cfg.itemsCount}
+                                onChange={(e) => {
+                                  const val = Math.max(1, Math.min(50, parseInt(e.target.value) || 1));
+                                  setGenSessionConfigs(prev => prev.map(c => 
+                                    c.sessionNumber === cfg.sessionNumber ? { ...c, itemsCount: val } : c
+                                  ));
+                                }}
+                                className="w-16 p-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-center font-mono font-bold focus:bg-white focus:ring-2 focus:ring-[#DC2626]/20"
+                              />
+                              <span className="text-[11px] text-zinc-500 font-mono">câu</span>
+                            </div>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              {/* 3B. Pedagogical Context & Conversational Focus */}
+              <div className="space-y-4 p-4.5 bg-zinc-50/90 rounded-2xl border border-zinc-200/80">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-zinc-800 uppercase font-mono tracking-wider text-[10px] flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-[#DC2626]" />
+                    <span>Ngữ Cảnh Giao Tiếp & Mục Tiêu Sư Phạm (Pedagogical Focus)</span>
+                  </label>
+                  <span className="text-[10px] text-zinc-400 font-mono">
+                    Định hướng AI sinh ngữ cảnh & phong cách tự nhiên
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Topic / Situation */}
+                  <div className="space-y-2">
+                    <label className="font-bold text-zinc-700 block uppercase font-mono tracking-wider text-[10px]">
+                      Chủ Đề / Tình Huống (Topic)
+                    </label>
+                    <input
+                      type="text"
+                      value={genTopic}
+                      onChange={(e) => setGenTopic(e.target.value)}
+                      placeholder="VD: Giao tiếp hàng ngày, Phỏng vấn xin việc..."
+                      className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#DC2626]/20"
+                    />
+                    {/* Quick Preset Chips */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {TOPIC_PRESETS.map(preset => {
+                        const isSelected = genTopic.includes(preset);
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleTopicChipClick(preset)}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-red-50 text-[#DC2626] border-red-300 ring-1 ring-red-200'
+                                : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Target Grammar */}
+                  <div className="space-y-2">
+                    <label className="font-bold text-zinc-700 block uppercase font-mono tracking-wider text-[10px]">
+                      Cấu Trúc Ngữ Pháp Trọng Tâm (Target Grammar)
+                    </label>
+                    <input
+                      type="text"
+                      value={genTargetGrammar}
+                      onChange={(e) => setGenTargetGrammar(e.target.value)}
+                      placeholder="VD: Collocations & Phrasal Verbs, Câu điều kiện..."
+                      className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#DC2626]/20"
+                    />
+                    {/* Quick Preset Chips */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {TARGET_GRAMMAR_PRESETS.map(preset => {
+                        const isSelected = genTargetGrammar.includes(preset);
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleGrammarChipClick(preset)}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-red-50 text-[#DC2626] border-red-300 ring-1 ring-red-200'
+                                : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Conversational Tone */}
+                <div className="space-y-2 pt-2 border-t border-zinc-200/60">
+                  <label className="font-bold text-zinc-700 block uppercase font-mono tracking-wider text-[10px]">
+                    Ngữ Điệu / Phong Cách Đàm Thoại (Conversational Tone)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {TONE_PRESETS.map(tone => {
+                      const isSelected = genConversationalTone === tone;
+                      return (
+                        <button
+                          key={tone}
+                          type="button"
+                          onClick={() => setGenConversationalTone(tone)}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
+                              : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                          }`}
+                        >
+                          {tone}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Collapsible Custom Pedagogical Notes */}
+                <div className="pt-2 border-t border-zinc-200/60">
+                  <button
+                    type="button"
+                    onClick={() => setIsPedagogicalNotesOpen(prev => !prev)}
+                    className="flex items-center justify-between w-full py-1 text-left text-xs font-bold text-zinc-700 hover:text-zinc-900 cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Edit3 className="w-3.5 h-3.5 text-[#DC2626]" />
+                      <span>Chỉ Dẫn Sư Phạm Bổ Sung (Custom Pedagogical Notes)</span>
+                      {genPedagogicalNotes && (
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-100 text-[#DC2626]">
+                          Đã nhập
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isPedagogicalNotesOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isPedagogicalNotesOpen && (
+                    <div className="mt-2">
+                      <textarea
+                        rows={3}
+                        value={genPedagogicalNotes}
+                        onChange={(e) => setGenPedagogicalNotes(e.target.value)}
+                        placeholder="VD: Ưu tiên các câu đàm thoại ngắn có ngắt nhịp // rõ ràng; từ ngữ phù hợp trình độ học viên; tập trung vào mẫu câu phản xạ nhanh..."
+                        className="w-full p-2.5 bg-white border border-zinc-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#DC2626]/20 leading-relaxed"
+                      />
+                      <span className="text-[10px] text-zinc-400 font-mono mt-1 block">
+                        Chỉ dẫn này sẽ được gửi trực tiếp đến AI engine trong system prompt.
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -4374,12 +4653,23 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
               {/* Error Banner */}
               {genError && (
-                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-200 text-xs flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <div className="font-bold text-red-100">Không thể hoàn tất sinh dữ liệu AI:</div>
-                    <div className="font-mono text-[11px] text-red-300 break-words leading-relaxed">{genError}</div>
+                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="font-bold text-red-100">Không thể hoàn tất sinh dữ liệu AI:</div>
+                      <div className="font-mono text-[11px] text-red-300 break-words leading-relaxed">{genError}</div>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleGenerateOfflineFallback}
+                    disabled={isGenerating}
+                    className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Zap className="w-4 h-4 fill-current text-zinc-950" />
+                    <span>⚡ Tạo Ngoại Tuyến (Offline Fallback)</span>
+                  </button>
                 </div>
               )}
 

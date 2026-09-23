@@ -17,6 +17,7 @@ import {
   ImprovItem, 
   ImprovHint, 
   ImprovLLMConfig, 
+  ImprovLlmProvider,
   ImprovSessionConfig,
   ImprovGenerateRequest,
   ImprovBatchGenerationStatus,
@@ -1049,8 +1050,9 @@ export function exportImprovPackageToExcel(
     XLSX.writeFile(workbook, filename);
   }
 
-  // Return binary array buffer
-  return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as Uint8Array;
+  // Return binary array buffer as Uint8Array
+  const out = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  return out instanceof Uint8Array ? out : new Uint8Array(out);
 }
 
 // --------------------------------------------------------------------------
@@ -1144,15 +1146,15 @@ export async function executeLlmGeneration(
   signal?: AbortSignal
 ): Promise<string> {
   const aiConfig = modelRegistryService.getAiConfig();
-  const provider = config.provider || (
-    config.endpoint && !config.endpoint.includes('googleapis.com')
+  const cleanEndpoint = (config.endpoint || aiConfig.endpoint || '').trim();
+  const cleanModel = (config.model || aiConfig.model || '').trim();
+  const cleanApiKey = (config.apiKey || aiConfig.apiKey || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey || '').trim();
+
+  const provider: ImprovLlmProvider = config.provider || (
+    cleanEndpoint && !cleanEndpoint.includes('googleapis.com')
       ? 'CUSTOM_OPENAI'
       : 'GOOGLE_GENAI'
   );
-
-  const effectiveApiKey = config.apiKey?.trim() 
-    || aiConfig.apiKey?.trim() 
-    || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey;
 
   // JSON Mode Requirement: prompt MUST explicitly contain 'json' or 'JSON'
   const sysPromptWithJson = systemPrompt.toLowerCase().includes('json') 
@@ -1163,135 +1165,195 @@ export async function executeLlmGeneration(
     ? userPrompt
     : `${userPrompt}\n\nPlease output your response strictly as valid JSON.`;
 
-  // 1. Google Gemini Provider
-  if (provider === 'GOOGLE_GENAI') {
-    const model = config.model || aiConfig.model || 'gemini-2.5-flash';
-    const apiKey = effectiveApiKey;
-    if (!apiKey) {
-      throw new Error('Chưa cung cấp Google Gemini API Key. Vui lòng cấu hình API Key từ Google AI Studio.');
+  // 1. Custom OpenAI-compatible endpoint
+  if (provider === 'CUSTOM_OPENAI') {
+    if (!cleanEndpoint || cleanEndpoint.includes('api.openai.com')) {
+      throw new Error(
+        'Trình duyệt chặn kết nối trực tiếp đến api.openai.com do chính sách CORS. Vui lòng sử dụng một CORS proxy server (ví dụ Cloudflare Worker) hoặc chuyển sang dùng Google Gemini.'
+      );
     }
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    // Payload helper:
-    // Gemini 2.5 Flash / 2.5 Pro / reasoning models enable thinking by default which consumes up to 4k tokens and cuts off JSON output.
-    // Setting thinkingBudget: 0 disables thinking tokens for pure, instant JSON output.
-    const buildGeminiBody = (includeThinkingConfig: boolean) => {
-      const genConfig: Record<string, any> = {
-        responseMimeType: 'application/json',
-        temperature: config.temperature ?? 0.7,
-        maxOutputTokens: config.maxTokens ?? 16384
-      };
-      if (includeThinkingConfig) {
-        genConfig.thinkingConfig = {
-          thinkingBudget: 0
-        };
-      }
-      return {
-        systemInstruction: {
-          parts: [{ text: sysPromptWithJson }]
+    const baseUrl = cleanEndpoint.replace(/\/+$/, '');
+    const endpoint = baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${cleanApiKey}`,
+          'Content-Type': 'application/json'
         },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: userPromptWithJson }]
-          }
-        ],
-        generationConfig: genConfig
-      };
-    };
+        body: JSON.stringify({
+          model: cleanModel || 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: sysPromptWithJson },
+            { role: 'user', content: userPromptWithJson }
+          ],
+          temperature: config.temperature ?? 0.7,
+          max_tokens: config.maxTokens ?? 4000
+        }),
+        signal
+      });
 
-    // Attempt first with thinkingConfig enabled for Gemini 2.5 / 2.0 / reasoning models
-    const shouldTryThinkingConfig = model.includes('2.5') || model.includes('2.0') || model.includes('thinking');
-    let response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(buildGeminiBody(shouldTryThinkingConfig)),
-      signal
-    });
-
-    // Graceful fallback: If older Gemini models reject thinkingConfig with 400 Bad Request, retry without it
-    if (!response.ok && shouldTryThinkingConfig && response.status === 400) {
-      const errPeek = await response.text();
-      if (errPeek.includes('thinkingConfig') || errPeek.includes('thinkingBudget') || errPeek.includes('Unknown field')) {
-        console.warn('[ImprovService] Gemini model rejected thinkingConfig, retrying without thinkingConfig...');
-        response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(buildGeminiBody(false)),
-          signal
-        });
-      } else {
-        throw new Error(`Google Gemini API Error (${response.status}): ${errPeek}`);
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`LLM API Error (${response.status}): ${errText}`);
       }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) {
+        throw new Error('LLM API không trả về nội dung.');
+      }
+      return content;
+    } catch (err: any) {
+      if (signal?.aborted) throw err;
+      const isFetchError = err instanceof TypeError || err.name === 'TypeError' || (err.message && err.message.toLowerCase().includes('failed to fetch'));
+      if (isFetchError) {
+        throw new Error(
+          'Lỗi kết nối mạng (Failed to fetch). Trình duyệt không thể gửi yêu cầu đến máy chủ AI. Nguyên nhân có thể do trình chặn quảng cáo (AdBlock / Brave Shields), mạng bị chặn hoặc vi phạm chính sách CORS.'
+        );
+      }
+      throw err;
     }
+  }
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Google Gemini API Error (${response.status}): ${errText}`);
+  // 2. Google Gemini Provider
+  let baseEndpoint = 'https://generativelanguage.googleapis.com';
+  if (cleanEndpoint && !cleanEndpoint.includes('googleapis.com')) {
+    baseEndpoint = cleanEndpoint.replace(/\/+$/, '');
+  }
+
+  if (!cleanApiKey) {
+    throw new Error('Chưa cung cấp Google Gemini API Key. Vui lòng cấu hình API Key từ Google AI Studio.');
+  }
+
+  const primaryModel = cleanModel || 'gemini-2.5-flash';
+  const fallbackModels = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  const modelChain = [primaryModel, ...fallbackModels.filter(m => m !== primaryModel)];
+
+  const buildGeminiBody = (includeThinkingConfig: boolean) => {
+    const genConfig: Record<string, any> = {
+      responseMimeType: 'application/json',
+      temperature: config.temperature ?? 0.7,
+      maxOutputTokens: config.maxTokens ?? 16384
+    };
+    if (includeThinkingConfig) {
+      genConfig.thinkingConfig = {
+        thinkingBudget: 0
+      };
     }
+    return {
+      systemInstruction: {
+        parts: [{ text: sysPromptWithJson }]
+      },
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: userPromptWithJson }]
+        }
+      ],
+      generationConfig: genConfig
+    };
+  };
 
-    const data = await response.json();
-    const candidate = data.candidates?.[0];
-    const content = candidate?.content?.parts?.[0]?.text;
+  let lastError: Error | null = null;
 
-    if (candidate?.finishReason === 'MAX_TOKENS') {
-      if (content) {
-        try {
-          extractAndParseJson(content);
-        } catch {
+  for (let mIdx = 0; mIdx < modelChain.length; mIdx++) {
+    const currentModel = modelChain[mIdx];
+    const isLastModel = mIdx === modelChain.length - 1;
+    const url = baseEndpoint.includes('/v1beta') || baseEndpoint.includes('/v1')
+      ? `${baseEndpoint}/models/${currentModel}:generateContent?key=${cleanApiKey}`
+      : `${baseEndpoint}/v1beta/models/${currentModel}:generateContent?key=${cleanApiKey}`;
+
+    const shouldTryThinkingConfig = currentModel.includes('2.5') || currentModel.includes('2.0') || currentModel.includes('thinking');
+
+    try {
+      let response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(buildGeminiBody(shouldTryThinkingConfig)),
+        signal
+      });
+
+      // Graceful fallback: If older Gemini models reject thinkingConfig with 400 Bad Request, retry without it
+      if (!response.ok && shouldTryThinkingConfig && response.status === 400) {
+        const errPeek = await response.text();
+        if (errPeek.includes('thinkingConfig') || errPeek.includes('thinkingBudget') || errPeek.includes('Unknown field')) {
+          console.warn('[ImprovService] Gemini model rejected thinkingConfig, retrying without thinkingConfig...');
+          response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(buildGeminiBody(false)),
+            signal
+          });
+        } else {
+          throw new Error(`Google Gemini API Error (${response.status}): ${errPeek}`);
+        }
+      }
+
+      if (!response.ok) {
+        const errText = await response.text();
+        if ((response.status === 404 || response.status === 503 || response.status === 429) && !isLastModel) {
+          console.warn(`[ImprovService] Gemini model ${currentModel} returned ${response.status}. Retrying with fallback model ${modelChain[mIdx + 1]}...`);
+          lastError = new Error(`Google Gemini API Error (${response.status}): ${errText}`);
+          continue;
+        }
+        throw new Error(`Google Gemini API Error (${response.status}): ${errText}`);
+      }
+
+      const data = await response.json();
+      const candidate = data.candidates?.[0];
+      const content = candidate?.content?.parts?.[0]?.text;
+
+      if (candidate?.finishReason === 'MAX_TOKENS') {
+        if (content) {
+          try {
+            extractAndParseJson(content);
+          } catch {
+            throw new Error('Google Gemini API chạm giới hạn token (finishReason: MAX_TOKENS). Dữ liệu JSON bị cắt ngắn giữa chừng.');
+          }
+        } else {
           throw new Error('Google Gemini API chạm giới hạn token (finishReason: MAX_TOKENS). Dữ liệu JSON bị cắt ngắn giữa chừng.');
         }
-      } else {
-        throw new Error('Google Gemini API chạm giới hạn token (finishReason: MAX_TOKENS). Dữ liệu JSON bị cắt ngắn giữa chừng.');
       }
-    }
 
-    if (candidate?.finishReason === 'SAFETY') {
-      throw new Error('Google Gemini API bị chặn bởi bộ lọc an toàn (Safety Filter).');
+      if (candidate?.finishReason === 'SAFETY') {
+        throw new Error('Google Gemini API bị chặn bởi bộ lọc an toàn (Safety Filter).');
+      }
+
+      if (!content) {
+        throw new Error(`Google Gemini API không trả về nội dung. FinishReason: ${candidate?.finishReason || 'UNKNOWN'}`);
+      }
+
+      return content;
+    } catch (err: any) {
+      if (signal?.aborted) throw err;
+      const isFetchError = err instanceof TypeError || err.name === 'TypeError' || (err.message && err.message.toLowerCase().includes('failed to fetch'));
+      if (isFetchError) {
+        if (!isLastModel) {
+          console.warn(`[ImprovService] Gemini model ${currentModel} failed with network error (${err.message}). Retrying with fallback model ${modelChain[mIdx + 1]}...`);
+          lastError = err;
+          continue;
+        }
+        throw new Error('Lỗi kết nối mạng (Failed to fetch). Trình duyệt không thể gửi yêu cầu đến máy chủ AI. Nguyên nhân có thể do trình chặn quảng cáo (AdBlock / Brave Shields), mạng bị chặn hoặc vi phạm chính sách CORS.');
+      }
+
+      if (!isLastModel && (err.message?.includes('404') || err.message?.includes('503') || err.message?.includes('429'))) {
+        console.warn(`[ImprovService] Gemini model ${currentModel} failed (${err.message}). Retrying with fallback model ${modelChain[mIdx + 1]}...`);
+        lastError = err;
+        continue;
+      }
+
+      throw err;
     }
-    
-    if (!content) {
-      throw new Error(`Google Gemini API không trả về nội dung. FinishReason: ${candidate?.finishReason || 'UNKNOWN'}`);
-    }
-    return content;
   }
 
-  // 2. Custom OpenAI-compatible endpoint
-  const rawEndpoint = config.endpoint || 'https://api.openai.com/v1';
-  const endpoint = rawEndpoint.replace(/\/+$/, '') + (rawEndpoint.endsWith('/chat/completions') ? '' : '/chat/completions');
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${effectiveApiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: config.model || 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: sysPromptWithJson },
-        { role: 'user', content: userPromptWithJson }
-      ],
-      temperature: config.temperature ?? 0.7,
-      max_tokens: config.maxTokens ?? 4000
-    }),
-    signal
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`LLM API Error (${response.status}): ${errText}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
-  if (!content) {
-    throw new Error('LLM API không trả về nội dung.');
-  }
-  return content;
+  throw lastError || new Error('Google Gemini generation failed with all fallback models.');
 }
 
 export interface LlmTestResult {
@@ -1444,8 +1506,575 @@ function synthesizeFallbackBatchItems(
 }
 
 /**
+ * Algorithmically builds a high-quality ImprovPackage using seed vocabulary chunks from
+ * curriculumRegistry or curated sample vocabulary pools without calling external LLM APIs.
+ * Strictly respects each session's sConfig.itemsCount, hcTotal, and hintTypes.
+ */
+export function generateOfflineFallbackPackage(request: ImprovGenerateRequest): ImprovPackage {
+  const isEasy = (request.difficulty || '').toLowerCase().includes('easy') || 
+                 (request.difficulty || '').toLowerCase().includes('a1-a2') || 
+                 (request.difficulty || '').toLowerCase().includes('dễ');
+
+  // 1. Gather seed chunks from curriculumRegistry
+  let seedPairs: { english: string; vietnamese: string }[] = [];
+
+  if (request.sourceLessonIds && request.sourceLessonIds.length > 0) {
+    for (const lId of request.sourceLessonIds) {
+      const lesson = curriculumRegistry.getLessonById(lId);
+      if (lesson?.chunks) {
+        for (const c of lesson.chunks) {
+          if (c.english && c.vietnamese) {
+            seedPairs.push({ english: c.english.trim(), vietnamese: c.vietnamese.trim() });
+          }
+        }
+      }
+    }
+  }
+
+  if (seedPairs.length < 20 && request.sourceLevel) {
+    const levelCode = request.sourceLevel === 'ALL' ? 'LEVEL_B_ERES' : request.sourceLevel;
+    const lessons = curriculumRegistry.getLessons(levelCode);
+    for (const lesson of lessons) {
+      if (lesson?.chunks) {
+        for (const c of lesson.chunks) {
+          if (c.english && c.vietnamese) {
+            seedPairs.push({ english: c.english.trim(), vietnamese: c.vietnamese.trim() });
+          }
+        }
+      }
+      if (seedPairs.length >= 100) break;
+    }
+  }
+
+  // Deduplicate seeds by english text
+  const seenSeeds = new Set<string>();
+  seedPairs = seedPairs.filter(s => {
+    const key = s.english.toLowerCase();
+    if (seenSeeds.has(key)) return false;
+    seenSeeds.add(key);
+    return true;
+  });
+
+  // Curated fallback seed pools
+  const defaultEasySeeds = [
+    { english: 'wake up early', vietnamese: 'thức dậy sớm' },
+    { english: 'grab a coffee', vietnamese: 'mua cốc cà phê' },
+    { english: 'take a break', vietnamese: 'nghỉ ngơi một lát' },
+    { english: 'miss the bus', vietnamese: 'lỡ chuyến xe buýt' },
+    { english: 'call a friend', vietnamese: 'gọi điện cho bạn bè' },
+    { english: 'heavy rain', vietnamese: 'mưa lớn' },
+    { english: 'feel tired', vietnamese: 'cảm thấy mệt mỏi' },
+    { english: 'stay at home', vietnamese: 'ở nhà' },
+    { english: 'pack a bag', vietnamese: 'chuẩn bị hành lý' },
+    { english: 'good idea', vietnamese: 'ý kiến hay' },
+    { english: 'order lunch', vietnamese: 'gọi bữa trưa' },
+    { english: 'save money', vietnamese: 'tiết kiệm tiền' },
+    { english: 'wait a minute', vietnamese: 'chờ một chút' },
+    { english: 'fresh air', vietnamese: 'không khí trong lành' },
+    { english: 'sunny day', vietnamese: 'ngày nắng đẹp' },
+    { english: 'buy a ticket', vietnamese: 'mua một chiếc vé' },
+    { english: 'cook dinner', vietnamese: 'nấu bữa tối' },
+    { english: 'clean the desk', vietnamese: 'dọn bàn làm việc' }
+  ];
+
+  const defaultAdvancedSeeds = [
+    { english: 'hit the ground running', vietnamese: 'bắt tay vào làm ngay' },
+    { english: 'give it a shot', vietnamese: 'thử một phen' },
+    { english: 'room for improvement', vietnamese: 'còn cơ hội để cải thiện' },
+    { english: 'keep an eye on', vietnamese: 'để mắt tới' },
+    { english: 'break the ice', vietnamese: 'phá vỡ bầu không khí ngại ngùng' },
+    { english: 'out of the blue', vietnamese: 'bất thình lình' },
+    { english: 'a blessing in disguise', vietnamese: 'trong cái rủi có cái may' },
+    { english: 'bite the bullet', vietnamese: 'cắn răng chịu đựng' },
+    { english: 'play devil\'s advocate', vietnamese: 'đóng vai người phản biện' },
+    { english: 'burn the midnight oil', vietnamese: 'thức khuya làm việc' },
+    { english: 'touch and go', vietnamese: 'bấp bênh khó đoán' },
+    { english: 'on the fence', vietnamese: 'chưa thể quyết định' },
+    { english: 'cut corners', vietnamese: 'làm tắt rút gọn' },
+    { english: 'silver lining', vietnamese: 'tia hy vọng tích cực' },
+    { english: 'spill the beans', vietnamese: 'bật mí bí mật' },
+    { english: 'to put it bluntly', vietnamese: 'nói thẳng ra là' }
+  ];
+
+  const effectiveSeeds = seedPairs.length >= 8 
+    ? seedPairs 
+    : [...seedPairs, ...(isEasy ? defaultEasySeeds : defaultAdvancedSeeds)];
+
+  const defaultConnectors = [
+    { english: 'therefore', vietnamese: 'do đó' },
+    { english: 'however', vietnamese: 'tuy nhiên' },
+    { english: 'eventually', vietnamese: 'sau cùng' },
+    { english: 'before that', vietnamese: 'trước đó' },
+    { english: 'meanwhile', vietnamese: 'đồng thời' },
+    { english: 'moreover', vietnamese: 'hơn nữa' },
+    { english: 'besides', vietnamese: 'ngoài ra' },
+    { english: 'otherwise', vietnamese: 'nếu không' },
+    { english: 'as a result', vietnamese: 'kết quả là' },
+    { english: 'after that', vietnamese: 'sau đó' },
+    { english: 'nevertheless', vietnamese: 'dù vậy' },
+    { english: 'as long as', vietnamese: 'miễn là' }
+  ];
+
+  const defaultEasyEndings = [
+    { english: 'be late', vietnamese: 'đi trễ' },
+    { english: 'feel happy', vietnamese: 'cảm thấy vui vẻ' },
+    { english: 'stay safe', vietnamese: 'giữ an toàn' },
+    { english: 'have fun', vietnamese: 'vui chơi thoải mái' },
+    { english: 'feel relaxed', vietnamese: 'thư giãn' },
+    { english: 'good outcome', vietnamese: 'kết quả tốt' },
+    { english: 'arrive on time', vietnamese: 'đến đúng giờ' },
+    { english: 'solve it', vietnamese: 'giải quyết được' },
+    { english: 'sound great', vietnamese: 'nghe rất tuyệt' },
+    { english: 'sleep well', vietnamese: 'ngủ ngon' }
+  ];
+
+  const defaultAdvancedEndings = [
+    { english: 'fierce debate', vietnamese: 'tranh luận nảy lửa' },
+    { english: 'unintended consequence', vietnamese: 'hậu quả bất ngờ' },
+    { english: 'remarkable turnaround', vietnamese: 'bước ngoặt đáng kinh ngạc' },
+    { english: 'catastrophic failure', vietnamese: 'thất bại nặng nề' },
+    { english: 'smooth transition', vietnamese: 'chuyển giao êm đẹp' },
+    { english: 'breakthrough moment', vietnamese: 'thời khắc đột phá' },
+    { english: 'lasting impression', vietnamese: 'ấn tượng sâu đậm' },
+    { english: 'par for the course', vietnamese: 'chuyện thường thấy' }
+  ];
+
+  const defaultEasyFancy = [
+    { english: 'warm smile', vietnamese: 'nụ cười ấm áp' },
+    { english: 'bright light', vietnamese: 'ánh sáng rực rỡ' },
+    { english: 'quiet room', vietnamese: 'căn phòng yên tĩnh' },
+    { english: 'cool breeze', vietnamese: 'làn gió mát mẻ' },
+    { english: 'busy street', vietnamese: 'con phố tấp nập' },
+    { english: 'gentle touch', vietnamese: 'cái chạm nhẹ nhàng' }
+  ];
+
+  const defaultAdvancedFancy = [
+    { english: 'double-edged sword', vietnamese: 'con dao hai lưỡi' },
+    { english: 'elephant in the room', vietnamese: 'vấn đề lớn bị ngó lơ' },
+    { english: 'watchful eye', vietnamese: 'ánh mắt dò xét cảnh giác' },
+    { english: 'wake-up call', vietnamese: 'lời cảnh tỉnh cần thiết' },
+    { english: 'beacon of hope', vietnamese: 'ngọn hải đăng hy vọng' },
+    { english: 'stepping stone', vietnamese: 'bước đệm tiến lên' }
+  ];
+
+  const endingsPool = isEasy ? defaultEasyEndings : defaultAdvancedEndings;
+  const fancyPool = isEasy ? defaultEasyFancy : defaultAdvancedFancy;
+
+  // Session configs resolution
+  const sessionConfigs: ImprovSessionConfig[] = request.sessionsConfig && request.sessionsConfig.length > 0
+    ? request.sessionsConfig.map((s, idx) => ({
+        sessionNumber: s.sessionNumber || (idx + 1),
+        title: s.title || `Session ${s.sessionNumber || (idx + 1)}`,
+        hcTotal: s.hcTotal || 2,
+        hintTypes: s.hintTypes || ['Keyword', 'Ending'],
+        itemsCount: s.itemsCount > 0 ? s.itemsCount : 5
+      }))
+    : [
+        { sessionNumber: 1, title: 'Session 1: Two-Word Reflex Pairs', hcTotal: 2, hintTypes: ['Keyword · Cụm phản xạ', 'Ending · Kết quả'], itemsCount: Math.ceil((request.totalItems || 20) / 4) },
+        { sessionNumber: 2, title: 'Session 2: Three-Hint Reflex Triples', hcTotal: 3, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Ending'], itemsCount: Math.ceil((request.totalItems || 20) / 4) },
+        { sessionNumber: 3, title: 'Session 3: Four-Hint Extended Reflexes', hcTotal: 4, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Fancy word', 'Ending'], itemsCount: Math.ceil((request.totalItems || 20) / 4) },
+        { sessionNumber: 4, title: 'Session 4: Four-Hint Advanced Synthesis', hcTotal: 4, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Fancy word', 'Ending'], itemsCount: Math.max(1, (request.totalItems || 20) - 3 * Math.ceil((request.totalItems || 20) / 4)) }
+      ];
+
+  const now = new Date().toISOString();
+  const packageId = generateId('pkg_improv');
+
+  const sessions: ImprovSession[] = sessionConfigs.map((sConfig, sIdx) => {
+    const itemsCount = sConfig.itemsCount > 0 ? sConfig.itemsCount : 5;
+    const sessionNumber = sConfig.sessionNumber || (sIdx + 1);
+    const sessionTitle = sConfig.title || `Session ${sessionNumber}`;
+    const hcTotal = sConfig.hcTotal || 2;
+    const hintTypes = sConfig.hintTypes && sConfig.hintTypes.length > 0
+      ? sConfig.hintTypes
+      : Array.from({ length: hcTotal }, (_, i) => i === 0 ? 'Keyword' : i === hcTotal - 1 ? 'Ending' : 'Logic word');
+
+    const items: ImprovItem[] = [];
+
+    for (let it = 1; it <= itemsCount; it++) {
+      const seedIndex = (sIdx * 10 + it - 1) % effectiveSeeds.length;
+      const seed = effectiveSeeds[seedIndex];
+      const connector = defaultConnectors[(sIdx * 7 + it - 1) % defaultConnectors.length];
+      const ending = endingsPool[(sIdx * 5 + it - 1) % endingsPool.length];
+      const fancy = fancyPool[(sIdx * 3 + it - 1) % fancyPool.length];
+
+      const hints: ImprovHint[] = [];
+
+      for (let h = 1; h <= hcTotal; h++) {
+        let text = '';
+        let translation = '';
+        const typeFunction = hintTypes[h - 1] || `Hint ${h}`;
+
+        if (h === 1) {
+          text = seed.english;
+          translation = seed.vietnamese;
+        } else if (hcTotal === 2) {
+          text = ending.english;
+          translation = ending.vietnamese;
+        } else if (hcTotal === 3) {
+          if (h === 2) {
+            text = connector.english;
+            translation = connector.vietnamese;
+          } else {
+            text = ending.english;
+            translation = ending.vietnamese;
+          }
+        } else {
+          // hcTotal >= 4
+          if (h === 2) {
+            text = connector.english;
+            translation = connector.vietnamese;
+          } else if (h === 3) {
+            text = fancy.english;
+            translation = fancy.vietnamese;
+          } else {
+            text = ending.english;
+            translation = ending.vietnamese;
+          }
+        }
+
+        hints.push({
+          id: `h_${sessionNumber}_${it}_${h}`,
+          text,
+          translation,
+          typeFunction,
+          itemIndex: h
+        });
+      }
+
+      items.push({
+        id: `item_s${sessionNumber}_i${it}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        itemNumber: it,
+        sessionNumber,
+        hcTotal: hints.length,
+        hints,
+        createdAt: now
+      });
+    }
+
+    return {
+      sessionNumber,
+      title: sessionTitle,
+      hcTotal,
+      hintTypes,
+      items
+    };
+  });
+
+  const totalItems = sessions.reduce((sum, s) => sum + s.items.length, 0);
+
+  const rawPkg: ImprovPackage = {
+    id: packageId,
+    title: request.packageTitle || 'CHUNKS Improv Package',
+    description: request.packageDescription || `CHUNKS Improv reflex package (${sessions.length} sessions, ${totalItems} items).`,
+    totalItems,
+    sessionsCount: sessions.length,
+    sessions,
+    sourceCourseLevel: request.sourceLevel,
+    sourceLessonIds: request.sourceLessonIds,
+    createdAt: now,
+    updatedAt: now
+  };
+
+  const { package: sanitizedPkg } = evaluateAndSanitizePackage(rawPkg);
+  return sanitizedPkg;
+}
+
+/**
+ * Generates a single ImprovSession with the specified sessionConfig.itemsCount items,
+ * incorporating prompt guidance from difficulty, relevance, tone, grammar, and custom notes.
+ */
+export async function generateSingleSession(
+  sessionConfig: ImprovSessionConfig,
+  options: {
+    packageTitle?: string;
+    difficulty?: string;
+    relevance?: string;
+    sourceLevel?: string;
+    seedChunks?: ChunkItem[];
+    llmConfig?: ImprovLLMConfig;
+    topic?: string;
+    targetGrammar?: string;
+    pedagogicalNotes?: string;
+    conversationalTone?: string;
+    targetAudience?: string;
+  } = {},
+  signal?: AbortSignal
+): Promise<ImprovSession> {
+  const dynamicTemperature = getDynamicTemperature(options.relevance);
+  const relevanceDirective = getRelevanceDirective(options.relevance);
+  const difficultyDirective = getDifficultyDirective(options.difficulty);
+  const courseLevelDirective = getCourseLevelDirective(options.sourceLevel);
+
+  const aiConfig = modelRegistryService.getAiConfig();
+  const effectiveLlmConfig: ImprovLLMConfig = {
+    ...GOOGLE_GENAI_DEFAULT_CONFIG,
+    ...options.llmConfig,
+    temperature: dynamicTemperature,
+    provider: options.llmConfig?.provider || aiConfig.provider || 'GOOGLE_GENAI',
+    apiKey: options.llmConfig?.apiKey?.trim() || aiConfig.apiKey?.trim() || GOOGLE_GENAI_DEFAULT_CONFIG.apiKey,
+    model: options.llmConfig?.model || aiConfig.model || GOOGLE_GENAI_DEFAULT_CONFIG.model,
+    endpoint: options.llmConfig?.endpoint || aiConfig.endpoint || GOOGLE_GENAI_DEFAULT_CONFIG.endpoint,
+    webClientId: options.llmConfig?.webClientId || aiConfig.webClientId || GOOGLE_GENAI_DEFAULT_CONFIG.webClientId
+  };
+
+  const masterSystemPrompt = effectiveLlmConfig.masterPrompt || DEFAULT_IMPROV_MASTER_PROMPT;
+  const now = new Date().toISOString();
+  const sessionNum = sessionConfig.sessionNumber || 1;
+  const totalItemsNeeded = sessionConfig.itemsCount > 0 ? sessionConfig.itemsCount : 5;
+  const sessionTitle = sessionConfig.title || `Session ${sessionNum}`;
+
+  // Seed resolution
+  let seedSample: { seedNumber: number; english: string; vietnamese: string }[] = [];
+  if (options.seedChunks && options.seedChunks.length > 0) {
+    seedSample = options.seedChunks.map((c, i) => ({
+      seedNumber: i + 1,
+      english: (c.english || (c as any).en || '').trim(),
+      vietnamese: (c.vietnamese || (c as any).vi || '').trim()
+    })).filter(s => s.english.length > 0);
+  }
+
+  if (seedSample.length === 0) {
+    const isEasy = (options.difficulty || '').toLowerCase().includes('easy') || 
+                   (options.difficulty || '').toLowerCase().includes('a1-a2') || 
+                   (options.difficulty || '').toLowerCase().includes('dễ');
+    seedSample = isEasy ? [
+      { seedNumber: 1, english: 'wake up early', vietnamese: 'thức dậy sớm' },
+      { seedNumber: 2, english: 'take a break', vietnamese: 'nghỉ ngơi một lát' },
+      { seedNumber: 3, english: 'heavy rain', vietnamese: 'mưa lớn' },
+      { seedNumber: 4, english: 'grab a coffee', vietnamese: 'mua cốc cà phê' },
+      { seedNumber: 5, english: 'call a friend', vietnamese: 'gọi điện cho bạn bè' },
+      { seedNumber: 6, english: 'miss the bus', vietnamese: 'lỡ chuyến xe buýt' },
+      { seedNumber: 7, english: 'feel tired', vietnamese: 'cảm thấy mệt mỏi' },
+      { seedNumber: 8, english: 'good idea', vietnamese: 'ý kiến hay' }
+    ] : [
+      { seedNumber: 1, english: 'give it a shot', vietnamese: 'thử một phen' },
+      { seedNumber: 2, english: 'hit the ground running', vietnamese: 'bắt tay vào làm ngay' },
+      { seedNumber: 3, english: 'room for improvement', vietnamese: 'còn cơ hội để cải thiện' },
+      { seedNumber: 4, english: 'keep an eye on', vietnamese: 'để mắt tới' },
+      { seedNumber: 5, english: 'break the ice', vietnamese: 'phá vỡ bầu không khí ngại ngùng' },
+      { seedNumber: 6, english: 'out of the blue', vietnamese: 'bất thình lình / hoàn toàn bất ngờ' },
+      { seedNumber: 7, english: 'a blessing in disguise', vietnamese: 'trong cái rủi có cái may' },
+      { seedNumber: 8, english: 'to put it bluntly', vietnamese: 'nói thẳng ra là' }
+    ];
+  }
+
+  // Micro-batches for this session
+  const batches: { startItem: number; count: number }[] = [];
+  const MICRO_BATCH_THRESHOLD = 8;
+  if (totalItemsNeeded <= MICRO_BATCH_THRESHOLD) {
+    batches.push({ startItem: 1, count: totalItemsNeeded });
+  } else {
+    const batchSize = totalItemsNeeded <= 12 ? Math.ceil(totalItemsNeeded / 2) : 6;
+    let remaining = totalItemsNeeded;
+    let currentStart = 1;
+    while (remaining > 0) {
+      const c = Math.min(batchSize, remaining);
+      batches.push({ startItem: currentStart, count: c });
+      currentStart += c;
+      remaining -= c;
+    }
+  }
+
+  const pedagogicalDirectives: string[] = [];
+  if (options.topic?.trim()) pedagogicalDirectives.push(`- TOPIC / SITUATIONAL CONTEXT: "${options.topic.trim()}"`);
+  if (options.targetGrammar?.trim()) pedagogicalDirectives.push(`- TARGET GRAMMAR / FOCUS STRUCTURE: "${options.targetGrammar.trim()}"`);
+  if (options.conversationalTone?.trim()) pedagogicalDirectives.push(`- CONVERSATIONAL TONE: "${options.conversationalTone.trim()}"`);
+  if (options.targetAudience?.trim()) pedagogicalDirectives.push(`- TARGET AUDIENCE: "${options.targetAudience.trim()}"`);
+  if (options.pedagogicalNotes?.trim()) pedagogicalDirectives.push(`- PEDAGOGICAL NOTES & SPECIAL INSTRUCTIONS: "${options.pedagogicalNotes.trim()}"`);
+  const pedagogicalBlock = pedagogicalDirectives.length > 0 
+    ? `\n### CUSTOM PEDAGOGICAL DIRECTIVES:\n${pedagogicalDirectives.join('\n')}\n`
+    : '';
+
+  const accumulatedItems: ImprovItem[] = [];
+
+  for (let bIdx = 0; bIdx < batches.length; bIdx++) {
+    const batch = batches[bIdx];
+    const endItem = batch.startItem + batch.count - 1;
+    const isMultiBatch = batches.length > 1;
+
+    // Distribute fresh seeds
+    const seedsPerBatch = Math.max(6, Math.ceil(batch.count * 1.5));
+    const startSeedIdx = (bIdx * seedsPerBatch) % Math.max(1, seedSample.length);
+    let batchSeeds = seedSample.slice(startSeedIdx, startSeedIdx + seedsPerBatch);
+    if (batchSeeds.length < seedsPerBatch && seedSample.length >= seedsPerBatch) {
+      batchSeeds = [...batchSeeds, ...seedSample.slice(0, seedsPerBatch - batchSeeds.length)];
+    }
+    if (batchSeeds.length === 0) batchSeeds = seedSample;
+
+    const userPrompt = `You must generate valid JSON for Session ${sessionNum}${isMultiBatch ? ` [Batch ${bIdx + 1}/${batches.length}: Items ${batch.startItem} to ${endItem}]` : ''} of Improv Package "${options.packageTitle || 'CHUNKS Improv'}".
+- Session Number: ${sessionNum}
+- Total Items in this Batch: ${batch.count} (Item numbers ${batch.startItem} to ${endItem})
+- Hints per Item (hcTotal): ${sessionConfig.hcTotal}
+- Hint Types: ${JSON.stringify(sessionConfig.hintTypes)}
+- Difficulty Level: ${options.difficulty || 'Medium (B1)'}
+- Relevance / Context: ${options.relevance || 'High'}
+- Seed Vocabularies: ${JSON.stringify(batchSeeds)}
+${pedagogicalBlock}
+${courseLevelDirective}
+
+${difficultyDirective}
+
+${relevanceDirective}
+
+CRITICAL RULES:
+1. Respond ONLY with a valid JSON object matching this exact schema:
+{
+  "sessionNumber": ${sessionNum},
+  "title": "${sessionTitle}",
+  "hcTotal": ${sessionConfig.hcTotal},
+  "hintTypes": ${JSON.stringify(sessionConfig.hintTypes)},
+  "items": [
+    {
+      "itemNumber": ${batch.startItem},
+      "sessionNumber": ${sessionNum},
+      "hcTotal": ${sessionConfig.hcTotal},
+      "hints": [
+        {
+          "itemIndex": 1,
+          "text": "...",
+          "translation": "...",
+          "typeFunction": "${sessionConfig.hintTypes[0] || 'Keyword'}"
+        }
+      ]
+    }
+  ]
+}
+2. Generate exactly ${batch.count} items, numbered sequentially from ${batch.startItem} to ${endItem}.
+3. Every single item MUST have exactly ${sessionConfig.hcTotal} hints (itemIndex from 1 to ${sessionConfig.hcTotal}).
+4. Ensure all Vietnamese translations are 100% natural, colloquial, and accurate (Latin Extended, Be Vietnam Pro typography safe).
+5. Output ONLY pure JSON.`;
+
+    let validatedBatchItems: ImprovItem[] = [];
+
+    try {
+      const rawContent = await executeLlmGeneration(
+        effectiveLlmConfig,
+        masterSystemPrompt,
+        userPrompt,
+        signal
+      );
+
+      const parsed = extractAndParseJson<any>(rawContent);
+      let rawItems: any[] = [];
+      if (Array.isArray(parsed)) {
+        rawItems = parsed;
+      } else if (Array.isArray(parsed.items)) {
+        rawItems = parsed.items;
+      } else if (Array.isArray(parsed.sessions) && parsed.sessions[0]?.items) {
+        rawItems = parsed.sessions[0].items;
+      } else if (parsed.session && Array.isArray(parsed.session.items)) {
+        rawItems = parsed.session.items;
+      }
+
+      validatedBatchItems = rawItems.map((it: any, itIdx: number) => {
+        const assignedItemNumber = batch.startItem + itIdx;
+        const itemNumber = Number(it.itemNumber) || assignedItemNumber;
+        const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+        const hints: ImprovHint[] = (it.hints || []).map((h: any, hIdx: number) => ({
+          id: `h_${sessionNum}_${itemNumber}_${h.itemIndex || (hIdx + 1)}`,
+          text: String(h.text || '').trim(),
+          translation: String(h.translation || '').trim(),
+          typeFunction: String(h.typeFunction || (sessionConfig.hintTypes[hIdx] || `Hint ${hIdx + 1}`)).trim(),
+          itemIndex: Number(h.itemIndex) || (hIdx + 1)
+        }));
+
+        while (hints.length < sessionConfig.hcTotal) {
+          const nextIdx = hints.length + 1;
+          hints.push({
+            id: `h_${sessionNum}_${itemNumber}_${nextIdx}`,
+            text: `Practice chunk ${nextIdx}`,
+            translation: `Gợi ý thực hành ${nextIdx}`,
+            typeFunction: sessionConfig.hintTypes[nextIdx - 1] || 'Hint',
+            itemIndex: nextIdx
+          });
+        }
+
+        if (hints.length > sessionConfig.hcTotal) {
+          hints.length = sessionConfig.hcTotal;
+        }
+
+        return {
+          id: itemId,
+          itemNumber,
+          sessionNumber: sessionNum,
+          hcTotal: hints.length,
+          hints,
+          createdAt: now
+        };
+      });
+
+      // Language sanitization
+      validatedBatchItems = validatedBatchItems.map(item => ({
+        ...item,
+        hints: item.hints.map(hint => {
+          const { hint: sanitizedHint } = evaluateAndSanitizeHint(hint, {
+            sessionNumber: sessionNum,
+            itemNumber: item.itemNumber
+          });
+          return sanitizedHint;
+        })
+      }));
+
+      // Top-up if fewer items
+      while (validatedBatchItems.length < batch.count) {
+        const missingIdx = validatedBatchItems.length;
+        const itemNumber = batch.startItem + missingIdx;
+        const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        const seed = batchSeeds[missingIdx % batchSeeds.length] || { english: 'Practice phrase', vietnamese: 'Cụm từ thực hành' };
+
+        const hints: ImprovHint[] = [];
+        for (let h = 1; h <= sessionConfig.hcTotal; h++) {
+          hints.push({
+            id: `h_${sessionNum}_${itemNumber}_${h}`,
+            text: h === 1 ? seed.english : `Collocation ${h}`,
+            translation: h === 1 ? seed.vietnamese : `Kết hợp từ ${h}`,
+            typeFunction: sessionConfig.hintTypes[h - 1] || `Hint ${h}`,
+            itemIndex: h
+          });
+        }
+
+        validatedBatchItems.push({
+          id: itemId,
+          itemNumber,
+          sessionNumber: sessionNum,
+          hcTotal: hints.length,
+          hints,
+          createdAt: now
+        });
+      }
+    } catch (batchErr: any) {
+      if (signal?.aborted) throw batchErr;
+      console.warn(`[generateSingleSession] Error in batch ${bIdx + 1}, using fallback synthesis:`, batchErr);
+      validatedBatchItems = synthesizeFallbackBatchItems(
+        { startItem: batch.startItem, count: batch.count, sessionNumber: sessionNum },
+        sessionConfig,
+        batchSeeds,
+        now
+      );
+    }
+
+    accumulatedItems.push(...validatedBatchItems);
+  }
+
+  // Final re-indexing
+  const sortedItems = accumulatedItems
+    .sort((a, b) => a.itemNumber - b.itemNumber)
+    .map((it, idx) => ({ ...it, itemNumber: idx + 1 }));
+
+  return {
+    sessionNumber: sessionNum,
+    title: sessionTitle,
+    hcTotal: sessionConfig.hcTotal,
+    hintTypes: sessionConfig.hintTypes,
+    items: sortedItems
+  };
+}
+
+/**
  * Generates an ImprovPackage using resilient Micro-Batching (splitting large sessions into 5–8 item batches)
  * to guarantee that Gemini, DeepSeek, and custom LLMs never hit MAX_TOKENS or output truncation limits.
+ * Incorporates expanded pedagogical controls and seamlessly falls back to high-quality offline generation.
  */
 export async function generateImprovPackage(
   request: ImprovGenerateRequest,
@@ -1475,6 +2104,27 @@ export async function generateImprovPackage(
     endpoint: request.llmConfig?.endpoint || aiConfig.endpoint || GOOGLE_GENAI_DEFAULT_CONFIG.endpoint,
     webClientId: request.llmConfig?.webClientId || aiConfig.webClientId || GOOGLE_GENAI_DEFAULT_CONFIG.webClientId
   };
+
+  // Compile expanded pedagogical context directives
+  const pedagogicalDirectives: string[] = [];
+  if (request.topic?.trim()) {
+    pedagogicalDirectives.push(`- TOPIC / SITUATIONAL CONTEXT: "${request.topic.trim()}"`);
+  }
+  if (request.targetGrammar?.trim()) {
+    pedagogicalDirectives.push(`- TARGET GRAMMAR / FOCUS STRUCTURE: "${request.targetGrammar.trim()}"`);
+  }
+  if (request.conversationalTone?.trim()) {
+    pedagogicalDirectives.push(`- CONVERSATIONAL TONE: "${request.conversationalTone.trim()}"`);
+  }
+  if (request.targetAudience?.trim()) {
+    pedagogicalDirectives.push(`- TARGET AUDIENCE: "${request.targetAudience.trim()}"`);
+  }
+  if (request.pedagogicalNotes?.trim()) {
+    pedagogicalDirectives.push(`- PEDAGOGICAL NOTES & SPECIAL INSTRUCTIONS: "${request.pedagogicalNotes.trim()}"`);
+  }
+  const pedagogicalBlock = pedagogicalDirectives.length > 0 
+    ? `\n### CUSTOM PEDAGOGICAL & CONTEXT DIRECTIVES:\n${pedagogicalDirectives.join('\n')}\n`
+    : '';
 
   // Step 1: Gather seed vocabularies (Dynamic Firestore support first)
   let seedChunks: ChunkItem[] = [];
@@ -1565,14 +2215,20 @@ export async function generateImprovPackage(
     }
   }
 
-  // Setup sessions configs
+  // Setup sessions configs strictly respecting individual itemsCount
   const sessionConfigs: ImprovSessionConfig[] = request.sessionsConfig && request.sessionsConfig.length > 0
-    ? request.sessionsConfig
+    ? request.sessionsConfig.map((s, idx) => ({
+        sessionNumber: s.sessionNumber || (idx + 1),
+        title: s.title || `Session ${s.sessionNumber || (idx + 1)}`,
+        hcTotal: s.hcTotal || 2,
+        hintTypes: s.hintTypes || ['Keyword', 'Ending'],
+        itemsCount: s.itemsCount > 0 ? s.itemsCount : 5
+      }))
     : [
-        { sessionNumber: 1, hcTotal: 2, hintTypes: ['Keyword · Cụm phản xạ', 'Ending · Kết quả'], itemsCount: Math.ceil(request.totalItems / 4) },
-        { sessionNumber: 2, hcTotal: 3, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Ending'], itemsCount: Math.ceil(request.totalItems / 4) },
-        { sessionNumber: 3, hcTotal: 4, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Fancy word', 'Ending'], itemsCount: Math.ceil(request.totalItems / 4) },
-        { sessionNumber: 4, hcTotal: 4, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Fancy word', 'Ending'], itemsCount: request.totalItems - 3 * Math.ceil(request.totalItems / 4) }
+        { sessionNumber: 1, title: 'Session 1: Two-Word Reflex Pairs', hcTotal: 2, hintTypes: ['Keyword · Cụm phản xạ', 'Ending · Kết quả'], itemsCount: Math.ceil((request.totalItems || 20) / 4) },
+        { sessionNumber: 2, title: 'Session 2: Three-Hint Reflex Triples', hcTotal: 3, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Ending'], itemsCount: Math.ceil((request.totalItems || 20) / 4) },
+        { sessionNumber: 3, title: 'Session 3: Four-Hint Extended Reflexes', hcTotal: 4, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Fancy word', 'Ending'], itemsCount: Math.ceil((request.totalItems || 20) / 4) },
+        { sessionNumber: 4, title: 'Session 4: Four-Hint Advanced Synthesis', hcTotal: 4, hintTypes: ['Keyword', 'Từ nối · Logic word', 'Fancy word', 'Ending'], itemsCount: Math.max(1, (request.totalItems || 20) - 3 * Math.ceil((request.totalItems || 20) / 4)) }
       ];
 
   const totalSessions = sessionConfigs.length;
@@ -1640,7 +2296,7 @@ export async function generateImprovPackage(
   // Initialize session accumulators
   sessionConfigs.forEach(sConfig => {
     sessionAccumulators.set(sConfig.sessionNumber, {
-      title: `Session ${sConfig.sessionNumber}`,
+      title: sConfig.title || `Session ${sConfig.sessionNumber}`,
       hcTotal: sConfig.hcTotal,
       hintTypes: sConfig.hintTypes,
       items: []
@@ -1673,41 +2329,42 @@ export async function generateImprovPackage(
   });
 
   // Step 2: Execute Micro-Batches sequentially
-  for (let batchStep = 0; batchStep < allPlannedBatches.length; batchStep++) {
-    const batch = allPlannedBatches[batchStep];
-    const sConfig = batch.sessionConfig;
-    const sessionNum = batch.sessionNumber;
-    const endItem = batch.startItem + batch.count - 1;
+  try {
+    for (let batchStep = 0; batchStep < allPlannedBatches.length; batchStep++) {
+      const batch = allPlannedBatches[batchStep];
+      const sConfig = batch.sessionConfig;
+      const sessionNum = batch.sessionNumber;
+      const endItem = batch.startItem + batch.count - 1;
 
-    allPlannedBatchesStatus[batchStep].status = 'generating';
-    const batchStartTime = Date.now();
+      allPlannedBatchesStatus[batchStep].status = 'generating';
+      const batchStartTime = Date.now();
 
-    const progressPercent = Math.round(5 + ((batchStep) / totalBatchesCount) * 88);
-    const batchInfoMsg = batch.totalBatchesInSession > 1
-      ? `Đang sinh Session ${sessionNum}/${totalSessions}: câu ${batch.startItem}-${endItem} / ${sConfig.itemsCount} (${sConfig.hcTotal} hints)...`
-      : `Đang sinh Session ${sessionNum}/${totalSessions}: ${sConfig.itemsCount} câu (${sConfig.hcTotal} hints)...`;
+      const progressPercent = Math.round(5 + ((batchStep) / totalBatchesCount) * 88);
+      const batchInfoMsg = batch.totalBatchesInSession > 1
+        ? `Đang sinh Session ${sessionNum}/${totalSessions}: câu ${batch.startItem}-${endItem} / ${sConfig.itemsCount} (${sConfig.hcTotal} hints)...`
+        : `Đang sinh Session ${sessionNum}/${totalSessions}: ${sConfig.itemsCount} câu (${sConfig.hcTotal} hints)...`;
 
-    onProgress?.(progressPercent, 100, batchInfoMsg, {
-      batchIndex: batchStep,
-      totalBatches: totalBatchesCount,
-      batches: [...allPlannedBatchesStatus],
-      successBatches: successBatchesCount,
-      failedBatches: failedBatchesCount
-    });
+      onProgress?.(progressPercent, 100, batchInfoMsg, {
+        batchIndex: batchStep,
+        totalBatches: totalBatchesCount,
+        batches: [...allPlannedBatchesStatus],
+        successBatches: successBatchesCount,
+        failedBatches: failedBatchesCount
+      });
 
-    // Distribute fresh seed vocabularies for this batch
-    const seedsPerBatch = Math.max(6, Math.ceil(batch.count * 1.5));
-    const startSeedIdx = (batchStep * seedsPerBatch) % Math.max(1, seedSample.length);
-    let batchSeeds = seedSample.slice(startSeedIdx, startSeedIdx + seedsPerBatch);
-    if (batchSeeds.length < seedsPerBatch && seedSample.length >= seedsPerBatch) {
-      batchSeeds = [...batchSeeds, ...seedSample.slice(0, seedsPerBatch - batchSeeds.length)];
-    }
-    if (batchSeeds.length === 0) {
-      batchSeeds = seedSample;
-    }
+      // Distribute fresh seed vocabularies for this batch
+      const seedsPerBatch = Math.max(6, Math.ceil(batch.count * 1.5));
+      const startSeedIdx = (batchStep * seedsPerBatch) % Math.max(1, seedSample.length);
+      let batchSeeds = seedSample.slice(startSeedIdx, startSeedIdx + seedsPerBatch);
+      if (batchSeeds.length < seedsPerBatch && seedSample.length >= seedsPerBatch) {
+        batchSeeds = [...batchSeeds, ...seedSample.slice(0, seedsPerBatch - batchSeeds.length)];
+      }
+      if (batchSeeds.length === 0) {
+        batchSeeds = seedSample;
+      }
 
-    const isMultiBatch = batch.totalBatchesInSession > 1;
-    const sessionUserPrompt = `You must generate valid JSON for Session ${sessionNum}${isMultiBatch ? ` [Batch ${batch.batchIndex + 1}/${batch.totalBatchesInSession}: Items ${batch.startItem} to ${endItem}]` : ''} of Improv Package "${request.packageTitle}".
+      const isMultiBatch = batch.totalBatchesInSession > 1;
+      const sessionUserPrompt = `You must generate valid JSON for Session ${sessionNum}${isMultiBatch ? ` [Batch ${batch.batchIndex + 1}/${batch.totalBatchesInSession}: Items ${batch.startItem} to ${endItem}]` : ''} of Improv Package "${request.packageTitle}".
 - Session Number: ${sessionNum}
 - Total Items in this Batch: ${batch.count} (Item numbers ${batch.startItem} to ${endItem})
 - Hints per Item (hcTotal): ${sConfig.hcTotal}
@@ -1715,7 +2372,7 @@ export async function generateImprovPackage(
 - Difficulty Level: ${request.difficulty || 'Medium (B1)'}
 - Relevance / Context: ${request.relevance || 'High'}
 - Seed Vocabularies: ${JSON.stringify(batchSeeds)}
-
+${pedagogicalBlock}
 ${courseLevelDirective}
 
 ${difficultyDirective}
@@ -1726,7 +2383,7 @@ CRITICAL RULES:
 1. Respond ONLY with a valid JSON object matching this exact schema:
 {
   "sessionNumber": ${sessionNum},
-  "title": "Session ${sessionNum}: ...",
+  "title": "${sConfig.title || `Session ${sessionNum}`}",
   "hcTotal": ${sConfig.hcTotal},
   "hintTypes": ${JSON.stringify(sConfig.hintTypes)},
   "items": [
@@ -1752,154 +2409,181 @@ CRITICAL RULES:
 6. CRITICAL DIFFICULTY COMPLIANCE: You MUST strictly conform to the Difficulty Level ('${request.difficulty || 'Medium (B1)'}'). If Difficulty is Easy, you are strictly forbidden from using words like 'meticulous', 'nostalgic', 'fierce' or C1 idioms; use only high-frequency A1-A2 daily vocabulary!
 7. Output ONLY pure JSON. Do NOT wrap in markdown explanation or reasoning tags.`;
 
-    let validatedBatchItems: ImprovItem[] = [];
-    try {
-      // Execute LLM call for this micro-batch
-      const rawContent = await executeLlmGeneration(
-        effectiveLlmConfig,
-        masterSystemPrompt,
-        sessionUserPrompt,
-        signal
-      );
+      let validatedBatchItems: ImprovItem[] = [];
+      try {
+        // Execute LLM call for this micro-batch
+        const rawContent = await executeLlmGeneration(
+          effectiveLlmConfig,
+          masterSystemPrompt,
+          sessionUserPrompt,
+          signal
+        );
 
-      // Robust JSON extraction
-      const parsed = extractAndParseJson<any>(rawContent);
+        // Robust JSON extraction
+        const parsed = extractAndParseJson<any>(rawContent);
 
-      // Extract items array from response (handling various response structures)
-      let rawItems: any[] = [];
-      if (Array.isArray(parsed)) {
-        rawItems = parsed;
-      } else if (Array.isArray(parsed.items)) {
-        rawItems = parsed.items;
-        if (parsed.title) sessionAccumulators.get(sessionNum)!.title = parsed.title;
-      } else if (Array.isArray(parsed.sessions) && parsed.sessions[0]?.items) {
-        rawItems = parsed.sessions[0].items;
-        if (parsed.sessions[0].title) sessionAccumulators.get(sessionNum)!.title = parsed.sessions[0].title;
-      } else if (parsed.session && Array.isArray(parsed.session.items)) {
-        rawItems = parsed.session.items;
-        if (parsed.session.title) sessionAccumulators.get(sessionNum)!.title = parsed.session.title;
-      }
-
-      // Normalize and validate items for this batch
-      validatedBatchItems = rawItems.map((it: any, itIdx: number) => {
-        const assignedItemNumber = batch.startItem + itIdx;
-        const itemNumber = Number(it.itemNumber) || assignedItemNumber;
-        const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-        
-        const hints: ImprovHint[] = (it.hints || []).map((h: any, hIdx: number) => ({
-          id: `h_${sessionNum}_${itemNumber}_${h.itemIndex || (hIdx + 1)}`,
-          text: String(h.text || '').trim(),
-          translation: String(h.translation || '').trim(),
-          typeFunction: String(h.typeFunction || (sConfig.hintTypes[hIdx] || `Hint ${hIdx + 1}`)).trim(),
-          itemIndex: Number(h.itemIndex) || (hIdx + 1)
-        }));
-
-        // Ensure item has required hints count
-        while (hints.length < sConfig.hcTotal) {
-          const nextIdx = hints.length + 1;
-          hints.push({
-            id: `h_${sessionNum}_${itemNumber}_${nextIdx}`,
-            text: `Practice chunk ${nextIdx}`,
-            translation: `Gợi ý thực hành ${nextIdx}`,
-            typeFunction: sConfig.hintTypes[nextIdx - 1] || 'Hint',
-            itemIndex: nextIdx
-          });
+        // Extract items array from response (handling various response structures)
+        let rawItems: any[] = [];
+        if (Array.isArray(parsed)) {
+          rawItems = parsed;
+        } else if (Array.isArray(parsed.items)) {
+          rawItems = parsed.items;
+          if (parsed.title) sessionAccumulators.get(sessionNum)!.title = parsed.title;
+        } else if (Array.isArray(parsed.sessions) && parsed.sessions[0]?.items) {
+          rawItems = parsed.sessions[0].items;
+          if (parsed.sessions[0].title) sessionAccumulators.get(sessionNum)!.title = parsed.sessions[0].title;
+        } else if (parsed.session && Array.isArray(parsed.session.items)) {
+          rawItems = parsed.session.items;
+          if (parsed.session.title) sessionAccumulators.get(sessionNum)!.title = parsed.session.title;
         }
 
-        // If more hints than hcTotal, trim to hcTotal
-        if (hints.length > sConfig.hcTotal) {
-          hints.length = sConfig.hcTotal;
-        }
+        // Normalize and validate items for this batch
+        validatedBatchItems = rawItems.map((it: any, itIdx: number) => {
+          const assignedItemNumber = batch.startItem + itIdx;
+          const itemNumber = Number(it.itemNumber) || assignedItemNumber;
+          const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          
+          const hints: ImprovHint[] = (it.hints || []).map((h: any, hIdx: number) => ({
+            id: `h_${sessionNum}_${itemNumber}_${h.itemIndex || (hIdx + 1)}`,
+            text: String(h.text || '').trim(),
+            translation: String(h.translation || '').trim(),
+            typeFunction: String(h.typeFunction || (sConfig.hintTypes[hIdx] || `Hint ${hIdx + 1}`)).trim(),
+            itemIndex: Number(h.itemIndex) || (hIdx + 1)
+          }));
 
-        return {
-          id: itemId,
-          itemNumber,
-          sessionNumber: sessionNum,
-          hcTotal: hints.length,
-          hints,
-          createdAt: now
-        };
-      });
+          // Ensure item has required hints count
+          while (hints.length < sConfig.hcTotal) {
+            const nextIdx = hints.length + 1;
+            hints.push({
+              id: `h_${sessionNum}_${itemNumber}_${nextIdx}`,
+              text: `Practice chunk ${nextIdx}`,
+              translation: `Gợi ý thực hành ${nextIdx}`,
+              typeFunction: sConfig.hintTypes[nextIdx - 1] || 'Hint',
+              itemIndex: nextIdx
+            });
+          }
 
-      // Post-Generation Language Integrity Evaluation Gate for batch items
-      let batchFixedCount = 0;
-      validatedBatchItems = validatedBatchItems.map(item => ({
-        ...item,
-        hints: item.hints.map(hint => {
-          const { hint: sanitizedHint, wasFixed } = evaluateAndSanitizeHint(hint, {
+          // If more hints than hcTotal, trim to hcTotal
+          if (hints.length > sConfig.hcTotal) {
+            hints.length = sConfig.hcTotal;
+          }
+
+          return {
+            id: itemId,
+            itemNumber,
             sessionNumber: sessionNum,
-            itemNumber: item.itemNumber
-          });
-          if (wasFixed) batchFixedCount++;
-          return sanitizedHint;
-        })
-      }));
-      if (batchFixedCount > 0) {
-        console.log(`[generateImprovPackage] Auto-sanitized ${batchFixedCount} corrupted language fields in batch ${batchStep + 1}`);
-      }
+            hcTotal: hints.length,
+            hints,
+            createdAt: now
+          };
+        });
 
-      // If LLM returned fewer items than requested, synthesize remaining items to guarantee count
-      while (validatedBatchItems.length < batch.count) {
-        const missingIdx = validatedBatchItems.length;
-        const itemNumber = batch.startItem + missingIdx;
-        const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-        const seed = batchSeeds[missingIdx % batchSeeds.length] || { english: 'Practice phrase', vietnamese: 'Cụm từ thực hành' };
-        
-        const hints: ImprovHint[] = [];
-        for (let h = 1; h <= sConfig.hcTotal; h++) {
-          hints.push({
-            id: `h_${sessionNum}_${itemNumber}_${h}`,
-            text: h === 1 ? seed.english : `Collocation ${h}`,
-            translation: h === 1 ? seed.vietnamese : `Kết hợp từ ${h}`,
-            typeFunction: sConfig.hintTypes[h - 1] || `Hint ${h}`,
-            itemIndex: h
+        // Post-Generation Language Integrity Evaluation Gate for batch items
+        let batchFixedCount = 0;
+        validatedBatchItems = validatedBatchItems.map(item => ({
+          ...item,
+          hints: item.hints.map(hint => {
+            const { hint: sanitizedHint, wasFixed } = evaluateAndSanitizeHint(hint, {
+              sessionNumber: sessionNum,
+              itemNumber: item.itemNumber
+            });
+            if (wasFixed) batchFixedCount++;
+            return sanitizedHint;
+          })
+        }));
+        if (batchFixedCount > 0) {
+          console.log(`[generateImprovPackage] Auto-sanitized ${batchFixedCount} corrupted language fields in batch ${batchStep + 1}`);
+        }
+
+        // If LLM returned fewer items than requested, synthesize remaining items to guarantee count
+        while (validatedBatchItems.length < batch.count) {
+          const missingIdx = validatedBatchItems.length;
+          const itemNumber = batch.startItem + missingIdx;
+          const itemId = `item_s${sessionNum}_i${itemNumber}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          const seed = batchSeeds[missingIdx % batchSeeds.length] || { english: 'Practice phrase', vietnamese: 'Cụm từ thực hành' };
+          
+          const hints: ImprovHint[] = [];
+          for (let h = 1; h <= sConfig.hcTotal; h++) {
+            hints.push({
+              id: `h_${sessionNum}_${itemNumber}_${h}`,
+              text: h === 1 ? seed.english : `Collocation ${h}`,
+              translation: h === 1 ? seed.vietnamese : `Kết hợp từ ${h}`,
+              typeFunction: sConfig.hintTypes[h - 1] || `Hint ${h}`,
+              itemIndex: h
+            });
+          }
+
+          validatedBatchItems.push({
+            id: itemId,
+            itemNumber,
+            sessionNumber: sessionNum,
+            hcTotal: hints.length,
+            hints,
+            createdAt: now
           });
         }
 
-        validatedBatchItems.push({
-          id: itemId,
-          itemNumber,
-          sessionNumber: sessionNum,
-          hcTotal: hints.length,
-          hints,
-          createdAt: now
-        });
+        allPlannedBatchesStatus[batchStep].status = 'success';
+        allPlannedBatchesStatus[batchStep].itemsCount = validatedBatchItems.length;
+        allPlannedBatchesStatus[batchStep].durationMs = Date.now() - batchStartTime;
+        successBatchesCount++;
+      } catch (batchErr: any) {
+        if (signal?.aborted) {
+          throw batchErr;
+        }
+        console.error(`[generateImprovPackage] Error in batch ${batchStep + 1}/${totalBatchesCount}:`, batchErr);
+        allPlannedBatchesStatus[batchStep].status = 'failed';
+        allPlannedBatchesStatus[batchStep].error = batchErr?.message || 'Lỗi không xác định';
+        allPlannedBatchesStatus[batchStep].durationMs = Date.now() - batchStartTime;
+        failedBatchesCount++;
+
+        // Use fallback synthesis for this batch so generation proceeds reliably
+        validatedBatchItems = synthesizeFallbackBatchItems(batch, sConfig, batchSeeds, now);
+        allPlannedBatchesStatus[batchStep].itemsCount = validatedBatchItems.length;
       }
 
-      allPlannedBatchesStatus[batchStep].status = 'success';
-      allPlannedBatchesStatus[batchStep].itemsCount = validatedBatchItems.length;
-      allPlannedBatchesStatus[batchStep].durationMs = Date.now() - batchStartTime;
-      successBatchesCount++;
-    } catch (batchErr: any) {
-      if (signal?.aborted) {
-        throw batchErr;
-      }
-      console.error(`[generateImprovPackage] Error in batch ${batchStep + 1}/${totalBatchesCount}:`, batchErr);
-      allPlannedBatchesStatus[batchStep].status = 'failed';
-      allPlannedBatchesStatus[batchStep].error = batchErr?.message || 'Lỗi không xác định';
-      allPlannedBatchesStatus[batchStep].durationMs = Date.now() - batchStartTime;
-      failedBatchesCount++;
+      // Append batch items to session accumulator
+      sessionAccumulators.get(sessionNum)!.items.push(...validatedBatchItems);
 
-      // Use fallback synthesis for this batch so generation proceeds reliably
-      validatedBatchItems = synthesizeFallbackBatchItems(batch, sConfig, batchSeeds, now);
-      allPlannedBatchesStatus[batchStep].itemsCount = validatedBatchItems.length;
+      onProgress?.(
+        Math.round(5 + ((batchStep + 1) / totalBatchesCount) * 88),
+        100,
+        `Hoàn thành Session ${sessionNum}: câu ${batch.startItem}-${endItem} (${allPlannedBatchesStatus[batchStep].status === 'success' ? 'Thành công' : 'Đã dùng fallback do lỗi LLM'})`,
+        {
+          batchIndex: batchStep,
+          totalBatches: totalBatchesCount,
+          batches: [...allPlannedBatchesStatus],
+          successBatches: successBatchesCount,
+          failedBatches: failedBatchesCount
+        }
+      );
     }
+  } catch (fatalErr: any) {
+    if (signal?.aborted) throw fatalErr;
+    console.warn('[generateImprovPackage] Fatal execution error during LLM generation. Seamlessly activating generateOfflineFallbackPackage...', fatalErr);
+    const fallbackPkg = generateOfflineFallbackPackage(request);
+    await saveImprovPackage(fallbackPkg);
+    return fallbackPkg;
+  }
 
-    // Append batch items to session accumulator
-    sessionAccumulators.get(sessionNum)!.items.push(...validatedBatchItems);
-
+  // If all batches failed (e.g. total network or quota failure), seamlessly fallback to offline package
+  if (successBatchesCount === 0) {
+    console.warn('[generateImprovPackage] All LLM batches failed. Seamlessly activating generateOfflineFallbackPackage...');
+    const fallbackPkg = generateOfflineFallbackPackage(request);
+    await saveImprovPackage(fallbackPkg);
     onProgress?.(
-      Math.round(5 + ((batchStep + 1) / totalBatchesCount) * 88),
-      100,
-      `Hoàn thành Session ${sessionNum}: câu ${batch.startItem}-${endItem} (${allPlannedBatchesStatus[batchStep].status === 'success' ? 'Thành công' : 'Đã dùng fallback do lỗi LLM'})`,
+      100, 
+      100, 
+      `Đã chuyển sang gói ngoại tuyến offline chất lượng cao cho ${fallbackPkg.title} (${fallbackPkg.totalItems} items) do lỗi kết nối AI.`,
       {
-        batchIndex: batchStep,
+        batchIndex: totalBatchesCount - 1,
         totalBatches: totalBatchesCount,
         batches: [...allPlannedBatchesStatus],
-        successBatches: successBatchesCount,
-        failedBatches: failedBatchesCount
+        successBatches: 0,
+        failedBatches: totalBatchesCount
       }
     );
+    return fallbackPkg;
   }
 
   // Step 3: Construct generatedSessions

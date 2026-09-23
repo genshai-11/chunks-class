@@ -4,6 +4,7 @@ import { Course, NavTab, Cohort } from '../types';
 import { CohortModal } from './CohortModal';
 import { DEFAULT_COURSES } from '../services/firestoreService';
 
+
 interface AppLayoutProps {
   activeTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
@@ -60,7 +61,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
       {/* 2. MAIN CONTENT AREA */}
       <div className="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto">
-
         {/* Main Canvas View */}
         <main className="flex-1 p-6 md:p-8">
           {children}

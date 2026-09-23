@@ -69,6 +69,7 @@ export interface ImprovLLMConfig {
 
 export interface ImprovSessionConfig {
   sessionNumber: number;
+  title?: string;
   hcTotal: number;
   hintTypes: string[];
   itemsCount: number;
@@ -112,4 +113,9 @@ export interface ImprovGenerateRequest {
   difficulty: 'EASY' | 'MEDIUM' | 'HARD' | string;
   relevance: 'LOW' | 'MEDIUM' | 'HIGH' | string;
   llmConfig: ImprovLLMConfig;
+  topic?: string;
+  targetGrammar?: string;
+  pedagogicalNotes?: string;
+  conversationalTone?: string;
+  targetAudience?: string;
 }
