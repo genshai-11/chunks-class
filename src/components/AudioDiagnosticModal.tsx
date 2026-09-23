@@ -15,7 +15,8 @@ import {
   Check,
   Zap,
   Sparkles,
-  Layers
+  Layers,
+  Database
 } from 'lucide-react';
 import { 
   audioPlayer, 
@@ -25,6 +26,12 @@ import {
   maskApiKey,
   detectGoogleKeyType
 } from '../services/googleTtsService';
+import { 
+  syncFirestoreLessonsToRegistry, 
+  checkFirestoreHealth, 
+  DatabaseStatus 
+} from '../services/firestoreService';
+import { curriculumRegistry } from '../services/curriculumRegistry';
 
 interface AudioDiagnosticModalProps {
   isOpen: boolean;
@@ -57,6 +64,48 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
   const [testingKey, setTestingKey] = useState<string | null>(null);
   const [singleKeyResults, setSingleKeyResults] = useState<Record<string, SingleKeyTestResult>>({});
 
+  // Firebase ➔ UI Audio Synchronization state
+  const [dbStatus, setDbStatus] = useState<DatabaseStatus | null>(null);
+  const [syncingFirebase, setSyncingFirebase] = useState<boolean>(false);
+  const [syncResult, setSyncResult] = useState<{
+    totalLessons: number;
+    totalChunks: number;
+    chunksWithAudio: number;
+  } | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [registryStats, setRegistryStats] = useState<{
+    totalLessons: number;
+    totalChunks: number;
+    chunksWithAudio: number;
+  }>({ totalLessons: 0, totalChunks: 0, chunksWithAudio: 0 });
+
+  const refreshRegistryStats = () => {
+    const allLessons = curriculumRegistry.getAllLessons();
+    const totalLessons = allLessons.length;
+    const totalChunks = allLessons.reduce((sum, l) => sum + (l.chunks?.length || 0), 0);
+    const chunksWithAudio = allLessons.reduce((sum, l) => {
+      if (!l.chunks) return sum;
+      return sum + l.chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+    }, 0);
+    setRegistryStats({ totalLessons, totalChunks, chunksWithAudio });
+  };
+
+  const handleSyncFromFirebase = async () => {
+    setSyncingFirebase(true);
+    setSyncError(null);
+    try {
+      const res = await syncFirestoreLessonsToRegistry();
+      setSyncResult(res);
+      refreshRegistryStats();
+      checkFirestoreHealth().then(setDbStatus).catch(() => {});
+      setCurrentSource(audioPlayer.getLastSource());
+    } catch (err: any) {
+      setSyncError(err?.message || 'Không thể đồng bộ dữ liệu từ Firestore');
+    } finally {
+      setSyncingFirebase(false);
+    }
+  };
+
   const refreshKeyPool = () => {
     setKeyPool([...audioPlayer.getApiKeyPool()]);
   };
@@ -80,6 +129,8 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
       const voices = audioPlayer.getBrowserVoices();
       setBrowserVoices(voices);
       setCurrentSource(audioPlayer.getLastSource());
+      refreshRegistryStats();
+      checkFirestoreHealth().then(setDbStatus).catch(() => {});
       runTest();
       runDeepgramTest();
     }
@@ -188,6 +239,97 @@ export const AudioDiagnosticModal: React.FC<AudioDiagnosticModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6 text-xs">
+          {/* 0. Cloud Audio Sync: Firebase ➔ UI & Cloud Storage */}
+          <div className="p-4 rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-white space-y-3.5 shadow-2xs">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="font-bold text-blue-950 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Database className="w-4 h-4 text-blue-600" />
+                Đồng Bộ Firebase ➔ UI & Cloud Storage (Cloud Audio Sync)
+              </span>
+              <button
+                onClick={handleSyncFromFirebase}
+                disabled={syncingFirebase}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncingFirebase ? 'animate-spin' : ''}`} />
+                <span>{syncingFirebase ? 'Đang nạp audio...' : '⚡ Nạp Lại Audio Từ Firebase Vào UI'}</span>
+              </button>
+            </div>
+
+            <p className="text-[11px] text-zinc-600 leading-relaxed font-medium">
+              Nạp trực tiếp liên kết Google Cloud Storage (GCS) audio và audio tiếng Việt từ Firestore <code className="font-mono text-zinc-800 bg-blue-100/60 px-1 py-0.5 rounded">/lessons</code> vào bộ nhớ đệm UI (<code className="font-mono text-zinc-800 bg-blue-100/60 px-1 py-0.5 rounded">curriculumRegistry</code>). Trình chiếu & Trình phát âm thanh sẽ nhận diện tức thì file MP3 phòng thu mà không bị phụ thuộc vào dữ liệu seed tĩnh.
+            </p>
+
+            {/* Real-time Status Grid: Cloud Firestore vs In-Memory UI Registry */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+              <div className="p-2.5 rounded-xl bg-white border border-blue-100 shadow-2xs">
+                <div className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">Cloud Firestore</div>
+                <div className="text-sm font-bold text-zinc-900 mt-1 flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${dbStatus?.isConnected ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+                  <span>{dbStatus ? `${dbStatus.totalLessonsInDb} bài học` : 'Đang kiểm tra...'}</span>
+                </div>
+                <div className="text-[10px] text-zinc-400 mt-0.5 truncate font-mono">
+                  {dbStatus?.projectId || 'chunks-voicecloning-genshai'}
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-white border border-blue-100 shadow-2xs">
+                <div className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">UI Memory Registry</div>
+                <div className="text-sm font-bold text-zinc-900 mt-1">
+                  {registryStats.totalLessons} bài học ({registryStats.totalChunks} chunks)
+                </div>
+                <div className="text-[10px] text-zinc-400 mt-0.5">
+                  Bộ nhớ đệm giao diện giảng dạy
+                </div>
+              </div>
+
+              <div className={`p-2.5 rounded-xl border shadow-2xs ${
+                registryStats.chunksWithAudio > 0
+                  ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                  : 'bg-amber-50/80 border-amber-200 text-amber-900'
+              }`}>
+                <div className="text-[10px] font-semibold uppercase tracking-wider">GCS Audio Sẵn Sàng</div>
+                <div className="text-sm font-bold mt-1 flex items-center gap-1.5">
+                  {registryStats.chunksWithAudio > 0 ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  )}
+                  <span>{registryStats.chunksWithAudio} / {registryStats.totalChunks} chunks</span>
+                </div>
+                <div className="text-[10px] opacity-80 mt-0.5">
+                  {registryStats.chunksWithAudio > 0 ? 'Đã liên kết Cloud Storage' : 'Chưa có link audio GCS'}
+                </div>
+              </div>
+            </div>
+
+            {/* Success Banner */}
+            {syncResult && (
+              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200 flex items-start gap-2.5 shadow-2xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="font-bold text-xs">
+                    Đồng bộ Firebase ➔ UI thành công!
+                  </div>
+                  <p className="text-[11px] font-medium leading-relaxed">
+                    Đã đồng bộ {syncResult.totalLessons} bài học, {syncResult.chunksWithAudio}/{syncResult.totalChunks} chunks có link GCS audio từ Firebase
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Error Banner */}
+            {syncError && (
+              <div className="p-3 rounded-xl bg-rose-50 text-rose-900 border border-rose-200 flex items-start gap-2.5 shadow-2xs">
+                <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="font-bold text-xs">Lỗi khi đồng bộ từ Firebase</div>
+                  <p className="text-[11px]">{syncError}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 1. Deepgram Aura Test Card (Primary Engine) */}
           <div className="p-4 rounded-xl border bg-purple-50/40 border-purple-200 space-y-3">
             <div className="flex items-center justify-between">

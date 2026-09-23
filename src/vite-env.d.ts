@@ -18,3 +18,17 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+declare module 'bun:test' {
+  export const describe: (name: string, fn: () => void | Promise<void>) => void;
+  export const it: (name: string, fn: () => any) => void;
+  export const test: (name: string, fn: () => any) => void;
+  export const expect: any;
+  export const beforeEach: (fn: () => any) => void;
+  export const afterEach: (fn: () => any) => void;
+  export const beforeAll: (fn: () => any) => void;
+  export const afterAll: (fn: () => any) => void;
+  export const mock: <T extends (...args: any[]) => any>(fn?: T) => any;
+  export const spyOn: any;
+}
+

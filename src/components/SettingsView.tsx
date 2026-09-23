@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Cohort, 
   CourseLevel, 
@@ -21,6 +21,7 @@ import {
   ProviderApiKey, 
   TtsProviderType, 
   ActiveTtsProviderType,
+  ACTIVE_TTS_PROVIDERS,
   PROVIDERS_META,
   DEFAULT_REGISTERED_MODELS,
   getMinimalName,
@@ -70,17 +71,78 @@ interface SettingsViewProps {
   cohort: Cohort;
   onUpdateCohort: (cohort: Cohort) => void;
   onResetToDefault: () => void;
+  allCohorts?: Cohort[];
+  onSelectCohort?: (id: string) => void;
+  onToggleCohortActive?: (id: string, active: boolean) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   cohort,
   onUpdateCohort,
-  onResetToDefault
+  onResetToDefault,
+  allCohorts = [],
+  onSelectCohort,
+  onToggleCohortActive
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTabId>('cohort');
   const [formData, setFormData] = useState<Cohort>({ ...cohort });
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [recalcSuccess, setRecalcSuccess] = useState<boolean>(false);
+
+  // Course Level Visibility State
+  const [visibleCourseIds, setVisibleCourseIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('chunks_visible_course_ids');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to read chunks_visible_course_ids:', e);
+    }
+    return curriculumRegistry.getAllCourses().map(c => c.id);
+  });
+
+  const allCoursesList = useMemo(() => {
+    const raw = curriculumRegistry.getAllCourses();
+    const order = ['course_level_a', 'course_level_b', 'course_level_b_erel', 'course_level_b_eres'];
+    const sorted = [...raw].sort((a, b) => {
+      const idxA = order.indexOf(a.id);
+      const idxB = order.indexOf(b.id);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.title.localeCompare(b.title);
+    });
+
+    return sorted.map(c => {
+      let displayName = c.title;
+      if (c.level_code === 'LEVEL_A' || c.id === 'course_level_a') {
+        displayName = 'Level A (Foundation)';
+      } else if (c.level_code === 'LEVEL_B_EREL' || c.id === 'course_level_b_erel') {
+        displayName = 'Level B (EREL Listening)';
+      } else if (c.level_code === 'LEVEL_B_ERES' || c.id === 'course_level_b_eres') {
+        displayName = 'Level B (ERES Speaking)';
+      } else if (c.level_code === 'LEVEL_B' || c.id === 'course_level_b') {
+        displayName = 'Level B (30 Topics)';
+      }
+      return {
+        ...c,
+        displayName
+      };
+    });
+  }, []);
+
+  const handleToggleCourseVisibility = (courseId: string) => {
+    setVisibleCourseIds(prev => {
+      const next = prev.includes(courseId)
+        ? prev.filter(id => id !== courseId)
+        : [...prev, courseId];
+      localStorage.setItem('chunks_visible_course_ids', JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent('chunks_course_visibility_changed', { detail: next }));
+      return next;
+    });
+  };
 
   // Model & Key Registry State
   const [models, setModels] = useState<RegisteredModel[]>(() => modelRegistryService.getAllModels());
@@ -884,6 +946,173 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ===================================================================== */}
       {activeSubTab === 'cohort' && (
         <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-xs space-y-6">
+          {/* Cohort Switcher & Active Toggle Bar */}
+          {allCohorts && allCohorts.length > 0 && (
+            <div className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                    Danh Sách Lớp Học & Bật/Tắt Lớp (Cohorts Switcher & Status)
+                  </h3>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    Chọn lớp để chỉnh sửa chi tiết hoặc gạt công tắc ON/OFF để ẩn/hiện lớp trong thanh công cụ.
+                  </p>
+                </div>
+                <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-zinc-200 text-zinc-700">
+                  {allCohorts.filter(c => c.is_active !== false).length}/{allCohorts.length} Đang bật (Active)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {allCohorts.map((c) => {
+                  const isSelected = (formData.id === c.id);
+                  const isActive = c.is_active !== false;
+
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setFormData({ ...c });
+                        onSelectCohort?.(c.id);
+                      }}
+                      className={`relative p-3.5 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between gap-2.5 ${
+                        isSelected
+                          ? 'bg-white border-[#DC2626] ring-2 ring-[#DC2626]/20 shadow-xs'
+                          : 'bg-white/80 hover:bg-white border-zinc-200 hover:border-zinc-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-700">
+                              {c.level_code?.replace('LEVEL_', 'Lv ')}
+                            </span>
+                            {isSelected && (
+                              <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#DC2626]/10 text-[#DC2626]">
+                                Đang sửa
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs font-bold text-zinc-900 leading-snug truncate" title={c.title}>
+                            {c.title}
+                          </div>
+                        </div>
+
+                        {/* ON/OFF Switch */}
+                        <div
+                          className="shrink-0 flex items-center pt-0.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newActive = !isActive;
+                              onToggleCohortActive?.(c.id, newActive);
+                              if (c.id === formData.id) {
+                                setFormData(prev => ({ ...prev, is_active: newActive }));
+                              }
+                            }}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              isActive ? 'bg-emerald-500' : 'bg-zinc-300'
+                            }`}
+                            title={isActive ? 'Nhấn để tắt lớp (Inactive)' : 'Nhấn để bật lớp (Active)'}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                isActive ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 pt-1.5 border-t border-zinc-100">
+                        <span>{c.total_sessions || 15} sessions</span>
+                        <span className={`font-bold ${isActive ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                          {isActive ? '● ON (Active)' : '○ OFF (Inactive)'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Cấu Hình Ẩn / Hiện Khóa Học (Course Levels Visibility) */}
+          <div className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                  Cấu Hình Ẩn / Hiện Khóa Học (Course Levels Visibility)
+                </h3>
+                <p className="text-[11px] text-zinc-500 mt-0.5">
+                  Bật hoặc tắt hiển thị các cấp độ khóa học trong thanh công cụ Sidebar và bộ chọn khóa học.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-zinc-200 text-zinc-700">
+                {allCoursesList.filter(c => visibleCourseIds.includes(c.id)).length}/{allCoursesList.length} Hiển thị (Visible)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {allCoursesList.map((c) => {
+                const isVisible = visibleCourseIds.includes(c.id);
+
+                return (
+                  <div
+                    key={c.id}
+                    className={`relative p-3.5 rounded-xl border transition-all select-none flex flex-col justify-between gap-2.5 ${
+                      isVisible
+                        ? 'bg-white border-zinc-200 hover:border-zinc-300 shadow-2xs'
+                        : 'bg-zinc-100/70 border-zinc-200 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                            isVisible ? 'bg-zinc-100 text-zinc-700' : 'bg-zinc-200 text-zinc-500'
+                          }`}>
+                            {c.level_code?.replace('LEVEL_', 'Lv ')}
+                          </span>
+                        </div>
+                        <div className="text-xs font-bold text-zinc-900 leading-snug truncate" title={c.title}>
+                          {c.displayName}
+                        </div>
+                      </div>
+
+                      {/* ON/OFF Switch */}
+                      <div className="shrink-0 flex items-center pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCourseVisibility(c.id)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            isVisible ? 'bg-emerald-500' : 'bg-zinc-300'
+                          }`}
+                          title={isVisible ? 'Nhấn để ẩn khóa học (Hide)' : 'Nhấn để hiện khóa học (Show)'}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              isVisible ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 pt-1.5 border-t border-zinc-100">
+                      <span>{c.total_days} days</span>
+                      <span className={`font-bold ${isVisible ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                        {isVisible ? '● ON (Hiển thị)' : '○ OFF (Ẩn)'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
             <div className="flex items-center gap-2">
               <User className="w-5 h-5 text-[#DC2626]" />
@@ -894,7 +1123,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span className="text-xs font-mono text-zinc-400">ID: {formData.id}</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-xs font-bold text-zinc-700 block mb-1.5 uppercase tracking-wider">
                 Tên Lớp Học (Cohort Title)
@@ -944,6 +1173,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 placeholder="VD: teacher_genshai"
                 className="w-full px-3.5 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-mono font-bold text-zinc-900 focus:bg-white focus:outline-none focus:border-[#DC2626]"
               />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-zinc-700 block mb-1.5 uppercase tracking-wider">
+                Trạng Thái Hoạt Động (Status)
+              </label>
+              <div className="flex items-center h-[38px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextActive = formData.is_active === false;
+                    setFormData(prev => ({ ...prev, is_active: nextActive }));
+                    if (onToggleCohortActive && formData.id) {
+                      onToggleCohortActive(formData.id, nextActive);
+                    }
+                  }}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs w-full justify-center ${
+                    formData.is_active !== false
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                      : 'bg-zinc-100 text-zinc-500 border-zinc-300 hover:bg-zinc-200'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${formData.is_active !== false ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+                  <span>{formData.is_active !== false ? 'Lớp Bật (Active)' : 'Lớp Tắt (Inactive)'}</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1316,7 +1571,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {/* Provider Cards Selection */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {(['GOOGLE_TTS', 'GEMINI_AI_STUDIO', 'DEEPGRAM', 'CUSTOM_TTS'] as ActiveTtsProviderType[]).map((provKey) => {
+            {ACTIVE_TTS_PROVIDERS.map((provKey) => {
               const meta = PROVIDERS_META[provKey];
               const provKeys = keys.filter(k => k.provider === provKey);
               const readyCount = provKeys.filter(k => k.status === 'READY' && (!k.rateLimitedUntil || k.rateLimitedUntil <= now)).length;
@@ -2218,7 +2473,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-700 cursor-pointer focus:bg-white focus:outline-none focus:border-[#DC2626]"
                 >
                   <option value="all">Tất Cả Nhà Cung Cấp</option>
-                  {(['GOOGLE_TTS', 'GEMINI_AI_STUDIO', 'DEEPGRAM', 'CUSTOM_TTS'] as ActiveTtsProviderType[]).map(p => (
+                  {ACTIVE_TTS_PROVIDERS.map(p => (
                     <option key={p} value={p}>{PROVIDERS_META[p]?.shortName || p}</option>
                   ))}
                 </select>

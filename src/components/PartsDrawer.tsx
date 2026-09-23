@@ -138,6 +138,9 @@ interface PartsDrawerProps {
   parts: LessonPart[];
   currentChunkIndex: number;
   onSelectPart: (startIndex: number) => void;
+  onSelectGrammar?: () => void;
+  isGrammarActive?: boolean;
+  hasGrammar?: boolean;
   lessonTitle?: string;
 }
 
@@ -147,6 +150,9 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
   parts,
   currentChunkIndex,
   onSelectPart,
+  onSelectGrammar,
+  isGrammarActive = false,
+  hasGrammar = true,
   lessonTitle
 }) => {
   const [selectedTopicFilter, setSelectedTopicFilter] = useState<'ALL' | 1 | 2>('ALL');
@@ -233,6 +239,40 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
 
       {/* Parts List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+        {/* Dedicated 0. Grammar & Structures Slide Entry */}
+        {onSelectGrammar && (
+          <button
+            type="button"
+            onClick={() => {
+              onSelectGrammar();
+              onClose();
+            }}
+            className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
+              isGrammarActive
+                ? 'border-[#DC2626] bg-[#DC2626]/[0.05] ring-2 ring-[#DC2626]/20 shadow-xs'
+                : 'border-[#E8E8EC] bg-white hover:border-zinc-300 hover:bg-zinc-50'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                isGrammarActive ? 'bg-[#DC2626] text-white' : 'bg-rose-50 text-[#DC2626] border border-rose-200'
+              }`}>
+                Phần 0 · Slide 0
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+                <BookOpen className="w-3 h-3 text-[#DC2626]" />
+                <span>No Audio · Briefing</span>
+              </span>
+            </div>
+            <div className="text-sm font-bold text-[#0A0A0A] flex items-center justify-between">
+              <span>0. Grammar & Sentence Structures</span>
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-1">
+              Điểm qua các mẫu câu, dạng động từ và ngữ pháp trọng tâm (Phím G)
+            </p>
+          </button>
+        )}
+
         {displayedParts.map((part) => {
           const isCurrentPart =
             currentChunkIndex >= part.start_index && currentChunkIndex <= part.end_index;

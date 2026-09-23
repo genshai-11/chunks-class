@@ -45,6 +45,9 @@ import {
 } from '../styles/improvTheme';
 import { 
   improvTts, 
+  getHintAudioCacheKey,
+  getItemAudioCacheKey,
+  isSessionAudioReady,
   synthesizeItemCombinedAudio, 
   synthesizeSingleHintAudio,
   playItemAudio, 
@@ -58,7 +61,7 @@ import {
   ImprovBatchProgress
 } from '../services/improvTtsService';
 import { audioPlayer, sanitizeSpeechText, ALL_VOICES, GOOGLE_TTS_VOICES } from '../services/googleTtsService';
-import { modelRegistryService, DEFAULT_AI_GENERATION_CONFIG } from '../services/modelRegistryService';
+import { modelRegistryService, DEFAULT_AI_GENERATION_CONFIG, PROVIDERS_META, getMinimalName } from '../services/modelRegistryService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { getCourses, getLessonsByLevel } from '../services/firestoreService';
 import { 
@@ -210,7 +213,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   audioSettings
 }) => {
   const rawVoiceEn = audioSettings?.voice_profile_en;
-  const currentVoiceEn = (rawVoiceEn && rawVoiceEn !== 'aura-theia-en') ? rawVoiceEn : 'flux-cliff-en';
+  const currentVoiceEn = rawVoiceEn || 'flux-cliff-en';
   const currentVoiceVi = audioSettings?.voice_profile_vi || 'vi-VN-Neural2-A';
   // --------------------------------------------------------------------------
   // A. Packages & Active Selection State
@@ -281,7 +284,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   const [batchWorkersCount, setBatchWorkersCount] = useState<number>(4);
   const [batchTargetLang, setBatchTargetLang] = useState<'en' | 'vi' | 'both'>('both');
   const [batchVoiceEn, setBatchVoiceEn] = useState<string>(() => {
-    return (currentVoiceEn && currentVoiceEn !== 'aura-theia-en') ? currentVoiceEn : 'flux-cliff-en';
+    return currentVoiceEn || 'flux-cliff-en';
   });
   const [batchVoiceVi, setBatchVoiceVi] = useState<string>(currentVoiceVi || 'vi-VN-Neural2-A');
   const [forceOverwrite, setForceOverwrite] = useState<boolean>(true);
@@ -320,7 +323,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   // Keep batch voice in sync if prop changes
   useEffect(() => {
     if (currentVoiceEn) {
-      setBatchVoiceEn(currentVoiceEn === 'aura-theia-en' ? 'flux-cliff-en' : currentVoiceEn);
+      setBatchVoiceEn(currentVoiceEn);
     }
   }, [currentVoiceEn]);
 
@@ -337,7 +340,14 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   }, []);
 
   const enVoiceOptions = useMemo(() => {
-    return modelRegistryService.getImprovModels('en');
+    const list = modelRegistryService.getImprovModels('en');
+    return list.sort((a, b) => {
+      const isGeminiA = a.provider === 'GEMINI_AI_STUDIO';
+      const isGeminiB = b.provider === 'GEMINI_AI_STUDIO';
+      if (isGeminiA && !isGeminiB) return 1;
+      if (!isGeminiA && isGeminiB) return -1;
+      return 0;
+    });
   }, [improvRegistryRev]);
 
   const viVoiceOptions = useMemo(() => {
@@ -441,9 +451,9 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     return () => { isMounted = false; };
   }, []);
 
-  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv - Level B ERES Speaking (Day 1)');
+  const [genTitle, setGenTitle] = useState<string>('CHUNKS Improv - Level B - ERE (Day 1)');
   const [genDescription, setGenDescription] = useState<string>(
-    'Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm 4 sessions (50 câu) dựa trên từ vựng cốt lõi Level B ERES Speaking - Day 1.'
+    'Bộ bài tập phản xạ ngẫu hứng CHUNKS gồm 4 sessions (50 câu) dựa trên từ vựng cốt lõi Level B - ERE - Day 1.'
   );
   const [genTotalItems, setGenTotalItems] = useState<number>(50);
   const [genSessionsCount, setGenSessionsCount] = useState<number>(4);
@@ -454,11 +464,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     { sessionNumber: 4, hcTotal: 4, hintTypes: ['Keyword', 'Logic word', 'Fancy word', 'Ending'], itemsCount: 13 }
   ]);
 
-  // Layer 1: Khóa học (Defaults to LEVEL_B_ERES)
-  const [genSourceLevel, setGenSourceLevel] = useState<CourseLevel | 'ALL'>('LEVEL_B_ERES');
-  // Layer 2: Bài học (Days) - Defaults to level_b_eres_day_1
+  // Layer 1: Khóa học (Defaults to LEVEL_B - 30 Topics)
+  const [genSourceLevel, setGenSourceLevel] = useState<CourseLevel | 'ALL'>('LEVEL_B');
+  // Layer 2: Bài học (Days) - Defaults to level_b_day_1
   const [genAvailableLessons, setGenAvailableLessons] = useState<LessonDoc[]>([]);
-  const [genSelectedLessonIds, setGenSelectedLessonIds] = useState<string[]>(['level_b_eres_day_1']);
+  const [genSelectedLessonIds, setGenSelectedLessonIds] = useState<string[]>(['level_b_day_1']);
   // Layer 3: Thể loại & Từ vựng cụ thể
   const [genCategoryFilter, setGenCategoryFilter] = useState<string>('all');
   const [genVocabSearch, setGenVocabSearch] = useState<string>('');
@@ -482,9 +492,11 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     sessionsCount: number,
     totalItems: number
   ) => {
-    let courseTitle = 'Level B ERES Speaking';
+    let courseTitle = 'Level B - ERE (30 Topics)';
     if (courseLevel === 'ALL') {
       courseTitle = 'Tất Cả Giáo Trình CHUNKS';
+    } else if (courseLevel === 'LEVEL_B' || courseLevel === 'course_level_b' || courseLevel === 'LEVEL_B_ERE' || courseLevel === 'course_level_b_ere') {
+      courseTitle = 'Level B - ERE (30 Topics)';
     } else {
       const matched = coursesList.find(c => c.level_code === courseLevel || c.id === courseLevel);
       if (matched) {
@@ -755,7 +767,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
     let isMounted = true;
     async function fetchLessons() {
-      const targetLevel = genSourceLevel === 'ALL' ? 'LEVEL_B_ERES' : genSourceLevel;
+      const targetLevel = genSourceLevel === 'ALL' ? 'LEVEL_B' : genSourceLevel;
       // 1. Instant in-memory curriculumRegistry lookup (0ms latency, zero network)
       let lessons: LessonDoc[] = curriculumRegistry.getLessons(targetLevel);
 
@@ -948,31 +960,28 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     return packages.find(p => p.id === activePackageId) || packages[0] || null;
   }, [packages, activePackageId]);
 
-  // Helper: check readiness of an ImprovItem (EN, VI, and overall ready)
-  const checkItemReadiness = useCallback((item: ImprovItem): { en: boolean; vi: boolean; ready: boolean } => {
-    const isEn = Boolean(
-      (item.audioUrl && item.audioUrl !== 'cached' && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) ||
-      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
-      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
-      (item.hints && item.hints.length > 0 && item.hints.every(h => {
-        const t = h.text?.trim();
-        const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
-        return !t || Boolean((h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceEn) || (t && (audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn))));
-      }))
-    );
-    const isVi = Boolean(
-      (item.audioUrlVi && item.audioUrlVi !== 'cached' && (item.audioUrlVi.startsWith('http') || item.audioUrlVi.startsWith('data:'))) ||
-      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
-      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
-      (item.hints && item.hints.length > 0 && item.hints.every(h => {
-        const t = (h.translation || '').trim();
-        const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
-        return !t || Boolean((h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceVi) || (t && (audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi))));
-      }))
-    );
-    // Item is ready if both EN and VI are ready (or if in EN_ONLY, isEn, but generally both for dual syllabus)
-    return { en: isEn, vi: isVi, ready: isEn && isVi };
-  }, [currentVoiceEn, currentVoiceVi]);
+  const [itemReadiness, setItemReadiness] = useState<Record<string, { en: boolean; vi: boolean; ready: boolean }>>({});
+  useEffect(() => {
+    let cancelled = false;
+    setItemReadiness({});
+    const scan = async () => {
+      const result: Record<string, { en: boolean; vi: boolean; ready: boolean }> = {};
+      for (const session of activePackage?.sessions || []) {
+        for (const item of session.items || []) {
+          const vEn = itemVoiceEn[item.id] || batchVoiceEn;
+          const vVi = itemVoiceVi[item.id] || batchVoiceVi;
+          const one = { ...session, items: [item] };
+          const en = await isSessionAudioReady(one, vEn, vVi, 'EN_ONLY');
+          const vi = await isSessionAudioReady(one, vEn, vVi, 'VI_ONLY');
+          result[item.id] = { en, vi, ready: en && vi };
+        }
+      }
+      if (!cancelled) setItemReadiness(result);
+    };
+    scan().catch(() => {});
+    return () => { cancelled = true; };
+  }, [activePackage, itemVoiceEn, itemVoiceVi, batchVoiceEn, batchVoiceVi, synthesizingItemIds, synthesizingHintIds, batchCompleted]);
+  const checkItemReadiness = useCallback((item: ImprovItem) => itemReadiness[item.id] || { en: false, vi: false, ready: false }, [itemReadiness]);
 
   // All items within active session / package scope (before search and audioFilter)
   const sessionScopeItems = useMemo(() => {
@@ -1163,9 +1172,9 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     voiceEnOverride?: string,
     voiceViOverride?: string
   ) => {
-    const rawVoiceEn = voiceEnOverride || itemVoiceEn[item.id] || currentVoiceEn;
-    const effectiveVoiceEn = (rawVoiceEn && rawVoiceEn !== 'aura-theia-en') ? rawVoiceEn : 'flux-cliff-en';
-    const effectiveVoiceVi = voiceViOverride || itemVoiceVi[item.id] || currentVoiceVi;
+    const rawVoiceEn = voiceEnOverride || itemVoiceEn[item.id] || batchVoiceEn;
+    const effectiveVoiceEn = rawVoiceEn || 'flux-cliff-en';
+    const effectiveVoiceVi = voiceViOverride || itemVoiceVi[item.id] || batchVoiceVi;
     setSynthesizingItemIds(prev => ({ ...prev, [item.id]: true }));
     try {
       let base64En = '';
@@ -1187,7 +1196,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
         // 1. Upload EN combined audio and hint audios to Cloud Storage
         if (target === 'en' || target === 'both') {
-          const kEn = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_EN_ONLY`;
+          const kEn = getItemAudioCacheKey(item, effectiveVoiceEn, effectiveVoiceVi, 'EN_ONLY');
           const base64ToUploadEn = base64En || await audioPlayer.getCachedAudioAsync(kEn);
           if (base64ToUploadEn) {
             try {
@@ -1209,7 +1218,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
           if (updatedItem.hints) {
             for (const h of updatedItem.hints) {
-              const hKeyEn = `improv_hint_${h.id}_${effectiveVoiceEn}_en`;
+              const hKeyEn = getHintAudioCacheKey(h, effectiveVoiceEn, 'en');
               const hCachedEn = await audioPlayer.getCachedAudioAsync(hKeyEn);
               if (hCachedEn) {
                 try {
@@ -1234,7 +1243,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
         // 2. Upload VI combined audio and hint audios to Cloud Storage
         if (target === 'vi' || target === 'both') {
-          const kVi = `improv_item_${item.id}_${effectiveVoiceEn}_${effectiveVoiceVi}_VI_ONLY`;
+          const kVi = getItemAudioCacheKey(item, effectiveVoiceEn, effectiveVoiceVi, 'VI_ONLY');
           const base64ToUploadVi = base64Vi || await audioPlayer.getCachedAudioAsync(kVi);
           if (base64ToUploadVi) {
             try {
@@ -1256,7 +1265,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
 
           if (updatedItem.hints) {
             for (const h of updatedItem.hints) {
-              const hKeyVi = `improv_hint_${h.id}_${effectiveVoiceVi}_vi`;
+              const hKeyVi = getHintAudioCacheKey(h, effectiveVoiceVi, 'vi');
               const hCachedVi = await audioPlayer.getCachedAudioAsync(hKeyVi);
               if (hCachedVi) {
                 try {
@@ -1317,8 +1326,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     const hintKey = `${hint.id}_${lang}`;
     setSynthesizingHintIds(prev => ({ ...prev, [hintKey]: true }));
     try {
-      const rawVoice = voiceOverride || (lang === 'vi' ? (itemVoiceVi[item.id] || currentVoiceVi) : (itemVoiceEn[item.id] || currentVoiceEn));
-      const effectiveVoice = (rawVoice && rawVoice !== 'aura-theia-en') ? rawVoice : (lang === 'vi' ? 'vi-VN-Neural2-A' : 'flux-cliff-en');
+      const rawVoice = voiceOverride || (lang === 'vi' ? (itemVoiceVi[item.id] || batchVoiceVi) : (itemVoiceEn[item.id] || batchVoiceEn));
+      const effectiveVoice = rawVoice || (lang === 'vi' ? 'vi-VN-Neural2-A' : 'flux-cliff-en');
       const base64 = await synthesizeSingleHintAudio(hint, lang, effectiveVoice, true);
 
       let gcsUrl = '';
@@ -1652,9 +1661,13 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
   // 4. Batch Audio Generator (Package or Session Scope, EN, VI, or BOTH)
   // --------------------------------------------------------------------------
 
-  const handleStartBatchAudioGeneration = async (overrideScope?: 'package' | 'session' | 'missing' | 'failed') => {
+  const handleStartBatchAudioGeneration = async (
+    overrideScope?: 'package' | 'session' | 'missing' | 'failed',
+    overrideSessionNum?: number
+  ) => {
     if (!activePackage) return;
     const currentScope = overrideScope || batchScope;
+    const targetSessionNumber = overrideSessionNum !== undefined ? overrideSessionNum : batchSessionNum;
     setIsBatchRunning(true);
     setBatchCompleted(false);
     setCloudSyncSummary(null);
@@ -1668,12 +1681,12 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
     };
 
     const targetSession = currentScope === 'session'
-      ? activePackage.sessions.find(s => s.sessionNumber === batchSessionNum)
+      ? activePackage.sessions.find(s => s.sessionNumber === targetSessionNumber)
       : null;
 
     let scopeLabel = `Toàn bộ Package (${stats.totalItems} câu)`;
     if (currentScope === 'session' && targetSession) {
-      scopeLabel = `Session ${batchSessionNum} (${targetSession.items.length} câu)`;
+      scopeLabel = `Session ${targetSessionNumber} (${targetSession.items.length} câu)`;
     } else if (currentScope === 'missing') {
       scopeLabel = `Các câu còn thiếu Audio (${missingItemsToProcess.length} câu)`;
     } else if (currentScope === 'failed') {
@@ -1787,6 +1800,16 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
       setIsBatchRunning(false);
       setBatchCompleted(true);
     }
+  };
+
+  const handleQuickCreateSessionAudio = async (sessionNumber: number) => {
+    setBatchScope('session');
+    setBatchSessionNum(sessionNumber);
+    setBatchCompleted(false);
+    setBatchErrors([]);
+    setCloudSyncSummary(null);
+    setIsBatchAudioModalOpen(true);
+    await handleStartBatchAudioGeneration('session', sessionNumber);
   };
 
   const handleRetryFailedAudio = async () => {
@@ -2990,26 +3013,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                     const isPlayingThis = playingItemId === item.id;
                     const isSynthesizing = synthesizingItemIds[item.id] || false;
                     const isSelected = selectedItemIds.includes(item.id);
-                    const isAudioEnReady = Boolean(
-                      (item.audioUrl && item.audioUrl !== 'cached' && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) ||
-                      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
-                      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
-                      (item.hints && item.hints.length > 0 && item.hints.every(h => {
-                        const t = h.text?.trim();
-                        const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
-                        return !t || Boolean((h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceEn) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
-                      }))
-                    );
-                    const isAudioViReady = Boolean(
-                      (item.audioUrlVi && item.audioUrlVi !== 'cached' && (item.audioUrlVi.startsWith('http') || item.audioUrlVi.startsWith('data:'))) ||
-                      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
-                      audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
-                      (item.hints && item.hints.length > 0 && item.hints.every(h => {
-                        const t = (h.translation || '').trim();
-                        const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
-                        return !t || Boolean((h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceVi) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
-                      }))
-                    );
+                    const isAudioEnReady = checkItemReadiness(item).en;
+                    const isAudioViReady = checkItemReadiness(item).vi;
 
                     return (
                       <React.Fragment key={item.id}>
@@ -3287,20 +3292,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                   <div className="flex items-center gap-2 flex-1 min-w-[220px]">
                                     <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model EN:</span>
                                     <select
-                                      value={itemVoiceEn[item.id] || currentVoiceEn}
+                                      value={itemVoiceEn[item.id] || batchVoiceEn}
                                       onChange={(e) => setItemVoiceEn(prev => ({ ...prev, [item.id]: e.target.value }))}
                                       className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#DC2626] cursor-pointer"
                                     >
-                                       <optgroup label="Deepgram Aura & Flux">
-                                         {enVoiceOptions.filter(v => v.provider === 'DEEPGRAM' || (v.provider as any) === 'DEEPGRAM_AURA').map(v => (
-                                           <option key={v.id} value={v.id}>{v.name}</option>
-                                         ))}
-                                       </optgroup>
-                                       <optgroup label="Google Cloud, OpenAI & Custom">
-                                         {enVoiceOptions.filter(v => v.provider !== 'DEEPGRAM' && (v.provider as any) !== 'DEEPGRAM_AURA').map(v => (
-                                           <option key={v.id} value={v.id}>{v.name}</option>
-                                         ))}
-                                       </optgroup>
+                                      {enVoiceOptions.map(v => (
+                                        <option key={v.id} value={v.id}>
+                                          {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}] {v.gender === 'FEMALE' ? '• Nữ' : '• Nam'}
+                                        </option>
+                                      ))}
                                     </select>
                                   </div>
 
@@ -3308,20 +3308,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                                   <div className="flex items-center gap-2 flex-1 min-w-[220px]">
                                     <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model VI:</span>
                                     <select
-                                      value={itemVoiceVi[item.id] || currentVoiceVi}
+                                      value={itemVoiceVi[item.id] || batchVoiceVi}
                                       onChange={(e) => setItemVoiceVi(prev => ({ ...prev, [item.id]: e.target.value }))}
                                       className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-blue-600 cursor-pointer"
                                     >
-                                      <optgroup label="Google Neural2 & WaveNet (vi-VN)">
-                                        {viVoiceOptions.filter(v => !v.id.includes('Chirp')).map(v => (
-                                          <option key={v.id} value={v.id}>{v.name}</option>
-                                        ))}
-                                      </optgroup>
-                                      <optgroup label="Google Chirp3-HD (vi-VN)">
-                                        {viVoiceOptions.filter(v => v.id.includes('Chirp')).map(v => (
-                                          <option key={v.id} value={v.id}>{v.name}</option>
-                                        ))}
-                                      </optgroup>
+                                      {viVoiceOptions.map(v => (
+                                        <option key={v.id} value={v.id}>
+                                          {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}] {v.gender === 'FEMALE' ? '• Nữ' : '• Nam'}
+                                        </option>
+                                      ))}
                                     </select>
                                   </div>
                                 </div>
@@ -3377,26 +3372,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
               const isPlayingThis = playingItemId === item.id;
               const isSynthesizing = synthesizingItemIds[item.id] || false;
               const isSelected = selectedItemIds.includes(item.id);
-              const isAudioEnReady = Boolean(
-                (item.audioUrl && item.audioUrl !== 'cached' && (item.audioUrl.startsWith('http') || item.audioUrl.startsWith('data:'))) ||
-                audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_ONLY`, currentVoiceEn) ||
-                audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceEn) ||
-                (item.hints && item.hints.length > 0 && item.hints.every(h => {
-                  const t = h.text?.trim();
-                  const hKey = `improv_hint_${h.id}_${currentVoiceEn}_en`;
-                  return !t || Boolean((h.audioUrl && h.audioUrl !== 'cached' && (h.audioUrl.startsWith('http') || h.audioUrl.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceEn) || audioPlayer.getCachedAudio(t, currentVoiceEn) || audioPlayer.isChunkCached(t, currentVoiceEn));
-                }))
-              );
-              const isAudioViReady = Boolean(
-                (item.audioUrlVi && item.audioUrlVi !== 'cached' && (item.audioUrlVi.startsWith('http') || item.audioUrlVi.startsWith('data:'))) ||
-                audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_VI_ONLY`, currentVoiceVi) ||
-                audioPlayer.getCachedAudio(`improv_item_${item.id}_${currentVoiceEn}_${currentVoiceVi}_EN_THEN_VI`, currentVoiceVi) ||
-                (item.hints && item.hints.length > 0 && item.hints.every(h => {
-                  const t = (h.translation || '').trim();
-                  const hKey = `improv_hint_${h.id}_${currentVoiceVi}_vi`;
-                  return !t || Boolean((h.audioUrlVi && h.audioUrlVi !== 'cached' && (h.audioUrlVi.startsWith('http') || h.audioUrlVi.startsWith('data:'))) || audioPlayer.getCachedAudio(hKey, currentVoiceVi) || audioPlayer.getCachedAudio(t, currentVoiceVi) || audioPlayer.isChunkCached(t, currentVoiceVi));
-                }))
-              );
+              const isAudioEnReady = checkItemReadiness(item).en;
+                    const isAudioViReady = checkItemReadiness(item).vi;
 
               return (
                 <div
@@ -3660,20 +3637,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <div className="flex items-center gap-2 flex-1 min-w-[220px]">
                           <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model EN:</span>
                           <select
-                            value={itemVoiceEn[item.id] || currentVoiceEn}
+                            value={itemVoiceEn[item.id] || batchVoiceEn}
                             onChange={(e) => setItemVoiceEn(prev => ({ ...prev, [item.id]: e.target.value }))}
                             className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-[#DC2626] cursor-pointer"
                           >
-                            <optgroup label="Deepgram Aura & Flux">
-                              {enVoiceOptions.filter(v => v.provider === 'DEEPGRAM' || (v.provider as any) === 'DEEPGRAM_AURA').map(v => (
-                                <option key={v.id} value={v.id}>{v.name}</option>
-                              ))}
-                            </optgroup>
-                            <optgroup label="Google Cloud, OpenAI & Custom">
-                              {enVoiceOptions.filter(v => v.provider !== 'DEEPGRAM' && (v.provider as any) !== 'DEEPGRAM_AURA').map(v => (
-                                <option key={v.id} value={v.id}>{v.name}</option>
-                              ))}
-                            </optgroup>
+                            {enVoiceOptions.map(v => (
+                              <option key={v.id} value={v.id}>
+                                {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}] {v.gender === 'FEMALE' ? '• Nữ' : '• Nam'}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
@@ -3681,20 +3653,15 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         <div className="flex items-center gap-2 flex-1 min-w-[220px]">
                           <span className="text-[10px] font-bold text-zinc-500 uppercase font-mono shrink-0">Model VI:</span>
                           <select
-                            value={itemVoiceVi[item.id] || currentVoiceVi}
+                            value={itemVoiceVi[item.id] || batchVoiceVi}
                             onChange={(e) => setItemVoiceVi(prev => ({ ...prev, [item.id]: e.target.value }))}
                             className="w-full text-xs font-semibold bg-white border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:border-blue-600 cursor-pointer"
                           >
-                            <optgroup label="Google Neural2 & WaveNet (vi-VN)">
-                              {viVoiceOptions.filter(v => !v.id.includes('Chirp')).map(v => (
-                                <option key={v.id} value={v.id}>{v.name}</option>
-                              ))}
-                            </optgroup>
-                            <optgroup label="Google Chirp3-HD (vi-VN)">
-                              {viVoiceOptions.filter(v => v.id.includes('Chirp')).map(v => (
-                                <option key={v.id} value={v.id}>{v.name}</option>
-                              ))}
-                            </optgroup>
+                            {viVoiceOptions.map(v => (
+                              <option key={v.id} value={v.id}>
+                                {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}] {v.gender === 'FEMALE' ? '• Nữ' : '• Nam'}
+                              </option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -4272,7 +4239,8 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                         ))
                       ) : (
                         <>
-                          <option value="LEVEL_A">Level A - Foundation (Days 1..15)</option>
+                          <option value="LEVEL_B">Level B - ERE (30 Topics)</option>
+                          <option value="LEVEL_A">Level A - Foundation (Days 1..16)</option>
                           <option value="LEVEL_B_EREL">Level B - EREL Listening (Days 1..15)</option>
                           <option value="LEVEL_B_ERES">Level B - ERES Speaking (Days 1..15)</option>
                         </>
@@ -5587,7 +5555,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       >
                         {enVoiceOptions.map(v => (
                           <option key={v.id} value={v.id} className="bg-white text-zinc-900">
-                            {v.name} ({v.gender}) {v.provider ? `[${v.provider}]` : ''}
+                            {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}] ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
                           </option>
                         ))}
                       </select>
@@ -5606,7 +5574,7 @@ export const ImprovManagerView: React.FC<ImprovManagerViewProps> = ({
                       >
                         {viVoiceOptions.map(v => (
                           <option key={v.id} value={v.id} className="bg-white text-zinc-900">
-                            {v.name} ({v.gender})
+                            {getMinimalName(v)} • [{PROVIDERS_META[v.provider]?.shortName || v.provider}] ({v.gender === 'FEMALE' ? 'Nữ' : 'Nam'})
                           </option>
                         ))}
                       </select>

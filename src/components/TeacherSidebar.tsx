@@ -14,7 +14,9 @@ import {
   GraduationCap,
   ShieldCheck,
   FileSpreadsheet,
-  Play
+  Play,
+  Library,
+  CheckCircle2
 } from 'lucide-react';
 
 interface TeacherSidebarProps {
@@ -46,13 +48,81 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
   isCollapsed = false,
   onToggleCollapse
 }) => {
+  const [visibleCourseIds, setVisibleCourseIds] = React.useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('chunks_visible_course_ids');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to read chunks_visible_course_ids:', e);
+    }
+    return (courses || []).map(c => c.id);
+  });
+
+  React.useEffect(() => {
+    const handleVisibilityChange = (e?: any) => {
+      try {
+        if (e && e.detail && Array.isArray(e.detail)) {
+          setVisibleCourseIds(e.detail);
+          return;
+        }
+        const stored = localStorage.getItem('chunks_visible_course_ids');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setVisibleCourseIds(parsed);
+            return;
+          }
+        }
+      } catch (err) {}
+      setVisibleCourseIds((courses || []).map(c => c.id));
+    };
+
+    try {
+      const stored = localStorage.getItem('chunks_visible_course_ids');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setVisibleCourseIds(parsed);
+        }
+      } else if (courses.length > 0) {
+        setVisibleCourseIds(courses.map(c => c.id));
+      }
+    } catch (e) {}
+
+    window.addEventListener('chunks_course_visibility_changed', handleVisibilityChange);
+    window.addEventListener('storage', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('chunks_course_visibility_changed', handleVisibilityChange);
+      window.removeEventListener('storage', handleVisibilityChange);
+    };
+  }, [courses]);
+
+  const visibleCourses = (courses || []).filter(c => visibleCourseIds.includes(c.id));
+  const displayedCourses = visibleCourses.length > 0 ? visibleCourses : (courses || []);
+
+  // Auto-switch to first visible course if the selected course is hidden
+  React.useEffect(() => {
+    if (
+      visibleCourseIds.length > 0 &&
+      selectedCourseId &&
+      !visibleCourseIds.includes(selectedCourseId) &&
+      displayedCourses.length > 0
+    ) {
+      onSelectCourse?.(displayedCourses[0].id);
+    }
+  }, [visibleCourseIds, selectedCourseId, displayedCourses, onSelectCourse]);
+
   const menuItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'schedule', label: '15-Session Schedule', icon: <Calendar className="w-4 h-4" /> },
-    { id: 'projector', label: 'Presentation - Focus Mode', icon: <Mic2 className="w-4 h-4" />, badge: 'LIVE' },
+    { id: 'schedule', label: 'Cohort Schedule', icon: <Calendar className="w-4 h-4" /> },
+    { id: 'projector', label: 'Focus Mode', icon: <Mic2 className="w-4 h-4" />, badge: 'LIVE' },
     { id: 'improv-manager', label: 'Improv Studio', icon: <Sparkles className="w-4 h-4" /> },
-    { id: 'improv-presentation', label: 'Improv - Focus Mode', icon: <Play className="w-4 h-4 text-[#DC2626]" /> },
+    { id: 'improv-presentation', label: 'Improv Mode', icon: <Play className="w-4 h-4 text-[#DC2626]" /> },
     { id: 'curriculum', label: 'Curriculum & Chunks', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'audio-manager', label: 'Audio Management', icon: <Volume2 className="w-4 h-4" /> },
+    { id: 'grammar-portal', label: 'Grammar Studio', icon: <Sparkles className="w-4 h-4 text-emerald-500" />, badge: 'STUDIO' },
     { id: 'settings', label: 'Modules Settings', icon: <Settings className="w-4 h-4" /> }
   ];
 
@@ -103,7 +173,7 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
                 onChange={(e) => onSelectCourse?.(e.target.value)}
                 className="w-full bg-white border border-[#E8E8EC] rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626] cursor-pointer shadow-xs"
               >
-                {(courses || []).map(c => (
+                {displayedCourses.map(c => (
                   <option key={c.id} value={c.id}>
                     {c.level_code === 'LEVEL_A'
                       ? '📗 Level A (Foundation)'
@@ -111,6 +181,8 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
                       ? '🎧 Level B (EREL Listening)'
                       : c.level_code === 'LEVEL_B_ERES'
                       ? '🗣️ Level B (ERES Speaking)'
+                      : (c.level_code === 'LEVEL_B' || c.level_code === 'LEVEL_B_ERE' || c.id === 'course_level_b')
+                      ? '🎯 Level B (30 Topics)'
                       : `📕 ${c.title || c.level_code}`}
                   </option>
                 ))}
@@ -122,17 +194,49 @@ export const TeacherSidebar: React.FC<TeacherSidebarProps> = ({
               <label className="text-[10px] font-mono font-bold text-[#6B6B6B] uppercase tracking-wider block mb-1">
                 Active Cohort
               </label>
-              <select
-                value={selectedCohortId}
-                onChange={(e) => onSelectCohort?.(e.target.value)}
-                className="w-full bg-white border border-[#E8E8EC] rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626] cursor-pointer shadow-xs truncate"
-              >
-                {(cohorts || []).map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
+              {(() => {
+                const isCohortCourseVisible = (c: Cohort) => {
+                  if (visibleCourseIds.length === 0) return true;
+                  const cid = c.course_id || (
+                    c.level_code === 'LEVEL_A' ? 'course_level_a' :
+                    c.level_code === 'LEVEL_B_EREL' ? 'course_level_b_erel' :
+                    c.level_code === 'LEVEL_B_ERES' ? 'course_level_b_eres' : 'course_level_b'
+                  );
+                  return visibleCourseIds.includes(cid);
+                };
+                const activeCohorts = (cohorts || [])
+                  .filter(c => c.is_active !== false)
+                  .filter(isCohortCourseVisible);
+                const courseFilteredCohorts = activeCohorts.filter(c => {
+                  if (c.course_id && c.course_id === selectedCourseId) return true;
+                  if (selectedCourseId === 'course_level_a') return c.level_code === 'LEVEL_A';
+                  if (selectedCourseId === 'course_level_b') return c.level_code === 'LEVEL_B' || c.level_code === 'LEVEL_B_ERE';
+                  if (selectedCourseId === 'course_level_b_erel') return c.level_code === 'LEVEL_B_EREL';
+                  if (selectedCourseId === 'course_level_b_eres') return c.level_code === 'LEVEL_B_ERES';
+                  return false;
+                });
+                const visibleAllCohorts = (cohorts || []).filter(isCohortCourseVisible);
+                const fallbackCohorts = visibleAllCohorts.length > 0 ? visibleAllCohorts : (cohorts || []);
+                const availableCohorts = courseFilteredCohorts.length > 0 
+                  ? courseFilteredCohorts 
+                  : activeCohorts.length > 0 
+                  ? activeCohorts 
+                  : fallbackCohorts;
+
+                return (
+                  <select
+                    value={selectedCohortId}
+                    onChange={(e) => onSelectCohort?.(e.target.value)}
+                    className="w-full bg-white border border-[#E8E8EC] rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#0A0A0A] focus:outline-none focus:border-[#DC2626] cursor-pointer shadow-xs truncate"
+                  >
+                    {availableCohorts.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                );
+              })()}
             </div>
           </div>
         )}

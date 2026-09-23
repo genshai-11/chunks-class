@@ -11,25 +11,24 @@ import { SettingsView } from './components/SettingsView';
 import { ImprovManagerView } from './components/ImprovManagerView';
 import { ImprovPresentation } from './components/ImprovPresentation';
 import { LessonExcelUploader } from './components/LessonExcelUploader';
+import { GrammarReviewPortal } from './components/GrammarReviewPortal';
 import { getFirestoreCohorts, saveFirestoreCohort, deleteFirestoreCohort, DEFAULT_COURSES } from './services/firestoreService';
 import { useAppRouter } from './hooks/useAppRouter';
 import { IMPROV_SET_01 } from './data/improvSet01And02';
 
 function sanitizeCohort(cohort: Cohort): Cohort {
   let levelCode = cohort.level_code;
-  if ((levelCode as string) === 'LEVEL_B') {
-    levelCode = 'LEVEL_B_ERES';
-  }
   let courseId = cohort.course_id;
-  if (!courseId || (courseId as string) === 'course_level_b') {
+
+  if (levelCode === 'LEVEL_B' || levelCode === 'LEVEL_B_ERE' || courseId === 'course_level_b' || courseId === 'course_level_b_ere') {
+    levelCode = 'LEVEL_B';
+    courseId = 'course_level_b';
+  } else if (!courseId) {
     courseId = levelCode === 'LEVEL_A' ? 'course_level_a' : levelCode === 'LEVEL_B_EREL' ? 'course_level_b_erel' : 'course_level_b_eres';
   }
 
   const cleanedSessions = (cohort.sessions || []).map(s => {
     let cleanLessonId = s.lesson_id || '';
-    if (cleanLessonId.startsWith('level_b_day_')) {
-      cleanLessonId = cleanLessonId.replace('level_b_day_', 'level_b_eres_day_');
-    }
     if (!cleanLessonId) {
       cleanLessonId = `${String(levelCode).toLowerCase()}_day_${s.session_number}`;
     }
@@ -47,6 +46,26 @@ function sanitizeCohort(cohort: Cohort): Cohort {
   };
 }
 
+function getCohortCourseId(cohort?: Cohort): string {
+  if (!cohort) return 'course_level_b';
+  return cohort.course_id || (
+    cohort.level_code === 'LEVEL_A' ? 'course_level_a' :
+    cohort.level_code === 'LEVEL_B_EREL' ? 'course_level_b_erel' :
+    cohort.level_code === 'LEVEL_B_ERES' ? 'course_level_b_eres' : 'course_level_b'
+  );
+}
+
+function getStoredVisibleCourseIds(): string[] {
+  try {
+    const stored = localStorage.getItem('chunks_visible_course_ids');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
 export const App: React.FC = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -58,50 +77,75 @@ export const App: React.FC = () => {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [activeCohortId, setActiveCohortId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [drillLessonId, setDrillLessonId] = useState<string>('level_b_eres_day_1');
+  const [drillLessonId, setDrillLessonId] = useState<string>('level_b_day_1');
   const [drillSessionNumber, setDrillSessionNumber] = useState<number>(1);
   const [improvPackageId, setImprovPackageId] = useState<string>(IMPROV_SET_01.id);
   const [improvSessionNumber, setImprovSessionNumber] = useState<number>(1);
   const [isExcelModalOpen, setIsExcelModalOpen] = useState<boolean>(false);
+  const [projectorReturnTab, setProjectorReturnTab] = useState<NavTab>('schedule');
 
   // Load cohorts on mount
   useEffect(() => {
     async function loadData() {
       try {
+        const visibleIds = getStoredVisibleCourseIds();
+        const isCourseVisible = (c: Cohort) => {
+          if (visibleIds.length === 0) return true;
+          return visibleIds.includes(getCohortCourseId(c));
+        };
+
         const loadedCohorts = await getFirestoreCohorts();
         if (loadedCohorts.length > 0) {
           const sanitized = loadedCohorts.map(sanitizeCohort);
           setCohorts(sanitized);
-          const defaultActive = sanitized.find(c => c.level_code === 'LEVEL_B_ERES' || c.title.includes('ERES')) || sanitized[0];
+          const visibleCohorts = sanitized.filter(isCourseVisible);
+          const cohortsToSearch = visibleCohorts.length > 0 ? visibleCohorts : sanitized;
+          const defaultActive = cohortsToSearch.find(c => c.level_code === 'LEVEL_B' || c.course_id === 'course_level_b') 
+            || cohortsToSearch.find(c => c.level_code === 'LEVEL_B_ERE') 
+            || cohortsToSearch[0];
           setActiveCohortId(defaultActive.id);
           if (defaultActive.sessions?.[0]) {
             setDrillLessonId(defaultActive.sessions[0].lesson_id);
             setDrillSessionNumber(defaultActive.sessions[0].session_number);
           }
         } else {
-          const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
-          const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+          const defaultB = createDefaultCohort("Level B - ERE Spoken Reflexes K30", "LEVEL_B");
           const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
-          setCohorts([defaultEres, defaultErel, defaultA]);
-          setActiveCohortId(defaultEres.id);
-          if (defaultEres.sessions?.[0]) {
-            setDrillLessonId(defaultEres.sessions[0].lesson_id);
-            setDrillSessionNumber(defaultEres.sessions[0].session_number);
+          const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+          const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
+          const allDefaults = [defaultB, defaultA, defaultErel, defaultEres];
+          setCohorts(allDefaults);
+          const visibleDefaults = allDefaults.filter(isCourseVisible);
+          const chosenDefault = visibleDefaults.length > 0 ? visibleDefaults[0] : defaultB;
+          setActiveCohortId(chosenDefault.id);
+          if (chosenDefault.sessions?.[0]) {
+            setDrillLessonId(chosenDefault.sessions[0].lesson_id);
+            setDrillSessionNumber(chosenDefault.sessions[0].session_number);
           }
-          await saveFirestoreCohort(defaultEres);
-          await saveFirestoreCohort(defaultErel);
+          await saveFirestoreCohort(defaultB);
           await saveFirestoreCohort(defaultA);
+          await saveFirestoreCohort(defaultErel);
+          await saveFirestoreCohort(defaultEres);
         }
       } catch (e) {
         console.error('Error loading cohorts:', e);
-        const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
-        const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+        const visibleIds = getStoredVisibleCourseIds();
+        const isCourseVisible = (c: Cohort) => {
+          if (visibleIds.length === 0) return true;
+          return visibleIds.includes(getCohortCourseId(c));
+        };
+        const defaultB = createDefaultCohort("Level B - ERE Spoken Reflexes K30", "LEVEL_B");
         const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
-        setCohorts([defaultEres, defaultErel, defaultA]);
-        setActiveCohortId(defaultEres.id);
-        if (defaultEres.sessions?.[0]) {
-          setDrillLessonId(defaultEres.sessions[0].lesson_id);
-          setDrillSessionNumber(defaultEres.sessions[0].session_number);
+        const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+        const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
+        const allDefaults = [defaultB, defaultA, defaultErel, defaultEres];
+        setCohorts(allDefaults);
+        const visibleDefaults = allDefaults.filter(isCourseVisible);
+        const chosenDefault = visibleDefaults.length > 0 ? visibleDefaults[0] : defaultB;
+        setActiveCohortId(chosenDefault.id);
+        if (chosenDefault.sessions?.[0]) {
+          setDrillLessonId(chosenDefault.sessions[0].lesson_id);
+          setDrillSessionNumber(chosenDefault.sessions[0].session_number);
         }
       } finally {
         setIsLoading(false);
@@ -126,25 +170,67 @@ export const App: React.FC = () => {
     await saveFirestoreCohort(sanitized);
   };
 
-  const handleResetToDefault = async () => {
-    if (window.confirm("Are you sure you want to reset and restore the default 15-session cohorts?")) {
-      const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
-      const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
-      const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
-      setCohorts([defaultEres, defaultErel, defaultA]);
-      setActiveCohortId(defaultEres.id);
-      if (defaultEres.sessions?.[0]) {
-        setDrillLessonId(defaultEres.sessions[0].lesson_id);
-        setDrillSessionNumber(defaultEres.sessions[0].session_number);
+  const handleDeleteCohort = async (cohortId: string) => {
+    try {
+      await deleteFirestoreCohort(cohortId);
+    } catch (e) {
+      console.warn('Failed to delete cohort from Firestore:', e);
+    }
+    const updated = cohorts.filter(c => c.id !== cohortId);
+    setCohorts(updated);
+    try {
+      localStorage.setItem('chunks_firestore_synced_cohorts', JSON.stringify(updated));
+    } catch {}
+    if (activeCohortId === cohortId) {
+      const nextActive = updated[0];
+      if (nextActive) {
+        setActiveCohortId(nextActive.id);
+        const firstSession = nextActive.sessions?.[0];
+        if (firstSession) {
+          setDrillLessonId(firstSession.lesson_id);
+          setDrillSessionNumber(firstSession.session_number);
+        }
       }
-      await saveFirestoreCohort(defaultEres);
-      await saveFirestoreCohort(defaultErel);
-      await saveFirestoreCohort(defaultA);
     }
   };
 
+  const handleResetToDefault = async () => {
+    if (window.confirm("Are you sure you want to reset and restore default cohorts?")) {
+      const defaultB = createDefaultCohort("Level B - ERE Spoken Reflexes K30", "LEVEL_B");
+      const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
+      const defaultErel = createDefaultCohort("Level B - EREL Listening & Shadowing K18", "LEVEL_B_EREL");
+      const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
+      setCohorts([defaultB, defaultA, defaultErel, defaultEres]);
+      setActiveCohortId(defaultB.id);
+      if (defaultB.sessions?.[0]) {
+        setDrillLessonId(defaultB.sessions[0].lesson_id);
+        setDrillSessionNumber(defaultB.sessions[0].session_number);
+      }
+      await saveFirestoreCohort(defaultB);
+      await saveFirestoreCohort(defaultA);
+      await saveFirestoreCohort(defaultErel);
+      await saveFirestoreCohort(defaultEres);
+    }
+  };
+
+  const handleToggleCohortActive = async (cohortId: string, active: boolean) => {
+    const target = cohorts.find(c => c.id === cohortId);
+    if (!target) return;
+    const updated = { ...target, is_active: active, updated_at: new Date().toISOString() };
+    await handleUpdateCohort(updated);
+  };
+
   const handleSelectCourse = (courseId: string) => {
-    const matchingCohort = cohorts.find(c => c.course_id === courseId);
+    const matchingCohorts = cohorts.filter(c => {
+      if (c.course_id && c.course_id === courseId) return true;
+      if (courseId === 'course_level_a') return c.level_code === 'LEVEL_A';
+      if (courseId === 'course_level_b') return c.level_code === 'LEVEL_B' || c.level_code === 'LEVEL_B_ERE';
+      if (courseId === 'course_level_b_erel') return c.level_code === 'LEVEL_B_EREL';
+      if (courseId === 'course_level_b_eres') return c.level_code === 'LEVEL_B_ERES';
+      return false;
+    });
+    // Prefer selecting an active cohort
+    const matchingCohort = matchingCohorts.find(c => c.is_active !== false) || matchingCohorts[0];
     if (matchingCohort) {
       setActiveCohortId(matchingCohort.id);
       const firstSession = matchingCohort.sessions?.[0];
@@ -154,20 +240,64 @@ export const App: React.FC = () => {
       }
     } else {
       const course = DEFAULT_COURSES.find(c => c.id === courseId);
-      const level = (course?.level_code || 'LEVEL_B_ERES') as any;
+      const level = (course?.level_code || (courseId === 'course_level_b' ? 'LEVEL_B' : 'LEVEL_B_ERES')) as any;
       const title = course?.title || `Cohort - ${courseId}`;
       const newCohort = createDefaultCohort(title, level);
       newCohort.course_id = courseId;
+      newCohort.is_active = true;
       handleCreateCohort(newCohort);
     }
   };
 
+  // Listen for course visibility changes and auto-switch if active cohort's course is turned off
+  useEffect(() => {
+    const handleVisibilityChange = (e?: Event) => {
+      try {
+        let visibleIds: string[] = [];
+        if (e && 'detail' in e && Array.isArray((e as CustomEvent).detail)) {
+          visibleIds = (e as CustomEvent).detail;
+        } else {
+          visibleIds = getStoredVisibleCourseIds();
+        }
+
+        if (visibleIds.length > 0) {
+          const currentCourseId = getCohortCourseId(activeCohort);
+          if (currentCourseId && !visibleIds.includes(currentCourseId)) {
+            const isVisible = (c: Cohort) => visibleIds.includes(getCohortCourseId(c));
+            const visibleCohorts = cohorts.filter(isVisible);
+            const nextCohort = visibleCohorts.find(c => c.is_active !== false) || visibleCohorts[0];
+            if (nextCohort) {
+              setActiveCohortId(nextCohort.id);
+              const firstSession = nextCohort.sessions?.[0];
+              if (firstSession) {
+                setDrillLessonId(firstSession.lesson_id);
+                setDrillSessionNumber(firstSession.session_number);
+              }
+            } else if (visibleIds[0]) {
+              handleSelectCourse(visibleIds[0]);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to handle course visibility change in App:', err);
+      }
+    };
+
+    window.addEventListener('chunks_course_visibility_changed', handleVisibilityChange);
+    window.addEventListener('storage', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('chunks_course_visibility_changed', handleVisibilityChange);
+      window.removeEventListener('storage', handleVisibilityChange);
+    };
+  }, [cohorts, activeCohort]);
+
   const handleLaunchProjectorForLesson = (lessonId: string, sessionNumber: number) => {
-    let cleanId = lessonId;
-    if (cleanId?.startsWith('level_b_day_')) {
-      cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
+    if (activeTab === 'grammar-portal' || (activeTab as any) === 'resource-manager') {
+      setProjectorReturnTab('grammar-portal');
+    } else {
+      setProjectorReturnTab(activeTab || 'schedule');
     }
-    setDrillLessonId(cleanId);
+    setDrillLessonId(lessonId);
     setDrillSessionNumber(sessionNumber);
     setActiveTab('projector');
   };
@@ -199,6 +329,28 @@ export const App: React.FC = () => {
     );
   }
 
+  // Dedicated Standalone Grammar Curator Studio Mode
+  const isStandalonePortal = activeTab === 'grammar-portal' && (
+    typeof window !== 'undefined' && (
+      window.location.pathname.includes('/grammar-portal') ||
+      window.location.pathname.includes('/curator') ||
+      window.location.search.includes('standalone=true')
+    )
+  );
+
+  if (isStandalonePortal) {
+    return (
+      <GrammarReviewPortal
+        isStandalone={true}
+        onExitToApp={() => setActiveTab('resource-manager')}
+        onLaunchProjectorForLesson={(lessonId, sessionNumber) => {
+          setProjectorReturnTab('grammar-portal');
+          handleLaunchProjectorForLesson(lessonId, sessionNumber);
+        }}
+      />
+    );
+  }
+
   return (
     <AppLayout
       activeTab={activeTab}
@@ -206,7 +358,7 @@ export const App: React.FC = () => {
       activeCohort={activeCohort}
       allCohorts={cohorts}
       courses={DEFAULT_COURSES}
-      selectedCourseId={activeCohort?.course_id || 'course_level_b_eres'}
+      selectedCourseId={getCohortCourseId(activeCohort)}
       onSelectCourse={handleSelectCourse}
       onSelectCohort={(c) => {
         setActiveCohortId(c.id);
@@ -225,6 +377,7 @@ export const App: React.FC = () => {
           onUpdateCohort={handleUpdateCohort}
           onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
           onOpenCreateCohort={() => {}}
+          onDeleteCohort={handleDeleteCohort}
         />
       )}
 
@@ -232,15 +385,11 @@ export const App: React.FC = () => {
         <ClassroomPresentation
           initialLessonId={drillLessonId}
           sessionNumber={drillSessionNumber}
-          onExit={() => setActiveTab('schedule')}
+          onExit={() => setActiveTab(projectorReturnTab || 'schedule')}
           audioSettings={activeCohort.audio_settings}
           courseLevel={activeCohort.level_code}
           onSelectLesson={(newLessonId, sessionNumber) => {
-            let cleanId = newLessonId;
-            if (cleanId?.startsWith('level_b_day_')) {
-              cleanId = cleanId.replace('level_b_day_', 'level_b_eres_day_');
-            }
-            setDrillLessonId(cleanId);
+            setDrillLessonId(newLessonId);
             if (sessionNumber !== undefined) {
               setDrillSessionNumber(sessionNumber);
             }
@@ -281,6 +430,7 @@ export const App: React.FC = () => {
       {activeTab === 'audio-manager' && (
         <AudioManagerView
           cohortAudioSettings={activeCohort.audio_settings}
+          defaultCourseLevel={activeCohort.level_code}
           onUpdateAudioSettings={handleUpdateAudioSettings}
           onLaunchProjectorForLesson={handleLaunchProjectorForLesson}
         />
@@ -298,6 +448,19 @@ export const App: React.FC = () => {
           cohort={activeCohort}
           onUpdateCohort={handleUpdateCohort}
           onResetToDefault={handleResetToDefault}
+          allCohorts={cohorts}
+          onSelectCohort={(id) => setActiveCohortId(id)}
+          onToggleCohortActive={handleToggleCohortActive}
+        />
+      )}
+
+      {(activeTab === 'grammar-portal' || (activeTab as any) === 'resource-manager') && (
+        <GrammarReviewPortal
+          onLaunchProjectorForLesson={(lessonId, sessionNumber) => {
+            setProjectorReturnTab('grammar-portal');
+            handleLaunchProjectorForLesson(lessonId, sessionNumber);
+          }}
+          onExitToApp={() => setActiveTab('schedule')}
         />
       )}
 

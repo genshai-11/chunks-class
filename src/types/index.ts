@@ -1,7 +1,7 @@
 // --------------------------------------------------------------------------
 // 1. Dynamic Course Level & Course Entity
 // --------------------------------------------------------------------------
-export type KnownCourseLevel = 'LEVEL_A' | 'LEVEL_B' | 'LEVEL_B_EREL' | 'LEVEL_B_ERES' | 'LEVEL_C' | 'IELTS_DRILL' | 'BUSINESS_CHUNK_PRO';
+export type KnownCourseLevel = 'LEVEL_A' | 'LEVEL_B' | 'LEVEL_B_ERE' | 'LEVEL_B_EREL' | 'LEVEL_B_ERES' | 'LEVEL_C' | 'IELTS_DRILL' | 'BUSINESS_CHUNK_PRO';
 export type CourseLevel = KnownCourseLevel | (string & {});
 
 export interface Course {
@@ -45,6 +45,14 @@ export interface ChunkItem {
   speaker: string | null;
   audio_url?: string | null;
   audio_url_vi?: string | null;
+  audio_url_human?: string | null;
+  audio_url_human_vi?: string | null;
+  audio_url_tts?: string | null;
+  audio_url_tts_vi?: string | null;
+  audio_source_preferred?: 'human' | 'tts';
+  raw_audio_en?: string | null;
+  raw_audio_vi?: string | null;
+  raw_image?: string | null;
   beat_prosody?: string | null;
   ipa?: string | null;
   source_file?: string;
@@ -53,6 +61,7 @@ export interface ChunkItem {
   source_row?: number;
   notes?: string;
   part?: string;
+  is_example?: boolean;
   [key: string]: any;
 }
 
@@ -68,10 +77,58 @@ export interface LessonDoc {
   total_chunks: number;
   categories: string[];
   chunks: ChunkItem[];
+  grammar?: LessonGrammar;
   source_files?: string[];
   created_at?: string;
   updated_at?: string;
   [key: string]: any;
+}
+
+export interface GrammarExample {
+  en: string;
+  vi: string;
+}
+
+export type GrammarStructureType = 'sentence_structure' | 'verb_form' | 'tense_reflex';
+
+export interface GrammarMiniLesson {
+  file?: string;
+  topic?: string;
+  transcript?: string;
+  structures?: string[];
+  verb_forms?: string[];
+  tense?: string[];
+  examples?: GrammarExample[];
+  notes?: string;
+  primary_structure?: string;
+  structure_type?: GrammarStructureType;
+  audio_url?: string;
+  gdrive_file_id?: string;
+  audio_source?: 'google_drive' | 'local_blob' | 'gcs' | 'tts' | string;
+}
+
+export interface LessonGrammar {
+  verb_forms: string[];
+  sentence_structures: string[];
+  tense: string[];
+  notes?: string;
+  mini_lessons?: GrammarMiniLesson[];
+  total_audio_files?: number;
+  source_type?: string;
+  data_group?: 'core_19_lessons' | 'supplemental_7_lessons' | 'pending_4_lessons';
+  status?: 'active' | 'pending_audio';
+  cohort_day_15?: number | null;
+  lesson_number_19?: number | null;
+  thematic_module?: string;
+}
+
+export interface LessonGrammarDoc extends LessonGrammar {
+  id: string;             // e.g. "grammar_level_b_day_1"
+  lesson_id: string;      // e.g. "level_b_day_1"
+  course_id: string;      // e.g. "course_level_b"
+  day_number: number;
+  lesson_title: string;
+  updated_at?: string;
 }
 
 // --------------------------------------------------------------------------
@@ -113,6 +170,8 @@ export interface CohortAudioSettings {
   repeat_count: number;
   provider_primary?: string;       // 'DEEPGRAM_AURA' | 'GOOGLE_TTS'
   provider_secondary?: string;
+  part_announce_enabled?: boolean;
+  part_intro_autoplay_chunk?: boolean;
 }
 
 export interface Cohort {
@@ -131,6 +190,7 @@ export interface Cohort {
   total_sessions: number;          // Dynamic N sessions
   sessions: ClassSession[];
   audio_settings?: CohortAudioSettings;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -167,7 +227,9 @@ export type NavTab =
   | 'audio-manager' 
   | 'settings'
   | 'improv-manager'
-  | 'improv-presentation';
+  | 'improv-presentation'
+  | 'resource-manager'
+  | 'grammar-portal';
 
 // --------------------------------------------------------------------------
 // 4. CHUNKS Improv Domain Models
