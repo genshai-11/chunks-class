@@ -885,7 +885,7 @@ Large JSON outputs frequently get truncated when LLMs hit `maxOutputTokens`, cau
 
 ## 7. Serverless HTTP REST API Endpoint (`/api/v1/improv/*`)
 
-The **CHUNKS Improv Serverless REST API v2** exposes the complete `improvApi` pedagogical and synchronization engine over high-performance HTTP endpoints powered by **Google Cloud Functions v2** (Node.js 20, 512MiB, 300s timeout) and rewritten cleanly through **Firebase Hosting** under `/api/v1/improv/**`.
+The **CHUNKS Improv Serverless REST API v2** exposes the complete `improvApi` pedagogical and synchronization engine over high-performance HTTP endpoints powered by **Google Cloud Functions v2** (Node.js 22, 512MiB, 300s timeout) and rewritten cleanly through **Firebase Hosting** under `/api/v1/improv/**`.
 
 ### Cloud Functions v2 Serverless Architecture
 
