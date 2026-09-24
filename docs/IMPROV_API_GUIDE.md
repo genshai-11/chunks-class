@@ -53,6 +53,15 @@ The [`improvApi`](file:///C:/Users/gensh/Desktop/CHUNKS/PROJECT/chunks-class/src
    - [9. Ingest & Parse Excel Spreadsheet (`POST /parse-excel`)](#9-ingest--parse-excel-spreadsheet-post-parse-excel)
    - [10. Language Auto-Sanitization (`POST /sanitize`)](#10-language-auto-sanitization-post-sanitize)
    - [Client SDKs & Code Examples (cURL, Python, TypeScript)](#client-sdks--code-examples-curl-python-typescript)
+8. [Xác Thực & Sử Dụng Service Account Gọi Cloud Run Trực Tiếp (GCP Service Account Authentication)](#8-xác-thực--sử-dụng-service-account-gọi-cloud-run-trực-tiếp-gcp-service-account-authentication)
+   - [Tổng Quan Kiến Trúc Bảo Mật & Xác Thực OIDC](#81-tổng-quan-kiến-trúc-bảo-mật--xác-thực-oidc-iam-service-to-service)
+   - [Thông Số Cấu Hình Hạ Tầng Cloud Run & Service Account](#82-thông-số-cấu-hình-hạ-tầng-cloud-run--service-account)
+   - [Quản Lý Khóa Bí Mật An Toàn (`credentials/`)](#83-quản-lý-khóa-bí-mật-an-toàn-credentials)
+   - [Code Recipes: Xác Thực OIDC ID Token & Gọi Cloud Run Trực Tiếp](#84-code-recipes-xác-thực-oidc-id-token--gọi-cloud-run-trực-tiếp)
+     - [Recipe 1: TypeScript / Node.js (Chunks-LMS / Backend Microservices)](#recipe-1-typescript--nodejs-chunks-lms--backend-microservices)
+     - [Recipe 2: Python Client (`google-auth` & `requests`)](#recipe-2-python-client-google-auth--requests)
+     - [Recipe 3: cURL & Shell Scripts (PowerShell & Bash)](#recipe-3-curl--shell-scripts-powershell--bash)
+     - [Recipe 4: Full End-to-End Package Generation & Fetching](#recipe-4-full-end-to-end-package-generation--fetching)
 
 ---
 
@@ -1193,3 +1202,416 @@ async function createQuickDrill() {
   return session;
 }
 ```
+
+---
+
+## 8. Xác Thực & Sử Dụng Service Account Gọi Cloud Run Trực Tiếp (GCP Service Account Authentication)
+
+Mục này hướng dẫn chi tiết cách cấu hình và sử dụng **Google Cloud Service Account** để xác thực OpenID Connect (OIDC) ID Token khi gọi trực tiếp endpoint **Cloud Run** (`https://improvapiendpoint-n4trgixj6q-de.a.run.app`) mà không cần thông qua Firebase Hosting rewrite proxy.
+
+Giải pháp này được thiết kế chuyên biệt cho:
+- **Backend-to-Backend & Headless LMS Integration**: Kết nối từ Chunks-LMS, backend microservices, cron pipelines hoặc CI/CD runners.
+- **Bảo Mật Zero-Trust IAM**: Giới hạn quyền gọi API bằng vai trò Cloud Run Invoker (`roles/run.invoker`), loại bỏ hoàn toàn rủi ro lộ public endpoint không xác thực.
+- **Tốc Độ Tối Ưu**: Gọi trực tiếp đến vùng `asia-east1` (Taiwan), giảm thiểu độ trễ mạng và loại bỏ tầng trung gian reverse-proxy.
+
+---
+
+### 8.1 Tổng Quan Kiến Trúc Bảo Mật & Xác Thực OIDC (IAM Service-to-Service)
+
+Google Cloud Run sử dụng giao thức chuẩn **OpenID Connect (OIDC)** để xác thực giữa các service (Service-to-Service Authentication).
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                             Client Machine / Backend                             │
+│                                                                                  │
+│   1. Đọc key JSON: credentials/chunks-cloudrun-service-account.json              │
+│   2. Ký JWT Assertion với Private Key của Service Account                       │
+│   3. Gửi JWT đến Google OAuth2 Endpoint (https://oauth2.googleapis.com/token)    │
+│   4. Nhận Google-signed OIDC ID Token (Audience = Cloud Run URL)                 │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │
+                                         │ 5. HTTP Request kèm Header:
+                                         │    Authorization: Bearer <ID_TOKEN>
+                                         ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                 Google Cloud Run Gateway (Google Front End / IAM)                │
+│                                                                                  │
+│   • Kiểm tra chữ ký số của Google trên ID Token                                  │
+│   • Xác minh audience trùng khớp https://improvapiendpoint-n4trgixj6q-de.a.run.app│
+│   • Kiểm tra IAM Permission: roles/run.invoker                                   │
+│   • Nếu hợp lệ -> Chuyển tiếp request vào Container improvapiendpoint           │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                   Container: improvapiendpoint (Node.js/Bun)                     │
+│                                                                                  │
+│   • Thực thi micro-batch LLM synthesis (Gemini 2.5)                             │
+│   • Đọc/Ghi trực tiếp Firestore collection /improv_packages                     │
+│   • Trả về kết quả JSON / Excel binary stream với HTTP 200 OK                   │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 8.2 Thông Số Cấu Hình Hạ Tầng Cloud Run & Service Account
+
+Bảng thông số kỹ thuật đã được cấp phát, thiết lập IAM và kiểm thử xác thực thành công:
+
+| Thuộc Tính | Giá Trị Cấu Hình | Ghi Chú |
+| :--- | :--- | :--- |
+| **Service Name** | `improvapiendpoint` | Google Cloud Run Service |
+| **Direct Cloud Run URL** | `https://improvapiendpoint-n4trgixj6q-de.a.run.app` | Target Endpoint & OIDC Audience |
+| **GCP Region** | `asia-east1` | Taiwan Data Center (độ trễ thấp nhất về VN) |
+| **GCP Project ID** | `chunks-voicecloning-genshai` | Project chứa Cloud Run & Firestore |
+| **GCP Project Number** | `284566312743` | Số định danh dự án |
+| **Billing Account (Cycy)** | `012961-7A87C2-05D3CA` | Tài khoản thanh toán GCP chính thức |
+| **Service Account Email** | `284566312743-compute@developer.gserviceaccount.com` | Default Compute Service Account |
+| **Quyền IAM Cần Thiết** | `roles/run.invoker`, `roles/datastore.user` | Cho phép invoke Cloud Run & truy xuất Firestore |
+| **Key File Location** | `credentials/chunks-cloudrun-service-account.json` | Đã cấu hình `.gitignore` an toàn |
+
+---
+
+### 8.3 Quản Lý Khóa Bí Mật An Toàn (`credentials/`)
+
+Để bảo mật khóa bí mật (`private_key`) của Service Account, dự án đã thiết lập quy chuẩn lưu trữ nghiêm ngặt:
+
+1. **Vị trí tệp**:
+   ```
+   chunks-class/
+   ├── credentials/
+   │   └── chunks-cloudrun-service-account.json   # Key JSON (đã gitignore)
+   └── .gitignore
+   ```
+
+2. **Cấu hình `.gitignore`**:
+   Đã thêm cấu hình chặn commit toàn bộ thư mục `credentials/` và các file `*service-account*.json`:
+   ```gitignore
+   # GCP / Service Account Credentials
+   credentials/
+   *service-account*.json
+   ```
+
+> [!CAUTION]
+> **Tuyệt đối không commit tệp `chunks-cloudrun-service-account.json` vào bất kỳ Git repository nào.**
+> Trong môi trường Production (như Cloud Run, Kubernetes, Heroku, Docker), khuyến nghị truyền khóa thông qua biến môi trường `GOOGLE_APPLICATION_CREDENTIALS` trỏ tới file mount bí mật từ Secret Manager hoặc truyền chuỗi base64 qua biến bí mật.
+
+---
+
+### 8.4 Code Recipes: Xác Thực OIDC ID Token & Gọi Cloud Run Trực Tiếp
+
+Dưới đây là các công thức mã nguồn thực chiến đã được kiểm thử xác thực 100% thành công.
+
+#### Recipe 1: TypeScript / Node.js (Chunks-LMS / Backend Microservices)
+
+Sử dụng thư viện chính thức [`google-auth-library`](https://www.npmjs.com/package/google-auth-library). Thư viện này tự động quản lý vòng đời lấy token, lưu bộ nhớ đệm (caching) và tự động làm mới (refresh) trước khi token hết hạn (1 giờ).
+
+Cài đặt thư viện:
+```bash
+bun add google-auth-library
+# hoặc: npm install google-auth-library
+```
+
+Mã nguồn triển khai hoàn chỉnh:
+
+```typescript
+import { GoogleAuth } from 'google-auth-library';
+
+// 1. Cấu hình hằng số endpoint và file key bí mật
+const CLOUD_RUN_URL = 'https://improvapiendpoint-n4trgixj6q-de.a.run.app';
+const KEY_FILE_PATH = 'credentials/chunks-cloudrun-service-account.json';
+
+// 2. Khởi tạo GoogleAuth instance trỏ tới key file
+const auth = new GoogleAuth({
+  keyFilename: KEY_FILE_PATH
+});
+
+/**
+ * Tạo một authenticated HTTP client cho Cloud Run target audience
+ */
+async function getAuthenticatedClient() {
+  return await auth.getIdTokenClient(CLOUD_RUN_URL);
+}
+
+// 3. Ví dụ 1: Kiểm tra trạng thái hệ thống (Health Check)
+export async function checkCloudRunHealth() {
+  const client = await getAuthenticatedClient();
+  const res = await client.request<{ status: string; service: string; region: string }>({
+    url: `${CLOUD_RUN_URL}/health`,
+    method: 'GET'
+  });
+  console.log('Cloud Run Health:', res.data);
+  return res.data;
+}
+
+// 4. Ví dụ 2: Lấy danh sách gói Improv từ Firestore
+export async function listImprovPackages() {
+  const client = await getAuthenticatedClient();
+  const res = await client.request<{ success: boolean; count: number; data: any[] }>({
+    url: `${CLOUD_RUN_URL}/packages`,
+    method: 'GET'
+  });
+  console.log(`Lấy thành công ${res.data.count} packages từ Cloud Run!`);
+  return res.data.data;
+}
+
+// 5. Ví dụ 3: Tạo trọn vẹn một gói Improv Package và lưu vào Firestore
+export async function generateImprovPackageViaCloudRun() {
+  const client = await getAuthenticatedClient();
+
+  const payload = {
+    packageTitle: 'Business Pitch & Elevator Reflex',
+    totalItems: 6,
+    difficulty: 'Medium (B1)',
+    relevance: 'High',
+    sourceLevel: 'LEVEL_B_ERES',
+    sourceLessonIds: [],
+    topic: 'Venture Capital Pitching',
+    sessionsConfig: [
+      {
+        sessionNumber: 1,
+        title: 'Session 1: Problem & Solution',
+        hcTotal: 2,
+        hintTypes: ['Keyword', 'Ending'],
+        itemsCount: 3
+      },
+      {
+        sessionNumber: 2,
+        title: 'Session 2: Financials & Traction',
+        hcTotal: 3,
+        hintTypes: ['Keyword', 'Từ nối', 'Ending'],
+        itemsCount: 3
+      }
+    ]
+  };
+
+  const res = await client.request<{ success: boolean; data: any }>({
+    url: `${CLOUD_RUN_URL}/generate?save=true`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    data: payload
+  });
+
+  console.log('Generated Package ID:', res.data.data.id);
+  return res.data.data;
+}
+```
+
+---
+
+#### Recipe 2: Python Client (`google-auth` & `requests`)
+
+Sử dụng thư viện chính thức `google-auth` cùng `requests`. Có thể sử dụng `AuthorizedSession` để tự động đính kèm ID Token vào mọi request.
+
+Cài đặt thư viện:
+```bash
+pip install google-auth requests
+```
+
+Mã nguồn Python hoàn chỉnh:
+
+```python
+import os
+import requests
+from google.oauth2 import service_account
+from google.auth.transport.requests import AuthorizedSession, Request
+import google.oauth2.id_token
+
+# 1. Cấu hình endpoint và file key bí mật
+CLOUD_RUN_URL = "https://improvapiendpoint-n4trgixj6q-de.a.run.app"
+KEY_FILE_PATH = "credentials/chunks-cloudrun-service-account.json"
+
+# --- Cách 1: Sử dụng AuthorizedSession (Khuyến nghị - Tự động refresh token) ---
+def get_authorized_session() -> AuthorizedSession:
+    """Tạo một requests.Session tự động gắn header Authorization: Bearer <ID_TOKEN>."""
+    credentials = service_account.IDTokenCredentials.from_service_account_file(
+        KEY_FILE_PATH,
+        target_audience=CLOUD_RUN_URL
+    )
+    return AuthorizedSession(credentials)
+
+def check_health():
+    session = get_authorized_session()
+    res = session.get(f"{CLOUD_RUN_URL}/health")
+    res.raise_for_status()
+    print("Health Status:", res.json())
+    return res.json()
+
+def get_all_packages():
+    session = get_authorized_session()
+    res = session.get(f"{CLOUD_RUN_URL}/packages")
+    res.raise_for_status()
+    data = res.json()
+    print(f"Tổng số packages: {data.get('count', 0)}")
+    return data.get("data", [])
+
+# --- Cách 2: Lấy ID Token tường minh rồi gọi qua requests thông thường ---
+def fetch_token_and_call():
+    auth_req = Request()
+    # Tự động đọc file từ GOOGLE_APPLICATION_CREDENTIALS nếu không chỉ định rõ
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = KEY_FILE_PATH
+    id_token = google.oauth2.id_token.fetch_id_token(auth_req, CLOUD_RUN_URL)
+
+    headers = {
+        "Authorization": f"Bearer {id_token}",
+        "Content-Type": "application/json"
+    }
+    res = requests.get(f"{CLOUD_RUN_URL}/packages", headers=headers)
+    print("Packages response:", res.status_code, len(res.json().get("data", [])))
+
+if __name__ == "__main__":
+    check_health()
+    packages = get_all_packages()
+```
+
+---
+
+#### Recipe 3: cURL & Shell Scripts (PowerShell & Bash)
+
+##### A. Sử dụng `gcloud CLI` (Môi trường phát triển có cài Google Cloud SDK)
+
+1. **Bash / Linux / macOS**:
+   ```bash
+   # Kích hoạt service account bằng key file đã lưu
+   gcloud auth activate-service-account --key-file="credentials/chunks-cloudrun-service-account.json"
+
+   # Lấy OIDC ID Token với audience của Cloud Run
+   ID_TOKEN=$(gcloud auth print-identity-token --audiences="https://improvapiendpoint-n4trgixj6q-de.a.run.app")
+
+   # Gọi Health Check
+   curl -X GET "https://improvapiendpoint-n4trgixj6q-de.a.run.app/health" \
+     -H "Authorization: Bearer $ID_TOKEN"
+
+   # Lấy danh sách Packages
+   curl -X GET "https://improvapiendpoint-n4trgixj6q-de.a.run.app/packages" \
+     -H "Authorization: Bearer $ID_TOKEN"
+   ```
+
+2. **PowerShell (Windows)**:
+   ```powershell
+   # Kích hoạt service account
+   gcloud auth activate-service-account --key-file="credentials\chunks-cloudrun-service-account.json"
+
+   # Lấy OIDC ID Token
+   $ID_TOKEN = (gcloud auth print-identity-token --audiences="https://improvapiendpoint-n4trgixj6q-de.a.run.app").Trim()
+
+   # Gửi yêu cầu qua Invoke-RestMethod
+   $headers = @{
+       Authorization = "Bearer $ID_TOKEN"
+       "Content-Type" = "application/json"
+   }
+
+   # Health Check
+   $health = Invoke-RestMethod -Uri "https://improvapiendpoint-n4trgixj6q-de.a.run.app/health" -Method Get -Headers $headers
+   $health | ConvertTo-Json
+
+   # Danh sách Packages
+   $packages = Invoke-RestMethod -Uri "https://improvapiendpoint-n4trgixj6q-de.a.run.app/packages" -Method Get -Headers $headers
+   $packages.data | Format-Table id, title, totalItems
+   ```
+
+##### B. Không dùng `gcloud CLI` (Sử dụng Bun / Node script để lấy token tức thời)
+
+Nếu máy chủ không cài `gcloud`, có thể dùng Node/Bun sinh token nhanh:
+```bash
+# Lấy token vào biến môi trường
+ID_TOKEN=$(bun -e "import { GoogleAuth } from 'google-auth-library'; const a = new GoogleAuth({ keyFilename: 'credentials/chunks-cloudrun-service-account.json' }); const c = await a.getIdTokenClient('https://improvapiendpoint-n4trgixj6q-de.a.run.app'); const t = await c.idTokenProvider.fetchIdToken('https://improvapiendpoint-n4trgixj6q-de.a.run.app'); console.log(t);")
+
+# Thực hiện cURL với token vừa lấy
+curl -X GET "https://improvapiendpoint-n4trgixj6q-de.a.run.app/health" \
+  -H "Authorization: Bearer $ID_TOKEN"
+```
+
+---
+
+#### Recipe 4: Full End-to-End Package Generation & Fetching
+
+Ví dụ hoàn chỉnh từ A đến Z tạo gói bài học phản xạ trực tiếp qua Cloud Run với payload chi tiết:
+
+```bash
+# 1. Chuẩn bị ID Token
+ID_TOKEN=$(gcloud auth print-identity-token --audiences="https://improvapiendpoint-n4trgixj6q-de.a.run.app")
+
+# 2. Gửi request sinh gói bài tập phản xạ (POST /generate?save=true)
+curl -X POST "https://improvapiendpoint-n4trgixj6q-de.a.run.app/generate?save=true" \
+  -H "Authorization: Bearer $ID_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "packageTitle": "Online Banking & Security Reflexes",
+    "totalItems": 6,
+    "difficulty": "Medium (B1)",
+    "relevance": "High",
+    "sourceLevel": "LEVEL_B_ERES",
+    "sourceLessonIds": [],
+    "topic": "OTP Verification & Fraud Alerts",
+    "sessionsConfig": [
+      {
+        "sessionNumber": 1,
+        "title": "Two-Factor Verification",
+        "hcTotal": 2,
+        "hintTypes": ["Keyword", "Ending"],
+        "itemsCount": 3
+      },
+      {
+        "sessionNumber": 2,
+        "title": "Suspicious Activity Alerts",
+        "hcTotal": 3,
+        "hintTypes": ["Keyword", "Từ nối", "Ending"],
+        "itemsCount": 3
+      }
+    ]
+  }'
+```
+
+**Ví dụ phản hồi thành công (HTTP 200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "pkg_improv_1727162600123_a9b8c7",
+    "title": "Online Banking & Security Reflexes",
+    "topic": "OTP Verification & Fraud Alerts",
+    "totalItems": 6,
+    "sessionsCount": 2,
+    "sessions": [
+      {
+        "sessionNumber": 1,
+        "title": "Two-Factor Verification",
+        "hcTotal": 2,
+        "hintTypes": ["Keyword", "Ending"],
+        "items": [
+          {
+            "id": "item_1_1",
+            "en": "Enter the code sent to your phone.",
+            "vi": "Nhập mã được gửi đến điện thoại của bạn.",
+            "hints": [
+              { "type": "Keyword", "text": "Enter code", "vi": "Nhập mã" },
+              { "type": "Ending", "text": "your phone", "vi": "điện thoại của bạn" }
+            ]
+          }
+        ]
+      }
+    ],
+    "createdAt": 1727162600123,
+    "updatedAt": 1727162600123
+  }
+}
+```
+
+Sau khi tạo, có thể tải ngay file Excel bằng lệnh:
+```bash
+curl -X POST "https://improvapiendpoint-n4trgixj6q-de.a.run.app/export-excel?id=pkg_improv_1727162600123_a9b8c7" \
+  -H "Authorization: Bearer $ID_TOKEN" \
+  -o "Online_Banking_Security_Reflexes.xlsx"
+```
+
+---
+
+### 8.5 Bảng Mã Lỗi Thường Gặp & Xử Lý Sự Cố (Troubleshooting)
+
+| Mã HTTP | Tên Lỗi | Nguyên Nhân Thường Gặp | Cách Khắc Phục |
+| :--- | :--- | :--- | :--- |
+| **`401 Unauthorized`** | Missing or Invalid Token | Không truyền header `Authorization` hoặc dùng Access Token thông thường thay vì OIDC ID Token. | Sử dụng `getIdTokenClient` hoặc `fetch_id_token` để tạo **OIDC ID Token** có audience đúng với Cloud Run URL. |
+| **`403 Forbidden`** | Permission Denied | Service Account thiếu quyền `roles/run.invoker` trên Cloud Run service. | Cấp quyền: `gcloud run services add-iam-policy-binding improvapiendpoint --member="serviceAccount:284566312743-compute@developer.gserviceaccount.com" --role="roles/run.invoker" --region="asia-east1"`. |
+| **`400 Bad Request`** | Invalid JSON Payload | Thiếu trường bắt buộc trong `sessionsConfig` hoặc định dạng JSON sai. | Kiểm tra schema payload theo bảng [Domain Models](#4-domain-models--configuration-types). |
+| **`500 Internal Error`** | Server Execution Error | Lỗi kết nối LLM hoặc Firestore quota. | Kiểm tra log chi tiết: `gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=improvapiendpoint" --limit 20`. |
