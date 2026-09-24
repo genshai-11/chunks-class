@@ -906,7 +906,7 @@ The **CHUNKS Improv Serverless REST API v2** exposes the complete `improvApi` pe
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │               Cloud Functions v2 (improvApiEndpoint)                   │
-│       Region: us-central1 • Memory: 512MiB • Timeout: 300s             │
+│       Region: asia-east1 • Memory: 512MiB • Timeout: 300s              │
 │   ┌────────────────────────────────────────────────────────────────┐   │
 │   │ • Route Normalizer & CORS Handler                              │   │
 │   │ • Multi-tier Gemini REST Engine (2.5 -> 2.0 -> 1.5)            │   │
@@ -947,7 +947,7 @@ Verifies endpoint availability and current server timestamp.
 {
   "status": "ok",
   "service": "CHUNKS Improv Serverless API v2",
-  "region": "us-central1",
+  "region": "asia-east1",
   "timestamp": "2026-09-24T00:15:00.000Z"
 }
 ```

@@ -14,7 +14,7 @@
         "source": "/api/v1/improv/**",
         "function": {
           "functionId": "improvApiEndpoint",
-          "region": "us-central1"
+          "region": "asia-east1"
         }
       },
       {

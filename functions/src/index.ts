@@ -19,7 +19,7 @@ import { ImprovGenerateRequest, ImprovPackage, ImprovSessionConfig } from './typ
 export const improvApiEndpoint = onRequest(
   {
     cors: true,
-    region: 'us-central1',
+    region: 'asia-east1',
     timeoutSeconds: 300,
     memory: '512MiB',
     maxInstances: 10
@@ -53,7 +53,7 @@ export const improvApiEndpoint = onRequest(
         res.status(200).json({
           status: 'ok',
           service: 'CHUNKS Improv Serverless API v2',
-          region: 'us-central1',
+          region: 'asia-east1',
           timestamp: new Date().toISOString()
         });
         return;
