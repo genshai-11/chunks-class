@@ -39,6 +39,20 @@ The [`improvApi`](file:///C:/Users/gensh/Desktop/CHUNKS/PROJECT/chunks-class/src
    - [CORS Safety for Custom OpenAI Endpoints](#cors-safety-for-custom-openai-endpoints)
    - [Micro-Batching & Token Ceiling Protection](#micro-batching--token-ceiling-protection)
    - [Graceful Batch Degradation & Auto-Sanitization](#graceful-batch-degradation--auto-sanitization)
+7. [Serverless HTTP REST API Endpoint (`/api/v1/improv/*`)](#7-serverless-http-rest-api-endpoint-apiv1improv)
+   - [Cloud Functions v2 Serverless Architecture](#cloud-functions-v2-serverless-architecture)
+   - [Unified Endpoints Matrix](#unified-endpoints-matrix)
+   - [1. Health Check (`GET /health`)](#1-health-check-get-health)
+   - [2. Generate Full Package (`POST /generate`)](#2-generate-full-package-post-generate)
+   - [3. Generate Single Session (`POST /session`)](#3-generate-single-session-post-session)
+   - [4. List All Packages (`GET /packages`)](#4-list-all-packages-get-packages)
+   - [5. Get Package by ID (`GET /packages/:id`)](#5-get-package-by-id-get-packagesid)
+   - [6. Persist Package (`POST /save`)](#6-persist-package-post-save)
+   - [7. Delete Package (`DELETE /packages/:id`)](#7-delete-package-delete-packagesid)
+   - [8. Export Excel Spreadsheet (`POST /export-excel`)](#8-export-excel-spreadsheet-post-export-excel)
+   - [9. Ingest & Parse Excel Spreadsheet (`POST /parse-excel`)](#9-ingest--parse-excel-spreadsheet-post-parse-excel)
+   - [10. Language Auto-Sanitization (`POST /sanitize`)](#10-language-auto-sanitization-post-sanitize)
+   - [Client SDKs & Code Examples (cURL, Python, TypeScript)](#client-sdks--code-examples-curl-python-typescript)
 
 ---
 
@@ -866,3 +880,316 @@ Large JSON outputs frequently get truncated when LLMs hit `maxOutputTokens`, cau
 1. **Batch Isolation**: If Batch 2 of 4 fails due to a network glitch, only Batch 2 uses seed synthesis (`synthesizeFallbackBatchItems`). Batches 1, 3, and 4 retain their full AI output.
 2. **Total Fallback**: If 100% of batches fail, the system automatically synthesizes a full package via [`generateOfflineFallbackPackage`](file:///C:/Users/gensh/Desktop/CHUNKS/PROJECT/chunks-class/src/services/improvService.ts#L1513).
 3. **Typography & Diacritics Safety**: Every generated hint passes through `evaluateAndSanitizeHint`. Vietnamese translations are verified against Latin Extended diacritics, ensuring 100% compatibility with `Be Vietnam Pro` font rendering.
+
+---
+
+## 7. Serverless HTTP REST API Endpoint (`/api/v1/improv/*`)
+
+The **CHUNKS Improv Serverless REST API v2** exposes the complete `improvApi` pedagogical and synchronization engine over high-performance HTTP endpoints powered by **Google Cloud Functions v2** (Node.js 20, 512MiB, 300s timeout) and rewritten cleanly through **Firebase Hosting** under `/api/v1/improv/**`.
+
+### Cloud Functions v2 Serverless Architecture
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        External Clients & Services                     │
+│    cURL / Postman      Python Automation Scripts      LMS / Mobile App │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                         HTTP/2 HTTPS Requests
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│              Firebase Hosting Multi-Site Edge Proxy                    │
+│                 https://chunks-classroom.web.app                       │
+│                     Rewrite rule: /api/v1/improv/**                    │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│               Cloud Functions v2 (improvApiEndpoint)                   │
+│       Region: us-central1 • Memory: 512MiB • Timeout: 300s             │
+│   ┌────────────────────────────────────────────────────────────────┐   │
+│   │ • Route Normalizer & CORS Handler                              │   │
+│   │ • Multi-tier Gemini REST Engine (2.5 -> 2.0 -> 1.5)            │   │
+│   │ • Micro-Batching & Token Safety Coordinator                    │   │
+│   │ • Zero-Fail Offline Algorithmic Fallback                       │   │
+│   │ • Firebase Admin Firestore SDK (Sub-millisecond Server Auth)   │   │
+│   │ • SheetJS Server-Side Streaming (.xlsx Ingestion / Export)     │   │
+│   │ • Vietnamese Diacritics & Connectors Auto-Sanitizer            │   │
+│   └────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Unified Endpoints Matrix
+
+| HTTP Verb | Path | Description | Payload / Params | Response |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/improv/health` | Health & service readiness check | None | `{ status: 'ok', service: ..., timestamp: ... }` |
+| `POST` | `/api/v1/improv/generate` | Generates full AI reflex package | `ImprovGenerateRequest` (JSON), `?save=true` | `{ success: true, data: ImprovPackage }` |
+| `POST` | `/api/v1/improv/session` | Generates single on-demand session | `{ sessionConfig, options }` (JSON) | `{ success: true, data: ImprovSession }` |
+| `GET` | `/api/v1/improv/packages` | Lists all Firestore packages | None | `{ success: true, count, data: ImprovPackage[] }` |
+| `GET` | `/api/v1/improv/packages/:id` | Retrieves package by ID | `:id` path param | `{ success: true, data: ImprovPackage }` or 404 |
+| `POST` | `/api/v1/improv/save` | Direct server-side package persistence | `ImprovPackage` (JSON) | `{ success: true, id: string }` |
+| `DELETE` | `/api/v1/improv/packages/:id` | Deletes package from Firestore | `:id` path param | `{ success: true, message: string }` |
+| `POST` | `/api/v1/improv/export-excel` | Exports package as standard XLSX binary | `pkg` (JSON in body) or `?id=<packageId>` | `Content-Type: application/vnd.openxmlformats...` |
+| `POST` | `/api/v1/improv/parse-excel` | Ingests XLSX into structured package | Binary file buffer or `{ fileBase64, title }` | `{ success: true, data: ImprovPackage }` |
+| `POST` | `/api/v1/improv/sanitize` | Cleans Vietnamese/English inversions | `ImprovPackage` (JSON) | `{ success: true, fixedCount, data, issues }` |
+
+---
+
+### Detailed Endpoint Specifications
+
+#### 1. Health Check (`GET /health`)
+Verifies endpoint availability and current server timestamp.
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/health`
+- **Method**: `GET`
+- **Response**:
+```json
+{
+  "status": "ok",
+  "service": "CHUNKS Improv Serverless API v2",
+  "region": "us-central1",
+  "timestamp": "2026-09-24T00:15:00.000Z"
+}
+```
+
+#### 2. Generate Full Package (`POST /generate`)
+Accepts an `ImprovGenerateRequest`. Automatically orchestrates micro-batching across sessions, applies multi-tier Gemini fallback, auto-sanitizes typography, and optionally persists directly to Firestore when `?save=true` is passed.
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/generate?save=true`
+- **Method**: `POST`
+- **Headers**: `Content-Type: application/json`
+- **Body Example**:
+```json
+{
+  "packageTitle": "Workplace Collocations",
+  "totalItems": 10,
+  "difficulty": "Medium (B1)",
+  "relevance": "High",
+  "sourceLevel": "LEVEL_B_ERES",
+  "sourceLessonIds": [],
+  "topic": "Office Team Meeting",
+  "sessionsConfig": [
+    {
+      "sessionNumber": 1,
+      "title": "Session 1: Fast Reflexes",
+      "hcTotal": 2,
+      "hintTypes": ["Keyword", "Ending"],
+      "itemsCount": 5
+    },
+    {
+      "sessionNumber": 2,
+      "title": "Session 2: Logic Transitions",
+      "hcTotal": 3,
+      "hintTypes": ["Keyword", "Từ nối", "Ending"],
+      "itemsCount": 5
+    }
+  ]
+}
+```
+- **Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "pkg_improv_1727136000000_abc123",
+    "title": "Workplace Collocations",
+    "totalItems": 10,
+    "sessionsCount": 2,
+    "sessions": [...]
+  }
+}
+```
+
+#### 3. Generate Single Session (`POST /session`)
+Generates an isolated `ImprovSession` for real-time classroom drills.
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/session`
+- **Method**: `POST`
+- **Body Example**:
+```json
+{
+  "sessionConfig": {
+    "sessionNumber": 1,
+    "title": "Quick Drill",
+    "hcTotal": 2,
+    "hintTypes": ["Keyword", "Ending"],
+    "itemsCount": 5
+  },
+  "options": {
+    "difficulty": "Easy (A1-A2)",
+    "relevance": "High",
+    "topic": "Daily Routine"
+  }
+}
+```
+
+#### 4. List All Packages (`GET /packages`)
+Returns all saved packages in Firestore, sorted by `updatedAt` descending.
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/packages`
+- **Method**: `GET`
+- **Response**:
+```json
+{
+  "success": true,
+  "count": 5,
+  "data": [ ... ]
+}
+```
+
+#### 5. Get Package by ID (`GET /packages/:id`)
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/packages/pkg_improv_123`
+- **Method**: `GET`
+- **Response (200)**: `{ "success": true, "data": { ... } }`
+- **Response (404)**: `{ "success": false, "error": "Package with ID \"pkg_improv_123\" not found." }`
+
+#### 6. Persist Package (`POST /save`)
+Saves or updates an `ImprovPackage` directly in Firestore using server-authenticated credentials.
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/save`
+- **Method**: `POST`
+- **Body**: Complete `ImprovPackage` JSON.
+
+#### 7. Delete Package (`DELETE /packages/:id`)
+Deletes an `ImprovPackage` from Firestore.
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/packages/pkg_improv_123`
+- **Method**: `DELETE`
+
+#### 8. Export Excel Spreadsheet (`POST /export-excel`)
+Generates a downloadable `.xlsx` binary stream. Accepts either a full `pkg` object in the JSON body, or a query parameter `?id=<packageId>` to export a package existing in Firestore.
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/export-excel?id=pkg_improv_123`
+- **Method**: `POST`
+- **Response Headers**:
+  - `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+  - `Content-Disposition: attachment; filename="Workplace_Collocations_Improv.xlsx"`
+
+#### 9. Ingest & Parse Excel Spreadsheet (`POST /parse-excel`)
+Parses an Excel spreadsheet binary buffer or base64 string into a validated `ImprovPackage`.
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/parse-excel`
+- **Method**: `POST`
+- **Headers**: `Content-Type: application/json`
+- **Body Example**:
+```json
+{
+  "fileBase64": "UEsDBBQAAAAIA...",
+  "packageTitle": "Imported Package"
+}
+```
+
+#### 10. Language Auto-Sanitization (`POST /sanitize`)
+Audits all hints in a package, fixing inverted English/Vietnamese fields, translating connectors, and repairing identical values.
+- **URL**: `https://chunks-classroom.web.app/api/v1/improv/sanitize`
+- **Method**: `POST`
+- **Body**: Complete `ImprovPackage` JSON.
+- **Response**: `{ "success": true, "fixedCount": 2, "data": { ... }, "issues": [ ... ] }`
+
+---
+
+### Client SDKs & Code Examples (cURL, Python, TypeScript)
+
+#### Example 1: cURL
+
+```bash
+# 1. Health check
+curl -X GET "https://chunks-classroom.web.app/api/v1/improv/health"
+
+# 2. Generate a package and persist to Firestore
+curl -X POST "https://chunks-classroom.web.app/api/v1/improv/generate?save=true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "packageTitle": "Speaking Reflexes Unit 1",
+    "totalItems": 6,
+    "difficulty": "Easy (A1-A2)",
+    "relevance": "High",
+    "sourceLevel": "LEVEL_A",
+    "sourceLessonIds": [],
+    "sessionsConfig": [
+      {
+        "sessionNumber": 1,
+        "title": "Two-Word Pairs",
+        "hcTotal": 2,
+        "hintTypes": ["Keyword", "Ending"],
+        "itemsCount": 6
+      }
+    ]
+  }'
+
+# 3. Download as Excel spreadsheet (.xlsx)
+curl -X POST "https://chunks-classroom.web.app/api/v1/improv/export-excel?id=pkg_improv_123" \
+  -o "Package_Export.xlsx"
+```
+
+#### Example 2: Python (`requests`)
+
+```python
+import requests
+
+BASE_URL = "https://chunks-classroom.web.app/api/v1/improv"
+
+# 1. Generate package
+payload = {
+    "packageTitle": "Business English Reflexes",
+    "totalItems": 8,
+    "difficulty": "Medium (B1)",
+    "relevance": "High",
+    "sourceLevel": "LEVEL_B_ERES",
+    "sourceLessonIds": [],
+    "topic": "Client Negotiation",
+    "sessionsConfig": [
+        {
+            "sessionNumber": 1,
+            "title": "Key Connectors",
+            "hcTotal": 3,
+            "hintTypes": ["Keyword", "Logic word", "Ending"],
+            "itemsCount": 8
+        }
+    ]
+}
+
+res = requests.post(f"{BASE_URL}/generate?save=true", json=payload)
+data = res.json()
+print("Generated Package ID:", data["data"]["id"])
+package_id = data["data"]["id"]
+
+# 2. Export to Excel file
+excel_res = requests.post(f"{BASE_URL}/export-excel?id={package_id}")
+with open("Business_English.xlsx", "wb") as f:
+    f.write(excel_res.content)
+print("Saved Business_English.xlsx successfully!")
+```
+
+#### Example 3: TypeScript / JavaScript (`fetch`)
+
+```typescript
+const BASE_URL = 'https://chunks-classroom.web.app/api/v1/improv';
+
+// 1. Fetch all packages
+async function listPackages() {
+  const res = await fetch(`${BASE_URL}/packages`);
+  const { data } = await res.json();
+  console.log(`Retrieved ${data.length} packages.`);
+  return data;
+}
+
+// 2. Generate on-demand session
+async function createQuickDrill() {
+  const res = await fetch(`${BASE_URL}/session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionConfig: {
+        sessionNumber: 1,
+        title: 'Emergency Drill',
+        hcTotal: 2,
+        hintTypes: ['Keyword', 'Ending'],
+        itemsCount: 5
+      },
+      options: {
+        difficulty: 'Easy (A1-A2)',
+        relevance: 'High',
+        topic: 'Coffee Shop Ordering'
+      }
+    })
+  });
+
+  const { data: session } = await res.json();
+  console.log('Session generated:', session.title, session.items.length, 'items');
+  return session;
+}
+```
