@@ -28,7 +28,9 @@ import {
   CANONICAL_PARTS, 
   playPartIntro, 
   regeneratePartAudio,
-  prepareAllCanonicalPartAudios, 
+  prepareAllCanonicalPartAudios,
+  prepareCoursePartAudios,
+  getCoursePartsFromLessons,
   isPartAudioCached,
   PartAnnouncementDef
 } from '../services/partAudioService';
@@ -276,13 +278,45 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [auditioningPartKey, setAuditioningPartKey] = useState<string | null>(null);
   const [regeneratingPartKey, setRegeneratingPartKey] = useState<string | null>(null);
 
+  const currentCourseParts = useMemo(() => {
+    return getCoursePartsFromLessons(lessons, selectedCourseLevel);
+  }, [lessons, selectedCourseLevel]);
+
+  // Grouping filter state for Section 4.5 Part Intro Announcements
+  const [partCategoryFilter, setPartCategoryFilter] = useState<'ALL' | 'STANDARD' | 'FREE_TALK' | 'SPECIAL'>('ALL');
+
+  const getPartCategory = useCallback((part: PartAnnouncementDef): 'STANDARD' | 'FREE_TALK' | 'SPECIAL' => {
+    const lower = part.titleEn.toLowerCase();
+    if (lower.includes('lesson') && lower.includes('phrase check')) return 'FREE_TALK';
+    if (
+      lower.includes('orientation') ||
+      lower.includes('linguistic problems') ||
+      lower.includes('final test')
+    ) {
+      return 'SPECIAL';
+    }
+    return 'STANDARD';
+  }, []);
+
+  const hasMultiplePartCategories = useMemo(() => {
+    if (currentCourseParts.length <= 7) return false;
+    const categories = new Set(currentCourseParts.map(getPartCategory));
+    return categories.size > 1;
+  }, [currentCourseParts, getPartCategory]);
+
+  const filteredCourseParts = useMemo(() => {
+    if (!hasMultiplePartCategories || partCategoryFilter === 'ALL') {
+      return currentCourseParts;
+    }
+    return currentCourseParts.filter(p => getPartCategory(p) === partCategoryFilter);
+  }, [currentCourseParts, hasMultiplePartCategories, partCategoryFilter, getPartCategory]);
   const checkAllPartAudiosCache = useCallback(async () => {
     const status: Record<string, boolean> = {};
-    for (const p of CANONICAL_PARTS) {
+    for (const p of currentCourseParts) {
       status[p.key] = await isPartAudioCached(p.titleEn, voiceProfileEn, p.partNumber);
     }
     setPartAudioCacheStatus(status);
-  }, [voiceProfileEn]);
+  }, [currentCourseParts, voiceProfileEn]);
 
   useEffect(() => {
     checkAllPartAudiosCache();
@@ -302,8 +336,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       } else {
         await playPartIntro(part.titleEn, part.partNumber, voiceProfileEn);
       }
-    } catch (e: any) {
-      addLog(`Lỗi phát part intro "${part.titleEn}": ${e?.message || String(e)}`, 'error');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      addLog(`Lỗi phát part intro "${part.titleEn}": ${msg}`, 'error');
     } finally {
       setAuditioningPartKey(null);
       setRegeneratingPartKey(null);
@@ -311,19 +346,21 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     }
   };
 
-  const handlePrepareAllPartAudios = async () => {
+  const handlePrepareAllPartAudios = async (targetParts?: PartAnnouncementDef[]) => {
     if (isPreppingPartAudios) return;
+    const partsToPrep = targetParts || (filteredCourseParts.length > 0 ? filteredCourseParts : currentCourseParts);
     setIsPreppingPartAudios(true);
-    setPreppingPartProgress({ current: 0, total: CANONICAL_PARTS.length });
-    addLog('Bắt đầu tạo trước âm thanh cho tất cả 7 canonical parts...', 'info');
+    setPreppingPartProgress({ current: 0, total: partsToPrep.length });
+    addLog(`Bắt đầu tạo trước âm thanh cho ${partsToPrep.length} parts (${selectedCourseLevel})...`, 'info');
 
     try {
-      await prepareAllCanonicalPartAudios(voiceProfileEn, (current, total) => {
+      await prepareCoursePartAudios(partsToPrep, voiceProfileEn, (current, total) => {
         setPreppingPartProgress({ current, total });
       });
-      addLog('🎉 Đã chuẩn bị xong toàn bộ âm thanh Part Announcements và lưu vào IndexedDB!', 'success');
-    } catch (e: any) {
-      addLog(`Lỗi chuẩn bị part audios: ${e?.message || String(e)}`, 'error');
+      addLog(`🎉 Đã chuẩn bị xong toàn bộ ${partsToPrep.length} âm thanh Part Announcements cho ${selectedCourseLevel} và lưu vào IndexedDB!`, 'success');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      addLog(`Lỗi chuẩn bị part audios: ${msg}`, 'error');
     } finally {
       setIsPreppingPartAudios(false);
       setPreppingPartProgress(null);
@@ -2249,11 +2286,16 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               <Layers className="w-5 h-5" />
             </span>
             <div>
-              <h2 className="font-display font-bold text-base text-zinc-900">
-                Part Intro & Transition Announcements (Âm thanh chuyển Part dùng lại)
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-display font-bold text-base text-zinc-900">
+                  Part Intro & Transition Announcements (Âm thanh chuyển Part dùng lại)
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-100 text-purple-700">
+                  {selectedCourseLevel} ({currentCourseParts.length} parts)
+                </span>
+              </div>
               <p className="text-xs text-zinc-500">
-                Âm thanh thông báo chuẩn khi bắt đầu phần mới trong Focus Mode. Tự động tái sử dụng cho tất cả bài học.
+                Âm thanh thông báo chuẩn khi bắt đầu phần mới trong Focus Mode. Tự động tương ứng với cấu trúc bài học của khóa học đang chọn.
               </p>
             </div>
           </div>
@@ -2262,9 +2304,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           <button
             type="button"
             disabled={isPreppingPartAudios}
-            onClick={handlePrepareAllPartAudios}
+            onClick={() => handlePrepareAllPartAudios(filteredCourseParts)}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 disabled:bg-purple-300 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
-            title="Tạo trước và lưu toàn bộ 7 âm thanh thông báo Part vào bộ nhớ đệm IndexedDB"
+            title={`Tạo trước và lưu toàn bộ ${filteredCourseParts.length} âm thanh thông báo Part vào bộ nhớ đệm IndexedDB`}
           >
             {isPreppingPartAudios ? (
               <>
@@ -2276,15 +2318,66 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             ) : (
               <>
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Chuẩn bị tất cả âm thanh Part (Batch Prepare Part Audios)</span>
+                <span>Chuẩn bị âm thanh ({filteredCourseParts.length} Parts)</span>
               </>
             )}
           </button>
         </div>
 
-        {/* Canonical Parts Grid */}
+        {/* Filter Pills for Multiple Categories (e.g. Level A) */}
+        {hasMultiplePartCategories && (
+          <div className="flex items-center gap-2 flex-wrap pb-1">
+            <span className="text-xs font-bold text-zinc-500 mr-1">Phân loại Part:</span>
+            <button
+              type="button"
+              onClick={() => setPartCategoryFilter('ALL')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                partCategoryFilter === 'ALL'
+                  ? 'bg-purple-700 text-white shadow-xs'
+                  : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+              }`}
+            >
+              Tất cả ({currentCourseParts.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPartCategoryFilter('STANDARD')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                partCategoryFilter === 'STANDARD'
+                  ? 'bg-purple-700 text-white shadow-xs'
+                  : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+              }`}
+            >
+              Standard Lessons ({currentCourseParts.filter(p => getPartCategory(p) === 'STANDARD').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPartCategoryFilter('FREE_TALK')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                partCategoryFilter === 'FREE_TALK'
+                  ? 'bg-purple-700 text-white shadow-xs'
+                  : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+              }`}
+            >
+              Free Talk Review ({currentCourseParts.filter(p => getPartCategory(p) === 'FREE_TALK').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPartCategoryFilter('SPECIAL')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                partCategoryFilter === 'SPECIAL'
+                  ? 'bg-purple-700 text-white shadow-xs'
+                  : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+              }`}
+            >
+              Orientation & Tests ({currentCourseParts.filter(p => getPartCategory(p) === 'SPECIAL').length})
+            </button>
+          </div>
+        )}
+
+        {/* Dynamic Course Parts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-          {CANONICAL_PARTS.map((part) => {
+          {filteredCourseParts.map((part) => {
             const isCached = partAudioCacheStatus[part.key] ?? false;
             const isAuditioning = auditioningPartKey === part.key;
             const isRegenerating = regeneratingPartKey === part.key;

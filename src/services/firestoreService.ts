@@ -142,6 +142,47 @@ export function clearAllFirestoreCache(): void {
 }
 
 // --------------------------------------------------------------------------
+// Lesson Overrides Helpers (Local Persistence)
+// --------------------------------------------------------------------------
+export interface LessonOverride {
+  is_active?: boolean;
+  display_title?: string;
+}
+
+export function getLessonOverrides(): Record<string, LessonOverride> {
+  if (typeof window === 'undefined' || !window.localStorage) return {};
+  try {
+    const raw = localStorage.getItem('chunks_lesson_overrides');
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveLessonOverrides(overrides: Record<string, LessonOverride>): void {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const existing = getLessonOverrides();
+    const merged = { ...existing, ...overrides };
+    localStorage.setItem('chunks_lesson_overrides', JSON.stringify(merged));
+  } catch (e) {
+    console.warn('[Firestore] Failed to save chunks_lesson_overrides to localStorage:', e);
+  }
+}
+
+export function applyLessonOverrides<T extends LessonDoc>(lesson: T, overrides?: Record<string, LessonOverride>): T {
+  const map = overrides || getLessonOverrides();
+  const override = map[lesson.id];
+  if (!override) return lesson;
+  return {
+    ...lesson,
+    is_active: override.is_active !== undefined ? override.is_active : (lesson.is_active !== undefined ? lesson.is_active : true),
+    display_title: override.display_title || lesson.display_title || lesson.lesson_title,
+    lesson_title: override.display_title || lesson.lesson_title
+  };
+}
+
+// --------------------------------------------------------------------------
 // 1. Fetch All Courses Dynamically
 // --------------------------------------------------------------------------
 export async function getCourses(forceRefresh?: boolean): Promise<Course[]> {
@@ -256,11 +297,14 @@ export async function getLessonById(lessonId: string, forceRefresh?: boolean): P
         const chunksArray: ChunkItem[] = Array.isArray(data.chunks) ? data.chunks : [];
 
         const lessonDoc: LessonDoc = {
+          ...data,
           id: snapshot.id,
           course_id: data.course_id,
           level_code: data.level_code || 'CUSTOM',
           day_number: data.day_number ?? 0,
-          lesson_title: data.lesson_title || snapshot.id,
+          lesson_title: data.display_title || data.lesson_title || snapshot.id,
+          display_title: data.display_title || data.lesson_title || snapshot.id,
+          is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
           lesson_type: data.lesson_type || 'Standard Lesson',
           total_chunks: chunksArray.length,
           categories: Array.isArray(data.categories) ? data.categories : [],
@@ -269,16 +313,19 @@ export async function getLessonById(lessonId: string, forceRefresh?: boolean): P
           created_at: data.created_at || new Date().toISOString()
         };
 
+        // Merge with local storage overrides
+        const mergedDoc = applyLessonOverrides(lessonDoc);
+
         // Always update registry so in-memory store is synchronized with Firestore permanent audio URLs
-        curriculumRegistry.updateLesson(lessonDoc);
-        setCacheEntry(cacheKey, lessonDoc);
+        curriculumRegistry.updateLesson(mergedDoc);
+        setCacheEntry(cacheKey, mergedDoc);
         if (lessonId.startsWith('level_b_day_')) {
-          setCacheEntry(`lesson_by_id:${lessonId.replace('level_b_day_', 'level_b_ere_day_')}`, lessonDoc);
+          setCacheEntry(`lesson_by_id:${lessonId.replace('level_b_day_', 'level_b_ere_day_')}`, mergedDoc);
         } else if (lessonId.startsWith('level_b_ere_day_')) {
-          setCacheEntry(`lesson_by_id:${lessonId.replace('level_b_ere_day_', 'level_b_day_')}`, lessonDoc);
+          setCacheEntry(`lesson_by_id:${lessonId.replace('level_b_ere_day_', 'level_b_day_')}`, mergedDoc);
         }
 
-        return lessonDoc;
+        return mergedDoc;
       }
     } catch (err) {
       console.warn(`[Firestore] getLessonById notice for ${lessonId}:`, err);
@@ -445,11 +492,14 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string, f
           const data = d.data();
           const chunks = Array.isArray(data.chunks) ? data.chunks : [];
           return {
+            ...data,
             id: d.id,
             course_id: data.course_id,
             level_code: data.level_code || courseIdOrLevel,
             day_number: data.day_number ?? 0,
-            lesson_title: data.lesson_title || d.id,
+            lesson_title: data.display_title || data.lesson_title || d.id,
+            display_title: data.display_title || data.lesson_title || d.id,
+            is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
             lesson_type: data.lesson_type || 'Standard Lesson',
             total_chunks: chunks.length,
             categories: data.categories || [],
@@ -460,9 +510,12 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string, f
         });
 
         const lessons = deduplicateLessons(rawLessons, courseIdOrLevel);
+        // Secondary persistence: merge with localStorage overrides
+        const overrides = getLessonOverrides();
+        const lessonsWithOverrides = lessons.map(l => applyLessonOverrides(l, overrides));
 
         // Iterate and call curriculumRegistry.updateLesson for each doc before returning
-        lessons.forEach(lesson => {
+        lessonsWithOverrides.forEach(lesson => {
           curriculumRegistry.updateLesson(lesson);
           setCacheEntry(`lesson_by_id:${lesson.id}`, lesson);
           if (lesson.id.startsWith('level_b_day_')) {
@@ -470,8 +523,8 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string, f
           }
         });
 
-        setCacheEntry(cacheKey, lessons);
-        return lessons;
+        setCacheEntry(cacheKey, lessonsWithOverrides);
+        return lessonsWithOverrides;
       }
     } catch (err) {
       console.warn(`[Firestore] getLessonsByLevel notice for ${courseIdOrLevel}:`, err);
@@ -502,11 +555,14 @@ export async function getAllLessons(courseIdOrLevel?: CourseLevel | string, forc
           const data = d.data();
           const chunks = Array.isArray(data.chunks) ? data.chunks : [];
           return {
+            ...data,
             id: d.id,
             course_id: data.course_id,
             level_code: data.level_code || 'CUSTOM',
             day_number: data.day_number ?? 0,
-            lesson_title: data.lesson_title || d.id,
+            lesson_title: data.display_title || data.lesson_title || d.id,
+            display_title: data.display_title || data.lesson_title || d.id,
+            is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
             lesson_type: data.lesson_type || 'Standard Lesson',
             total_chunks: chunks.length,
             categories: Array.isArray(data.categories) ? data.categories : [],
@@ -517,16 +573,19 @@ export async function getAllLessons(courseIdOrLevel?: CourseLevel | string, forc
         });
 
         const lessons = deduplicateLessons(rawLessons);
+        // Merge with localStorage overrides
+        const overridesAll = getLessonOverrides();
+        const lessonsAllWithOverrides = lessons.map(l => applyLessonOverrides(l, overridesAll));
 
-        lessons.forEach(lesson => {
+        lessonsAllWithOverrides.forEach(lesson => {
           curriculumRegistry.updateLesson(lesson);
           setCacheEntry(`lesson_by_id:${lesson.id}`, lesson);
           if (lesson.id.startsWith('level_b_day_')) {
             setCacheEntry(`lesson_by_id:${lesson.id.replace('level_b_day_', 'level_b_ere_day_')}`, lesson);
           }
         });
-        setCacheEntry(cacheKey, lessons);
-        return lessons;
+        setCacheEntry(cacheKey, lessonsAllWithOverrides);
+        return lessonsAllWithOverrides;
       }
     } catch (err) {
       console.warn('[Firestore] getAllLessons notice:', err);
@@ -596,6 +655,101 @@ export async function saveLesson(lesson: LessonDoc): Promise<void> {
     console.warn(`[Firestore] saveLesson warning for ${lesson.id}:`, e);
   }
 }
+/**
+ * Batch update multiple lessons in Firestore and synchronize in-memory registry.
+ * Chunked into batches of up to 450 operations to respect Firestore's 500 limit.
+ */
+export async function batchUpdateLessons(
+  lessons: LessonDoc[]
+): Promise<{ success: boolean; count: number; error?: string }> {
+  if (!lessons || lessons.length === 0) {
+    return { success: true, count: 0 };
+  }
+
+  const now = new Date().toISOString();
+  const updatedLessons: LessonDoc[] = [];
+
+  // 1. Update in-memory registry and local caches immediately
+  for (const lesson of lessons) {
+    const updated = {
+      ...lesson,
+      updated_at: now
+    };
+    curriculumRegistry.updateLesson(updated);
+    invalidateLessonsCache(updated.course_id || updated.level_code);
+    memoryCache.delete(`lesson_by_id:${updated.id}`);
+    if (updated.id.startsWith('level_b_day_')) {
+      memoryCache.delete(`lesson_by_id:${updated.id.replace('level_b_day_', 'level_b_ere_day_')}`);
+    } else if (updated.id.startsWith('level_b_ere_day_')) {
+      memoryCache.delete(`lesson_by_id:${updated.id.replace('level_b_ere_day_', 'level_b_day_')}`);
+    }
+    updatedLessons.push(updated);
+  }
+
+  // Dual-persistence: serialize and save overrides map to localStorage
+  try {
+    const overridesMap: Record<string, LessonOverride> = {};
+    for (const l of updatedLessons) {
+      overridesMap[l.id] = {
+        is_active: l.is_active !== undefined ? Boolean(l.is_active) : true,
+        display_title: l.display_title || l.lesson_title
+      };
+    }
+    saveLessonOverrides(overridesMap);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      // Also write level-scoped backup if applicable
+      const firstLevel = updatedLessons[0]?.level_code || updatedLessons[0]?.course_id;
+      if (firstLevel) {
+        localStorage.setItem(`chunks_lesson_overrides_${firstLevel}`, JSON.stringify(overridesMap));
+      }
+    }
+  } catch (e) {
+    console.warn('[Firestore] Failed to persist lesson overrides to localStorage in batchUpdateLessons:', e);
+  }
+
+  // 2. Commit in Firestore batches (max 450 per commit)
+  // CRITICAL OPTIMIZATION: Write ONLY updated metadata (is_active, display_title, lesson_title, day_number, updated_at).
+  // DO NOT write multi-megabyte `chunks` array to avoid network bloat, quota waste, and latency.
+  // Include a 6-second timeout race on batch.commit() so saving never hangs indefinitely.
+  try {
+    const BATCH_SIZE = 450;
+    for (let i = 0; i < updatedLessons.length; i += BATCH_SIZE) {
+      const chunk = updatedLessons.slice(i, i + BATCH_SIZE);
+      const batch = writeBatch(db);
+      for (const lesson of chunk) {
+        const docRef = doc(db, 'lessons', lesson.id);
+        const payload: Record<string, unknown> = {
+          is_active: lesson.is_active !== undefined ? Boolean(lesson.is_active) : true,
+          display_title: lesson.display_title || lesson.lesson_title,
+          lesson_title: lesson.display_title || lesson.lesson_title,
+          day_number: lesson.day_number,
+          updated_at: now
+        };
+        if (lesson.course_id) payload.course_id = lesson.course_id;
+        if (lesson.level_code) payload.level_code = lesson.level_code;
+        if (lesson.lesson_type) payload.lesson_type = lesson.lesson_type;
+        batch.set(docRef, payload, { merge: true });
+      }
+
+      // Commit with a 6-second timeout race
+      const commitPromise = batch.commit();
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Firestore commit timed out after 6000ms. Local state & offline cache have been preserved.')), 6000);
+      });
+      await Promise.race([commitPromise, timeoutPromise]);
+    }
+    return { success: true, count: updatedLessons.length };
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error('[Firestore] batchUpdateLessons error:', err);
+    return { 
+      success: false, 
+      count: 0, 
+      error: errorMessage 
+    };
+  }
+}
+
 
 export async function addOrUpdateChunk(lessonId: string, chunk: ChunkItem): Promise<LessonDoc | null> {
   const lesson = await getLessonById(lessonId);

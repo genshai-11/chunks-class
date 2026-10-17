@@ -15,6 +15,7 @@ import { audioPlayer } from '../services/googleTtsService';
 import { ChunkModal } from './ChunkModal';
 import { ChunkPreviewModal } from './ChunkPreviewModal';
 import { LessonExcelUploader } from './LessonExcelUploader';
+import { CourseLessonManagerModal } from './CourseLessonManagerModal';
 import { 
   Search, 
   Volume2, 
@@ -32,7 +33,9 @@ import {
   Layers, 
   Sparkles, 
   ArrowUpDown, 
-  FileSpreadsheet 
+  FileSpreadsheet,
+  SlidersHorizontal,
+  EyeOff
 } from 'lucide-react';
 
 interface CurriculumExplorerProps {
@@ -171,6 +174,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const [isBulkImportOpen, setIsBulkImportOpen] = useState<boolean>(false);
   const [bulkImportText, setBulkImportText] = useState<string>('');
   const [isExcelModalOpen, setIsExcelModalOpen] = useState<boolean>(false);
+  const [isLessonManagerOpen, setIsLessonManagerOpen] = useState<boolean>(false);
 
   // Load lessons from Firestore / Local storage
   const loadCurriculumData = async () => {
@@ -599,6 +603,14 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
           {/* Action buttons on top right */}
           <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
             <button
+              onClick={() => setIsLessonManagerOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-xs font-bold transition-all cursor-pointer shadow-xs"
+              title="Quản lý bật/tắt (is_active) và đổi tên hiển thị (display_title) từng bài học"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-red-600" />
+              <span>Quản lý Bài học & Index</span>
+            </button>
+            <button
               onClick={() => setIsExcelModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#E8E8EC] hover:border-[#DC2626] text-zinc-800 hover:text-[#DC2626] text-xs font-bold transition-all cursor-pointer shadow-xs"
             >
@@ -713,11 +725,15 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
               className="w-full px-3 py-2 bg-[#FAFAFA] border border-[#E8E8EC] rounded-xl text-xs font-semibold text-[#0A0A0A] focus:bg-white focus:outline-none focus:border-[#DC2626] cursor-pointer"
             >
               <option value="all">Tất Cả {lessons.length} Bài Học (Day 1 – {lessons.length > 0 ? Math.max(...lessons.map(l => l.day_number)) : ((selectedLevel === 'LEVEL_B' || selectedLevel === 'LEVEL_B_ERE') ? 30 : 15)})</option>
-              {lessons.map(l => (
-                <option key={l.id} value={l.day_number}>
-                  Day {l.day_number}: {l.lesson_title} ({l.chunks?.length || 0} chunks)
-                </option>
-              ))}
+              {lessons.map(l => {
+                const title = l.display_title || l.lesson_title;
+                const isOff = l.is_active === false;
+                return (
+                  <option key={l.id} value={l.day_number}>
+                    {isOff ? '🔴 [ĐÃ TẮT] ' : ''}Day {l.day_number}: {title} ({l.chunks?.length || 0} chunks)
+                  </option>
+                );
+              })}
             </select>
 
             {/* Dynamic Category Selector */}
@@ -781,6 +797,30 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
             </div>
           )}
         </div>
+        {/* Inactive lesson warning banner if viewing single inactive day */}
+        {selectedDay !== 'all' && (() => {
+          const activeLesson = lessons.find(l => l.day_number === selectedDay);
+          if (activeLesson && activeLesson.is_active === false) {
+            return (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900">
+                <div className="flex items-center gap-2">
+                  <EyeOff className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    <strong>Lưu ý:</strong> Bài học <strong>Day {activeLesson.day_number}: {activeLesson.display_title || activeLesson.lesson_title}</strong> hiện đang được <strong>TẮT (is_active = false)</strong>. Bài học này sẽ không tạo buổi học trong lịch tự động (Session Recurrence).
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsLessonManagerOpen(true)}
+                  className="px-2.5 py-1 bg-white border border-amber-300 hover:bg-amber-100 rounded-lg font-bold text-amber-800 transition-all shrink-0 cursor-pointer"
+                >
+                  Bật lại bài học
+                </button>
+              </div>
+            );
+          }
+          return null;
+        })()}
       </div>
 
       {/* 4. Chunks List / Grid */}
@@ -1135,6 +1175,19 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
         }}
         onStartDrillNow={(newLessonId, day) => {
           onLaunchProjectorForLesson(newLessonId, day);
+        }}
+      />
+      {/* Course Lesson & Index Manager Modal */}
+      <CourseLessonManagerModal
+        isOpen={isLessonManagerOpen}
+        onClose={() => setIsLessonManagerOpen(false)}
+        course={currentCourse}
+        lessons={lessons}
+        onLessonsUpdated={(updatedLessons) => {
+          setLessons([...updatedLessons]);
+          // In-memory registry and local caches were already updated by batchUpdateLessons
+          // Reload with fresh cache refresh
+          loadCurriculumData();
         }}
       />
     </div>

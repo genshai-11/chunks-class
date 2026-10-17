@@ -72,7 +72,10 @@ export interface LessonDoc {
   day_number: number;              // 0, 1, 2, ... N
   course_title?: string;
   lesson_title: string;
+  display_title?: string;          // Dynamic custom display title (e.g. "Lesson 1: How to survive")
   title?: string;                  // Canonical title alias matching lesson_title
+  is_active?: boolean;             // Whether lesson is enabled in curriculum schedule/projector (default true)
+  display_order?: number;          // Custom sorting order in course curriculum
   lesson_type: string;
   total_chunks: number;
   categories: string[];
@@ -111,6 +114,11 @@ export interface LessonGrammar {
   verb_forms: string[];
   sentence_structures: string[];
   tense: string[];
+  grammar_points?: Array<{
+    title: string;
+    items: string[];
+    notes?: string;
+  }>;
   notes?: string;
   mini_lessons?: GrammarMiniLesson[];
   total_audio_files?: number;
@@ -172,6 +180,7 @@ export interface CohortAudioSettings {
   provider_secondary?: string;
   part_announce_enabled?: boolean;
   part_intro_autoplay_chunk?: boolean;
+  part_transition_chime_enabled?: boolean;
 }
 
 export interface Cohort {

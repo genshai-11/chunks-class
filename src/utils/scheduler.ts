@@ -61,10 +61,11 @@ export async function calculateSessions(params: CalculateSessionParams): Promise
     holidays = []
   } = params;
 
-  let catalog: LessonDoc[] = params.customLessons || [];
-  if (catalog.length === 0) {
-    catalog = await getLessonsByLevel(courseIdOrLevel);
+  let rawCatalog: LessonDoc[] = params.customLessons || [];
+  if (rawCatalog.length === 0) {
+    rawCatalog = await getLessonsByLevel(courseIdOrLevel);
   }
+  const catalog = rawCatalog.filter(l => l.is_active !== false);
 
   const targetSessionsCount = params.totalSessions || (catalog.length > 0 ? catalog.length : 15);
 
@@ -102,7 +103,8 @@ export async function calculateSessions(params: CalculateSessionParams): Promise
         day_number: count,
         id: `${String(courseIdOrLevel).toLowerCase()}_day_${count}`,
         lesson_title: `Day ${count} - Interactive Chunk Drill`,
-        lesson_type: "Standard Lesson"
+        lesson_type: "Standard Lesson",
+        display_title: undefined as string | undefined
       };
 
       sessions.push({
@@ -113,7 +115,7 @@ export async function calculateSessions(params: CalculateSessionParams): Promise
         end_time: endTime,
         day_number: meta.day_number !== undefined ? meta.day_number : count,
         lesson_id: meta.id,
-        lesson_title: meta.lesson_title,
+        lesson_title: meta.display_title || meta.lesson_title,
         lesson_type: meta.lesson_type || 'Standard Lesson',
         status: count === 1 ? 'in_progress' : 'scheduled'
       });
@@ -165,7 +167,8 @@ export function calculate15Sessions(
   let safetyLoop = 0;
   const maxSafetyLoop = 730;
 
-  const catalog = curriculumRegistry.getLessons(levelCode);
+  const rawCatalog = curriculumRegistry.getLessons(levelCode);
+  const catalog = rawCatalog.filter(l => l.is_active !== false);
   const defaultCountForLevel = (levelCode === 'LEVEL_B' || levelCode === 'course_level_b' || levelCode === 'LEVEL_B_ERE') ? 30 : (levelCode === 'LEVEL_A' || levelCode === 'course_level_a' ? 16 : 15);
   const targetSessionsCount = totalSessionsOverride || (catalog.length > 0 ? catalog.length : defaultCountForLevel);
 
@@ -182,7 +185,8 @@ export function calculate15Sessions(
         day_number: count,
         id: `${String(levelCode).toLowerCase()}_day_${count}`,
         lesson_title: `Day ${count} - Standard Chunk Drill Session`,
-        lesson_type: "Standard Lesson"
+        lesson_type: "Standard Lesson",
+        display_title: undefined as string | undefined
       };
 
       sessions.push({
@@ -193,7 +197,7 @@ export function calculate15Sessions(
         end_time: endTime,
         day_number: meta.day_number !== undefined ? meta.day_number : count,
         lesson_id: meta.id,
-        lesson_title: meta.lesson_title,
+        lesson_title: meta.display_title || meta.lesson_title,
         lesson_type: meta.lesson_type || 'Standard Lesson',
         status: count === 1 ? 'in_progress' : 'scheduled'
       });

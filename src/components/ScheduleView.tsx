@@ -634,15 +634,18 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   };
 
   const sessions = cohort?.sessions || [];
-  const completedCount = sessions.filter(s => s.status === 'completed').length;
-  const totalSessions = cohort?.total_sessions || sessions.length || 15;
-  const inProgressSession = sessions.find(s => s.status === 'in_progress') || sessions.find(s => s.status === 'scheduled') || sessions[0];
+  const activeCohortSessions = sessions.filter(s => {
+    const m = liveLessons[s.lesson_id] || curriculumRegistry.getLessonById(s.lesson_id);
+    return !m || m.is_active !== false;
+  });
+  const completedCount = activeCohortSessions.filter(s => s.status === 'completed').length;
+  const totalSessions = activeCohortSessions.length || cohort?.total_sessions || sessions.length || 15;
+  const inProgressSession = activeCohortSessions.find(s => s.status === 'in_progress') || activeCohortSessions.find(s => s.status === 'scheduled') || activeCohortSessions[0];
   const progressPercent = totalSessions > 0 ? Math.round((completedCount / totalSessions) * 100) : 0;
 
   // Aggregate audio readiness summary
-  const readySessionsCount = sessions.filter(s => sessionAudioStatus[s.session_number]?.isReady).length;
-  const sessionsWithCachedCount = sessions.filter(s => (sessionAudioStatus[s.session_number]?.cached || 0) > 0).length;
-
+  const readySessionsCount = activeCohortSessions.filter(s => sessionAudioStatus[s.session_number]?.isReady).length;
+  const sessionsWithCachedCount = activeCohortSessions.filter(s => (sessionAudioStatus[s.session_number]?.cached || 0) > 0).length;
   const handleStatusChange = (sessionNumber: number, newStatus: ClassSession['status']) => {
     const updatedSessions = sessions.map(s => {
       if (s.session_number === sessionNumber) {
@@ -683,7 +686,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     document.body.removeChild(link);
   };
 
-  const filteredSessions = sessions.filter(s => {
+  const filteredSessions = activeCohortSessions.filter(s => {
     if (filterStatus === 'all') return true;
     return s.status === filterStatus;
   });
@@ -1032,7 +1035,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
             <div className="flex items-center gap-2">
               <span className="font-semibold text-[#0A0A0A]">Cohort Progression:</span>
               <span className="font-mono text-[#DC2626] font-bold">
-                {completedCount} of {cohort.total_sessions} sessions completed
+                {completedCount} of {totalSessions} sessions completed
               </span>
             </div>
             <span className="font-mono text-xs font-bold text-[#0A0A0A]">{progressPercent}%</span>
@@ -1103,7 +1106,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 : 'text-[#6B6B6B] hover:text-[#0A0A0A]'
             }`}
           >
-            All 15 Sessions ({cohort.sessions.length})
+            All Sessions ({activeCohortSessions.length})
           </button>
           <button
             onClick={() => setFilterStatus('scheduled')}
@@ -1113,7 +1116,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 : 'text-[#6B6B6B] hover:text-[#0A0A0A]'
             }`}
           >
-            Scheduled ({cohort.sessions.filter(s => s.status === 'scheduled').length})
+            Scheduled ({activeCohortSessions.filter(s => s.status === 'scheduled').length})
           </button>
           <button
             onClick={() => setFilterStatus('completed')}
@@ -1192,10 +1195,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                         {session.session_number}
                       </span>
                       <span className="font-mono text-xs font-semibold text-[#0A0A0A]">
-                        Session {session.session_number}/{cohort.total_sessions || cohort.sessions?.length || 30}
+                        Session {session.session_number}/{totalSessions}
                       </span>
                     </div>
-
                     <select
                       value={session.status}
                       onChange={(e) => handleStatusChange(session.session_number, e.target.value as any)}

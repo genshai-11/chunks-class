@@ -4,6 +4,7 @@ import { CURRICULUM_CATALOG_LEVEL_B_EREL } from '../data/levelBErelData';
 import { CURRICULUM_CATALOG_LEVEL_B_ERES } from '../data/levelBEresData';
 import { CURRICULUM_CATALOG_LEVEL_B_ERE } from '../data/levelBEreData';
 import { LEVEL_B_ERE_GRAMMAR_CATALOG, getGrammarForLesson } from '../data/levelBGrammarData';
+import { LEVEL_A_GRAMMAR_CATALOG, getLevelAGrammarForLesson } from '../data/levelAGrammarData';
 
 /**
  * Dynamic In-Memory Curriculum Registry
@@ -16,6 +17,7 @@ class CurriculumRegistryService {
 
   constructor() {
     this.initDefaultSeed();
+    this.applyLocalStorageOverrides();
   }
 
   private initDefaultSeed() {
@@ -28,6 +30,7 @@ class CurriculumRegistryService {
           verb_forms: g.verb_forms,
           sentence_structures: g.sentence_structures,
           tense: g.tense,
+          grammar_points: g.grammar_points,
           notes: g.notes,
           data_group: g.data_group,
           status: g.status,
@@ -66,13 +69,28 @@ class CurriculumRegistryService {
     });
 
     // 2. Seed Level A - Foundation (16 Lessons)
+    // Attach grammar data to each lesson doc in Level A
+    CURRICULUM_CATALOG_LEVEL_A.forEach(l => {
+      const g = getLevelAGrammarForLesson(l.id);
+      if (g) {
+        l.grammar = {
+          verb_forms: g.verb_forms,
+          sentence_structures: g.sentence_structures,
+          tense: g.tense,
+          grammar_points: g.grammar_points,
+          notes: g.notes,
+          status: g.status
+        };
+      }
+    });
+
     const courseA: Course = {
       id: "course_level_a",
       level_code: "LEVEL_A",
       title: "Level A - Foundation English Chunks",
-      description: "16 Lessons (Word List + Days 1..15) with 4,480 essential conversational and survival chunks.",
+      description: "16 Lessons (Word List + Days 1..15) with conversational and survival chunks.",
       total_days: 16,
-      total_chunks: 4480,
+      total_chunks: CURRICULUM_CATALOG_LEVEL_A.reduce((sum, l) => sum + (l.total_chunks || l.chunks.length), 0),
       default_sessions_count: 16,
       source: "Genshai Foundation Curriculum (ERES Design)",
       is_active: true
@@ -106,6 +124,47 @@ class CurriculumRegistryService {
       is_active: true
     };
     this.registerCourse(courseEres, CURRICULUM_CATALOG_LEVEL_B_ERES);
+  }
+
+  /**
+   * Reads persisted lesson overrides from localStorage (if in browser) and applies
+   * them onto seeded catalogs and maps so configured values persist across reloads.
+   */
+  public applyLocalStorageOverrides(): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      const raw = localStorage.getItem('chunks_lesson_overrides');
+      if (!raw) return;
+      const overrides = JSON.parse(raw);
+      if (!overrides || typeof overrides !== 'object') return;
+
+      // Apply overrides across all individual lessons and lesson lists
+      this.individualLessonsMap.forEach((lesson, id) => {
+        const ov = overrides[id] || (id.startsWith('level_b_day_') ? overrides[id.replace('level_b_day_', 'level_b_ere_day_')] : undefined);
+        if (ov) {
+          if (ov.is_active !== undefined) lesson.is_active = Boolean(ov.is_active);
+          if (ov.display_title) {
+            lesson.display_title = ov.display_title;
+            lesson.lesson_title = ov.display_title;
+          }
+        }
+      });
+
+      this.lessonsMap.forEach((list) => {
+        list.forEach(lesson => {
+          const ov = overrides[lesson.id] || (lesson.id.startsWith('level_b_day_') ? overrides[lesson.id.replace('level_b_day_', 'level_b_ere_day_')] : undefined);
+          if (ov) {
+            if (ov.is_active !== undefined) lesson.is_active = Boolean(ov.is_active);
+            if (ov.display_title) {
+              lesson.display_title = ov.display_title;
+              lesson.lesson_title = ov.display_title;
+            }
+          }
+        });
+      });
+    } catch (e) {
+      console.warn('[CurriculumRegistry] Failed to apply localStorage overrides:', e);
+    }
   }
 
   /**
@@ -207,12 +266,13 @@ class CurriculumRegistryService {
     if (lesson?.grammar) {
       return lesson.grammar;
     }
-    const gDoc = getGrammarForLesson(lessonId);
+    const gDoc = getGrammarForLesson(lessonId) || getLevelAGrammarForLesson(lessonId);
     if (gDoc) {
       return {
         verb_forms: gDoc.verb_forms,
         sentence_structures: gDoc.sentence_structures,
         tense: gDoc.tense,
+        grammar_points: gDoc.grammar_points,
         notes: gDoc.notes,
         data_group: gDoc.data_group,
         status: gDoc.status,
@@ -248,45 +308,62 @@ class CurriculumRegistryService {
     if (ereLesson) {
       ereLesson.grammar = { ...grammar };
     }
+
+    // 3. Update Level A catalog reference if present
+    const aLesson = CURRICULUM_CATALOG_LEVEL_A.find(l => l.id.toLowerCase() === cleanId.toLowerCase());
+    if (aLesson) {
+      aLesson.grammar = { ...grammar };
+    }
   }
 
   public updateLesson(lesson: LessonDoc): void {
     if (!lesson || !lesson.id) return;
-    this.individualLessonsMap.set(lesson.id, lesson);
+    
+    // Ensure is_active and display_title are preserved
+    const existing = this.individualLessonsMap.get(lesson.id);
+    const updatedLesson: LessonDoc = {
+      ...existing,
+      ...lesson,
+      is_active: lesson.is_active !== undefined ? Boolean(lesson.is_active) : (existing?.is_active !== undefined ? Boolean(existing.is_active) : true),
+      display_title: lesson.display_title || lesson.lesson_title || existing?.display_title || existing?.lesson_title,
+      lesson_title: lesson.display_title || lesson.lesson_title || existing?.lesson_title || lesson.id
+    };
+
+    this.individualLessonsMap.set(updatedLesson.id, updatedLesson);
 
     // Also handle aliases for individual lookup
-    if (lesson.id.startsWith('level_b_day_')) {
-      const aliasId = lesson.id.replace('level_b_day_', 'level_b_ere_day_');
-      this.individualLessonsMap.set(aliasId, lesson);
-    } else if (lesson.id.startsWith('level_b_ere_day_')) {
-      const aliasId = lesson.id.replace('level_b_ere_day_', 'level_b_day_');
-      this.individualLessonsMap.set(aliasId, lesson);
+    if (updatedLesson.id.startsWith('level_b_day_')) {
+      const aliasId = updatedLesson.id.replace('level_b_day_', 'level_b_ere_day_');
+      this.individualLessonsMap.set(aliasId, updatedLesson);
+    } else if (updatedLesson.id.startsWith('level_b_ere_day_')) {
+      const aliasId = updatedLesson.id.replace('level_b_ere_day_', 'level_b_day_');
+      this.individualLessonsMap.set(aliasId, updatedLesson);
     }
-    if (lesson.id === 'level_a_word_list') {
-      this.individualLessonsMap.set('level_a_day_0', lesson);
-      this.individualLessonsMap.set('level_a_0', lesson);
+    if (updatedLesson.id === 'level_a_word_list') {
+      this.individualLessonsMap.set('level_a_day_0', updatedLesson);
+      this.individualLessonsMap.set('level_a_0', updatedLesson);
     }
 
     let foundInAnyList = false;
     this.lessonsMap.forEach((list) => {
       const idx = list.findIndex(l => 
-        l.id === lesson.id ||
-        (lesson.id.startsWith('level_b_day_') && l.id === lesson.id.replace('level_b_day_', 'level_b_ere_day_')) ||
-        (lesson.id.startsWith('level_b_ere_day_') && l.id === lesson.id.replace('level_b_ere_day_', 'level_b_day_')) ||
-        (lesson.id === 'level_a_word_list' && (l.id === 'level_a_day_0' || l.id === 'level_a_0'))
+        l.id === updatedLesson.id ||
+        (updatedLesson.id.startsWith('level_b_day_') && l.id === updatedLesson.id.replace('level_b_day_', 'level_b_ere_day_')) ||
+        (updatedLesson.id.startsWith('level_b_ere_day_') && l.id === updatedLesson.id.replace('level_b_ere_day_', 'level_b_day_')) ||
+        (updatedLesson.id === 'level_a_word_list' && (l.id === 'level_a_day_0' || l.id === 'level_a_0'))
       );
       if (idx >= 0) {
-        list[idx] = lesson;
+        list[idx] = updatedLesson;
         foundInAnyList = true;
       }
     });
 
     if (!foundInAnyList) {
-      const targetKeys = [lesson.course_id, lesson.level_code, lesson.level_code?.toUpperCase()].filter(Boolean);
+      const targetKeys = [updatedLesson.course_id, updatedLesson.level_code, updatedLesson.level_code?.toUpperCase()].filter(Boolean);
       targetKeys.forEach(k => {
         const list = this.lessonsMap.get(k as string);
         if (list) {
-          list.push(lesson);
+          list.push(updatedLesson);
           list.sort((a, b) => a.day_number - b.day_number);
         }
       });
