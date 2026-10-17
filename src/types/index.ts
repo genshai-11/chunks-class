@@ -72,7 +72,10 @@ export interface LessonDoc {
   day_number: number;              // 0, 1, 2, ... N
   course_title?: string;
   lesson_title: string;
+  display_title?: string;          // Dynamic custom display title (e.g. "Lesson 1: How to survive")
   title?: string;                  // Canonical title alias matching lesson_title
+  is_active?: boolean;             // Whether lesson is enabled in curriculum schedule/projector (default true)
+  display_order?: number;          // Custom sorting order in course curriculum
   lesson_type: string;
   total_chunks: number;
   categories: string[];

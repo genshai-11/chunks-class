@@ -596,6 +596,66 @@ export async function saveLesson(lesson: LessonDoc): Promise<void> {
     console.warn(`[Firestore] saveLesson warning for ${lesson.id}:`, e);
   }
 }
+/**
+ * Batch update multiple lessons in Firestore and synchronize in-memory registry.
+ * Chunked into batches of up to 450 operations to respect Firestore's 500 limit.
+ */
+export async function batchUpdateLessons(
+  lessons: LessonDoc[]
+): Promise<{ success: boolean; count: number; error?: string }> {
+  if (!lessons || lessons.length === 0) {
+    return { success: true, count: 0 };
+  }
+
+  const now = new Date().toISOString();
+  const updatedLessons: LessonDoc[] = [];
+
+  // 1. Update in-memory registry and local caches immediately
+  for (const lesson of lessons) {
+    const updated = {
+      ...lesson,
+      updated_at: now
+    };
+    curriculumRegistry.updateLesson(updated);
+    invalidateLessonsCache(updated.course_id || updated.level_code);
+    memoryCache.delete(`lesson_by_id:${updated.id}`);
+    if (updated.id.startsWith('level_b_day_')) {
+      memoryCache.delete(`lesson_by_id:${updated.id.replace('level_b_day_', 'level_b_ere_day_')}`);
+    } else if (updated.id.startsWith('level_b_ere_day_')) {
+      memoryCache.delete(`lesson_by_id:${updated.id.replace('level_b_ere_day_', 'level_b_day_')}`);
+    }
+    updatedLessons.push(updated);
+  }
+
+  // 2. Commit in Firestore batches (max 450 per commit)
+  try {
+    const BATCH_SIZE = 450;
+    for (let i = 0; i < updatedLessons.length; i += BATCH_SIZE) {
+      const chunk = updatedLessons.slice(i, i + BATCH_SIZE);
+      const batch = writeBatch(db);
+      for (const lesson of chunk) {
+        const docRef = doc(db, 'lessons', lesson.id);
+        // Strip undefined values for clean Firestore payload
+        const payload: Record<string, unknown> = { ...lesson };
+        Object.keys(payload).forEach(k => {
+          if (payload[k] === undefined) delete payload[k];
+        });
+        batch.set(docRef, payload, { merge: true });
+      }
+      await batch.commit();
+    }
+    return { success: true, count: updatedLessons.length };
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error('[Firestore] batchUpdateLessons error:', err);
+    return { 
+      success: false, 
+      count: 0, 
+      error: errorMessage 
+    };
+  }
+}
+
 
 export async function addOrUpdateChunk(lessonId: string, chunk: ChunkItem): Promise<LessonDoc | null> {
   const lesson = await getLessonById(lessonId);

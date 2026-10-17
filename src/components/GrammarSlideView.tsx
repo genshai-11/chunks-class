@@ -187,8 +187,58 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
   const tenses = grammar?.tense || [];
   const hasContent = grammarPoints.length > 0 || sentenceStructures.length > 0 || verbForms.length > 0 || tenses.length > 0;
 
-  const capitalizeFirst = (s: string) => s ? s.trim().charAt(0).toUpperCase() + s.trim().slice(1) : '';
+  const renderHighlightedText = (text: string): React.ReactNode => {
+    if (!text) return text;
+    if (!text.includes('**')) return text;
 
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+        const content = part.slice(2, -2);
+        return (
+          <span
+            key={index}
+            className="font-extrabold text-[#DC2626] dark:text-rose-400 bg-rose-50 dark:bg-rose-950/70 px-1.5 py-0.5 rounded border border-rose-300 dark:border-rose-800 shadow-2xs underline decoration-2 decoration-[#DC2626]/70 mx-0.5 inline-block"
+          >
+            {content}
+          </span>
+        );
+      }
+      return <React.Fragment key={index}>{part}</React.Fragment>;
+    });
+  };
+
+  const renderChunkItem = (
+    item: string,
+    index: number,
+    sizeClass: string,
+    bgClass: string,
+    dotColor: string
+  ) => {
+    if (item.trim().startsWith('---')) {
+      const customLabel = item.replace(/^-+\s*/, '').trim();
+      return (
+        <div 
+          key={index} 
+          className="my-2 border-t border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center"
+        >
+          <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded">
+            {customLabel || 'Contrast / Negation'}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div 
+        key={index} 
+        className={`${sizeClass} transition-all ${bgClass}`}
+      >
+        <span className={`w-2.5 h-2.5 rounded-full ${dotColor} shrink-0 mt-1.5 shadow-xs`} />
+        <span className="break-words leading-snug">{renderHighlightedText(item)}</span>
+      </div>
+    );
+  };
   // Unified font size level 1..8 controlling all 3 columns simultaneously
   const [grammarFontSize, setGrammarFontSize] = React.useState<FontSizeLevel>(() =>
     getStoredFontSize('chunks_grammar_font_size', 3)
@@ -305,37 +355,33 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                       : 'bg-white border-zinc-200/90 hover:border-zinc-300'
                   }`}
                 >
-                  <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-                      <div className={`p-1.5 sm:p-2 rounded-xl ${theme.badgeBg} ${theme.badgeText} shrink-0`}>
+                  <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                    <div className="flex items-start gap-2 sm:gap-2.5 min-w-0 flex-1">
+                      <div className={`p-1.5 sm:p-2 rounded-xl ${theme.badgeBg} ${theme.badgeText} shrink-0 mt-0.5`}>
                         <IconComp className="w-5 h-5" />
                       </div>
-                      <div className="min-w-0">
-                        <h3 className={`font-black text-sm sm:text-base tracking-wider truncate ${theme.headerText}`} title={point.title}>
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-black text-sm sm:text-base tracking-tight break-words leading-snug whitespace-normal ${theme.headerText}`} title={point.title}>
                           {point.title}
                         </h3>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 shrink-0">
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 shrink-0 mt-0.5">
                       Point {pIdx + 1}
                     </span>
                   </div>
 
                   <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 scrollbar-thin pt-2">
                     {point.items && point.items.length > 0 ? (
-                      point.items.map((item, iIdx) => (
-                        <div 
-                          key={iIdx} 
-                          className={`${STRUCTURES_SIZE_CLASSES[grammarFontSize]} transition-all ${
-                            highContrastDark 
-                              ? theme.itemDarkBg 
-                              : theme.itemBg
-                          }`}
-                        >
-                          <span className={`w-2.5 h-2.5 rounded-full ${theme.dotColor} shrink-0 mt-1.5 shadow-xs`} />
-                          <span className="break-words leading-snug">{item}</span>
-                        </div>
-                      ))
+                      point.items.map((item, iIdx) =>
+                        renderChunkItem(
+                          item,
+                          iIdx,
+                          STRUCTURES_SIZE_CLASSES[grammarFontSize],
+                          highContrastDark ? theme.itemDarkBg : theme.itemBg,
+                          theme.dotColor
+                        )
+                      )
                     ) : (
                       <div className="text-xs sm:text-sm text-zinc-400 italic py-2">
                         (No spoken chunks listed)
@@ -343,10 +389,14 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                     )}
                   </div>
 
-                  <div className="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs font-mono font-medium text-zinc-400 shrink-0 flex items-center justify-between gap-2">
-                    <span className="shrink-0">{point.items?.length || 0} spoken {(point.items?.length || 0) === 1 ? 'chunk' : 'chunks'}</span>
+                  <div className="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs font-mono font-medium text-zinc-400 shrink-0 flex items-start justify-between gap-2">
+                    <span className="shrink-0">
+                      {(point.items?.filter(it => !it.trim().startsWith('---')).length || 0)} spoken {
+                        (point.items?.filter(it => !it.trim().startsWith('---')).length || 0) === 1 ? 'chunk' : 'chunks'
+                      }
+                    </span>
                     {point.notes && (
-                      <span className="text-[10px] text-zinc-400 truncate text-right" title={point.notes}>
+                      <span className="text-[10px] text-zinc-400 break-words leading-normal text-right max-w-[65%]" title={point.notes}>
                         {point.notes}
                       </span>
                     )}
@@ -363,13 +413,13 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
                 : 'bg-white border-zinc-200/90 hover:border-zinc-300'
             }`}>
-              <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-                <div className="flex items-center gap-2 sm:gap-2.5">
-                  <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0">
+              <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                <div className="flex items-start gap-2 sm:gap-2.5 min-w-0 flex-1">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">
                     <Layers className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="font-black text-sm sm:text-base tracking-wider text-blue-600 dark:text-blue-300">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-sm sm:text-base tracking-tight break-words leading-snug whitespace-normal text-blue-600 dark:text-blue-300">
                       Sentence Structures
                     </h3>
                   </div>
@@ -378,19 +428,17 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
 
               <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 scrollbar-thin pt-2">
                 {sentenceStructures.length > 0 ? (
-                  sentenceStructures.map((struct, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`${STRUCTURES_SIZE_CLASSES[grammarFontSize]} transition-all ${
-                        highContrastDark 
-                          ? 'bg-zinc-900/90 border-blue-500/30 text-blue-100 shadow-md' 
-                          : 'bg-blue-50/80 border-blue-300 text-blue-950 shadow-xs'
-                      }`}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0 mt-1.5 shadow-xs" />
-                      <span className="break-words leading-snug">{capitalizeFirst(struct)}</span>
-                    </div>
-                  ))
+                  sentenceStructures.map((struct, idx) =>
+                    renderChunkItem(
+                      struct,
+                      idx,
+                      STRUCTURES_SIZE_CLASSES[grammarFontSize],
+                      highContrastDark 
+                        ? 'bg-zinc-900/90 border-blue-500/30 text-blue-100 shadow-md' 
+                        : 'bg-blue-50/80 border-blue-300 text-blue-950 shadow-xs',
+                      'bg-blue-500'
+                    )
+                  )
                 ) : (
                   <div className="text-xs sm:text-sm text-zinc-400 italic py-2">
                     (No specialized sentence structures)
@@ -409,13 +457,13 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
                 : 'bg-white border-zinc-200/90 hover:border-zinc-300'
             }`}>
-              <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-                <div className="flex items-center gap-2 sm:gap-2.5">
-                  <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shrink-0">
+              <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                <div className="flex items-start gap-2 sm:gap-2.5 min-w-0 flex-1">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
                     <Sparkles className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="font-black text-sm sm:text-base tracking-wider text-emerald-600 dark:text-emerald-300">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-sm sm:text-base tracking-tight break-words leading-snug whitespace-normal text-emerald-600 dark:text-emerald-300">
                       Word Forms
                     </h3>
                   </div>
@@ -425,19 +473,31 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
               <div className="flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin pt-2">
                 <div className="flex flex-wrap gap-2 sm:gap-2.5">
                   {verbForms.length > 0 ? (
-                    verbForms.map((vf, idx) => (
-                      <span 
-                        key={idx}
-                        className={`${VERBS_SIZE_CLASSES[grammarFontSize]} shadow-xs transition-all ${
-                          highContrastDark 
-                            ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-100 shadow-md' 
-                            : 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xs'
-                        }`}
-                      >
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span className="break-words">{capitalizeFirst(vf)}</span>
-                      </span>
-                    ))
+                    verbForms.map((vf, idx) => {
+                      if (vf.trim().startsWith('---')) {
+                        const customLabel = vf.replace(/^-+\s*/, '').trim();
+                        return (
+                          <div key={idx} className="w-full my-1 border-t border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center">
+                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded">
+                              {customLabel || 'Contrast / Negation'}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <span 
+                          key={idx}
+                          className={`${VERBS_SIZE_CLASSES[grammarFontSize]} shadow-xs transition-all ${
+                            highContrastDark 
+                              ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-100 shadow-md' 
+                              : 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xs'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span className="break-words">{renderHighlightedText(vf)}</span>
+                        </span>
+                      );
+                    })
                   ) : (
                     <div className="text-xs sm:text-sm text-zinc-400 italic py-2">
                       (Standard word forms)
@@ -457,13 +517,13 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                 ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
                 : 'bg-white border-zinc-200/90 hover:border-zinc-300'
             }`}>
-              <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-                <div className="flex items-center gap-2 sm:gap-2.5">
-                  <div className="p-1.5 sm:p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-[#DC2626] dark:text-rose-400 shrink-0">
+              <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                <div className="flex items-start gap-2 sm:gap-2.5 min-w-0 flex-1">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-[#DC2626] dark:text-rose-400 shrink-0 mt-0.5">
                     <FileText className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="font-black text-sm sm:text-base tracking-wider text-[#DC2626] dark:text-rose-400">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-sm sm:text-base tracking-tight break-words leading-snug whitespace-normal text-[#DC2626] dark:text-rose-400">
                       Tenses
                     </h3>
                   </div>
@@ -472,19 +532,17 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
 
               <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 scrollbar-thin pt-2">
                 {tenses.length > 0 ? (
-                  tenses.map((tense, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`${TENSES_SIZE_CLASSES[grammarFontSize]} transition-all ${
-                        highContrastDark 
-                          ? 'bg-rose-950/40 border-rose-700/60 text-rose-100 shadow-md' 
-                          : 'bg-rose-50/80 border-rose-300 text-rose-950 shadow-xs'
-                      }`}
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626] shrink-0 shadow-xs" />
-                      <span className="break-words">{capitalizeFirst(tense)}</span>
-                    </div>
-                  ))
+                  tenses.map((tense, idx) =>
+                    renderChunkItem(
+                      tense,
+                      idx,
+                      TENSES_SIZE_CLASSES[grammarFontSize],
+                      highContrastDark 
+                        ? 'bg-rose-950/40 border-rose-700/60 text-rose-100 shadow-md' 
+                        : 'bg-rose-50/80 border-rose-300 text-rose-950 shadow-xs',
+                      'bg-[#DC2626]'
+                    )
+                  )
                 ) : (
                   <div className="text-xs sm:text-sm text-zinc-400 italic py-2">
                     (Natural tenses & patterns)
