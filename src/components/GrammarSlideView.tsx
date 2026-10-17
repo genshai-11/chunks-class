@@ -87,6 +87,36 @@ const TENSES_SIZE_CLASSES: Record<FontSizeLevel, string> = {
   8: 'p-6 sm:p-7 rounded-3xl border-4 text-2xl sm:text-3xl lg:text-4xl font-black font-mono flex items-center gap-6 text-left',
 };
 
+const POINT_THEMES = [
+  {
+    icon: Layers,
+    badgeBg: 'bg-blue-50 dark:bg-blue-950/60',
+    badgeText: 'text-blue-600 dark:text-blue-400',
+    headerText: 'text-blue-600 dark:text-blue-300',
+    itemBg: 'bg-blue-50/80 border-blue-300 text-blue-950 shadow-xs',
+    itemDarkBg: 'bg-zinc-900/90 border-blue-500/30 text-blue-100 shadow-md',
+    dotColor: 'bg-blue-500'
+  },
+  {
+    icon: Sparkles,
+    badgeBg: 'bg-emerald-50 dark:bg-emerald-950/60',
+    badgeText: 'text-emerald-600 dark:text-emerald-400',
+    headerText: 'text-emerald-600 dark:text-emerald-300',
+    itemBg: 'bg-emerald-50/80 border-emerald-300 text-emerald-950 shadow-xs',
+    itemDarkBg: 'bg-zinc-900/90 border-emerald-500/30 text-emerald-100 shadow-md',
+    dotColor: 'bg-emerald-500'
+  },
+  {
+    icon: FileText,
+    badgeBg: 'bg-rose-50 dark:bg-rose-950/60',
+    badgeText: 'text-[#DC2626] dark:text-rose-400',
+    headerText: 'text-[#DC2626] dark:text-rose-400',
+    itemBg: 'bg-rose-50/80 border-rose-300 text-rose-950 shadow-xs',
+    itemDarkBg: 'bg-zinc-900/90 border-rose-500/30 text-rose-100 shadow-md',
+    dotColor: 'bg-[#DC2626]'
+  }
+];
+
 interface FontSizeStepperProps {
   level: FontSizeLevel;
   onChange: (level: FontSizeLevel) => void;
@@ -151,10 +181,11 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
   highContrastDark = false,
   onStartDrill
 }) => {
+  const grammarPoints = grammar?.grammar_points || [];
   const sentenceStructures = grammar?.sentence_structures || [];
   const verbForms = grammar?.verb_forms || [];
   const tenses = grammar?.tense || [];
-  const hasContent = sentenceStructures.length > 0 || verbForms.length > 0 || tenses.length > 0;
+  const hasContent = grammarPoints.length > 0 || sentenceStructures.length > 0 || verbForms.length > 0 || tenses.length > 0;
 
   const capitalizeFirst = (s: string) => s ? s.trim().charAt(0).toUpperCase() + s.trim().slice(1) : '';
 
@@ -255,6 +286,74 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
             <p className="text-sm leading-relaxed max-w-sm mx-auto">
               No specific grammar notes recorded for this topic. Ready for Chunk drill.
             </p>
+          </div>
+        ) : grammarPoints.length > 0 ? (
+          <div className={`grid grid-cols-1 ${
+            grammarPoints.length === 1 ? 'md:grid-cols-1 max-w-2xl mx-auto' : 
+            grammarPoints.length === 2 ? 'md:grid-cols-2 max-w-5xl mx-auto' : 
+            'md:grid-cols-3'
+          } gap-3 sm:gap-4 w-full h-full max-h-full items-stretch`}>
+            {grammarPoints.map((point, pIdx) => {
+              const theme = POINT_THEMES[pIdx % POINT_THEMES.length];
+              const IconComp = theme.icon;
+              return (
+                <div 
+                  key={pIdx}
+                  className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col justify-between h-full min-h-0 overflow-hidden shadow-md transition-all ${
+                    highContrastDark 
+                      ? 'bg-[#121216] border-zinc-800 hover:border-zinc-700' 
+                      : 'bg-white border-zinc-200/90 hover:border-zinc-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                      <div className={`p-1.5 sm:p-2 rounded-xl ${theme.badgeBg} ${theme.badgeText} shrink-0`}>
+                        <IconComp className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className={`font-black text-sm sm:text-base tracking-wider truncate ${theme.headerText}`} title={point.title}>
+                          {point.title}
+                        </h3>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 shrink-0">
+                      Point {pIdx + 1}
+                    </span>
+                  </div>
+
+                  <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2 scrollbar-thin pt-2">
+                    {point.items && point.items.length > 0 ? (
+                      point.items.map((item, iIdx) => (
+                        <div 
+                          key={iIdx} 
+                          className={`${STRUCTURES_SIZE_CLASSES[grammarFontSize]} transition-all ${
+                            highContrastDark 
+                              ? theme.itemDarkBg 
+                              : theme.itemBg
+                          }`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full ${theme.dotColor} shrink-0 mt-1.5 shadow-xs`} />
+                          <span className="break-words leading-snug">{item}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-xs sm:text-sm text-zinc-400 italic py-2">
+                        (No spoken chunks listed)
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 mt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs font-mono font-medium text-zinc-400 shrink-0 flex items-center justify-between gap-2">
+                    <span className="shrink-0">{point.items?.length || 0} spoken {(point.items?.length || 0) === 1 ? 'chunk' : 'chunks'}</span>
+                    {point.notes && (
+                      <span className="text-[10px] text-zinc-400 truncate text-right" title={point.notes}>
+                        {point.notes}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 w-full h-full max-h-full items-stretch">

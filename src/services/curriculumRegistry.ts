@@ -4,6 +4,7 @@ import { CURRICULUM_CATALOG_LEVEL_B_EREL } from '../data/levelBErelData';
 import { CURRICULUM_CATALOG_LEVEL_B_ERES } from '../data/levelBEresData';
 import { CURRICULUM_CATALOG_LEVEL_B_ERE } from '../data/levelBEreData';
 import { LEVEL_B_ERE_GRAMMAR_CATALOG, getGrammarForLesson } from '../data/levelBGrammarData';
+import { LEVEL_A_GRAMMAR_CATALOG, getLevelAGrammarForLesson } from '../data/levelAGrammarData';
 
 /**
  * Dynamic In-Memory Curriculum Registry
@@ -28,6 +29,7 @@ class CurriculumRegistryService {
           verb_forms: g.verb_forms,
           sentence_structures: g.sentence_structures,
           tense: g.tense,
+          grammar_points: g.grammar_points,
           notes: g.notes,
           data_group: g.data_group,
           status: g.status,
@@ -66,13 +68,28 @@ class CurriculumRegistryService {
     });
 
     // 2. Seed Level A - Foundation (16 Lessons)
+    // Attach grammar data to each lesson doc in Level A
+    CURRICULUM_CATALOG_LEVEL_A.forEach(l => {
+      const g = getLevelAGrammarForLesson(l.id);
+      if (g) {
+        l.grammar = {
+          verb_forms: g.verb_forms,
+          sentence_structures: g.sentence_structures,
+          tense: g.tense,
+          grammar_points: g.grammar_points,
+          notes: g.notes,
+          status: g.status
+        };
+      }
+    });
+
     const courseA: Course = {
       id: "course_level_a",
       level_code: "LEVEL_A",
       title: "Level A - Foundation English Chunks",
-      description: "16 Lessons (Word List + Days 1..15) with 4,480 essential conversational and survival chunks.",
+      description: "16 Lessons (Word List + Days 1..15) with conversational and survival chunks.",
       total_days: 16,
-      total_chunks: 4480,
+      total_chunks: CURRICULUM_CATALOG_LEVEL_A.reduce((sum, l) => sum + (l.total_chunks || l.chunks.length), 0),
       default_sessions_count: 16,
       source: "Genshai Foundation Curriculum (ERES Design)",
       is_active: true
@@ -207,12 +224,13 @@ class CurriculumRegistryService {
     if (lesson?.grammar) {
       return lesson.grammar;
     }
-    const gDoc = getGrammarForLesson(lessonId);
+    const gDoc = getGrammarForLesson(lessonId) || getLevelAGrammarForLesson(lessonId);
     if (gDoc) {
       return {
         verb_forms: gDoc.verb_forms,
         sentence_structures: gDoc.sentence_structures,
         tense: gDoc.tense,
+        grammar_points: gDoc.grammar_points,
         notes: gDoc.notes,
         data_group: gDoc.data_group,
         status: gDoc.status,
@@ -247,6 +265,12 @@ class CurriculumRegistryService {
     );
     if (ereLesson) {
       ereLesson.grammar = { ...grammar };
+    }
+
+    // 3. Update Level A catalog reference if present
+    const aLesson = CURRICULUM_CATALOG_LEVEL_A.find(l => l.id.toLowerCase() === cleanId.toLowerCase());
+    if (aLesson) {
+      aLesson.grammar = { ...grammar };
     }
   }
 

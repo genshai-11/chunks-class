@@ -111,6 +111,11 @@ export interface LessonGrammar {
   verb_forms: string[];
   sentence_structures: string[];
   tense: string[];
+  grammar_points?: Array<{
+    title: string;
+    items: string[];
+    notes?: string;
+  }>;
   notes?: string;
   mini_lessons?: GrammarMiniLesson[];
   total_audio_files?: number;
@@ -172,6 +177,7 @@ export interface CohortAudioSettings {
   provider_secondary?: string;
   part_announce_enabled?: boolean;
   part_intro_autoplay_chunk?: boolean;
+  part_transition_chime_enabled?: boolean;
 }
 
 export interface Cohort {

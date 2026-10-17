@@ -3,7 +3,7 @@ import { ChunkItem, LessonDoc, LanguageMode, CohortAudioSettings, LessonPart, Le
 import { getLessonById as getFirestoreLessonById } from '../services/firestoreService';
 import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
-import { playTopicTransitionChime, playLessonCompletionFanfare } from '../utils/audioChimes';
+import { playTopicTransitionChime, playLessonCompletionFanfare, playPartTransitionChime } from '../utils/audioChimes';
 import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget, PreferredAudioSource } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
@@ -102,6 +102,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     }
     const saved = localStorage.getItem('chunks_part_autoplay_chunk');
     return saved !== null ? saved === 'true' : false;
+  });
+  const [isPartChimeEnabled, setIsPartChimeEnabled] = useState<boolean>(() => {
+    if (audioSettings?.part_transition_chime_enabled !== undefined) {
+      return audioSettings.part_transition_chime_enabled;
+    }
+    const saved = localStorage.getItem('chunks_part_chime_enabled');
+    return saved !== null ? saved === 'true' : true;
   });
   const [isAwaitingFirstChunkPlay, setIsAwaitingFirstChunkPlay] = useState<boolean>(false);
   const [partAnnounceBanner, setPartAnnounceBanner] = useState<{ title: string; partNumber?: number } | null>(null);
@@ -288,6 +295,9 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       if (audioSettings.part_intro_autoplay_chunk !== undefined && audioSettings.part_intro_autoplay_chunk !== isPartAutoplayChunk) {
         setIsPartAutoplayChunk(audioSettings.part_intro_autoplay_chunk);
       }
+      if (audioSettings.part_transition_chime_enabled !== undefined && audioSettings.part_transition_chime_enabled !== isPartChimeEnabled) {
+        setIsPartChimeEnabled(audioSettings.part_transition_chime_enabled);
+      }
     }
   }, [audioSettings]);
 
@@ -306,7 +316,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       audioSettings.default_speed !== speed ||
       audioSettings.repeat_count !== repeatCount ||
       audioSettings.part_announce_enabled !== isPartAnnounceEnabled ||
-      audioSettings.part_intro_autoplay_chunk !== isPartAutoplayChunk;
+      audioSettings.part_intro_autoplay_chunk !== isPartAutoplayChunk ||
+      audioSettings.part_transition_chime_enabled !== isPartChimeEnabled;
 
     if (hasChanged) {
       onUpdateAudioSettings?.({
@@ -324,10 +335,11 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         default_speed: speed,
         repeat_count: repeatCount,
         part_announce_enabled: isPartAnnounceEnabled,
-        part_intro_autoplay_chunk: isPartAutoplayChunk
+        part_intro_autoplay_chunk: isPartAutoplayChunk,
+        part_transition_chime_enabled: isPartChimeEnabled
       });
     }
-  }, [selectedVoice, selectedVoiceVi, speed, repeatCount, languageMode, isPartAnnounceEnabled, isPartAutoplayChunk]);
+  }, [selectedVoice, selectedVoiceVi, speed, repeatCount, languageMode, isPartAnnounceEnabled, isPartAutoplayChunk, isPartChimeEnabled]);
 
   const handleStartPrepareAudio = async () => {
     if (chunks.length === 0) return;
@@ -738,7 +750,14 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
       try {
         if (playbackSequenceRef.current === seqId) {
-          await playPartIntro(targetPart.title, targetPart.part_index, selectedVoice);
+          if (isPartChimeEnabled) {
+            await playPartTransitionChime();
+            // brief ~120ms pause after chime before speech announcement
+            await new Promise(resolve => setTimeout(resolve, 120));
+          }
+          if (playbackSequenceRef.current === seqId) {
+            await playPartIntro(targetPart.title, targetPart.part_index, selectedVoice);
+          }
         }
       } catch (err) {
         console.warn('[ClassroomPresentation] Part intro playback error:', err);
@@ -1845,6 +1864,34 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                             {isPartAutoplayChunk
                               ? '⚡ Automatically plays first chunk audio after Part intro'
                               : '⏸️ Pauses for teacher explanation, press Next/Space to play'}
+                          </div>
+
+                          {/* Transition chime before announcement switch */}
+                          <div className="pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-between">
+                            <div className="pr-2">
+                              <div className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
+                                Transition chime before Part announcement
+                              </div>
+                              <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                                Play a soft 3-note chime right before the part speech announcement
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextVal = !isPartChimeEnabled;
+                                setIsPartChimeEnabled(nextVal);
+                                localStorage.setItem('chunks_part_chime_enabled', String(nextVal));
+                              }}
+                              className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
+                                isPartChimeEnabled ? 'bg-[#DC2626]' : 'bg-zinc-300 dark:bg-zinc-600'
+                              }`}
+                              title="Toggle transition chime before Part announcement"
+                            >
+                              <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                                isPartChimeEnabled ? 'translate-x-4' : 'translate-x-0'
+                              }`} />
+                            </button>
                           </div>
                         </div>
                       )}
