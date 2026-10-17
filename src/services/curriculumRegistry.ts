@@ -142,6 +142,7 @@ class CurriculumRegistryService {
       this.individualLessonsMap.forEach((lesson, id) => {
         const ov = overrides[id] || (id.startsWith('level_b_day_') ? overrides[id.replace('level_b_day_', 'level_b_ere_day_')] : undefined);
         if (ov) {
+          if (ov.day_number !== undefined) lesson.day_number = Number(ov.day_number);
           if (ov.is_active !== undefined) lesson.is_active = Boolean(ov.is_active);
           if (ov.display_title) {
             lesson.display_title = ov.display_title;
@@ -154,6 +155,7 @@ class CurriculumRegistryService {
         list.forEach(lesson => {
           const ov = overrides[lesson.id] || (lesson.id.startsWith('level_b_day_') ? overrides[lesson.id.replace('level_b_day_', 'level_b_ere_day_')] : undefined);
           if (ov) {
+            if (ov.day_number !== undefined) lesson.day_number = Number(ov.day_number);
             if (ov.is_active !== undefined) lesson.is_active = Boolean(ov.is_active);
             if (ov.display_title) {
               lesson.display_title = ov.display_title;
@@ -161,6 +163,7 @@ class CurriculumRegistryService {
             }
           }
         });
+        list.sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
       });
     } catch (e) {
       console.warn('[CurriculumRegistry] Failed to apply localStorage overrides:', e);
@@ -324,6 +327,7 @@ class CurriculumRegistryService {
     const updatedLesson: LessonDoc = {
       ...existing,
       ...lesson,
+      day_number: lesson.day_number !== undefined ? Number(lesson.day_number) : (existing?.day_number ?? 0),
       is_active: lesson.is_active !== undefined ? Boolean(lesson.is_active) : (existing?.is_active !== undefined ? Boolean(existing.is_active) : true),
       display_title: lesson.display_title || lesson.lesson_title || existing?.display_title || existing?.lesson_title,
       lesson_title: lesson.display_title || lesson.lesson_title || existing?.lesson_title || lesson.id
@@ -354,6 +358,7 @@ class CurriculumRegistryService {
       );
       if (idx >= 0) {
         list[idx] = updatedLesson;
+        list.sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
         foundInAnyList = true;
       }
     });

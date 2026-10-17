@@ -147,6 +147,7 @@ export function clearAllFirestoreCache(): void {
 export interface LessonOverride {
   is_active?: boolean;
   display_title?: string;
+  day_number?: number;
 }
 
 export function getLessonOverrides(): Record<string, LessonOverride> {
@@ -176,6 +177,7 @@ export function applyLessonOverrides<T extends LessonDoc>(lesson: T, overrides?:
   if (!override) return lesson;
   return {
     ...lesson,
+    day_number: override.day_number !== undefined ? override.day_number : lesson.day_number,
     is_active: override.is_active !== undefined ? override.is_active : (lesson.is_active !== undefined ? lesson.is_active : true),
     display_title: override.display_title || lesson.display_title || lesson.lesson_title,
     lesson_title: override.display_title || lesson.lesson_title
@@ -512,7 +514,9 @@ export async function getLessonsByLevel(courseIdOrLevel: CourseLevel | string, f
         const lessons = deduplicateLessons(rawLessons, courseIdOrLevel);
         // Secondary persistence: merge with localStorage overrides
         const overrides = getLessonOverrides();
-        const lessonsWithOverrides = lessons.map(l => applyLessonOverrides(l, overrides));
+        const lessonsWithOverrides = lessons
+          .map(l => applyLessonOverrides(l, overrides))
+          .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
 
         // Iterate and call curriculumRegistry.updateLesson for each doc before returning
         lessonsWithOverrides.forEach(lesson => {
@@ -575,7 +579,9 @@ export async function getAllLessons(courseIdOrLevel?: CourseLevel | string, forc
         const lessons = deduplicateLessons(rawLessons);
         // Merge with localStorage overrides
         const overridesAll = getLessonOverrides();
-        const lessonsAllWithOverrides = lessons.map(l => applyLessonOverrides(l, overridesAll));
+        const lessonsAllWithOverrides = lessons
+          .map(l => applyLessonOverrides(l, overridesAll))
+          .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
 
         lessonsAllWithOverrides.forEach(lesson => {
           curriculumRegistry.updateLesson(lesson);
@@ -692,7 +698,8 @@ export async function batchUpdateLessons(
     for (const l of updatedLessons) {
       overridesMap[l.id] = {
         is_active: l.is_active !== undefined ? Boolean(l.is_active) : true,
-        display_title: l.display_title || l.lesson_title
+        display_title: l.display_title || l.lesson_title,
+        day_number: l.day_number
       };
     }
     saveLessonOverrides(overridesMap);

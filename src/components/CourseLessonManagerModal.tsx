@@ -13,7 +13,8 @@ import {
   HelpCircle,
   Layers,
   Wand2,
-  FileText
+  FileText,
+  Hash
 } from 'lucide-react';
 import { batchUpdateLessons } from '../services/firestoreService';
 
@@ -28,6 +29,7 @@ interface CourseLessonManagerModalProps {
 interface EditableLessonRow {
   id: string;
   day_number: number;
+  original_day_number: number;
   original_lesson_title: string;
   display_title: string;
   is_active: boolean;
@@ -56,6 +58,7 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
         .map(l => ({
           id: l.id,
           day_number: l.day_number,
+          original_day_number: l.day_number,
           original_lesson_title: l.lesson_title || '',
           display_title: l.display_title ?? l.lesson_title ?? '',
           is_active: l.is_active !== false,
@@ -83,21 +86,69 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
     setRows(prev => prev.map(r => r.id === id ? { ...r, display_title: newTitle } : r));
   };
 
+  // Change day number of single row
+  const handleDayNumberChange = (id: string, newDay: number) => {
+    const val = isNaN(newDay) ? 0 : Math.max(0, Math.min(99, Math.floor(newDay)));
+    setRows(prev => prev.map(r => r.id === id ? { ...r, day_number: val } : r));
+  };
   // Preset 1: Enable all lessons
   const handleEnableAll = () => {
     setRows(prev => prev.map(r => ({ ...r, is_active: true })));
   };
-
-  // Preset 2: Disable Day 0 & Day 1 (Level A: Word list & Orientation)
+  // Preset 2: Disable Day 0 & Day 1 and auto re-index remaining active lessons starting from Day 1
   const handleDisableDay0And1 = () => {
-    setRows(prev => prev.map(r => {
-      const isIntro = r.day_number === 0 || r.day_number === 1 || 
-        r.id.toLowerCase().includes('day_0') || 
-        r.id.toLowerCase().includes('word_list') ||
-        r.original_lesson_title.toLowerCase().includes('word list') ||
-        r.original_lesson_title.toLowerCase().includes('orientation');
-      return isIntro ? { ...r, is_active: false } : r;
-    }));
+    setRows(prev => {
+      // 1. Mark intro lessons as inactive
+      const updated = prev.map(r => {
+        const isIntro = r.original_day_number === 0 || r.original_day_number === 1 || 
+          r.id.toLowerCase().includes('day_0') || 
+          r.id.toLowerCase().includes('word_list') ||
+          r.original_lesson_title.toLowerCase().includes('word list') ||
+          r.original_lesson_title.toLowerCase().includes('orientation');
+        return isIntro ? { ...r, is_active: false } : r;
+      });
+
+      // 2. Re-index active lessons sequentially: Day 1, 2, 3...
+      let currentDay = 1;
+      return updated.map(r => {
+        if (!r.is_active) {
+          return { ...r, day_number: 0 };
+        }
+        const assignedDay = currentDay++;
+        let newTitle = r.display_title;
+        // Update any Day \d+ in title if present
+        if (/^Day\s*\d+\s*[-:]\s*/i.test(newTitle)) {
+          newTitle = newTitle.replace(/^Day\s*\d+\s*[-:]\s*/i, `Day ${assignedDay} - `);
+        }
+        return {
+          ...r,
+          day_number: assignedDay,
+          display_title: newTitle
+        };
+      });
+    });
+  };
+
+  // Preset 2b: Auto Re-index Active Lessons (Day 1, 2, 3...)
+  const handleAutoReindexActive = () => {
+    setRows(prev => {
+      let currentDay = 1;
+      return prev.map(r => {
+        if (!r.is_active) {
+          return { ...r, day_number: 0 };
+        }
+        const assignedDay = currentDay++;
+        let newTitle = r.display_title;
+        if (/^Day\s*\d+\s*[-:]\s*/i.test(newTitle)) {
+          newTitle = newTitle.replace(/^Day\s*\d+\s*[-:]\s*/i, `Day ${assignedDay} - `);
+        }
+        return {
+          ...r,
+          day_number: assignedDay,
+          display_title: newTitle
+        };
+      });
+    });
   };
 
   // Preset 3: Enable Day 0 & Day 1
@@ -138,6 +189,7 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
       const original = rawMap.get(r.id);
       return {
         ...r,
+        day_number: original?.day_number ?? r.original_day_number,
         display_title: original?.lesson_title || r.original_lesson_title,
         is_active: true
       };
@@ -156,6 +208,7 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
         const finalTitle = edited.display_title.trim() || lesson.lesson_title;
         return {
           ...lesson,
+          day_number: edited.day_number,
           display_title: finalTitle,
           lesson_title: finalTitle,
           is_active: Boolean(edited.is_active)
@@ -267,12 +320,21 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
             </button>
             <button
               type="button"
+              onClick={handleAutoReindexActive}
+              className="px-2.5 py-1 text-xs font-semibold bg-white border border-zinc-200 hover:border-red-500 hover:text-red-700 rounded-lg shadow-2xs transition-all cursor-pointer flex items-center gap-1"
+              title="Đánh lại số Day 1, 2, 3... liên tiếp cho toàn bộ bài học đang Bật, bài học tắt về Day 0"
+            >
+              <Hash className="w-3.5 h-3.5 text-red-600" />
+              ⚡ Đánh lại số Day (Auto Re-index Active)
+            </button>
+            <button
+              type="button"
               onClick={handleDisableDay0And1}
               className="px-2.5 py-1 text-xs font-semibold bg-white border border-zinc-200 hover:border-amber-500 hover:text-amber-700 rounded-lg shadow-2xs transition-all cursor-pointer flex items-center gap-1"
-              title="Tắt Day 0 (Word list) và Day 1 (Orientation)"
+              title="Tắt Day 0 (Word list) và Day 1 (Orientation), tự động đánh số bài tiếp theo bắt đầu từ Day 1"
             >
               <EyeOff className="w-3.5 h-3.5 text-amber-600" />
-              Tắt Day 0 & Day 1
+              Tắt Day 0 & Day 1 (Re-index)
             </button>
             <button
               type="button"
@@ -346,11 +408,20 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
                       : 'bg-zinc-50/50 opacity-60 hover:opacity-100'
                   }`}
                 >
-                  {/* Day Number */}
+                  {/* Day Number (Interactive Input) */}
                   <td className="py-3 px-3 text-center">
-                    <span className="font-mono font-bold text-xs px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-800">
-                      Day {row.day_number}
-                    </span>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-[11px] font-mono text-zinc-400 font-semibold">D</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={99}
+                        value={row.day_number}
+                        onChange={(e) => handleDayNumberChange(row.id, parseInt(e.target.value, 10))}
+                        className="w-13 px-1.5 py-1 text-center font-mono font-bold text-xs bg-zinc-100 hover:bg-zinc-200/80 focus:bg-white text-zinc-800 border border-zinc-200 focus:border-red-600 rounded-lg focus:outline-none transition-all shadow-2xs"
+                        title={`Day ${row.day_number} (Gốc: Day ${row.original_day_number})`}
+                      />
+                    </div>
                   </td>
 
                   {/* Active Toggle Switch */}

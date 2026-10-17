@@ -196,7 +196,8 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
           data = Array.from(map.values()).sort((a, b) => a.day_number - b.day_number);
         }
       }
-      setLessons(data);
+      const sortedData = [...data].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+      setLessons(sortedData);
       const health = await checkFirestoreHealth();
       setDbStatus(health);
     } catch (err) {
@@ -1184,7 +1185,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
         course={currentCourse}
         lessons={lessons}
         onLessonsUpdated={(updatedLessons) => {
-          setLessons([...updatedLessons]);
+          setLessons([...updatedLessons].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0)));
           // In-memory registry and local caches were already updated by batchUpdateLessons
           // Reload with fresh cache refresh
           loadCurriculumData();
