@@ -708,6 +708,9 @@ export async function batchUpdateLessons(
   }
 
   // 2. Commit in Firestore batches (max 450 per commit)
+  // CRITICAL OPTIMIZATION: Write ONLY updated metadata (is_active, display_title, lesson_title, day_number, updated_at).
+  // DO NOT write multi-megabyte `chunks` array to avoid network bloat, quota waste, and latency.
+  // Include a 6-second timeout race on batch.commit() so saving never hangs indefinitely.
   try {
     const BATCH_SIZE = 450;
     for (let i = 0; i < updatedLessons.length; i += BATCH_SIZE) {
@@ -715,14 +718,25 @@ export async function batchUpdateLessons(
       const batch = writeBatch(db);
       for (const lesson of chunk) {
         const docRef = doc(db, 'lessons', lesson.id);
-        // Strip undefined values for clean Firestore payload
-        const payload: Record<string, unknown> = { ...lesson };
-        Object.keys(payload).forEach(k => {
-          if (payload[k] === undefined) delete payload[k];
-        });
+        const payload: Record<string, unknown> = {
+          is_active: lesson.is_active !== undefined ? Boolean(lesson.is_active) : true,
+          display_title: lesson.display_title || lesson.lesson_title,
+          lesson_title: lesson.display_title || lesson.lesson_title,
+          day_number: lesson.day_number,
+          updated_at: now
+        };
+        if (lesson.course_id) payload.course_id = lesson.course_id;
+        if (lesson.level_code) payload.level_code = lesson.level_code;
+        if (lesson.lesson_type) payload.lesson_type = lesson.lesson_type;
         batch.set(docRef, payload, { merge: true });
       }
-      await batch.commit();
+
+      // Commit with a 6-second timeout race
+      const commitPromise = batch.commit();
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Firestore commit timed out after 6000ms. Local state & offline cache have been preserved.')), 6000);
+      });
+      await Promise.race([commitPromise, timeoutPromise]);
     }
     return { success: true, count: updatedLessons.length };
   } catch (err: unknown) {

@@ -118,6 +118,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [isLessonSwitcherOpen, setIsLessonSwitcherOpen] = useState<boolean>(false);
   const [isSoundSettingsOpen, setIsSoundSettingsOpen] = useState<boolean>(false);
   const [lessonSearchQuery, setLessonSearchQuery] = useState<string>('');
+  const [switcherScopeTab, setSwitcherScopeTab] = useState<'CURRENT' | 'ALL'>('CURRENT');
   const [isAuditioningEn, setIsAuditioningEn] = useState<boolean>(false);
   const [isAuditioningVi, setIsAuditioningVi] = useState<boolean>(false);
 
@@ -562,28 +563,82 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
 
   const audioReadyPercent = chunks.length > 0 ? Math.round((readyChunksCount / chunks.length) * 100) : 0;
 
-  // Grouped courses for the quick lesson switcher
+  // Grouped courses for the quick lesson switcher.
+  // Re-evaluated when isLessonSwitcherOpen toggles so newly saved changes from CourseLessonManagerModal reflect immediately.
+  // Auto-prioritizes active course at the TOP of the catalog.
   const groupedCourses = useMemo(() => {
-    return curriculumRegistry.getGroupedCoursesWithLessons();
-  }, []);
+    const rawGroups = curriculumRegistry.getGroupedCoursesWithLessons();
+    
+    // Determine active course identifier
+    const targetCourseId = activeLesson?.course_id;
+    const targetLevelCode = activeLesson?.level_code || courseLevel;
 
-  // Filtered courses for searchable lesson switcher popover
+    return [...rawGroups].sort((a, b) => {
+      const aIsCurrent = Boolean(
+        (targetCourseId && a.course.id === targetCourseId) ||
+        (targetLevelCode && a.course.level_code === targetLevelCode) ||
+        (targetLevelCode && a.course.id.toUpperCase().includes(targetLevelCode.toUpperCase()))
+      );
+      const bIsCurrent = Boolean(
+        (targetCourseId && b.course.id === targetCourseId) ||
+        (targetLevelCode && b.course.level_code === targetLevelCode) ||
+        (targetLevelCode && b.course.id.toUpperCase().includes(targetLevelCode.toUpperCase()))
+      );
+      if (aIsCurrent && !bIsCurrent) return -1;
+      if (!aIsCurrent && bIsCurrent) return 1;
+      return 0;
+    });
+  }, [isLessonSwitcherOpen, activeLesson?.course_id, activeLesson?.level_code, courseLevel]);
+
+  // Course label for current active course
+  const currentCourseLabel = useMemo(() => {
+    const targetLevelCode = activeLesson?.level_code || courseLevel;
+    if (targetLevelCode === 'LEVEL_A') return 'Level A';
+    if (targetLevelCode === 'LEVEL_B_EREL') return 'Level B (EREL)';
+    if (targetLevelCode === 'LEVEL_B_ERES') return 'Level B (ERES)';
+    if (targetLevelCode === 'LEVEL_B') return 'Level B';
+    return targetLevelCode || 'Khóa hiện tại';
+  }, [activeLesson?.level_code, courseLevel]);
+
+  // Filtered courses for searchable lesson switcher popover & scope tab
   const filteredGroupedCourses = useMemo(() => {
-    const query = lessonSearchQuery.trim().toLowerCase();
-    if (!query) return groupedCourses;
+    const targetCourseId = activeLesson?.course_id;
+    const targetLevelCode = activeLesson?.level_code || courseLevel;
 
-    return groupedCourses
+    // 1. Filter by scope tab: "Chỉ [Current Course]" vs "Tất Cả Khóa Học"
+    let scopedGroups = groupedCourses;
+    if (switcherScopeTab === 'CURRENT') {
+      scopedGroups = groupedCourses.filter(group => {
+        return Boolean(
+          (targetCourseId && group.course.id === targetCourseId) ||
+          (targetLevelCode && group.course.level_code === targetLevelCode) ||
+          (targetLevelCode && group.course.id.toUpperCase().includes(targetLevelCode.toUpperCase()))
+        );
+      });
+      // Fallback if filter leaves empty (e.g. unknown course id), show first group
+      if (scopedGroups.length === 0 && groupedCourses.length > 0) {
+        scopedGroups = [groupedCourses[0]];
+      }
+    }
+
+    const query = lessonSearchQuery.trim().toLowerCase();
+    if (!query) return scopedGroups;
+
+    return scopedGroups
       .map(group => ({
         ...group,
-        lessons: group.lessons.filter(l => 
-          l.lesson_title.toLowerCase().includes(query) ||
-          `day ${l.day_number}`.toLowerCase().includes(query) ||
-          l.id.toLowerCase().includes(query) ||
-          group.course.title.toLowerCase().includes(query)
-        )
+        lessons: group.lessons.filter(l => {
+          const title = (l.display_title || l.lesson_title || '').toLowerCase();
+          return (
+            title.includes(query) ||
+            `day ${l.day_number}`.toLowerCase().includes(query) ||
+            l.id.toLowerCase().includes(query) ||
+            group.course.title.toLowerCase().includes(query)
+          );
+        })
       }))
       .filter(group => group.lessons.length > 0);
-  }, [groupedCourses, lessonSearchQuery]);
+  }, [groupedCourses, switcherScopeTab, activeLesson?.course_id, activeLesson?.level_code, courseLevel, lessonSearchQuery]);
 
   const [lessonReadyMap, setLessonReadyMap] = useState<Record<string, boolean>>({});
   useEffect(() => {
@@ -1185,7 +1240,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             >
               <BookOpen className="w-4 h-4 text-[#DC2626] shrink-0" />
               <span className="truncate font-semibold text-left">
-                {activeLesson?.day_number === 0 ? 'Day 0: Word List' : `Day ${activeLesson?.day_number ?? 1}`}: {activeLesson?.lesson_title || 'Select Lesson'}
+                {activeLesson?.day_number === 0 ? 'Day 0: Word List' : `Day ${activeLesson?.day_number ?? 1}`}: {activeLesson?.display_title || activeLesson?.lesson_title || 'Select Lesson'}
               </span>
               {isCurrentLessonAudioReady && (
                 <Volume2 className="w-4 h-4 text-emerald-500 shrink-0 animate-in fade-in" title="Lesson audio ready" />
@@ -1220,6 +1275,36 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                   </button>
                 </div>
 
+                {/* Scope Filter Tabs */}
+                <div className={`p-2 border-b flex items-center gap-1.5 ${highContrastDark ? 'border-zinc-800 bg-zinc-900/50' : 'border-zinc-100 bg-zinc-50/50'}`}>
+                  <button
+                    type="button"
+                    onClick={() => setSwitcherScopeTab('CURRENT')}
+                    className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      switcherScopeTab === 'CURRENT'
+                        ? 'bg-[#DC2626] text-white shadow-2xs'
+                        : highContrastDark
+                        ? 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                        : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/60'
+                    }`}
+                  >
+                    <span>Chỉ {currentCourseLabel}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSwitcherScopeTab('ALL')}
+                    className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      switcherScopeTab === 'ALL'
+                        ? 'bg-[#DC2626] text-white shadow-2xs'
+                        : highContrastDark
+                        ? 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                        : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/60'
+                    }`}
+                  >
+                    <span>Tất Cả Khóa Học</span>
+                  </button>
+                </div>
+
                 {/* Search Bar */}
                 <div className={`p-2.5 border-b ${highContrastDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
                   <div className="relative flex items-center">
@@ -1228,7 +1313,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                       type="text"
                       value={lessonSearchQuery}
                       onChange={(e) => setLessonSearchQuery(e.target.value)}
-                      placeholder="Search by Day or lesson title..."
+                      placeholder={`Search in ${switcherScopeTab === 'CURRENT' ? currentCourseLabel : 'all courses'}...`}
                       className={`w-full text-xs pl-8.5 pr-8 py-2 rounded-xl border transition-all outline-none ${
                         highContrastDark
                           ? 'bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-[#DC2626]'
@@ -1292,7 +1377,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                                     : highContrastDark
                                     ? 'hover:bg-zinc-800/80 text-zinc-200'
                                     : 'hover:bg-zinc-100 text-zinc-800'
-                                }`}
+                                } ${l.is_active === false ? 'opacity-60 bg-zinc-100/50 dark:bg-zinc-900/50' : ''}`}
                               >
                                 <div className="flex items-center gap-2 min-w-0">
                                   <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
@@ -1302,9 +1387,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
                                   }`}>
                                     {l.day_number === 0 ? 'Day 0' : `Day ${l.day_number}`}
                                   </span>
-                                  <span className="truncate">{l.lesson_title}</span>
+                                  <span className="truncate">{l.display_title || l.lesson_title}</span>
+                                  {l.is_active === false && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 border border-red-300 dark:border-red-800 shrink-0">
+                                      🔴 [ĐÃ TẮT]
+                                    </span>
+                                  )}
                                 </div>
-
                                 <div className="flex items-center gap-1.5 shrink-0">
                                   {isLessonReady && (
                                     <Volume2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" title="Audio ready" />

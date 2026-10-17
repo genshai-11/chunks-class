@@ -223,6 +223,31 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
             <X className="w-5 h-5" />
           </button>
         </div>
+        {/* Top Status Notification Banner */}
+        {saveStatus && (
+          <div className={`px-6 py-2.5 flex items-center justify-between gap-3 text-xs font-semibold shrink-0 border-b animate-in fade-in duration-150 ${
+            saveStatus.success 
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+              : 'bg-red-50 text-red-800 border-red-200'
+          }`}>
+            <div className="flex items-center gap-2 min-w-0">
+              {saveStatus.success ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              )}
+              <span className="truncate">{saveStatus.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSaveStatus(null)}
+              className="p-1 rounded hover:bg-black/5 text-zinc-500 hover:text-zinc-800 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
 
         {/* Action Presets Toolbar */}
         <div className="px-6 py-3 bg-zinc-50 border-b border-zinc-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
@@ -397,17 +422,19 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
 
         {/* Modal Footer */}
         <div className="px-6 py-4 bg-zinc-50 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs flex-1 min-w-0">
             {saveStatus && (
-              <div className={`flex items-center gap-1.5 font-medium ${
-                saveStatus.success ? 'text-emerald-700' : 'text-red-600'
+              <div className={`flex items-center gap-2 font-semibold px-3 py-1.5 rounded-xl border ${
+                saveStatus.success 
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                  : 'bg-red-50 text-red-800 border-red-200'
               }`}>
                 {saveStatus.success ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-red-600" />
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                 )}
-                <span>{saveStatus.message}</span>
+                <span className="truncate">{saveStatus.message}</span>
               </div>
             )}
             {!saveStatus && (
