@@ -153,10 +153,12 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
       const updatedLessonDocs: LessonDoc[] = lessons.map(lesson => {
         const edited = rowsMap.get(lesson.id);
         if (!edited) return lesson;
+        const finalTitle = edited.display_title.trim() || lesson.lesson_title;
         return {
           ...lesson,
-          display_title: edited.display_title.trim() || lesson.lesson_title,
-          is_active: edited.is_active
+          display_title: finalTitle,
+          lesson_title: finalTitle,
+          is_active: Boolean(edited.is_active)
         };
       });
 

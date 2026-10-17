@@ -17,6 +17,7 @@ class CurriculumRegistryService {
 
   constructor() {
     this.initDefaultSeed();
+    this.applyLocalStorageOverrides();
   }
 
   private initDefaultSeed() {
@@ -123,6 +124,47 @@ class CurriculumRegistryService {
       is_active: true
     };
     this.registerCourse(courseEres, CURRICULUM_CATALOG_LEVEL_B_ERES);
+  }
+
+  /**
+   * Reads persisted lesson overrides from localStorage (if in browser) and applies
+   * them onto seeded catalogs and maps so configured values persist across reloads.
+   */
+  public applyLocalStorageOverrides(): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      const raw = localStorage.getItem('chunks_lesson_overrides');
+      if (!raw) return;
+      const overrides = JSON.parse(raw);
+      if (!overrides || typeof overrides !== 'object') return;
+
+      // Apply overrides across all individual lessons and lesson lists
+      this.individualLessonsMap.forEach((lesson, id) => {
+        const ov = overrides[id] || (id.startsWith('level_b_day_') ? overrides[id.replace('level_b_day_', 'level_b_ere_day_')] : undefined);
+        if (ov) {
+          if (ov.is_active !== undefined) lesson.is_active = Boolean(ov.is_active);
+          if (ov.display_title) {
+            lesson.display_title = ov.display_title;
+            lesson.lesson_title = ov.display_title;
+          }
+        }
+      });
+
+      this.lessonsMap.forEach((list) => {
+        list.forEach(lesson => {
+          const ov = overrides[lesson.id] || (lesson.id.startsWith('level_b_day_') ? overrides[lesson.id.replace('level_b_day_', 'level_b_ere_day_')] : undefined);
+          if (ov) {
+            if (ov.is_active !== undefined) lesson.is_active = Boolean(ov.is_active);
+            if (ov.display_title) {
+              lesson.display_title = ov.display_title;
+              lesson.lesson_title = ov.display_title;
+            }
+          }
+        });
+      });
+    } catch (e) {
+      console.warn('[CurriculumRegistry] Failed to apply localStorage overrides:', e);
+    }
   }
 
   /**
@@ -276,41 +318,52 @@ class CurriculumRegistryService {
 
   public updateLesson(lesson: LessonDoc): void {
     if (!lesson || !lesson.id) return;
-    this.individualLessonsMap.set(lesson.id, lesson);
+    
+    // Ensure is_active and display_title are preserved
+    const existing = this.individualLessonsMap.get(lesson.id);
+    const updatedLesson: LessonDoc = {
+      ...existing,
+      ...lesson,
+      is_active: lesson.is_active !== undefined ? Boolean(lesson.is_active) : (existing?.is_active !== undefined ? Boolean(existing.is_active) : true),
+      display_title: lesson.display_title || lesson.lesson_title || existing?.display_title || existing?.lesson_title,
+      lesson_title: lesson.display_title || lesson.lesson_title || existing?.lesson_title || lesson.id
+    };
+
+    this.individualLessonsMap.set(updatedLesson.id, updatedLesson);
 
     // Also handle aliases for individual lookup
-    if (lesson.id.startsWith('level_b_day_')) {
-      const aliasId = lesson.id.replace('level_b_day_', 'level_b_ere_day_');
-      this.individualLessonsMap.set(aliasId, lesson);
-    } else if (lesson.id.startsWith('level_b_ere_day_')) {
-      const aliasId = lesson.id.replace('level_b_ere_day_', 'level_b_day_');
-      this.individualLessonsMap.set(aliasId, lesson);
+    if (updatedLesson.id.startsWith('level_b_day_')) {
+      const aliasId = updatedLesson.id.replace('level_b_day_', 'level_b_ere_day_');
+      this.individualLessonsMap.set(aliasId, updatedLesson);
+    } else if (updatedLesson.id.startsWith('level_b_ere_day_')) {
+      const aliasId = updatedLesson.id.replace('level_b_ere_day_', 'level_b_day_');
+      this.individualLessonsMap.set(aliasId, updatedLesson);
     }
-    if (lesson.id === 'level_a_word_list') {
-      this.individualLessonsMap.set('level_a_day_0', lesson);
-      this.individualLessonsMap.set('level_a_0', lesson);
+    if (updatedLesson.id === 'level_a_word_list') {
+      this.individualLessonsMap.set('level_a_day_0', updatedLesson);
+      this.individualLessonsMap.set('level_a_0', updatedLesson);
     }
 
     let foundInAnyList = false;
     this.lessonsMap.forEach((list) => {
       const idx = list.findIndex(l => 
-        l.id === lesson.id ||
-        (lesson.id.startsWith('level_b_day_') && l.id === lesson.id.replace('level_b_day_', 'level_b_ere_day_')) ||
-        (lesson.id.startsWith('level_b_ere_day_') && l.id === lesson.id.replace('level_b_ere_day_', 'level_b_day_')) ||
-        (lesson.id === 'level_a_word_list' && (l.id === 'level_a_day_0' || l.id === 'level_a_0'))
+        l.id === updatedLesson.id ||
+        (updatedLesson.id.startsWith('level_b_day_') && l.id === updatedLesson.id.replace('level_b_day_', 'level_b_ere_day_')) ||
+        (updatedLesson.id.startsWith('level_b_ere_day_') && l.id === updatedLesson.id.replace('level_b_ere_day_', 'level_b_day_')) ||
+        (updatedLesson.id === 'level_a_word_list' && (l.id === 'level_a_day_0' || l.id === 'level_a_0'))
       );
       if (idx >= 0) {
-        list[idx] = lesson;
+        list[idx] = updatedLesson;
         foundInAnyList = true;
       }
     });
 
     if (!foundInAnyList) {
-      const targetKeys = [lesson.course_id, lesson.level_code, lesson.level_code?.toUpperCase()].filter(Boolean);
+      const targetKeys = [updatedLesson.course_id, updatedLesson.level_code, updatedLesson.level_code?.toUpperCase()].filter(Boolean);
       targetKeys.forEach(k => {
         const list = this.lessonsMap.get(k as string);
         if (list) {
-          list.push(lesson);
+          list.push(updatedLesson);
           list.sort((a, b) => a.day_number - b.day_number);
         }
       });

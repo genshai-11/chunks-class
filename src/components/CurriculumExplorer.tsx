@@ -727,10 +727,10 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
               <option value="all">Tất Cả {lessons.length} Bài Học (Day 1 – {lessons.length > 0 ? Math.max(...lessons.map(l => l.day_number)) : ((selectedLevel === 'LEVEL_B' || selectedLevel === 'LEVEL_B_ERE') ? 30 : 15)})</option>
               {lessons.map(l => {
                 const title = l.display_title || l.lesson_title;
-                const statusTag = l.is_active === false ? ' [ĐÃ TẮT]' : '';
+                const isOff = l.is_active === false;
                 return (
                   <option key={l.id} value={l.day_number}>
-                    {statusTag ? '🔴 ' : ''}Day {l.day_number}: {title} ({l.chunks?.length || 0} chunks){statusTag}
+                    {isOff ? '🔴 [ĐÃ TẮT] ' : ''}Day {l.day_number}: {title} ({l.chunks?.length || 0} chunks)
                   </option>
                 );
               })}
@@ -1184,7 +1184,9 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
         course={currentCourse}
         lessons={lessons}
         onLessonsUpdated={(updatedLessons) => {
-          setLessons(updatedLessons);
+          setLessons([...updatedLessons]);
+          // In-memory registry and local caches were already updated by batchUpdateLessons
+          // Reload with fresh cache refresh
           loadCurriculumData();
         }}
       />
