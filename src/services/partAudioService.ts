@@ -68,6 +68,11 @@ export const CANONICAL_PARTS: PartAnnouncementDef[] = [
  */
 function getVietnameseTitleForPart(titleEn: string): string {
   const lower = titleEn.toLowerCase();
+  const lessonMatch = lower.match(/lesson\s*(\d+)\s*(?:phrase\s*check)?/i);
+  if (lessonMatch) {
+    const num = lessonMatch[1];
+    return `Ôn tập Cụm từ Bài ${num} (Lesson ${num} Phrase Check)`;
+  }
   if (lower.includes('orientation vocab')) return 'Từ vựng định hướng (Orientation Vocab)';
   if (lower.includes('orientation phrase')) return 'Cụm từ định hướng (Orientation Phrases)';
   if (lower.includes('vocabulary check')) return 'Kiểm tra Từ vựng (Vocabulary Check)';
@@ -124,6 +129,13 @@ export function getPartSpeechText(
 
   if (hasSpecificTitle) {
     const titleLower = cleanTitleAfterPart.toLowerCase();
+
+    // Priority: Lesson X Phrase Check (e.g. "Lesson 1 Phrase Check")
+    const lessonCheckMatch = titleLower.match(/lesson\s*(\d+)\s*(?:phrase\s*check)?/i);
+    if (lessonCheckMatch) {
+      const num = lessonCheckMatch[1];
+      return effectivePartNum ? `Part ${effectivePartNum}. Lesson ${num} Phrase Check.` : `Lesson ${num} Phrase Check.`;
+    }
 
     // Specific recognized titles with clear pronunciation prosody
     if (titleLower.includes('orientation vocab')) {

@@ -622,12 +622,13 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     }
 
     const query = lessonSearchQuery.trim().toLowerCase();
-    if (!query) return scopedGroups;
 
     return scopedGroups
       .map(group => ({
         ...group,
         lessons: group.lessons.filter(l => {
+          if (l.is_active === false) return false;
+          if (!query) return true;
           const title = (l.display_title || l.lesson_title || '').toLowerCase();
           return (
             title.includes(query) ||
