@@ -182,6 +182,48 @@ export const App: React.FC = () => {
     loadData();
   }, []);
 
+  // Real-time synchronization of cohorts when course lessons or cohorts are updated
+  useEffect(() => {
+    const handleCohortsUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ cohorts?: Cohort[]; courseLevel?: string }>;
+      const updatedCohorts = customEvent.detail?.cohorts;
+      if (updatedCohorts && updatedCohorts.length > 0) {
+        const sanitizedUpdated = updatedCohorts.map(sanitizeCohort);
+        setCohorts(prev => {
+          return prev.map(c => {
+            const found = sanitizedUpdated.find(u => u.id === c.id);
+            return found || c;
+          });
+        });
+      } else {
+        // Fallback: re-fetch from Firestore
+        getFirestoreCohorts(undefined, true).then(loaded => {
+          if (loaded.length > 0) {
+            setCohorts(loaded.map(sanitizeCohort));
+          }
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('chunks:cohorts-updated', handleCohortsUpdated);
+    return () => {
+      window.removeEventListener('chunks:cohorts-updated', handleCohortsUpdated);
+    };
+  }, []);
+
+  // When switching to 'schedule' tab, re-sync with latest cohorts from Cloud Firestore
+  useEffect(() => {
+    if (activeTab === 'schedule') {
+      getFirestoreCohorts(undefined, true).then(loaded => {
+        if (loaded.length > 0) {
+          setCohorts(loaded.map(sanitizeCohort));
+        }
+      }).catch(err => {
+        console.warn('Failed to re-sync cohorts on schedule tab visit:', err);
+      });
+    }
+  }, [activeTab]);
+
   const activeCohort = cohorts.find(c => c.id === activeCohortId) || cohorts[0] || createDefaultCohort();
 
   const handleUpdateCohort = async (updated: Cohort) => {

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChunkItem, LessonPart } from '../types';
 import { Layers, X, Hash, Volume2, VolumeX, BookOpen, CheckCircle2 } from 'lucide-react';
+import { getPartOverrides, findPartOverride } from '../services/partAudioService';
 
 /**
  * Smart Topic & Part Extractor
@@ -10,7 +11,8 @@ import { Layers, X, Hash, Volume2, VolumeX, BookOpen, CheckCircle2 } from 'lucid
 export function groupChunksIntoParts(
   chunks: ChunkItem[],
   lessonTitle?: string,
-  checkAudioReady?: (chunk: ChunkItem) => boolean
+  checkAudioReady?: (chunk: ChunkItem) => boolean,
+  courseLevel?: string
 ): LessonPart[] {
   if (!chunks || chunks.length === 0) return [];
 
@@ -85,6 +87,13 @@ export function groupChunksIntoParts(
       ? rp.firstChunk.part.replace(/^Part\s*\d+\s*[-:]\s*/i, '').trim()
       : `Part ${idx + 1}: ${rp.categoryKey.toUpperCase().replace('_', ' ')}`;
 
+    // Apply custom part overrides if configured
+    const overrides = courseLevel ? getPartOverrides(courseLevel) : getPartOverrides('LEVEL_B');
+    const override = findPartOverride(overrides, rp.firstChunk.part || cleanTitle, rawPartIndex);
+    let effectiveCleanTitle = cleanTitle;
+    if (override?.titleEn?.trim()) {
+      effectiveCleanTitle = override.titleEn.trim().replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim() || override.titleEn.trim();
+    }
     // Topic resolution
     let topic_number: 1 | 2 | undefined = undefined;
     let topic_title: string | undefined = undefined;
@@ -116,8 +125,8 @@ export function groupChunksIntoParts(
 
     return {
       part_index: idx + 1,
-      category: cleanTitle || rp.firstChunk.category || 'General',
-      title: cleanTitle || `Part ${idx + 1}`,
+      category: effectiveCleanTitle || rp.firstChunk.category || 'General',
+      title: effectiveCleanTitle || `Part ${idx + 1}`,
       start_index: rp.startIndex,
       end_index: rp.endIndex,
       chunk_count: rp.chunkCount,

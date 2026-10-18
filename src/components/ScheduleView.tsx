@@ -306,6 +306,46 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     return () => { cancelled = true; };
   }, [cohort.id, cohort.level_code]);
 
+  // Listen for real-time lesson and cohort updates across components
+  useEffect(() => {
+    let cancelled = false;
+    const handleSyncEvent = () => {
+      if (!cohort?.level_code) return;
+      getAllLessons(cohort.level_code, true).then(firestoreLessons => {
+        if (cancelled || !firestoreLessons?.length) return;
+        const lessonMap: Record<string, LessonDoc> = {};
+        for (const l of firestoreLessons) {
+          lessonMap[l.id] = l;
+        }
+        liveLessonsRef.current = lessonMap;
+        setLiveLessons(lessonMap);
+
+        const voiceEn = getVoiceEn();
+        setSessionAudioStatus(prev => {
+          const updated = { ...prev };
+          for (const session of cohort.sessions || []) {
+            const lesson = lessonMap[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);
+            const chunks = lesson?.chunks || [];
+            updated[session.session_number] = computeBaselineStatus(session, chunks, voiceEn);
+          }
+          return updated;
+        });
+
+        runProgressiveAudioCheck(progressiveCheckRef.current, lessonMap);
+      }).catch(err => {
+        console.warn('[ScheduleView] Refetch on update failed:', err);
+      });
+    };
+
+    window.addEventListener('chunks:cohorts-updated', handleSyncEvent);
+    window.addEventListener('chunks:lessons-updated', handleSyncEvent);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('chunks:cohorts-updated', handleSyncEvent);
+      window.removeEventListener('chunks:lessons-updated', handleSyncEvent);
+    };
+  }, [cohort.id, cohort.level_code, cohort.sessions, getVoiceEn, runProgressiveAudioCheck]);
+
   // Check single session audio status after quick batch generation
   const checkSingleSessionAudio = async (session: ClassSession) => {
     const lesson = liveLessonsRef.current[session.lesson_id] || liveLessons[session.lesson_id] || curriculumRegistry.getLessonById(session.lesson_id);

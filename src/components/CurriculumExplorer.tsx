@@ -230,6 +230,16 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
     loadCurriculumData();
   }, [selectedLevel]);
 
+  useEffect(() => {
+    const handleLessonsSync = () => {
+      loadCurriculumData();
+    };
+    window.addEventListener('chunks:lessons-updated', handleLessonsSync);
+    return () => {
+      window.removeEventListener('chunks:lessons-updated', handleLessonsSync);
+    };
+  }, [selectedLevel]);
+
   // Handle Full Database Synchronization to Firestore
   const handleSyncToFirestore = async () => {
     setIsSyncing(true);
@@ -1219,7 +1229,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
           // In-memory registry and local caches were already updated by batchUpdateLessons
           // Reload with fresh cache refresh
           loadCurriculumData();
-          showToast('✅ Đã lưu cấu hình bài học lên Cloud Firestore và tự động đồng bộ Lịch dạy (Cohorts)!');
+          showToast('✅ ĐÃ LƯU THÀNH CÔNG LÊN CLOUD FIRESTORE! Đã cập nhật bài học và tự động đồng bộ Lịch dạy (Cohorts) trên Cloud cho mọi thiết bị.');
         }}
       />
       {/* Floating Toast Notification */}

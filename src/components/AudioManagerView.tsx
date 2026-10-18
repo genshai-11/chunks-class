@@ -32,7 +32,10 @@ import {
   prepareCoursePartAudios,
   getCoursePartsFromLessons,
   isPartAudioCached,
-  PartAnnouncementDef
+  PartAnnouncementDef,
+  savePartOverrides,
+  getPartOverrides,
+  loadPartOverridesFromFirestore
 } from '../services/partAudioService';
 import { AudioDiagnosticModal } from './AudioDiagnosticModal';
 import { 
@@ -289,9 +292,95 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [auditioningPartKey, setAuditioningPartKey] = useState<string | null>(null);
   const [regeneratingPartKey, setRegeneratingPartKey] = useState<string | null>(null);
 
+  // Dynamic Part Overrides state & real-time sync
+  const [partOverridesRev, setPartOverridesRev] = useState<number>(0);
+  const [editingPartKey, setEditingPartKey] = useState<string | null>(null);
+  const [editPartTitleEn, setEditPartTitleEn] = useState<string>('');
+  const [editPartSpeechText, setEditPartSpeechText] = useState<string>('');
+  const [isSavingPartOverride, setIsSavingPartOverride] = useState<boolean>(false);
+  const [partToast, setPartToast] = useState<{ type: 'success' | 'info' | 'error' | 'warning'; message: string } | null>(null);
+
+  const showPartToast = useCallback((type: 'success' | 'info' | 'error' | 'warning', message: string) => {
+    setPartToast({ type, message });
+    setTimeout(() => setPartToast(null), 4000);
+  }, []);
+
+  useEffect(() => {
+    loadPartOverridesFromFirestore(selectedCourseLevel).catch(() => {});
+  }, [selectedCourseLevel]);
+
+  useEffect(() => {
+    const handleOverridesUpdated = () => {
+      setPartOverridesRev(v => v + 1);
+    };
+    window.addEventListener('chunks:part-overrides-updated', handleOverridesUpdated);
+    return () => {
+      window.removeEventListener('chunks:part-overrides-updated', handleOverridesUpdated);
+    };
+  }, []);
+
   const currentCourseParts = useMemo(() => {
     return getCoursePartsFromLessons(lessons, selectedCourseLevel);
-  }, [lessons, selectedCourseLevel]);
+  }, [lessons, selectedCourseLevel, partOverridesRev]);
+
+  const handleStartEditPart = (part: PartAnnouncementDef) => {
+    setEditingPartKey(part.key);
+    setEditPartTitleEn(part.titleEn);
+    setEditPartSpeechText(part.speechText);
+  };
+
+  const handleCancelEditPart = () => {
+    setEditingPartKey(null);
+    setEditPartTitleEn('');
+    setEditPartSpeechText('');
+  };
+
+  const handleSavePartEdit = async (part: PartAnnouncementDef, autoRegenerate = false) => {
+    const newTitle = editPartTitleEn.trim();
+    const newSpeech = editPartSpeechText.trim();
+    if (!newTitle || !newSpeech) {
+      showPartToast('error', 'Tiêu đề Part và TTS Speech Text không được để trống.');
+      return;
+    }
+
+    setIsSavingPartOverride(true);
+    try {
+      const existing = getPartOverrides(selectedCourseLevel);
+      const updatedOverrides = {
+        ...existing,
+        [part.key]: {
+          key: part.key,
+          partNumber: part.partNumber,
+          titleEn: newTitle,
+          speechText: newSpeech,
+          titleVi: part.titleVi
+        }
+      };
+
+      await savePartOverrides(selectedCourseLevel, updatedOverrides);
+      setPartOverridesRev(v => v + 1);
+      setEditingPartKey(null);
+      showPartToast('success', `✅ Đã lưu cấu hình Part "${newTitle}" lên Cloud Firestore & đồng bộ Focus Mode!`);
+      addLog(`Đã cập nhật Part Announcement "${part.key}" -> Title: "${newTitle}", Speech: "${newSpeech}"`, 'success');
+
+      if (autoRegenerate) {
+        const updatedPartDef: PartAnnouncementDef = {
+          ...part,
+          titleEn: newTitle,
+          speechText: newSpeech
+        };
+        await handleAuditionPartIntro(updatedPartDef, true);
+      } else {
+        await checkAllPartAudiosCache();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showPartToast('error', `Lỗi khi lưu Part: ${msg}`);
+      addLog(`Lỗi khi lưu cấu hình Part: ${msg}`, 'error');
+    } finally {
+      setIsSavingPartOverride(false);
+    }
+  };
 
   // Grouping filter state for Section 4.5 Part Intro Announcements
   const [partCategoryFilter, setPartCategoryFilter] = useState<'ALL' | 'STANDARD' | 'FREE_TALK' | 'SPECIAL'>('ALL');
@@ -324,10 +413,10 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const checkAllPartAudiosCache = useCallback(async () => {
     const status: Record<string, boolean> = {};
     for (const p of currentCourseParts) {
-      status[p.key] = await isPartAudioCached(p.titleEn, voiceProfileEn, p.partNumber);
+      status[p.key] = await isPartAudioCached(p.titleEn, voiceProfileEn, p.partNumber, selectedCourseLevel);
     }
     setPartAudioCacheStatus(status);
-  }, [currentCourseParts, voiceProfileEn]);
+  }, [currentCourseParts, voiceProfileEn, selectedCourseLevel]);
 
   useEffect(() => {
     checkAllPartAudiosCache();
@@ -342,10 +431,10 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     }
     try {
       if (forceRegen) {
-        await regeneratePartAudio(part.titleEn, part.partNumber, voiceProfileEn);
+        await regeneratePartAudio(part.titleEn, part.partNumber, voiceProfileEn, selectedCourseLevel);
         addLog(`Đã tạo lại và phát âm thanh cho ${part.titleEn} (Voice: ${voiceProfileEn})`, 'success');
       } else {
-        await playPartIntro(part.titleEn, part.partNumber, voiceProfileEn);
+        await playPartIntro(part.titleEn, part.partNumber, voiceProfileEn, selectedCourseLevel);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -2326,88 +2415,175 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             const isCached = partAudioCacheStatus[part.key] ?? false;
             const isAuditioning = auditioningPartKey === part.key;
             const isRegenerating = regeneratingPartKey === part.key;
+            const isEditing = editingPartKey === part.key;
 
             return (
               <div
                 key={part.key}
                 className={`p-4 rounded-xl border transition-all flex flex-col justify-between space-y-3 ${
-                  isCached
+                  isEditing
+                    ? 'bg-purple-50/40 border-purple-300 ring-2 ring-purple-400/30 shadow-md'
+                    : isCached
                     ? 'bg-emerald-50/30 border-emerald-200/80 hover:border-emerald-300'
                     : 'bg-zinc-50/60 border-zinc-200 hover:border-zinc-300'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center justify-between gap-2 mb-2">
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-purple-100 text-purple-800">
                       Part {part.partNumber}
                     </span>
-                    {isCached ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>Ready / Cached</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-zinc-200 text-zinc-600">
-                        <span>Not Cached</span>
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {isCached ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Ready / Cached</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-zinc-200 text-zinc-600">
+                          <span>Not Cached</span>
+                        </span>
+                      )}
+                      {!isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditPart(part)}
+                          className="p-1 rounded-md hover:bg-purple-100 text-zinc-500 hover:text-purple-700 transition-colors cursor-pointer"
+                          title="Chỉnh sửa Tiêu đề & TTS Speech Text"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <h3 className="font-bold text-xs text-zinc-900 font-display">
-                    {part.titleEn}
-                  </h3>
-                  <div className="text-[11px] text-zinc-500">
-                    {part.titleVi}
-                  </div>
+                  {isEditing ? (
+                    <div className="space-y-2.5 pt-1">
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">
+                          Tiêu đề Part (English):
+                        </label>
+                        <input
+                          type="text"
+                          value={editPartTitleEn}
+                          onChange={(e) => setEditPartTitleEn(e.target.value)}
+                          className="w-full px-2.5 py-1.5 text-xs font-bold rounded-lg border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-zinc-900"
+                          placeholder="Ví dụ: Part 1 - Vietnamese Slangs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">
+                          TTS Speech Text (Đọc khi chuyển Part):
+                        </label>
+                        <input
+                          type="text"
+                          value={editPartSpeechText}
+                          onChange={(e) => setEditPartSpeechText(e.target.value)}
+                          className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-zinc-900"
+                          placeholder="Ví dụ: Part 1. Vietnamese slangs."
+                        />
+                      </div>
 
-                  {/* Speech Text Box */}
-                  <div className="mt-2.5 p-2 rounded-lg bg-white border border-zinc-200/80 text-[11px] font-mono text-zinc-700 flex items-start gap-1.5">
-                    <span className="text-zinc-400 shrink-0 font-sans">TTS:</span>
-                    <span className="font-semibold text-zinc-900">"{part.speechText}"</span>
-                  </div>
+                      {/* Edit Actions */}
+                      <div className="flex items-center justify-between gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleCancelEditPart}
+                          disabled={isSavingPartOverride}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 text-zinc-600 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          <X className="w-3 h-3" />
+                          <span>Hủy</span>
+                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSavePartEdit(part, false)}
+                            disabled={isSavingPartOverride}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                            title="Lưu cấu hình lên Cloud Firestore"
+                          >
+                            {isSavingPartOverride ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Save className="w-3 h-3" />
+                            )}
+                            <span>Lưu</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSavePartEdit(part, true)}
+                            disabled={isSavingPartOverride || isRegenerating}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                            title="Lưu và ngay lập tức tạo lại âm thanh mới"
+                          >
+                            <Sparkles className="w-3 h-3 text-amber-300" />
+                            <span>Lưu & Tạo Audio</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="font-bold text-xs text-zinc-900 font-display">
+                        {part.titleEn}
+                      </h3>
+                      <div className="text-[11px] text-zinc-500">
+                        {part.titleVi}
+                      </div>
+
+                      {/* Speech Text Box */}
+                      <div className="mt-2.5 p-2 rounded-lg bg-white border border-zinc-200/80 text-[11px] font-mono text-zinc-700 flex items-start gap-1.5">
+                        <span className="text-zinc-400 shrink-0 font-sans">TTS:</span>
+                        <span className="font-semibold text-zinc-900">"{part.speechText}"</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Audition & Regenerate Buttons */}
-                <div className="pt-2 border-t border-zinc-200/60 flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-mono text-zinc-400 truncate">
-                    Giọng: {voiceProfileEn.split('-')[0]}
-                  </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      disabled={isAuditioning || isRegenerating}
-                      onClick={() => handleAuditionPartIntro(part, false)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                      title="Nghe thử & Tạo lại âm thanh Part thông báo"
-                    >
-                      {isAuditioning ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
-                          <span>Đang đọc...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="w-3 h-3 text-emerald-400" />
-                          <span>Nghe thử & Tạo lại</span>
-                        </>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isAuditioning || isRegenerating}
-                      onClick={() => handleAuditionPartIntro(part, true)}
-                      className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                      title="Bắt buộc tạo lại âm thanh mới nhất bằng giọng đang chọn"
-                    >
-                      {isRegenerating ? (
-                        <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
-                      ) : (
-                        <RotateCcw className="w-3 h-3 text-purple-600" />
-                      )}
-                      <span className="hidden sm:inline">Tạo lại</span>
-                    </button>
+                {!isEditing && (
+                  <div className="pt-2 border-t border-zinc-200/60 flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono text-zinc-400 truncate">
+                      Giọng: {voiceProfileEn.split('-')[0]}
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        disabled={isAuditioning || isRegenerating}
+                        onClick={() => handleAuditionPartIntro(part, false)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                        title="Nghe thử & Tạo lại âm thanh Part thông báo"
+                      >
+                        {isAuditioning ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
+                            <span>Đang đọc...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="w-3 h-3 text-emerald-400" />
+                            <span>Nghe thử & Tạo lại</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isAuditioning || isRegenerating}
+                        onClick={() => handleAuditionPartIntro(part, true)}
+                        className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 text-purple-700 dark:text-purple-300 text-[11px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                        title="Bắt buộc tạo lại âm thanh mới nhất bằng giọng đang chọn"
+                      >
+                        {isRegenerating ? (
+                          <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3 text-purple-600" />
+                        )}
+                        <span className="hidden sm:inline">Tạo lại</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             );
           })}
@@ -3877,6 +4053,34 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
         isOpen={isDiagnosticOpen}
         onClose={() => setIsDiagnosticOpen(false)}
       />
+
+      {/* Floating Part Toast Notification */}
+      {partToast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 duration-200">
+          <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-xs font-bold ${
+            partToast.type === 'success'
+              ? 'border-emerald-700 bg-emerald-900 text-white'
+              : partToast.type === 'error'
+              ? 'border-red-700 bg-red-900 text-white'
+              : partToast.type === 'warning'
+              ? 'border-amber-700 bg-amber-900 text-white'
+              : 'border-zinc-700 bg-zinc-900 text-white'
+          }`}>
+            {partToast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+            {partToast.type === 'error' && <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />}
+            {partToast.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
+            {partToast.type === 'info' && <Info className="w-4 h-4 text-blue-400 shrink-0" />}
+            <span>{partToast.message}</span>
+            <button
+              type="button"
+              onClick={() => setPartToast(null)}
+              className="ml-2 text-zinc-300 hover:text-white cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

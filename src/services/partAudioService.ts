@@ -1,5 +1,8 @@
 import { audioPlayer } from './googleTtsService';
 import { modelRegistryService } from './modelRegistryService';
+import { LessonDoc } from '../types';
+import { db } from './firestoreService';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export interface PartAnnouncementDef {
   key: string;             // e.g. "part_slangs", "part_vocab", etc.
@@ -9,8 +12,167 @@ export interface PartAnnouncementDef {
   speechText: string;      // e.g. "Part 1. Vietnamese slangs."
 }
 
-import { LessonDoc } from '../types';
+export interface PartOverride {
+  key?: string;
+  partNumber?: number;
+  titleEn?: string;
+  titleVi?: string;
+  speechText?: string;
+}
 
+const PART_OVERRIDES_STORAGE_KEY_PREFIX = 'chunks_part_overrides_';
+const memoryPartOverrides: Record<string, Record<string, PartOverride>> = {};
+
+export function normalizeCourseLevel(level?: string): string {
+  if (!level) return 'LEVEL_B';
+  const clean = level.toLowerCase().replace(/^course_/, '').toUpperCase();
+  return clean;
+}
+
+export function getPartOverrides(courseLevel?: string): Record<string, PartOverride> {
+  const norm = normalizeCourseLevel(courseLevel);
+  if (memoryPartOverrides[norm]) {
+    return memoryPartOverrides[norm];
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(`${PART_OVERRIDES_STORAGE_KEY_PREFIX}${norm}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        memoryPartOverrides[norm] = parsed;
+        return parsed;
+      }
+    } catch {}
+  }
+  return {};
+}
+
+export async function savePartOverrides(
+  courseLevel: string,
+  overrides: Record<string, PartOverride>
+): Promise<void> {
+  const norm = normalizeCourseLevel(courseLevel);
+  memoryPartOverrides[norm] = { ...overrides };
+
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(`${PART_OVERRIDES_STORAGE_KEY_PREFIX}${norm}`, JSON.stringify(overrides));
+    } catch {}
+  }
+
+  // Persist to Firestore settings collection
+  try {
+    const docRef = doc(db, 'settings', `part_overrides_${norm.toLowerCase()}`);
+    await setDoc(docRef, {
+      course_level: norm,
+      overrides,
+      updated_at: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.warn('[PartAudioService] Failed to persist part overrides to Firestore settings:', err);
+  }
+
+  // Also persist to /courses/{courseId} if matching course exists
+  try {
+    const courseId = `course_${norm.toLowerCase()}`;
+    const courseDocRef = doc(db, 'courses', courseId);
+    await setDoc(courseDocRef, {
+      part_overrides: overrides,
+      updated_at: new Date().toISOString()
+    }, { merge: true });
+  } catch {}
+
+  // Dispatch custom event for real-time reactivity
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent('chunks:part-overrides-updated', {
+        detail: { courseLevel: norm, overrides }
+      }));
+    } catch (e) {
+      console.warn('[PartAudioService] Failed to dispatch chunks:part-overrides-updated:', e);
+    }
+  }
+}
+
+export async function loadPartOverridesFromFirestore(courseLevel?: string): Promise<Record<string, PartOverride>> {
+  const norm = normalizeCourseLevel(courseLevel);
+  try {
+    const docRef = doc(db, 'settings', `part_overrides_${norm.toLowerCase()}`);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && data.overrides) {
+        memoryPartOverrides[norm] = data.overrides;
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(`${PART_OVERRIDES_STORAGE_KEY_PREFIX}${norm}`, JSON.stringify(data.overrides));
+          } catch {}
+          window.dispatchEvent(new CustomEvent('chunks:part-overrides-updated', {
+            detail: { courseLevel: norm, overrides: data.overrides }
+          }));
+        }
+        return data.overrides;
+      }
+    }
+  } catch (err) {
+    console.warn('[PartAudioService] loadPartOverridesFromFirestore notice:', err);
+  }
+  return getPartOverrides(norm);
+}
+
+export function findPartOverride(
+  overrides: Record<string, PartOverride>,
+  partTitleOrCategory?: string,
+  partNumber?: number
+): PartOverride | undefined {
+  if (!overrides || typeof overrides !== 'object') return undefined;
+
+  const raw = (partTitleOrCategory || '').trim();
+
+  // 1. Direct key match: e.g. overrides['part_slangs']
+  if (raw && overrides[raw]) {
+    return overrides[raw];
+  }
+
+  // 2. Direct partNumber match: e.g. overrides['part_1'] or overrides['1']
+  if (partNumber !== undefined) {
+    if (overrides[`part_${partNumber}`]) return overrides[`part_${partNumber}`];
+    if (overrides[String(partNumber)]) return overrides[String(partNumber)];
+  }
+
+  // 3. Derived key match:
+  if (raw) {
+    const derivedKey = `part_${raw.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
+    if (overrides[derivedKey]) return overrides[derivedKey];
+  }
+
+  // 4. Extract part number from raw string if not provided:
+  let extractedNum = partNumber;
+  if (extractedNum === undefined && raw) {
+    const m = raw.match(/Part\s*(\d+)/i);
+    if (m) extractedNum = parseInt(m[1], 10);
+  }
+  if (extractedNum !== undefined) {
+    if (overrides[`part_${extractedNum}`]) return overrides[`part_${extractedNum}`];
+    if (overrides[String(extractedNum)]) return overrides[String(extractedNum)];
+  }
+
+  // 5. Search values
+  const values = Object.values(overrides);
+  const found = values.find(o => {
+    if (raw && o.key && o.key === raw) return true;
+    if (extractedNum !== undefined && o.partNumber !== undefined && o.partNumber === extractedNum) return true;
+    if (raw && o.titleEn && o.titleEn.toLowerCase() === raw.toLowerCase()) return true;
+    if (raw && o.titleEn) {
+      const cleanOverride = o.titleEn.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
+      const cleanRaw = raw.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
+      if (cleanOverride && cleanRaw && cleanOverride.toLowerCase() === cleanRaw.toLowerCase()) return true;
+    }
+    return false;
+  });
+
+  return found;
+}
 export const CANONICAL_PARTS: PartAnnouncementDef[] = [
   {
     key: 'part_slangs',
@@ -116,15 +278,24 @@ export function getPartSpeechText(
     }
   }
 
+  // Check custom overrides first
+  const overrides = courseLevel ? getPartOverrides(courseLevel) : getPartOverrides('LEVEL_B');
+  const override = findPartOverride(overrides, rawInput, effectivePartNum);
+  if (override?.speechText?.trim()) {
+    return override.speechText.trim();
+  }
+
+  const effectiveRawInput = override?.titleEn?.trim() || rawInput;
+
   // Normalize 14-part two-topic lessons where parts 8..14 map to topics 1..7 (if not Level A)
-  const isLevelA = courseLevel === 'LEVEL_A' || rawInput.toLowerCase().includes('orientation') || rawInput.toLowerCase().includes('teamwork');
+  const isLevelA = courseLevel === 'LEVEL_A' || effectiveRawInput.toLowerCase().includes('orientation') || effectiveRawInput.toLowerCase().includes('teamwork');
   if (!isLevelA && effectivePartNum && effectivePartNum > 7 && effectivePartNum <= 14) {
     effectivePartNum = effectivePartNum - 7;
   }
 
-  // Check if partTitleOrCategory contains an actual descriptive title
+  // Check if effectiveRawInput contains an actual descriptive title
   // (i.e. more than just a bare part number like "Part 1" or generic category keyword)
-  const cleanTitleAfterPart = rawInput.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
+  const cleanTitleAfterPart = effectiveRawInput.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
   const hasSpecificTitle = cleanTitleAfterPart.length > 0 && !/^part\s*\d+$/i.test(cleanTitleAfterPart);
 
   if (hasSpecificTitle) {
@@ -249,6 +420,7 @@ export function getPartSpeechText(
 export function getCoursePartsFromLessons(lessons: LessonDoc[], courseLevel?: string): PartAnnouncementDef[] {
   const seenParts = new Set<string>();
   const partsList: PartAnnouncementDef[] = [];
+  const overrides = getPartOverrides(courseLevel);
 
   if (lessons && lessons.length > 0) {
     for (const lesson of lessons) {
@@ -262,14 +434,18 @@ export function getCoursePartsFromLessons(lessons: LessonDoc[], courseLevel?: st
           const partNum = match ? parseInt(match[1], 10) : undefined;
           const cleanTitle = partStr.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
           const key = `part_${partStr.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
-          const speechText = getPartSpeechText(partStr, partNum, courseLevel || lesson.level_code);
-          const titleVi = getVietnameseTitleForPart(cleanTitle || partStr);
+          
+          const override = findPartOverride(overrides, key, partNum) || findPartOverride(overrides, partStr, partNum);
+
+          const titleEn = override?.titleEn?.trim() || partStr;
+          const speechText = override?.speechText?.trim() || getPartSpeechText(partStr, partNum, courseLevel || lesson.level_code);
+          const titleVi = override?.titleVi?.trim() || (partNum ? `Phần ${partNum}: ${getVietnameseTitleForPart(cleanTitle || partStr)}` : getVietnameseTitleForPart(cleanTitle || partStr));
 
           partsList.push({
             key,
             partNumber: partNum,
-            titleEn: partStr,
-            titleVi: partNum ? `Phần ${partNum}: ${titleVi}` : titleVi,
+            titleEn,
+            titleVi,
             speechText
           });
         }
@@ -288,15 +464,23 @@ export function getCoursePartsFromLessons(lessons: LessonDoc[], courseLevel?: st
   }
 
   // Fallback if course lessons lack chunk.part (e.g. Level B ERES which uses category-based canonical parts)
-  return CANONICAL_PARTS;
+  return CANONICAL_PARTS.map(p => {
+    const override = findPartOverride(overrides, p.key, p.partNumber);
+    return {
+      ...p,
+      titleEn: override?.titleEn?.trim() || p.titleEn,
+      titleVi: override?.titleVi?.trim() || p.titleVi,
+      speechText: override?.speechText?.trim() || p.speechText
+    };
+  });
 }
 
 
 /**
  * Checks if the audio for a part announcement is already cached in memory or IndexedDB
  */
-export async function isPartAudioCached(partTitle: string, voice?: string, partNumber?: number): Promise<boolean> {
-  const speechText = getPartSpeechText(partTitle, partNumber);
+export async function isPartAudioCached(partTitle: string, voice?: string, partNumber?: number, courseLevel?: string): Promise<boolean> {
+  const speechText = getPartSpeechText(partTitle, partNumber, courseLevel);
   const voiceEn = voice || modelRegistryService.getMainModelEn();
   const cached = await audioPlayer.getCachedAudioAsync(speechText, voiceEn);
   return Boolean(cached);
@@ -306,8 +490,8 @@ export async function isPartAudioCached(partTitle: string, voice?: string, partN
  * Plays part announcement audio through the central audioPlayer facade.
  * Utilizes prepared cache (memory + IndexedDB) or synthesizes on-the-fly via Deepgram / Google Cloud TTS.
  */
-export async function playPartIntro(partTitle: string, partNumber?: number, voice?: string): Promise<void> {
-  const speechText = getPartSpeechText(partTitle, partNumber);
+export async function playPartIntro(partTitle: string, partNumber?: number, voice?: string, courseLevel?: string): Promise<void> {
+  const speechText = getPartSpeechText(partTitle, partNumber, courseLevel);
   const voiceEn = voice || modelRegistryService.getMainModelEn();
   await audioPlayer.playChunk(speechText, null, voiceEn, 1.0, true);
 }
@@ -316,8 +500,8 @@ export async function playPartIntro(partTitle: string, partNumber?: number, voic
  * Synthesizes and caches (or re-caches) audio for a single part announcement with forceRegenerate: true,
  * then auditions it immediately.
  */
-export async function regeneratePartAudio(partTitle: string, partNumber?: number, voice?: string): Promise<void> {
-  const speechText = getPartSpeechText(partTitle, partNumber);
+export async function regeneratePartAudio(partTitle: string, partNumber?: number, voice?: string, courseLevel?: string): Promise<void> {
+  const speechText = getPartSpeechText(partTitle, partNumber, courseLevel);
   const voiceEn = voice || modelRegistryService.getMainModelEn();
   await audioPlayer.synthesizeSingleChunk({
     text: speechText,

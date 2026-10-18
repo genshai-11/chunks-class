@@ -213,12 +213,12 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
       if (res.success) {
         setSaveStatus({
           success: true,
-          message: "✅ ĐÃ LƯU THÀNH CÔNG LÊN CLOUD FIRESTORE! Đã cập nhật bài học và tự động đồng bộ toàn bộ Lịch dạy (Cohorts) trên Cloud cho mọi thiết bị."
+          message: "✅ ĐÃ LƯU THÀNH CÔNG LÊN CLOUD FIRESTORE! Đã cập nhật bài học và tự động đồng bộ Lịch dạy (Cohorts) trên Cloud cho mọi thiết bị."
         });
         onLessonsUpdated(updatedLessonDocs);
         setTimeout(() => {
           onClose();
-        }, 3000);
+        }, 3500);
       } else {
         setSaveStatus({ success: false, message: `Lỗi lưu Firestore: ${res.error}` });
       }
@@ -502,25 +502,25 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
         <div className="px-6 py-4 bg-zinc-50 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2 text-xs flex-1 min-w-0">
             {saveStatus && (
-              <div className={`flex items-center justify-between gap-3 font-semibold px-3 py-1.5 rounded-xl border flex-1 ${
+              <div className={`flex items-center justify-between gap-3 font-semibold px-3.5 py-2 rounded-xl border flex-1 shadow-xs ${
                 saveStatus.success 
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-                  : 'bg-red-50 text-red-800 border-red-200'
+                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300' 
+                  : 'bg-red-50 text-red-900 border-red-300'
               }`}>
                 <div className="flex items-center gap-2 min-w-0">
                   {saveStatus.success ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600 shrink-0" />
                   ) : (
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <AlertCircle className="w-4.5 h-4.5 text-red-600 shrink-0" />
                   )}
-                  <span className="truncate">{saveStatus.message}</span>
+                  <span className="text-xs font-bold leading-tight">{saveStatus.message}</span>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 transition-all cursor-pointer shadow-xs active:scale-95"
                 >
-                  Đóng modal (Close)
+                  Xong & Đóng
                 </button>
               </div>
             )}

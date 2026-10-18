@@ -756,6 +756,13 @@ export async function batchUpdateLessons(
       }
     }
 
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('chunks:lessons-updated', {
+          detail: { lessons: updatedLessons, courseLevel: firstLevel }
+        }));
+      } catch {}
+    }
     return { success: true, count: updatedLessons.length };
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -986,6 +993,16 @@ export async function syncCourseCohortsWithActiveLessons(
   // Invalidate in-memory caches
   invalidateCohortsCache();
 
+  // Dispatch real-time cohort synchronization event for open components
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent('chunks:cohorts-updated', {
+        detail: { cohorts: matchingCohorts, courseLevel: courseLevelOrId }
+      }));
+    } catch (e) {
+      console.warn('[Firestore] Error dispatching chunks:cohorts-updated:', e);
+    }
+  }
   return {
     updatedCount: updatedCohortIds.length,
     cohortIds: updatedCohortIds

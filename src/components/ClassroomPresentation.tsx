@@ -119,6 +119,17 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   const [isAwaitingFirstChunkPlay, setIsAwaitingFirstChunkPlay] = useState<boolean>(false);
   const [partAnnounceBanner, setPartAnnounceBanner] = useState<{ title: string; partNumber?: number } | null>(null);
   const partAnnounceSeqRef = useRef<number>(0);
+  const [partOverridesRev, setPartOverridesRev] = useState(0);
+
+  useEffect(() => {
+    const handlePartOverridesUpdated = () => {
+      setPartOverridesRev(v => v + 1);
+    };
+    window.addEventListener('chunks:part-overrides-updated', handlePartOverridesUpdated);
+    return () => {
+      window.removeEventListener('chunks:part-overrides-updated', handlePartOverridesUpdated);
+    };
+  }, []);
 
   // Redesign Popover States
   const [isLessonSwitcherOpen, setIsLessonSwitcherOpen] = useState<boolean>(false);
@@ -542,9 +553,10 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     return Boolean(chunk.english?.trim()) && audioPlayer.hasCachedAudio(chunk.english, selectedVoice);
   }, [selectedVoice, isCurrentLessonFullyCached]);
 
+  const effectiveLevel = activeLesson?.level_code || courseLevel;
   const parts: LessonPart[] = useMemo(() => {
-    return groupChunksIntoParts(chunks, activeLesson?.lesson_title, checkAudioReady);
-  }, [chunks, activeLesson?.lesson_title, checkAudioReady]);
+    return groupChunksIntoParts(chunks, activeLesson?.lesson_title, checkAudioReady, effectiveLevel);
+  }, [chunks, activeLesson?.lesson_title, checkAudioReady, effectiveLevel, partOverridesRev]);
 
   const currentPart = parts.find(p => currentChunkIndex >= p.start_index && currentChunkIndex <= p.end_index) || parts[0] || null;
 
@@ -857,7 +869,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             await new Promise(resolve => setTimeout(resolve, 120));
           }
           if (playbackSequenceRef.current === seqId) {
-            await playPartIntro(targetPart.title, targetPart.part_index, selectedVoice);
+            await playPartIntro(targetPart.title, targetPart.part_index, selectedVoice, effectiveLevel);
           }
         }
       } catch (err) {
