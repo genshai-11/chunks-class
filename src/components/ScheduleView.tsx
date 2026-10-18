@@ -1482,8 +1482,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                 >
                   <option value="course_level_b">Level B - ERE (30 Topics • 3,150 Chunks)</option>
                   <option value="course_level_a">Level A - Foundation (16 Lessons • 4,480 Chunks)</option>
-                  <option value="course_level_b_erel">Level B - EREL Listening (15 Lessons • 1,019 Chunks)</option>
-                  <option value="course_level_b_eres">Level B - ERES Speaking (15 Lessons • 3,371 Chunks)</option>
+                  {/* Only show auxiliary courses if the current cohort is already bound to one of them */}
+                  {(editCourseId === 'course_level_b_erel' || editLevelCode === 'LEVEL_B_EREL') && (
+                    <option value="course_level_b_erel">Level B - EREL Listening (15 Lessons • 1,019 Chunks)</option>
+                  )}
+                  {(editCourseId === 'course_level_b_eres' || editLevelCode === 'LEVEL_B_ERES') && (
+                    <option value="course_level_b_eres">Level B - ERES Speaking (15 Lessons • 3,371 Chunks)</option>
+                  )}
                 </select>
                 <p className="text-[11px] text-zinc-500 mt-1">
                   Khi chuyển Course Track, hệ thống sẽ tự động liên kết bài học tương ứng và cập nhật số buổi học tiêu chuẩn.

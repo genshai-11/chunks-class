@@ -187,8 +187,8 @@ export function applyLessonOverrides<T extends LessonDoc>(lesson: T, overrides?:
 // --------------------------------------------------------------------------
 // 1. Fetch All Courses Dynamically
 // --------------------------------------------------------------------------
-export async function getCourses(forceRefresh?: boolean): Promise<Course[]> {
-  const cacheKey = 'courses';
+export async function getCourses(forceRefresh?: boolean, includeAuxiliary: boolean = false): Promise<Course[]> {
+  const cacheKey = `courses:${includeAuxiliary ? 'all' : 'primary'}`;
   if (!forceRefresh) {
     const cached = getCacheEntry<Course[]>(cacheKey);
     if (cached) return cached;
@@ -198,7 +198,15 @@ export async function getCourses(forceRefresh?: boolean): Promise<Course[]> {
     try {
       const snapshot = await getDocs(collection(db, 'courses'));
       if (!snapshot.empty) {
-        const courses = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Course));
+        let courses = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Course));
+        if (!includeAuxiliary) {
+          courses = courses.filter(c => 
+            c.id !== 'course_level_b_erel' && 
+            c.id !== 'course_level_b_eres' && 
+            c.level_code !== 'LEVEL_B_EREL' && 
+            c.level_code !== 'LEVEL_B_ERES'
+          );
+        }
         setCacheEntry(cacheKey, courses);
         return courses;
       }
@@ -206,7 +214,7 @@ export async function getCourses(forceRefresh?: boolean): Promise<Course[]> {
       console.warn('[Firestore] getCourses fallback to registry:', err);
     }
 
-    const fallbackCourses = curriculumRegistry.getAllCourses();
+    const fallbackCourses = curriculumRegistry.getAllCourses(includeAuxiliary);
     setCacheEntry(cacheKey, fallbackCourses);
     return fallbackCourses;
   });
@@ -390,33 +398,25 @@ export function deduplicateLessons(lessons: LessonDoc[], context?: CourseLevel |
   const result: LessonDoc[] = [];
 
   for (const [partKey, groupLessons] of groups) {
-    const dayMap = new Map<number, LessonDoc>();
+    const idMap = new Map<string, LessonDoc>();
 
     for (const lesson of groupLessons) {
-      const day = lesson.day_number ?? 0;
-      const existing = dayMap.get(day);
-
+      const existing = idMap.get(lesson.id);
       if (!existing) {
-        dayMap.set(day, lesson);
+        idMap.set(lesson.id, lesson);
       } else {
-        // Prioritize canonical lesson:
-        // Prioritize l.id.startsWith('level_b_day_') over level_b_ere_day_
-        const lessonIsCanonical = lesson.id.startsWith('level_b_day_');
-        const existingIsCanonical = existing.id.startsWith('level_b_day_');
-
-        if (lessonIsCanonical && !existingIsCanonical) {
-          dayMap.set(day, lesson);
-        } else if (!lessonIsCanonical && existingIsCanonical) {
-          // Keep existing
-        } else if (existing.id.startsWith('level_b_ere_day_') && !lesson.id.startsWith('level_b_ere_day_')) {
-          dayMap.set(day, lesson);
-        } else if ((lesson.chunks?.length || 0) > (existing.chunks?.length || 0)) {
-          dayMap.set(day, lesson);
+        // If duplicate ID exists, keep the one with more chunks or updated content
+        if ((lesson.chunks?.length || 0) > (existing.chunks?.length || 0)) {
+          idMap.set(lesson.id, lesson);
         }
       }
     }
 
-    let sortedGroup = Array.from(dayMap.values()).sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+    let sortedGroup = Array.from(idMap.values()).sort((a, b) => {
+      const dayDiff = (a.day_number ?? 0) - (b.day_number ?? 0);
+      if (dayDiff !== 0) return dayDiff;
+      return a.id.localeCompare(b.id);
+    });
 
     // For LEVEL_B, ensure exactly 30 unique lessons (Days 1 to 30)
     if (partKey === 'LEVEL_B' || partKey === 'COURSE_LEVEL_B' || partKey === 'LEVEL_B_ERE' || partKey === 'COURSE_LEVEL_B_ERE') {
@@ -699,7 +699,7 @@ export async function batchUpdateLessons(
       overridesMap[l.id] = {
         is_active: l.is_active !== undefined ? Boolean(l.is_active) : true,
         display_title: l.display_title || l.lesson_title,
-        day_number: l.day_number
+        day_number: l.day_number !== undefined ? Number(l.day_number) : 0
       };
     }
     saveLessonOverrides(overridesMap);
@@ -729,7 +729,7 @@ export async function batchUpdateLessons(
           is_active: lesson.is_active !== undefined ? Boolean(lesson.is_active) : true,
           display_title: lesson.display_title || lesson.lesson_title,
           lesson_title: lesson.display_title || lesson.lesson_title,
-          day_number: lesson.day_number,
+          day_number: lesson.day_number !== undefined ? Number(lesson.day_number) : 0,
           updated_at: now
         };
         if (lesson.course_id) payload.course_id = lesson.course_id;

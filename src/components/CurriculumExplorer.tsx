@@ -101,12 +101,12 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const [qualityFilter, setQualityFilter] = useState<QualityFilterType>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [playingChunkId, setPlayingChunkId] = useState<string | null>(null);
-
-  const [availableCourses, setAvailableCourses] = useState<Course[]>(() => curriculumRegistry.getAllCourses());
+  const [showAuxiliaryCourses, setShowAuxiliaryCourses] = useState<boolean>(false);
+  const [availableCourses, setAvailableCourses] = useState<Course[]>(() => curriculumRegistry.getAllCourses(true));
 
   useEffect(() => {
     let isMounted = true;
-    getCourses().then(fetchedCourses => {
+    getCourses(false, true).then(fetchedCourses => {
       if (isMounted && fetchedCourses && fetchedCourses.length > 0) {
         setAvailableCourses(fetchedCourses);
       }
@@ -125,6 +125,16 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const displayCourses = useMemo(() => {
     const seenCodes = new Set<string>();
     return availableCourses.filter(course => {
+      const isAuxiliary = 
+        course.id === 'course_level_b_erel' || 
+        course.id === 'course_level_b_eres' || 
+        course.level_code === 'LEVEL_B_EREL' || 
+        course.level_code === 'LEVEL_B_ERES';
+
+      if (isAuxiliary && !showAuxiliaryCourses) {
+        return false;
+      }
+
       const normalizedCode = (course.level_code === 'LEVEL_B_ERE' || course.id === 'course_level_b_ere') 
         ? 'LEVEL_B' 
         : course.level_code;
@@ -132,7 +142,7 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
       seenCodes.add(normalizedCode);
       return true;
     });
-  }, [availableCourses]);
+  }, [availableCourses, showAuxiliaryCourses]);
 
   const currentCourse = useMemo(() => {
     return availableCourses.find(c => c.level_code === selectedLevel || c.id === selectedLevel || ((selectedLevel === 'LEVEL_B' || selectedLevel === 'LEVEL_B_ERE') && (c.level_code === 'LEVEL_B' || c.level_code === 'LEVEL_B_ERE' || c.id === 'course_level_b' || c.id === 'course_level_b_ere'))) || curriculumRegistry.getCourse(selectedLevel);
@@ -656,8 +666,19 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
                 </button>
               );
             })}
+            <button
+              type="button"
+              onClick={() => setShowAuxiliaryCourses(prev => !prev)}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                showAuxiliaryCourses 
+                  ? 'bg-amber-50 text-amber-800 border-amber-300' 
+                  : 'bg-transparent text-zinc-500 hover:text-zinc-800 border-dashed border-zinc-300'
+              }`}
+              title="Bật/Tắt hiển thị các khóa học bổ trợ EREL và ERES"
+            >
+              {showAuxiliaryCourses ? 'Ẩn khóa bổ trợ' : '+ Khóa bổ trợ (EREL/ERES)'}
+            </button>
           </div>
-
           {/* Right Action cluster: View Mode + Export */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* View Mode Toggle */}

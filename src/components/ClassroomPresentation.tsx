@@ -567,12 +567,15 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   // Re-evaluated when isLessonSwitcherOpen toggles so newly saved changes from CourseLessonManagerModal reflect immediately.
   // Auto-prioritizes active course at the TOP of the catalog.
   const groupedCourses = useMemo(() => {
-    const rawGroups = curriculumRegistry.getGroupedCoursesWithLessons();
-    
-    // Determine active course identifier
     const targetCourseId = activeLesson?.course_id;
     const targetLevelCode = activeLesson?.level_code || courseLevel;
+    const isActiveAuxiliary = 
+      targetCourseId === 'course_level_b_erel' || 
+      targetCourseId === 'course_level_b_eres' || 
+      targetLevelCode === 'LEVEL_B_EREL' || 
+      targetLevelCode === 'LEVEL_B_ERES';
 
+    const rawGroups = curriculumRegistry.getGroupedCoursesWithLessons(isActiveAuxiliary);
     return [...rawGroups].sort((a, b) => {
       const aIsCurrent = Boolean(
         (targetCourseId && a.course.id === targetCourseId) ||

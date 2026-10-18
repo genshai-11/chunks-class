@@ -186,10 +186,19 @@ class CurriculumRegistryService {
     });
   }
 
-  public getAllCourses(): Course[] {
+  public getAllCourses(includeAuxiliary: boolean = false): Course[] {
     const unique = new Map<string, Course>();
     this.coursesMap.forEach(c => unique.set(c.id, c));
-    return Array.from(unique.values());
+    const courses = Array.from(unique.values());
+    if (includeAuxiliary) {
+      return courses;
+    }
+    return courses.filter(c => 
+      c.id !== 'course_level_b_erel' && 
+      c.id !== 'course_level_b_eres' && 
+      c.level_code !== 'LEVEL_B_EREL' && 
+      c.level_code !== 'LEVEL_B_ERES'
+    );
   }
 
   public getCourse(courseIdOrLevel: string): Course | null {
@@ -381,13 +390,20 @@ class CurriculumRegistryService {
     return Array.from(unique.values());
   }
 
-  public getGroupedCoursesWithLessons(): { course: Course; lessons: LessonDoc[] }[] {
-    const courses = [
+  public getGroupedCoursesWithLessons(includeAuxiliary: boolean = false): { course: Course; lessons: LessonDoc[] }[] {
+    const courseList = [
       this.getCourse('course_level_b'),
-      this.getCourse('course_level_a'),
-      this.getCourse('course_level_b_erel'),
-      this.getCourse('course_level_b_eres')
-    ].filter((c): c is Course => Boolean(c));
+      this.getCourse('course_level_a')
+    ];
+
+    if (includeAuxiliary) {
+      courseList.push(
+        this.getCourse('course_level_b_erel'),
+        this.getCourse('course_level_b_eres')
+      );
+    }
+
+    const courses = courseList.filter((c): c is Course => Boolean(c));
 
     // Also include any custom registered courses
     const standardIds = new Set([

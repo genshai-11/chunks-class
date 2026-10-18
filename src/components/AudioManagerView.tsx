@@ -72,7 +72,8 @@ import {
   AlertTriangle,
   RefreshCcw,
   CheckCheck,
-  Filter
+  Filter,
+  Plus
 } from 'lucide-react';
 
 interface AudioManagerViewProps {
@@ -131,21 +132,31 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   // --------------------------------------------------------------------------
   // 1. Courses & Level Tab State
   // --------------------------------------------------------------------------
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedCourseLevel, setSelectedCourseLevel] = useState<CourseLevel>(
-    defaultCourseLevel || 'LEVEL_B_ERES'
-  );
+  const isDefaultAux = defaultCourseLevel === 'LEVEL_B_ERES' || defaultCourseLevel === 'LEVEL_B_EREL';
+  const [showAuxiliaryCourses, setShowAuxiliaryCourses] = useState<boolean>(isDefaultAux);
+  const [activeMainTab, setActiveMainTab] = useState<'lessons' | 'part_intros' | 'diagnostics'>('lessons');
+  const [courses, setCourses] = useState<Course[]>(() => {
+    return curriculumRegistry.getAllCourses(isDefaultAux);
+  });
+  const [selectedCourseLevel, setSelectedCourseLevel] = useState<CourseLevel>(() => {
+    if (defaultCourseLevel) return defaultCourseLevel;
+    const initialCourses = curriculumRegistry.getAllCourses(false);
+    return initialCourses.length > 0 ? initialCourses[0].level_code : 'LEVEL_A';
+  });
   const [lessons, setLessons] = useState<LessonDoc[]>(() => {
-    return curriculumRegistry.getLessons(defaultCourseLevel || 'LEVEL_B_ERES');
+    const initialLevel = defaultCourseLevel || 'LEVEL_A';
+    return curriculumRegistry.getLessons(initialLevel);
   });
   const [isLoadingLessons, setIsLoadingLessons] = useState<boolean>(false);
 
   useEffect(() => {
     if (defaultCourseLevel && defaultCourseLevel !== selectedCourseLevel) {
+      if (defaultCourseLevel === 'LEVEL_B_ERES' || defaultCourseLevel === 'LEVEL_B_EREL') {
+        setShowAuxiliaryCourses(true);
+      }
       setSelectedCourseLevel(defaultCourseLevel);
     }
   }, [defaultCourseLevel]);
-
   // --------------------------------------------------------------------------
   // 2. Audio Engine & Provider Configuration
   // --------------------------------------------------------------------------
@@ -161,9 +172,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   );
 
   const [statusList, setStatusList] = useState<LessonAudioStatus[]>(() => {
-    return createBaselineStatuses(curriculumRegistry.getLessons(defaultCourseLevel || 'LEVEL_B_ERES'));
+    const initialLevel = defaultCourseLevel || 'LEVEL_A';
+    return createBaselineStatuses(curriculumRegistry.getLessons(initialLevel));
   });
-
   // Synchronously initialize statusList baseline data whenever lessons change
   useEffect(() => {
     if (!lessons || lessons.length === 0) {
@@ -407,13 +418,14 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   });
 
   // Load available courses on mount
+  // Load available courses on mount & when showAuxiliaryCourses changes
   useEffect(() => {
-    const allCourses = curriculumRegistry.getAllCourses();
+    const allCourses = curriculumRegistry.getAllCourses(showAuxiliaryCourses);
     setCourses(allCourses);
     if (allCourses.length > 0 && !allCourses.some(c => c.level_code === selectedCourseLevel)) {
       setSelectedCourseLevel(allCourses[0].level_code);
     }
-  }, []);
+  }, [showAuxiliaryCourses]);
 
   // Listen to audioPlayer source changes
   useEffect(() => {
@@ -1463,148 +1475,275 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       {/* ------------------------------------------------------------------ */}
       {/* 2. Course Level Navigation Tabs                                    */}
       {/* ------------------------------------------------------------------ */}
-      <div className="flex items-center gap-2 border-b border-zinc-200 pb-2 overflow-x-auto">
-        {(courses.length > 0 ? courses : [
-          { id: 'course_level_b_eres', level_code: 'LEVEL_B_ERES', title: 'Level B - ERES Speaking' },
-          { id: 'course_level_b_erel', level_code: 'LEVEL_B_EREL', title: 'Level B - EREL Listening' },
-          { id: 'course_level_a', level_code: 'LEVEL_A', title: 'Level A - Foundation Chunks' }
-        ]).map((c) => {
-          const isSelected = selectedCourseLevel === c.level_code;
-          return (
-            <button
-              key={c.id}
-              onClick={() => setSelectedCourseLevel(c.level_code as CourseLevel)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                isSelected
-                  ? 'bg-[#DC2626] text-white shadow-xs font-extrabold'
-                  : 'bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200/80 hover:border-zinc-300'
-              }`}
-            >
-              <BookOpen className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-zinc-400'}`} />
-              <span>{c.title}</span>
-              {isSelected && (
-                <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
-                  Active
+      <div className="flex items-center justify-between gap-2 border-b border-zinc-200 pb-2 overflow-x-auto">
+        <div className="flex items-center gap-2">
+          {(() => {
+            const rawCourses = courses.length > 0 ? courses : [
+              { id: 'course_level_a', level_code: 'LEVEL_A', title: 'Level A - Foundation English Chunks' } as Course,
+              { id: 'course_level_b', level_code: 'LEVEL_B', title: 'Level B - ERE (30 Topics)' } as Course
+            ];
+            const sorted = [...rawCourses].sort((a, b) => {
+              const priority: Record<string, number> = {
+                'LEVEL_A': 1,
+                'LEVEL_B': 2,
+                'LEVEL_B_ERE': 2,
+                'LEVEL_B_EREL': 3,
+                'LEVEL_B_ERES': 4
+              };
+              return (priority[a.level_code] || 99) - (priority[b.level_code] || 99);
+            });
+            return sorted.map((c) => {
+              const isSelected = selectedCourseLevel === c.level_code;
+              const displayTitle = c.level_code === 'LEVEL_A' 
+                ? 'Level A' 
+                : c.level_code === 'LEVEL_B' || c.level_code === 'LEVEL_B_ERE'
+                ? 'Level B - ERE (30 Topics)'
+                : c.level_code === 'LEVEL_B_EREL'
+                ? 'Level B - EREL (Nghe)'
+                : c.level_code === 'LEVEL_B_ERES'
+                ? 'Level B - ERES (Nói)'
+                : c.title;
+
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCourseLevel(c.level_code as CourseLevel)}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                    isSelected
+                      ? 'bg-[#DC2626] text-white shadow-xs font-extrabold'
+                      : 'bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200/80 hover:border-zinc-300'
+                  }`}
+                >
+                  <BookOpen className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-zinc-400'}`} />
+                  <span>{displayTitle}</span>
+                  {isSelected && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
+                      Active
+                    </span>
+                  )}
+                </button>
+              );
+            });
+          })()}
+        </div>
+
+        {/* Auxiliary Courses Toggle Button */}
+        <button
+          type="button"
+          onClick={() => setShowAuxiliaryCourses(prev => !prev)}
+          className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+            showAuxiliaryCourses
+              ? 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border border-zinc-200'
+              : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-500 border border-dashed border-zinc-300'
+          }`}
+          title="Bật/tắt hiển thị các khóa bổ trợ (EREL Listening, ERES Speaking)"
+        >
+          <Plus className={`w-3.5 h-3.5 transition-transform duration-200 ${showAuxiliaryCourses ? 'rotate-45' : ''}`} />
+          <span>{showAuxiliaryCourses ? 'Ẩn khóa bổ trợ' : '+ Khóa bổ trợ'}</span>
+        </button>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 3. Consolidated Horizontal KPI Summary Card                        */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-zinc-200 shadow-xs">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 flex-1">
+            {/* Metric 1: Total Chunks */}
+            <div className="flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-zinc-500 text-xs font-bold uppercase tracking-wider font-mono">
+                <Layers className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Tổng Chunks</span>
+              </div>
+              <div className="mt-2">
+                <div className="text-xl sm:text-2xl font-bold font-mono text-zinc-900 tracking-tight">
+                  {totalChunksInLevel.toLocaleString()}
+                </div>
+                <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
+                  {lessons.length} bài học trong khóa
+                </div>
+              </div>
+            </div>
+
+            {/* Metric 2: EN Audio Ready % */}
+            <div className="flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-1 text-zinc-500 text-xs font-bold uppercase tracking-wider font-mono">
+                <span className="flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  <span>EN Sẵn Sàng</span>
                 </span>
+                <span className={`text-[11px] font-mono font-bold ${overallEnPercent >= 90 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {overallEnPercent}%
+                </span>
+              </div>
+              <div className="mt-2">
+                <div className="text-xs font-mono text-zinc-600 font-semibold">
+                  {totalEnCached.toLocaleString()} / {totalChunksInLevel.toLocaleString()}
+                </div>
+                <div className="w-full bg-zinc-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 ${overallEnPercent >= 90 ? 'bg-emerald-600' : 'bg-amber-500'}`}
+                    style={{ width: `${overallEnPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Metric 3: VI Audio Ready % */}
+            <div className="flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-1 text-zinc-500 text-xs font-bold uppercase tracking-wider font-mono">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>VI Sẵn Sàng</span>
+                </span>
+                <span className={`text-[11px] font-mono font-bold ${overallViPercent >= 90 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {overallViPercent}%
+                </span>
+              </div>
+              <div className="mt-2">
+                <div className="text-xs font-mono text-zinc-600 font-semibold">
+                  {totalViCached.toLocaleString()} / {totalChunksInLevel.toLocaleString()}
+                </div>
+                <div className="w-full bg-zinc-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 ${overallViPercent >= 90 ? 'bg-emerald-600' : 'bg-amber-500'}`}
+                    style={{ width: `${overallViPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Metric 4: GCS Master CDN */}
+            <div className="flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-1 text-zinc-500 text-xs font-bold uppercase tracking-wider font-mono">
+                <span className="flex items-center gap-1.5">
+                  <FileAudio className="w-3.5 h-3.5 text-blue-500" />
+                  <span>GCS Master</span>
+                </span>
+                <span className="text-[11px] font-mono font-bold text-blue-600">
+                  {overallGcsPercent}%
+                </span>
+              </div>
+              <div className="mt-2">
+                <div className="text-xs font-mono text-zinc-600 font-semibold">
+                  {totalGcsMaster.toLocaleString()} files
+                </div>
+                <div className="w-full bg-zinc-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 transition-all duration-300"
+                    style={{ width: `${overallGcsPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Action Buttons */}
+          <div className="flex items-center gap-2 pt-3 xl:pt-0 border-t xl:border-t-0 xl:border-l border-zinc-100 xl:pl-4 shrink-0">
+            <button
+              type="button"
+              disabled={isSyncingToCloud || isBatchRunning}
+              onClick={handleSyncCacheToCloud}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 ${
+                isAllLessonsGcsSynced
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+              title={isAllLessonsGcsSynced ? "Toàn bộ bài học trong level đã được đồng bộ 100% lên Cloud Storage" : "Tải toàn bộ audio đã có trong cache trình duyệt lên Cloud Storage bucket để dùng vĩnh viễn"}
+            >
+              {isSyncingToCloud ? (
+                <CloudUpload className="w-3.5 h-3.5 animate-bounce" />
+              ) : isAllLessonsGcsSynced ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+              ) : (
+                <CloudUpload className="w-3.5 h-3.5" />
               )}
+              <span>{isSyncingToCloud ? 'Đang sync...' : isAllLessonsGcsSynced ? '✓ GCS 100%' : 'Sync Cache ➔ GCS'}</span>
             </button>
-          );
-        })}
-      </div>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* 3. Readiness Matrix Overview & Summary Metrics                     */}
-      {/* ------------------------------------------------------------------ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Total Chunks */}
-        <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 font-mono">
-              Tổng Số Chunks
-            </span>
-            <span className="p-2 rounded-xl bg-zinc-100 text-zinc-700">
-              <Layers className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono text-zinc-900 tracking-tight">
-              {totalChunksInLevel.toLocaleString()}
-            </div>
-            <div className="text-[11px] text-zinc-500 mt-1 flex items-center gap-1">
-              <span>{lessons.length} Buổi học trong khóa</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Metric 2: EN Audio Ready % */}
-        <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 font-mono">
-              EN Audio Sẵn Sàng (0ms)
-            </span>
-            <span className={`p-2 rounded-xl ${overallEnPercent >= 90 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-              <Zap className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold font-mono text-zinc-900">
-                {overallEnPercent}%
-              </span>
-              <span className="text-xs font-mono text-zinc-500">
-                ({totalEnCached}/{totalChunksInLevel})
-              </span>
-            </div>
-            <div className="w-full bg-zinc-100 rounded-full h-1.5 mt-2 overflow-hidden">
-              <div
-                className={`h-full transition-all duration-300 ${overallEnPercent >= 90 ? 'bg-emerald-600' : 'bg-amber-500'}`}
-                style={{ width: `${overallEnPercent}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Metric 3: VI Audio Ready % */}
-        <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 font-mono">
-              VI Audio Sẵn Sàng (0ms)
-            </span>
-            <span className={`p-2 rounded-xl ${overallViPercent >= 90 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-              <CheckCircle2 className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold font-mono text-zinc-900">
-                {overallViPercent}%
-              </span>
-              <span className="text-xs font-mono text-zinc-500">
-                ({totalViCached}/{totalChunksInLevel})
-              </span>
-            </div>
-            <div className="w-full bg-zinc-100 rounded-full h-1.5 mt-2 overflow-hidden">
-              <div
-                className={`h-full transition-all duration-300 ${overallViPercent >= 90 ? 'bg-emerald-600' : 'bg-amber-500'}`}
-                style={{ width: `${overallViPercent}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Metric 4: GCS Master Audio Count */}
-        <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 font-mono">
-              GCS Master CDN
-            </span>
-            <span className="p-2 rounded-xl bg-blue-100 text-blue-700">
-              <FileAudio className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold font-mono text-zinc-900">
-                {totalGcsMaster}
-              </span>
-              <span className="text-xs font-mono text-zinc-500">
-                ({overallGcsPercent}%)
-              </span>
-            </div>
-            <div className="w-full bg-zinc-100 rounded-full h-1.5 mt-2 overflow-hidden">
-              <div
-                className="h-full bg-blue-600 transition-all duration-300"
-                style={{ width: `${overallGcsPercent}%` }}
-              />
-            </div>
+            <button
+              type="button"
+              onClick={() => calculateReadinessStatus()}
+              className="p-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-colors cursor-pointer"
+              title="Làm mới trạng thái đệm"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
 
       {/* ------------------------------------------------------------------ */}
-      {/* 4. Batch Generator / Regeneration Tool (Control Center)            */}
+      {/* 4. 3-Tab Main Navigation Bar                                       */}
       {/* ------------------------------------------------------------------ */}
-      <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-5">
+      <div className="flex items-center gap-1.5 p-1 bg-zinc-100 rounded-2xl border border-zinc-200/80 w-full sm:w-fit overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('lessons')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeMainTab === 'lessons'
+              ? 'bg-white text-zinc-900 shadow-xs font-extrabold'
+              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'
+          }`}
+        >
+          <BookOpen className="w-4 h-4 text-[#DC2626]" />
+          <span>Âm Thanh Bài Học</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+            activeMainTab === 'lessons' ? 'bg-zinc-100 text-zinc-800' : 'bg-zinc-200/70 text-zinc-600'
+          }`}>
+            {lessons.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('part_intros')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeMainTab === 'part_intros'
+              ? 'bg-white text-zinc-900 shadow-xs font-extrabold'
+              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'
+          }`}
+        >
+          <Layers className="w-4 h-4 text-purple-600" />
+          <span>Âm Thanh Chuyển Part</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+            activeMainTab === 'part_intros' ? 'bg-purple-100 text-purple-800' : 'bg-zinc-200/70 text-zinc-600'
+          }`}>
+            {currentCourseParts.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('diagnostics')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            activeMainTab === 'diagnostics'
+              ? 'bg-white text-zinc-900 shadow-xs font-extrabold'
+              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'
+          }`}
+        >
+          <Activity className={`w-4 h-4 ${failedChunks.length > 0 ? 'text-rose-600 animate-pulse' : 'text-zinc-500'}`} />
+          <span>Nhật Ký & Công Cụ</span>
+          {failedChunks.length > 0 ? (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-rose-100 text-rose-700 font-bold animate-pulse">
+              {failedChunks.length} lỗi
+            </span>
+          ) : batchLogs.length > 0 ? (
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+              activeMainTab === 'diagnostics' ? 'bg-zinc-100 text-zinc-800' : 'bg-zinc-200/70 text-zinc-600'
+            }`}>
+              {batchLogs.length}
+            </span>
+          ) : null}
+        </button>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* 4. Batch Generator / Regeneration Tool (Tab: Lessons)               */}
+      {/* ------------------------------------------------------------------ */}
+      {activeMainTab === 'lessons' && (
+        <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-5">
         <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
           <div className="flex items-center gap-2.5">
             <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
@@ -2078,208 +2217,14 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             </div>
           </div>
         )}
-
-        {/* Failed Audio Queue / Selective Regeneration Panel */}
-        {failedChunks.length > 0 && (
-          <div className="p-5 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-3.5 animate-fade-in">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-rose-200/80">
-              <div className="flex items-center gap-2.5">
-                <span className="p-2 rounded-xl bg-rose-100 text-rose-700">
-                  <AlertTriangle className="w-5 h-5" />
-                </span>
-                <div>
-                  <h3 className="font-display font-bold text-sm text-rose-950 flex items-center gap-2">
-                    <span>Phát Hiện {failedChunks.length} Audio Bị Lỗi Trong Hàng Đợi</span>
-                    <span className="px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 text-xs font-mono font-bold">
-                      {failedChunks.length} lỗi
-                    </span>
-                  </h3>
-                  <p className="text-xs text-rose-700">
-                    Các câu này gặp sự cố mạng, hạn mức API hoặc lỗi tải lên Cloud Storage. Bạn có thể thử lại ngay mà không cần tạo lại toàn bộ khóa học.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  disabled={isBatchRunning}
-                  onClick={handleRetryAllFailedChunks}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>🔄 Thử Lại Toàn Bộ ({failedChunks.length} câu)</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isBatchRunning}
-                  onClick={clearFailedQueue}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-rose-300 bg-white hover:bg-rose-100/50 text-rose-700 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Xóa Hàng Đợi Lỗi</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Failed Chunks List Table */}
-            <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-xl border border-rose-200/80 bg-white">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-rose-100/60 text-rose-900 font-bold border-b border-rose-200 sticky top-0 z-10">
-                  <tr>
-                    <th className="py-2.5 px-3 w-16 text-center">Buổi</th>
-                    <th className="py-2.5 px-3 w-16 text-center">Câu #</th>
-                    <th className="py-2.5 px-3">Văn Bản (EN / VI)</th>
-                    <th className="py-2.5 px-3 w-32 text-center">Giai Đoạn Lỗi</th>
-                    <th className="py-2.5 px-3">Chi Tiết Lỗi</th>
-                    <th className="py-2.5 px-3 w-36 text-center">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-rose-100">
-                  {failedChunks.map((item, idx) => (
-                    <tr key={`${item.chunkId}-${item.lang}-${idx}`} className="hover:bg-rose-50/50">
-                      <td className="py-2.5 px-3 text-center font-mono font-bold text-zinc-700">
-                        Day {item.dayNumber || '?'}
-                      </td>
-                      <td className="py-2.5 px-3 text-center font-mono font-bold text-zinc-800">
-                        #{item.itemNumber}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <div className="font-semibold text-zinc-900 truncate max-w-xs">{item.textEn}</div>
-                        {item.textVi && (
-                          <div className="text-[11px] text-zinc-500 truncate max-w-xs">{item.textVi}</div>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
-                          item.stage === 'cloud_upload'
-                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                            : item.stage === 'firestore_save'
-                            ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                            : 'bg-amber-100 text-amber-800 border border-amber-200'
-                        }`}>
-                          {item.stage === 'cloud_upload' ? 'Lỗi Tải Cloud' : item.stage === 'firestore_save' ? 'Lỗi Lưu DB' : 'Lỗi Tạo TTS'}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-rose-700 max-w-xs truncate" title={item.error}>
-                        {item.error}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            disabled={isBatchRunning}
-                            onClick={() => handleRetrySingleFailedChunk(item)}
-                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
-                            title="Thử lại câu này ngay"
-                          >
-                            <RotateCcw className="w-3 h-3" />
-                            <span>Thử Lại</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeFailedChunk(item.chunkId)}
-                            className="p-1 rounded-lg hover:bg-rose-200 text-rose-600 transition-all cursor-pointer"
-                            title="Xóa khỏi danh sách lỗi"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Live Log Console with Filtering Tabs */}
-        {batchLogs.length > 0 && (
-          <div className="p-3.5 bg-zinc-950 text-zinc-200 rounded-xl border border-zinc-800 font-mono text-[11px] space-y-2">
-            <div className="text-zinc-400 font-bold border-b border-zinc-800 pb-2 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-zinc-300 font-bold">Bảng Nhật Ký Hoạt Động (Live Activity Console)</span>
-                {/* Filter Pills */}
-                <div className="flex items-center gap-1 ml-2">
-                  <button
-                    type="button"
-                    onClick={() => setLogFilter('all')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                      logFilter === 'all' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'
-                    }`}
-                  >
-                    Tất cả ({batchLogs.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLogFilter('error')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                      logFilter === 'error' ? 'bg-rose-900 text-rose-200' : 'text-rose-400 hover:text-rose-300'
-                    }`}
-                  >
-                    Lỗi ({batchLogs.filter(l => l.type === 'error' || l.type === 'warning').length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLogFilter('cloud')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                      logFilter === 'cloud' ? 'bg-blue-900 text-blue-200' : 'text-blue-400 hover:text-blue-300'
-                    }`}
-                  >
-                    Cloud Sync ({batchLogs.filter(l => l.type === 'cloud' || l.message.toLowerCase().includes('cloud') || l.message.toLowerCase().includes('gcs')).length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLogFilter('success')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                      logFilter === 'success' ? 'bg-emerald-900 text-emerald-200' : 'text-emerald-400 hover:text-emerald-300'
-                    }`}
-                  >
-                    Thành công ({batchLogs.filter(l => l.type === 'success').length})
-                  </button>
-                </div>
-              </div>
-              <button 
-                onClick={() => setBatchLogs([])} 
-                className="text-zinc-500 hover:text-zinc-300 text-[10px] cursor-pointer"
-              >
-                Xóa Log
-              </button>
-            </div>
-
-            <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
-              {batchLogs
-                .filter(log => {
-                  if (logFilter === 'all') return true;
-                  if (logFilter === 'error') return log.type === 'error' || log.type === 'warning';
-                  if (logFilter === 'cloud') return log.type === 'cloud' || log.message.toLowerCase().includes('cloud') || log.message.toLowerCase().includes('gcs');
-                  if (logFilter === 'success') return log.type === 'success';
-                  return true;
-                })
-                .map(log => (
-                  <div key={log.id} className="flex items-start gap-2">
-                    <span className="text-zinc-600 shrink-0">[{log.timestamp}]</span>
-                    <span className={
-                      log.type === 'success' ? 'text-emerald-400' :
-                      log.type === 'cloud' ? 'text-cyan-400' :
-                      log.type === 'warning' ? 'text-amber-400' :
-                      log.type === 'error' ? 'text-rose-400' : 'text-zinc-300'
-                    }>
-                      {log.message}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
       </div>
+      )}
 
       {/* ------------------------------------------------------------------ */}
-      {/* 4.5 Part Intro & Transition Announcements (Reusable Audio)         */}
+      {/* 4.5 Part Intro & Transition Announcements (Tab: Part Intros)        */}
       {/* ------------------------------------------------------------------ */}
-      <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-5">
+      {activeMainTab === 'part_intros' && (
+        <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-xl bg-purple-50 text-purple-700">
@@ -2467,12 +2412,14 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             );
           })}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* ------------------------------------------------------------------ */}
-      {/* 5. Lesson Readiness Matrix Table                                   */}
+      {/* 5. Lesson Readiness Matrix Table (Tab: Lessons)                     */}
       {/* ------------------------------------------------------------------ */}
-      <div className="bg-white rounded-2xl border border-zinc-200 shadow-xs overflow-hidden">
+      {activeMainTab === 'lessons' && (
+        <div className="bg-white rounded-2xl border border-zinc-200 shadow-xs overflow-hidden">
         {/* Table Header & Search Filter */}
         <div className="p-5 border-b border-zinc-200 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#FCFCFD]">
           <div>
@@ -2780,7 +2727,420 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           </table>
         </div>
       </div>
+      )}
 
+      {/* ------------------------------------------------------------------ */}
+      {/* 5.5 Diagnostics, Failed Chunks & Logs (Tab: Diagnostics)           */}
+      {/* ------------------------------------------------------------------ */}
+      {activeMainTab === 'diagnostics' && (
+        <div className="space-y-6">
+          {/* Live Multi-Stage Progress Tracker & Metrics (if running or not idle) */}
+          {(isBatchRunning || batchProgress.stage !== 'idle') && (
+            <div className="p-5 bg-zinc-950 text-white rounded-2xl space-y-3.5 font-mono text-xs border border-zinc-800 shadow-xl animate-fade-in">
+              {/* Visual Stage Pipeline */}
+              <div className="flex flex-wrap items-center justify-between gap-1.5 p-2 bg-zinc-900/90 rounded-xl border border-zinc-800">
+                {[
+                  { key: 'preparing', num: '1', label: 'Chuẩn Bị' },
+                  { key: 'synthesizing', num: '2', label: 'Tạo TTS' },
+                  { key: 'uploading_cloud', num: '3', label: 'Tải Lên Cloud' },
+                  { key: 'saving_firestore', num: '4', label: 'Lưu Firestore' },
+                  { key: 'completed', num: '5', label: 'Hoàn Tất' }
+                ].map((step, sIdx, sArr) => {
+                  const stageOrder = ['preparing', 'synthesizing', 'uploading_cloud', 'saving_firestore', 'completed'];
+                  const curIdx = stageOrder.indexOf(batchProgress.stage);
+                  const thisIdx = stageOrder.indexOf(step.key);
+                  const isCurrent = batchProgress.stage === step.key;
+                  const isPassed = curIdx > thisIdx || batchProgress.stage === 'completed';
+
+                  return (
+                    <React.Fragment key={step.key}>
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all text-xs ${
+                        isCurrent
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold animate-pulse'
+                          : isPassed
+                          ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 font-semibold'
+                          : 'text-zinc-500 border border-transparent'
+                      }`}>
+                        <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                          isCurrent 
+                            ? 'bg-amber-400 text-zinc-950' 
+                            : isPassed 
+                            ? 'bg-emerald-500 text-zinc-950' 
+                            : 'bg-zinc-800 text-zinc-400'
+                        }`}>
+                          {isPassed && !isCurrent ? '✓' : step.num}
+                        </span>
+                        <span>{step.label}</span>
+                      </div>
+                      {sIdx < sArr.length - 1 && (
+                        <span className="text-zinc-700 text-xs">➔</span>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+
+              {/* Progress Bar & Current Status */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-300 truncate max-w-lg flex items-center gap-2">
+                    {isBatchRunning && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#DC2626] shrink-0" />}
+                    <span>{batchProgress.currentTask || 'Đang xử lý quy trình batch...'}</span>
+                  </span>
+                  <span className="text-[#DC2626] font-bold text-sm shrink-0">
+                    {batchProgress.percentage}% ({batchProgress.current} / {batchProgress.total})
+                  </span>
+                </div>
+
+                <div className="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 h-full transition-all duration-200"
+                    style={{ width: `${batchProgress.percentage}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Live Metric Tiles Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+                <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center">
+                  <div className="text-[10px] text-zinc-400 uppercase font-sans">Tổng Số Câu</div>
+                  <div className="text-base font-bold text-white font-mono mt-0.5">{batchProgress.total}</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center">
+                  <div className="text-[10px] text-emerald-400 uppercase font-sans flex items-center justify-center gap-1">
+                    <Check className="w-3 h-3" /> Thành Công
+                  </div>
+                  <div className="text-base font-bold text-emerald-400 font-mono mt-0.5">{batchProgress.successCount}</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center">
+                  <div className="text-[10px] text-blue-400 uppercase font-sans flex items-center justify-center gap-1">
+                    <CloudUpload className="w-3 h-3" /> Đã Tải Cloud
+                  </div>
+                  <div className="text-base font-bold text-blue-400 font-mono mt-0.5">{batchProgress.cloudSyncedCount}</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center">
+                  <div className="text-[10px] text-rose-400 uppercase font-sans flex items-center justify-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> Bị Lỗi
+                  </div>
+                  <div className="text-base font-bold text-rose-400 font-mono mt-0.5">{batchProgress.failCount}</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-center col-span-2 sm:col-span-1">
+                  <div className="text-[10px] text-zinc-400 uppercase font-sans">Đã Có / Bỏ Qua</div>
+                  <div className="text-base font-bold text-zinc-300 font-mono mt-0.5">{batchProgress.skippedCount}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Failed Audio Queue / Selective Regeneration Panel */}
+          {failedChunks.length > 0 ? (
+            <div className="p-5 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-3.5 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-rose-200/80">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 rounded-xl bg-rose-100 text-rose-700">
+                    <AlertTriangle className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h3 className="font-display font-bold text-sm text-rose-950 flex items-center gap-2">
+                      <span>Phát Hiện {failedChunks.length} Audio Bị Lỗi Trong Hàng Đợi</span>
+                      <span className="px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 text-xs font-mono font-bold">
+                        {failedChunks.length} lỗi
+                      </span>
+                    </h3>
+                    <p className="text-xs text-rose-700">
+                      Các câu này gặp sự cố mạng, hạn mức API hoặc lỗi tải lên Cloud Storage. Bạn có thể thử lại ngay mà không cần tạo lại toàn bộ khóa học.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isBatchRunning}
+                    onClick={handleRetryAllFailedChunks}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>🔄 Thử Lại Toàn Bộ ({failedChunks.length} câu)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isBatchRunning}
+                    onClick={clearFailedQueue}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-rose-300 bg-white hover:bg-rose-100/50 text-rose-700 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Xóa Hàng Đợi Lỗi</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Failed Chunks List Table */}
+              <div className="overflow-x-auto max-h-64 overflow-y-auto rounded-xl border border-rose-200/80 bg-white">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-rose-100/60 text-rose-900 font-bold border-b border-rose-200 sticky top-0 z-10">
+                    <tr>
+                      <th className="py-2.5 px-3 w-16 text-center">Buổi</th>
+                      <th className="py-2.5 px-3 w-16 text-center">Câu #</th>
+                      <th className="py-2.5 px-3">Văn Bản (EN / VI)</th>
+                      <th className="py-2.5 px-3 w-32 text-center">Giai Đoạn Lỗi</th>
+                      <th className="py-2.5 px-3">Chi Tiết Lỗi</th>
+                      <th className="py-2.5 px-3 w-36 text-center">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-rose-100">
+                    {failedChunks.map((item, idx) => (
+                      <tr key={`${item.chunkId}-${item.lang}-${idx}`} className="hover:bg-rose-50/50">
+                        <td className="py-2.5 px-3 text-center font-mono font-bold text-zinc-700">
+                          Day {item.dayNumber || '?'}
+                        </td>
+                        <td className="py-2.5 px-3 text-center font-mono font-bold text-zinc-800">
+                          #{item.itemNumber}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="font-semibold text-zinc-900 truncate max-w-xs">{item.textEn}</div>
+                          {item.textVi && (
+                            <div className="text-[11px] text-zinc-500 truncate max-w-xs">{item.textVi}</div>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                            item.stage === 'cloud_upload'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : item.stage === 'firestore_save'
+                              ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                              : 'bg-amber-100 text-amber-800 border border-amber-200'
+                          }`}>
+                            {item.stage === 'cloud_upload' ? 'Lỗi Tải Cloud' : item.stage === 'firestore_save' ? 'Lỗi Lưu DB' : 'Lỗi Tạo TTS'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono text-[11px] text-rose-700 max-w-xs truncate" title={item.error}>
+                          {item.error}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              disabled={isBatchRunning}
+                              onClick={() => handleRetrySingleFailedChunk(item)}
+                              className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                              title="Thử lại câu này ngay"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>Thử Lại</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeFailedChunk(item.chunkId)}
+                              className="p-1 rounded-lg hover:bg-rose-200 text-rose-600 transition-all cursor-pointer"
+                              title="Xóa khỏi danh sách lỗi"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700">
+                  <CheckCircle2 className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="font-display font-bold text-sm text-emerald-950">
+                    Hàng Đợi Lỗi Trống — Toàn Bộ Audio Sẵn Sàng
+                  </h3>
+                  <p className="text-xs text-emerald-700 mt-0.5">
+                    Không có audio nào gặp lỗi tổng hợp hoặc sự cố mạng trong khóa {selectedCourseLevel}.
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-mono font-bold">
+                0 lỗi
+              </span>
+            </div>
+          )}
+
+          {/* Diagnostic Tools & System Status */}
+          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-zinc-100 text-zinc-700">
+                  <Sliders className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="font-display font-bold text-base text-zinc-900">
+                    Hệ Thống & Công Cụ Chẩn Đoán Âm Thanh
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Kiểm tra trạng thái bộ đệm, nguồn phát hiện tại và mở bảng phân tích chi tiết.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsDiagnosticOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <Activity className="w-4 h-4 animate-pulse" />
+                <span>Mở Bảng Chẩn Đoán Chuyên Sâu</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80">
+                <div className="text-[11px] font-mono font-bold uppercase text-zinc-500">Nguồn Phát Hiện Tại</div>
+                <div className="text-sm font-bold font-mono text-zinc-900 mt-1 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span>{activeSource}</span>
+                </div>
+                <div className="text-[11px] text-zinc-400 mt-1">GCS CDN / IndexedDB / Memory Cache</div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80">
+                <div className="text-[11px] font-mono font-bold uppercase text-zinc-500">Engine Tổng Hợp</div>
+                <div className="text-sm font-bold font-mono text-zinc-900 mt-1">
+                  {activeProvider === 'DEEPGRAM_AURA' ? 'Deepgram Aura (0ms)' : 'Google Cloud AI'}
+                </div>
+                <div className="text-[11px] text-zinc-400 mt-1">EN: {voiceProfileEn.split('-')[0]} • VI: {voiceProfileVi.split('-')[0]}</div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80">
+                <div className="text-[11px] font-mono font-bold uppercase text-zinc-500">Đồng Bộ Cloud Bucket</div>
+                <div className="text-sm font-bold font-mono text-zinc-900 mt-1">
+                  {totalGcsMaster} / {totalChunksInLevel} ({overallGcsPercent}%)
+                </div>
+                <div className="text-[11px] text-zinc-400 mt-1">
+                  {isAllLessonsGcsSynced ? '✓ Đã đồng bộ 100%' : 'Còn audio chưa sync'}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={isSyncingToCloud || isBatchRunning}
+                onClick={handleSyncCacheToCloud}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                <CloudUpload className="w-3.5 h-3.5" />
+                <span>Đồng Bộ Cache Lên Cloud Bucket</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => calculateReadinessStatus()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-bold transition-all cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Làm Mới Trạng Thái Đệm</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isBatchRunning || isResettingAudio}
+                onClick={() => handleResetAudioUrls()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 bg-white hover:bg-red-50 text-xs font-bold text-red-700 cursor-pointer shadow-2xs transition-all disabled:opacity-50"
+                title="Xóa link audio cũ của bài học để tạo lại từ đầu"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                <span>Xóa Link Audio Cũ ({selectedCourseLevel})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Live Activity Log Console */}
+          <div className="p-4 bg-zinc-950 text-zinc-200 rounded-2xl border border-zinc-800 font-mono text-[11px] space-y-3 shadow-lg">
+            <div className="text-zinc-400 font-bold border-b border-zinc-800 pb-2.5 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-300 font-bold">Bảng Nhật Ký Hoạt Động (Live Activity Console)</span>
+                {/* Filter Pills */}
+                <div className="flex items-center gap-1 ml-2">
+                  <button
+                    type="button"
+                    onClick={() => setLogFilter('all')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      logFilter === 'all' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    Tất cả ({batchLogs.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLogFilter('error')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      logFilter === 'error' ? 'bg-rose-900 text-rose-200' : 'text-rose-400 hover:text-rose-300'
+                    }`}
+                  >
+                    Lỗi ({batchLogs.filter(l => l.type === 'error' || l.type === 'warning').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLogFilter('cloud')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      logFilter === 'cloud' ? 'bg-blue-900 text-blue-200' : 'text-blue-400 hover:text-blue-300'
+                    }`}
+                  >
+                    Cloud Sync ({batchLogs.filter(l => l.type === 'cloud' || l.message.toLowerCase().includes('cloud') || l.message.toLowerCase().includes('gcs')).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLogFilter('success')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      logFilter === 'success' ? 'bg-emerald-900 text-emerald-200' : 'text-emerald-400 hover:text-emerald-300'
+                    }`}
+                  >
+                    Thành công ({batchLogs.filter(l => l.type === 'success').length})
+                  </button>
+                </div>
+              </div>
+              <button 
+                onClick={() => setBatchLogs([])} 
+                className="text-zinc-500 hover:text-zinc-300 text-[10px] cursor-pointer"
+              >
+                Xóa Log
+              </button>
+            </div>
+
+            <div className="max-h-64 overflow-y-auto space-y-1 pr-1 font-mono">
+              {batchLogs.length === 0 ? (
+                <div className="py-8 text-center text-zinc-600">
+                  Chưa có nhật ký hoạt động nào. Hãy thực hiện thao tác tạo audio để xem chi tiết log tại đây.
+                </div>
+              ) : (
+                batchLogs
+                  .filter(log => {
+                    if (logFilter === 'all') return true;
+                    if (logFilter === 'error') return log.type === 'error' || log.type === 'warning';
+                    if (logFilter === 'cloud') return log.type === 'cloud' || log.message.toLowerCase().includes('cloud') || log.message.toLowerCase().includes('gcs');
+                    if (logFilter === 'success') return log.type === 'success';
+                    return true;
+                  })
+                  .map(log => (
+                    <div key={log.id} className="flex items-start gap-2">
+                      <span className="text-zinc-600 shrink-0">[{log.timestamp}]</span>
+                      <span className={
+                        log.type === 'success' ? 'text-emerald-400' :
+                        log.type === 'cloud' ? 'text-cyan-400' :
+                        log.type === 'warning' ? 'text-amber-400' :
+                        log.type === 'error' ? 'text-rose-400' : 'text-zinc-300'
+                      }>
+                        {log.message}
+                      </span>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {/* ------------------------------------------------------------------ */}
       {/* 6. Audition & Inspector Drawer / Modal                             */}
       {/* ------------------------------------------------------------------ */}

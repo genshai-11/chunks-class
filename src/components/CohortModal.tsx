@@ -36,7 +36,7 @@ export const CohortModal: React.FC<CohortModalProps> = ({
   const [endTime, setEndTime] = useState('21:00');
 
   const availableCourses = useMemo<Course[]>(() => {
-    return curriculumRegistry.getAllCourses();
+    return curriculumRegistry.getAllCourses(false);
   }, []);
 
   const weekdaysList = [

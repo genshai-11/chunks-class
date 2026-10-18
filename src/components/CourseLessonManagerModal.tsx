@@ -76,9 +76,34 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
 
   if (!isOpen) return null;
 
-  // Toggle single row is_active
+  // Helper to re-sequence active rows in place
+  const resequenceRows = (targetRows: EditableLessonRow[]): EditableLessonRow[] => {
+    let currentDay = 1;
+    return targetRows.map(r => {
+      if (!r.is_active) {
+        return { ...r, day_number: 0 };
+      }
+      const assignedDay = currentDay++;
+      let newTitle = r.display_title;
+      if (/^Day\s*\d+\s*[-:]\s*/i.test(newTitle)) {
+        newTitle = newTitle.replace(/^Day\s*\d+\s*[-:]\s*/i, `Day ${assignedDay} - `);
+      } else if (/^Lesson\s*\d+/i.test(newTitle)) {
+        newTitle = `Day ${assignedDay} - ${newTitle}`;
+      }
+      return {
+        ...r,
+        day_number: assignedDay,
+        display_title: newTitle
+      };
+    });
+  };
+
+  // Toggle single row is_active with automatic sequence adjustment
   const handleToggleRow = (id: string) => {
-    setRows(prev => prev.map(r => r.id === id ? { ...r, is_active: !r.is_active } : r));
+    setRows(prev => {
+      const toggled = prev.map(r => r.id === id ? { ...r, is_active: !r.is_active } : r);
+      return resequenceRows(toggled);
+    });
   };
 
   // Change title of single row
@@ -91,14 +116,15 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
     const val = isNaN(newDay) ? 0 : Math.max(0, Math.min(99, Math.floor(newDay)));
     setRows(prev => prev.map(r => r.id === id ? { ...r, day_number: val } : r));
   };
-  // Preset 1: Enable all lessons
+
+  // Preset 1: Enable all lessons and resequence
   const handleEnableAll = () => {
-    setRows(prev => prev.map(r => ({ ...r, is_active: true })));
+    setRows(prev => resequenceRows(prev.map(r => ({ ...r, is_active: true }))));
   };
+
   // Preset 2: Disable Day 0 & Day 1 and auto re-index remaining active lessons starting from Day 1
   const handleDisableDay0And1 = () => {
     setRows(prev => {
-      // 1. Mark intro lessons as inactive
       const updated = prev.map(r => {
         const isIntro = r.original_day_number === 0 || r.original_day_number === 1 || 
           r.id.toLowerCase().includes('day_0') || 
@@ -107,58 +133,26 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
           r.original_lesson_title.toLowerCase().includes('orientation');
         return isIntro ? { ...r, is_active: false } : r;
       });
-
-      // 2. Re-index active lessons sequentially: Day 1, 2, 3...
-      let currentDay = 1;
-      return updated.map(r => {
-        if (!r.is_active) {
-          return { ...r, day_number: 0 };
-        }
-        const assignedDay = currentDay++;
-        let newTitle = r.display_title;
-        // Update any Day \d+ in title if present
-        if (/^Day\s*\d+\s*[-:]\s*/i.test(newTitle)) {
-          newTitle = newTitle.replace(/^Day\s*\d+\s*[-:]\s*/i, `Day ${assignedDay} - `);
-        }
-        return {
-          ...r,
-          day_number: assignedDay,
-          display_title: newTitle
-        };
-      });
+      return resequenceRows(updated);
     });
   };
 
   // Preset 2b: Auto Re-index Active Lessons (Day 1, 2, 3...)
   const handleAutoReindexActive = () => {
-    setRows(prev => {
-      let currentDay = 1;
-      return prev.map(r => {
-        if (!r.is_active) {
-          return { ...r, day_number: 0 };
-        }
-        const assignedDay = currentDay++;
-        let newTitle = r.display_title;
-        if (/^Day\s*\d+\s*[-:]\s*/i.test(newTitle)) {
-          newTitle = newTitle.replace(/^Day\s*\d+\s*[-:]\s*/i, `Day ${assignedDay} - `);
-        }
-        return {
-          ...r,
-          day_number: assignedDay,
-          display_title: newTitle
-        };
-      });
-    });
+    setRows(prev => resequenceRows(prev));
   };
 
   // Preset 3: Enable Day 0 & Day 1
   const handleEnableDay0And1 = () => {
-    setRows(prev => prev.map(r => {
-      const isIntro = r.day_number === 0 || r.day_number === 1 || 
-        r.id.toLowerCase().includes('day_0') || 
-        r.id.toLowerCase().includes('word_list');
-      return isIntro ? { ...r, is_active: true } : r;
-    }));
+    setRows(prev => {
+      const updated = prev.map(r => {
+        const isIntro = r.original_day_number === 0 || r.original_day_number === 1 || 
+          r.id.toLowerCase().includes('day_0') || 
+          r.id.toLowerCase().includes('word_list');
+        return isIntro ? { ...r, is_active: true } : r;
+      });
+      return resequenceRows(updated);
+    });
   };
 
   // Preset 4: Format Lesson X instead of Day X
