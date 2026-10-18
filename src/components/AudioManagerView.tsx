@@ -386,6 +386,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const [partCategoryFilter, setPartCategoryFilter] = useState<'ALL' | 'STANDARD' | 'FREE_TALK' | 'SPECIAL'>('ALL');
 
   const getPartCategory = useCallback((part: PartAnnouncementDef): 'STANDARD' | 'FREE_TALK' | 'SPECIAL' => {
+    if (part.categoryGroup === 'FREE_TALK') return 'FREE_TALK';
+    if (part.categoryGroup === 'SPECIAL') return 'SPECIAL';
+    if (part.categoryGroup === 'STANDARD') return 'STANDARD';
     const lower = part.titleEn.toLowerCase();
     if (lower.includes('lesson') && lower.includes('phrase check')) return 'FREE_TALK';
     if (
@@ -2430,9 +2433,24 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-purple-100 text-purple-800">
-                      Part {part.partNumber}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-purple-100 text-purple-800">
+                        Part {part.partNumber}
+                      </span>
+                      {part.lessonScope && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                          part.categoryGroup === 'FREE_TALK'
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : part.categoryGroup === 'SPECIAL'
+                            ? 'bg-rose-50 text-rose-800 border-rose-200'
+                            : part.categoryGroup === 'TOPIC'
+                            ? 'bg-blue-50 text-blue-800 border-blue-200'
+                            : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        }`}>
+                          {part.lessonScope}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5">
                       {isCached ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">

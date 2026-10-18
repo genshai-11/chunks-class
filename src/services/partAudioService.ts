@@ -10,6 +10,8 @@ export interface PartAnnouncementDef {
   titleEn: string;         // e.g. "Part 1: Vietnamese slangs"
   titleVi: string;         // e.g. "Phần 1: Tiếng lóng Việt Nam"
   speechText: string;      // e.g. "Part 1. Vietnamese slangs."
+  categoryGroup?: 'STANDARD' | 'FREE_TALK' | 'SPECIAL' | 'TOPIC';
+  lessonScope?: string;    // e.g. "Bài chuẩn (10 bài)", "Day 6 (Free Talk 1)", "Toàn khóa"
 }
 
 export interface PartOverride {
@@ -179,49 +181,63 @@ export const CANONICAL_PARTS: PartAnnouncementDef[] = [
     partNumber: 1,
     titleEn: 'Part 1 - Vietnamese Slangs',
     titleVi: 'Phần 1: Tiếng lóng Việt Nam',
-    speechText: 'Part 1. Vietnamese slangs.'
+    speechText: 'Part 1. Vietnamese slangs.',
+    categoryGroup: 'STANDARD',
+    lessonScope: 'Toàn khóa (Bài chuẩn)'
   },
   {
     key: 'part_vocab',
     partNumber: 2,
     titleEn: 'Part 2 - Vocab Check',
     titleVi: 'Phần 2: Từ vựng (Vocabulary)',
-    speechText: 'Part 2. Vocabulary.'
+    speechText: 'Part 2. Vocabulary.',
+    categoryGroup: 'STANDARD',
+    lessonScope: 'Toàn khóa (Bài chuẩn)'
   },
   {
     key: 'part_phrases',
     partNumber: 3,
     titleEn: 'Part 3 - Phrase Check',
     titleVi: 'Phần 3: Cụm từ (Phrases)',
-    speechText: 'Part 3. Phrases.'
+    speechText: 'Part 3. Phrases.',
+    categoryGroup: 'STANDARD',
+    lessonScope: 'Toàn khóa (Bài chuẩn)'
   },
   {
     key: 'part_sentences',
     partNumber: 4,
     titleEn: 'Part 4 - Sentence Check',
     titleVi: 'Phần 4: Câu & Cấu trúc (Sentences)',
-    speechText: 'Part 4. Sentences.'
+    speechText: 'Part 4. Sentences.',
+    categoryGroup: 'STANDARD',
+    lessonScope: 'Toàn khóa (Bài chuẩn)'
   },
   {
     key: 'part_monologue',
     partNumber: 5,
     titleEn: 'Part 5 - Monologue',
     titleVi: 'Phần 5: Độc thoại (Monologue)',
-    speechText: 'Part 5. Monologue.'
+    speechText: 'Part 5. Monologue.',
+    categoryGroup: 'STANDARD',
+    lessonScope: 'Toàn khóa (Bài chuẩn)'
   },
   {
     key: 'part_dialogue',
     partNumber: 6,
     titleEn: 'Part 6 - Dialogue',
     titleVi: 'Phần 6: Hội thoại (Dialogue)',
-    speechText: 'Part 6. Dialogue.'
+    speechText: 'Part 6. Dialogue.',
+    categoryGroup: 'STANDARD',
+    lessonScope: 'Toàn khóa (Bài chuẩn)'
   },
   {
     key: 'part_review',
     partNumber: 7,
     titleEn: 'Part 7 - 5s Review',
     titleVi: 'Phần 7: Ôn tập phản xạ (Review)',
-    speechText: 'Part 7. Review.'
+    speechText: 'Part 7. Review.',
+    categoryGroup: 'STANDARD',
+    lessonScope: 'Toàn khóa (Bài chuẩn)'
   }
 ];
 
@@ -419,46 +435,137 @@ export function getPartSpeechText(
  */
 export function getCoursePartsFromLessons(lessons: LessonDoc[], courseLevel?: string): PartAnnouncementDef[] {
   const seenParts = new Set<string>();
-  const partsList: PartAnnouncementDef[] = [];
+  const rawPartsList: {
+    partStr: string;
+    partNum?: number;
+    cleanTitle: string;
+    key: string;
+    lessonTitles: Set<string>;
+    firstOccurrenceIndex: number;
+  }[] = [];
   const overrides = getPartOverrides(courseLevel);
 
   if (lessons && lessons.length > 0) {
+    let occurrenceCounter = 0;
     for (const lesson of lessons) {
+      const lessonTitle = lesson.lesson_title || `Day ${lesson.day_number ?? 0}`;
       const chunks = lesson.chunks || [];
       for (const chunk of chunks) {
         const partStr = chunk.part?.trim();
-        if (partStr && !seenParts.has(partStr)) {
-          seenParts.add(partStr);
+        if (!partStr) continue;
 
+        if (!seenParts.has(partStr)) {
+          seenParts.add(partStr);
           const match = partStr.match(/Part\s*(\d+)/i);
           const partNum = match ? parseInt(match[1], 10) : undefined;
           const cleanTitle = partStr.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
           const key = `part_${partStr.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
           
-          const override = findPartOverride(overrides, key, partNum) || findPartOverride(overrides, partStr, partNum);
-
-          const titleEn = override?.titleEn?.trim() || partStr;
-          const speechText = override?.speechText?.trim() || getPartSpeechText(partStr, partNum, courseLevel || lesson.level_code);
-          const titleVi = override?.titleVi?.trim() || (partNum ? `Phần ${partNum}: ${getVietnameseTitleForPart(cleanTitle || partStr)}` : getVietnameseTitleForPart(cleanTitle || partStr));
-
-          partsList.push({
+          rawPartsList.push({
+            partStr,
+            partNum,
+            cleanTitle,
             key,
-            partNumber: partNum,
-            titleEn,
-            titleVi,
-            speechText
+            lessonTitles: new Set([lessonTitle]),
+            firstOccurrenceIndex: occurrenceCounter++
           });
+        } else {
+          const existing = rawPartsList.find(p => p.partStr === partStr);
+          if (existing) {
+            existing.lessonTitles.add(lessonTitle);
+          }
         }
       }
     }
   }
 
-  // If course has explicit parts extracted, sort them naturally by partNumber or order of occurrence
-  if (partsList.length > 0) {
+  if (rawPartsList.length > 0) {
+    const totalLessons = lessons?.length || 0;
+
+    const partsList: PartAnnouncementDef[] = rawPartsList.map((item) => {
+      const override = findPartOverride(overrides, item.key, item.partNum) || findPartOverride(overrides, item.partStr, item.partNum);
+
+      const titleEn = override?.titleEn?.trim() || item.partStr;
+      const speechText = override?.speechText?.trim() || getPartSpeechText(item.partStr, item.partNum, courseLevel);
+      const titleVi = override?.titleVi?.trim() || (item.partNum ? `Phần ${item.partNum}: ${getVietnameseTitleForPart(item.cleanTitle || item.partStr)}` : getVietnameseTitleForPart(item.cleanTitle || item.partStr));
+
+      // Determine categoryGroup and lessonScope
+      const lower = item.partStr.toLowerCase();
+      let categoryGroup: 'STANDARD' | 'FREE_TALK' | 'SPECIAL' | 'TOPIC' = 'STANDARD';
+      let lessonScope = 'Toàn khóa';
+
+      if (lower.includes('orientation')) {
+        categoryGroup = 'SPECIAL';
+        lessonScope = 'Day 1 (Orientation)';
+      } else if (lower.includes('linguistic problems') || lower.includes('4 linguistic problems')) {
+        categoryGroup = 'SPECIAL';
+        lessonScope = 'Day 8 (Grammar)';
+      } else if (lower.includes('final test')) {
+        categoryGroup = 'SPECIAL';
+        lessonScope = 'Day 15 (Final Test)';
+      } else if (lower.includes('lesson') && lower.includes('phrase check')) {
+        categoryGroup = 'FREE_TALK';
+        const match = lower.match(/lesson\s*(\d+)/i);
+        const num = match ? parseInt(match[1], 10) : 0;
+        if (num >= 1 && num <= 4) {
+          lessonScope = 'Day 6 (Free Talk 1)';
+        } else if (num >= 5 && num <= 8) {
+          lessonScope = 'Day 12 (Free Talk 2)';
+        } else {
+          lessonScope = 'Free Talk Review';
+        }
+      } else if (item.partNum && item.partNum >= 8) {
+        categoryGroup = 'TOPIC';
+        lessonScope = 'Topic 2 (Nửa sau)';
+      } else {
+        const count = item.lessonTitles.size;
+        if (count >= 5 && totalLessons > 0) {
+          lessonScope = `Bài chuẩn (${count} bài)`;
+        } else if (count > 1) {
+          lessonScope = `${count} bài học`;
+        } else if (count === 1) {
+          const singleTitle = Array.from(item.lessonTitles)[0];
+          const dayMatch = singleTitle.match(/^Day\s*\d+/i);
+          lessonScope = dayMatch ? dayMatch[0] : singleTitle;
+        } else {
+          lessonScope = 'Toàn khóa';
+        }
+      }
+
+      return {
+        key: item.key,
+        partNumber: item.partNum,
+        titleEn,
+        titleVi,
+        speechText,
+        categoryGroup,
+        lessonScope
+      };
+    });
+
+    // Sort by category group first, then part number
+    const groupWeight: Record<'STANDARD' | 'TOPIC' | 'FREE_TALK' | 'SPECIAL', number> = {
+      'STANDARD': 1,
+      'TOPIC': 2,
+      'FREE_TALK': 3,
+      'SPECIAL': 4
+    };
+
     return partsList.sort((a, b) => {
-      if (a.partNumber && b.partNumber) return a.partNumber - b.partNumber;
-      if (a.partNumber) return -1;
-      if (b.partNumber) return 1;
+      const weightA = groupWeight[a.categoryGroup || 'STANDARD'] ?? 99;
+      const weightB = groupWeight[b.categoryGroup || 'STANDARD'] ?? 99;
+      if (weightA !== weightB) {
+        return weightA - weightB;
+      }
+      if (a.partNumber && b.partNumber) {
+        if (a.partNumber !== b.partNumber) {
+          return a.partNumber - b.partNumber;
+        }
+      } else if (a.partNumber) {
+        return -1;
+      } else if (b.partNumber) {
+        return 1;
+      }
       return a.titleEn.localeCompare(b.titleEn);
     });
   }
@@ -470,7 +577,9 @@ export function getCoursePartsFromLessons(lessons: LessonDoc[], courseLevel?: st
       ...p,
       titleEn: override?.titleEn?.trim() || p.titleEn,
       titleVi: override?.titleVi?.trim() || p.titleVi,
-      speechText: override?.speechText?.trim() || p.speechText
+      speechText: override?.speechText?.trim() || p.speechText,
+      categoryGroup: p.categoryGroup || 'STANDARD',
+      lessonScope: p.lessonScope || 'Toàn khóa'
     };
   });
 }

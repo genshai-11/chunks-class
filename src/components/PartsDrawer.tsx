@@ -1,8 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ChunkItem, LessonPart } from '../types';
-import { Layers, X, Hash, Volume2, VolumeX, BookOpen, CheckCircle2 } from 'lucide-react';
-import { getPartOverrides, findPartOverride } from '../services/partAudioService';
-
+import { Layers, X, Hash, Volume2, VolumeX, BookOpen, CheckCircle2, Play, RotateCw, Loader2 } from 'lucide-react';
+import { getPartOverrides, findPartOverride, getPartSpeechText, isPartAudioCached, playPartIntro, regeneratePartAudio } from '../services/partAudioService';
 /**
  * Smart Topic & Part Extractor
  * Identifies 2-topic structures (e.g. EREL 14 parts -> Topic 1 [Parts 1-7] & Topic 2 [Parts 8-14])
@@ -151,6 +150,8 @@ interface PartsDrawerProps {
   isGrammarActive?: boolean;
   hasGrammar?: boolean;
   lessonTitle?: string;
+  selectedVoice?: string;
+  courseLevel?: string;
 }
 
 export const PartsDrawer: React.FC<PartsDrawerProps> = ({
@@ -162,10 +163,14 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
   onSelectGrammar,
   isGrammarActive = false,
   hasGrammar = true,
-  lessonTitle
+  lessonTitle,
+  selectedVoice,
+  courseLevel
 }) => {
   const [selectedTopicFilter, setSelectedTopicFilter] = useState<'ALL' | 1 | 2>('ALL');
-
+  const [partAudioCacheStatus, setPartAudioCacheStatus] = useState<Record<number, boolean>>({});
+  const [auditioningPartIndex, setAuditioningPartIndex] = useState<number | null>(null);
+  const [regeneratingPartIndex, setRegeneratingPartIndex] = useState<number | null>(null);
   const topic1Parts = useMemo(() => parts.filter(p => p.topic_number === 1), [parts]);
   const topic2Parts = useMemo(() => parts.filter(p => p.topic_number === 2), [parts]);
   const hasTwoTopics = topic1Parts.length > 0 && topic2Parts.length > 0;
@@ -177,9 +182,65 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
     if (!hasTwoTopics || selectedTopicFilter === 'ALL') return parts;
     return parts.filter(p => p.topic_number === selectedTopicFilter);
   }, [parts, hasTwoTopics, selectedTopicFilter]);
+  // Check cache status for parts on mount or voice change
+  const checkPartsCache = useCallback(async () => {
+    const status: Record<number, boolean> = {};
+    for (const part of parts) {
+      status[part.part_index] = await isPartAudioCached(
+        part.title,
+        selectedVoice,
+        part.part_in_topic || part.part_index,
+        courseLevel
+      );
+    }
+    setPartAudioCacheStatus(status);
+  }, [parts, selectedVoice, courseLevel]);
+
+  useEffect(() => {
+    if (isOpen) {
+      checkPartsCache();
+    }
+  }, [isOpen, checkPartsCache]);
+
+  const handleAudition = async (e: React.MouseEvent, part: LessonPart) => {
+    e.stopPropagation();
+    if (auditioningPartIndex !== null || regeneratingPartIndex !== null) return;
+    setAuditioningPartIndex(part.part_index);
+    try {
+      await playPartIntro(
+        part.title,
+        part.part_in_topic || part.part_index,
+        selectedVoice,
+        courseLevel
+      );
+      setPartAudioCacheStatus(prev => ({ ...prev, [part.part_index]: true }));
+    } catch (err) {
+      console.warn('[PartsDrawer] Failed to play part intro:', err);
+    } finally {
+      setAuditioningPartIndex(null);
+    }
+  };
+
+  const handleRegenerate = async (e: React.MouseEvent, part: LessonPart) => {
+    e.stopPropagation();
+    if (auditioningPartIndex !== null || regeneratingPartIndex !== null) return;
+    setRegeneratingPartIndex(part.part_index);
+    try {
+      await regeneratePartAudio(
+        part.title,
+        part.part_in_topic || part.part_index,
+        selectedVoice,
+        courseLevel
+      );
+      setPartAudioCacheStatus(prev => ({ ...prev, [part.part_index]: true }));
+    } catch (err) {
+      console.warn('[PartsDrawer] Failed to regenerate part audio:', err);
+    } finally {
+      setRegeneratingPartIndex(null);
+    }
+  };
 
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-y-0 right-0 w-88 sm:w-96 bg-white border-l border-[#E8E8EC] shadow-2xl z-50 flex flex-col font-sans animate-in slide-in-from-right duration-200">
       {/* Header */}
@@ -354,7 +415,78 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
                 )}
               </div>
 
-              <div className="text-[11px] font-mono text-[#6B6B6B] mt-1.5 flex items-center justify-between">
+              {/* Part Intro TTS Speech & Action Controls */}
+              {(() => {
+                const speechText = getPartSpeechText(
+                  part.title,
+                  part.part_in_topic || part.part_index,
+                  courseLevel
+                );
+                const isCached = partAudioCacheStatus[part.part_index] ?? false;
+                const isAuditioning = auditioningPartIndex === part.part_index;
+                const isRegenerating = regeneratingPartIndex === part.part_index;
+
+                return (
+                  <div className="mt-2.5 pt-2 border-t border-zinc-100 flex flex-col gap-2">
+                    <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-200/80 text-[10px] font-mono text-zinc-700 flex items-start gap-1">
+                      <span className="text-zinc-400 shrink-0 font-sans">TTS:</span>
+                      <span className="font-semibold text-zinc-900 break-words line-clamp-2">"{speechText}"</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                      {/* Audio status badge */}
+                      {isCached ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                          <span>Ready / Cached</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200">
+                          <span>Live TTS</span>
+                        </span>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => handleAudition(e, part)}
+                          disabled={isAuditioning || isRegenerating}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-white text-[10px] font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                          title="Nghe Part Intro"
+                        >
+                          {isAuditioning ? (
+                            <>
+                              <Loader2 className="w-2.5 h-2.5 animate-spin text-amber-400" />
+                              <span>Đọc...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-2.5 h-2.5 text-emerald-400 fill-current" />
+                              <span>Nghe Intro</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleRegenerate(e, part)}
+                          disabled={isAuditioning || isRegenerating}
+                          className="inline-flex items-center gap-1 px-1.5 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-bold transition-all cursor-pointer border border-zinc-300 disabled:opacity-50"
+                          title="Tạo lại âm thanh Part Intro"
+                        >
+                          {isRegenerating ? (
+                            <Loader2 className="w-2.5 h-2.5 animate-spin text-purple-600" />
+                          ) : (
+                            <RotateCw className="w-2.5 h-2.5 text-zinc-600" />
+                          )}
+                          <span>Tạo lại</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="text-[11px] font-mono text-[#6B6B6B] mt-2 flex items-center justify-between">
                 <span className="flex items-center gap-1">
                   <Hash className="w-3 h-3 text-zinc-400" />
                   Chunks #{part.start_index + 1} – #{part.end_index + 1}

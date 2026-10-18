@@ -2402,6 +2402,8 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
         isGrammarActive={isGrammarSlide}
         hasGrammar={Boolean(currentGrammar)}
         lessonTitle={activeLesson?.lesson_title}
+        selectedVoice={selectedVoice}
+        courseLevel={effectiveLevel}
         onSelectGrammar={() => {
           setIsAwaitingFirstChunkPlay(false);
           setIsTopicCompleteGate(false);
