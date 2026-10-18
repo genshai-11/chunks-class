@@ -35,7 +35,8 @@ import {
   ArrowUpDown, 
   FileSpreadsheet,
   SlidersHorizontal,
-  EyeOff
+  EyeOff,
+  X
 } from 'lucide-react';
 
 interface CurriculumExplorerProps {
@@ -103,6 +104,14 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   const [playingChunkId, setPlayingChunkId] = useState<string | null>(null);
   const [showAuxiliaryCourses, setShowAuxiliaryCourses] = useState<boolean>(false);
   const [availableCourses, setAvailableCourses] = useState<Course[]>(() => curriculumRegistry.getAllCourses(true));
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4500);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -1210,8 +1219,25 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
           // In-memory registry and local caches were already updated by batchUpdateLessons
           // Reload with fresh cache refresh
           loadCurriculumData();
+          showToast('✅ Đã lưu cấu hình bài học lên Cloud Firestore và tự động đồng bộ Lịch dạy (Cohorts)!');
         }}
       />
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border border-emerald-700 bg-emerald-900 text-white text-xs font-bold">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{toastMessage}</span>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="ml-2 text-zinc-300 hover:text-white cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -198,7 +198,7 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
         return (
           <span
             key={index}
-            className="font-extrabold text-[#DC2626] dark:text-rose-400 bg-rose-50 dark:bg-rose-950/70 px-1.5 py-0.5 rounded border border-rose-300 dark:border-rose-800 shadow-2xs underline decoration-2 decoration-[#DC2626]/70 mx-0.5 inline-block"
+            className="font-bold underline decoration-2 underline-offset-2 break-words leading-snug"
           >
             {content}
           </span>
@@ -494,7 +494,7 @@ export const GrammarSlideView: React.FC<GrammarSlideViewProps> = ({
                           }`}
                         >
                           <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                          <span className="break-words">{renderHighlightedText(vf)}</span>
+                          <span className="break-words leading-snug">{renderHighlightedText(vf)}</span>
                         </span>
                       );
                     })

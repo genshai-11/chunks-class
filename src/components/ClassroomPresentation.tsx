@@ -76,6 +76,12 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   onUpdateAudioSettings
 }) => {
   const [currentLessonId, setCurrentLessonId] = useState<string>(() => {
+    const candidate = providedLesson?.id ? providedLesson : curriculumRegistry.getLessonById(initialLessonId);
+    if (candidate && candidate.is_active === false) {
+      const firstActive = curriculumRegistry.getLessons(courseLevel).find(l => l.is_active !== false) ||
+        curriculumRegistry.getAllLessons().find(l => l.is_active !== false);
+      if (firstActive) return firstActive.id;
+    }
     if (providedLesson?.id) return providedLesson.id;
     return initialLessonId || 'level_b_day_1';
   });
@@ -255,13 +261,42 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
   // Synchronize when initialLessonId changes
   useEffect(() => {
     if (initialLessonId && initialLessonId !== currentLessonId) {
+      const candidate = curriculumRegistry.getLessonById(initialLessonId);
+      if (candidate && candidate.is_active === false) {
+        const firstActive = curriculumRegistry.getLessons(courseLevel).find(l => l.is_active !== false) ||
+          curriculumRegistry.getAllLessons().find(l => l.is_active !== false);
+        if (firstActive && firstActive.id !== currentLessonId) {
+          handleSwitchLesson(firstActive.id);
+          return;
+        }
+      }
       handleSwitchLesson(initialLessonId);
     }
-  }, [initialLessonId, currentLessonId, handleSwitchLesson]);
+  }, [initialLessonId, currentLessonId, handleSwitchLesson, courseLevel]);
+
+  // Synchronize when currentLessonId points to an inactive lesson
+  useEffect(() => {
+    const candidate = fetchedLessonDoc || curriculumRegistry.getLessonById(currentLessonId);
+    if (candidate && candidate.is_active === false) {
+      const firstActive = curriculumRegistry.getLessons(courseLevel).find(l => l.is_active !== false) ||
+        curriculumRegistry.getAllLessons().find(l => l.is_active !== false);
+      if (firstActive && firstActive.id !== currentLessonId) {
+        handleSwitchLesson(firstActive.id);
+      }
+    }
+  }, [currentLessonId, courseLevel, fetchedLessonDoc, handleSwitchLesson]);
 
   // Synchronize when providedLesson changes
   useEffect(() => {
     if (providedLesson) {
+      if (providedLesson.is_active === false) {
+        const firstActive = curriculumRegistry.getLessons(courseLevel).find(l => l.is_active !== false) ||
+          curriculumRegistry.getAllLessons().find(l => l.is_active !== false);
+        if (firstActive) {
+          handleSwitchLesson(firstActive.id);
+          return;
+        }
+      }
       setIsTopicCompleteGate(false);
       setIsLessonCompleteGate(false);
       setIsGrammarSlide(true);
@@ -269,8 +304,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       setCurrentLessonId(providedLesson.id);
       setCurrentChunkIndex(0);
     }
-  }, [providedLesson]);
-
+  }, [providedLesson, courseLevel, handleSwitchLesson]);
   // Sync when audioSettings prop updates externally
   useEffect(() => {
     if (audioSettings) {
@@ -442,10 +476,18 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     return () => { isMounted = false; };
   }, [currentLessonId, providedLesson]);
 
-  const activeLesson: LessonDoc = fetchedLessonDoc || 
+  const rawActiveLesson: LessonDoc = fetchedLessonDoc || 
     curriculumRegistry.getLessonById(currentLessonId) || 
     curriculumRegistry.getAllLessons()[0];
 
+  const activeLesson: LessonDoc = useMemo(() => {
+    if (rawActiveLesson && rawActiveLesson.is_active === false) {
+      const firstActive = curriculumRegistry.getLessons(courseLevel).find(l => l.is_active !== false) ||
+        curriculumRegistry.getAllLessons().find(l => l.is_active !== false);
+      if (firstActive) return firstActive;
+    }
+    return rawActiveLesson;
+  }, [rawActiveLesson, courseLevel]);
   const currentGrammar: LessonGrammar | null = useMemo(() => {
     if (activeLesson?.grammar) return activeLesson.grammar;
     if (activeLesson?.id) {

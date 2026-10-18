@@ -13,6 +13,7 @@ import { ImprovPresentation } from './components/ImprovPresentation';
 import { LessonExcelUploader } from './components/LessonExcelUploader';
 import { GrammarReviewPortal } from './components/GrammarReviewPortal';
 import { getFirestoreCohorts, saveFirestoreCohort, deleteFirestoreCohort, DEFAULT_COURSES } from './services/firestoreService';
+import { curriculumRegistry } from './services/curriculumRegistry';
 import { useAppRouter } from './hooks/useAppRouter';
 import { IMPROV_SET_01 } from './data/improvSet01And02';
 
@@ -66,6 +67,33 @@ function getStoredVisibleCourseIds(): string[] {
   return [];
 }
 
+function getFirstActiveLessonId(cohort?: Cohort): { lessonId: string; sessionNumber: number } {
+  if (cohort) {
+    if (cohort.sessions && cohort.sessions.length > 0) {
+      const activeSession = cohort.sessions.find(s => {
+        const lesson = curriculumRegistry.getLessonById(s.lesson_id);
+        return !lesson || lesson.is_active !== false;
+      });
+      if (activeSession) {
+        return { lessonId: activeSession.lesson_id, sessionNumber: activeSession.session_number };
+      }
+    }
+
+    if (cohort.level_code) {
+      const activeLesson = curriculumRegistry.getLessons(cohort.level_code).find(l => l.is_active !== false);
+      if (activeLesson) {
+        return { lessonId: activeLesson.id, sessionNumber: activeLesson.day_number || 1 };
+      }
+    }
+
+    if (cohort.sessions?.[0]) {
+      return { lessonId: cohort.sessions[0].lesson_id, sessionNumber: cohort.sessions[0].session_number };
+    }
+  }
+
+  const defaultLesson = curriculumRegistry.getAllLessons().find(l => l.is_active !== false);
+  return { lessonId: defaultLesson?.id || 'level_b_day_1', sessionNumber: 1 };
+}
 export const App: React.FC = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -77,7 +105,10 @@ export const App: React.FC = () => {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [activeCohortId, setActiveCohortId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [drillLessonId, setDrillLessonId] = useState<string>('level_b_day_1');
+  const [drillLessonId, setDrillLessonId] = useState<string>(() => {
+    const firstActive = curriculumRegistry.getAllLessons().find(l => l.is_active !== false);
+    return firstActive?.id || 'level_b_day_1';
+  });
   const [drillSessionNumber, setDrillSessionNumber] = useState<number>(1);
   const [improvPackageId, setImprovPackageId] = useState<string>(IMPROV_SET_01.id);
   const [improvSessionNumber, setImprovSessionNumber] = useState<number>(1);
@@ -104,10 +135,9 @@ export const App: React.FC = () => {
             || cohortsToSearch.find(c => c.level_code === 'LEVEL_B_ERE') 
             || cohortsToSearch[0];
           setActiveCohortId(defaultActive.id);
-          if (defaultActive.sessions?.[0]) {
-            setDrillLessonId(defaultActive.sessions[0].lesson_id);
-            setDrillSessionNumber(defaultActive.sessions[0].session_number);
-          }
+          const { lessonId, sessionNumber } = getFirstActiveLessonId(defaultActive);
+          setDrillLessonId(lessonId);
+          setDrillSessionNumber(sessionNumber);
         } else {
           const defaultB = createDefaultCohort("Level B - ERE Spoken Reflexes K30", "LEVEL_B");
           const defaultA = createDefaultCohort("Level A - Foundation Chunks K12", "LEVEL_A");
@@ -118,10 +148,9 @@ export const App: React.FC = () => {
           const visibleDefaults = allDefaults.filter(isCourseVisible);
           const chosenDefault = visibleDefaults.length > 0 ? visibleDefaults[0] : defaultB;
           setActiveCohortId(chosenDefault.id);
-          if (chosenDefault.sessions?.[0]) {
-            setDrillLessonId(chosenDefault.sessions[0].lesson_id);
-            setDrillSessionNumber(chosenDefault.sessions[0].session_number);
-          }
+          const { lessonId, sessionNumber } = getFirstActiveLessonId(chosenDefault);
+          setDrillLessonId(lessonId);
+          setDrillSessionNumber(sessionNumber);
           await saveFirestoreCohort(defaultB);
           await saveFirestoreCohort(defaultA);
           await saveFirestoreCohort(defaultErel);
@@ -143,10 +172,9 @@ export const App: React.FC = () => {
         const visibleDefaults = allDefaults.filter(isCourseVisible);
         const chosenDefault = visibleDefaults.length > 0 ? visibleDefaults[0] : defaultB;
         setActiveCohortId(chosenDefault.id);
-        if (chosenDefault.sessions?.[0]) {
-          setDrillLessonId(chosenDefault.sessions[0].lesson_id);
-          setDrillSessionNumber(chosenDefault.sessions[0].session_number);
-        }
+        const { lessonId, sessionNumber } = getFirstActiveLessonId(chosenDefault);
+        setDrillLessonId(lessonId);
+        setDrillSessionNumber(sessionNumber);
       } finally {
         setIsLoading(false);
       }
@@ -185,11 +213,9 @@ export const App: React.FC = () => {
       const nextActive = updated[0];
       if (nextActive) {
         setActiveCohortId(nextActive.id);
-        const firstSession = nextActive.sessions?.[0];
-        if (firstSession) {
-          setDrillLessonId(firstSession.lesson_id);
-          setDrillSessionNumber(firstSession.session_number);
-        }
+        const { lessonId, sessionNumber } = getFirstActiveLessonId(nextActive);
+        setDrillLessonId(lessonId);
+        setDrillSessionNumber(sessionNumber);
       }
     }
   };
@@ -202,10 +228,9 @@ export const App: React.FC = () => {
       const defaultEres = createDefaultCohort("Level B - ERES Speaking Masterclass K24", "LEVEL_B_ERES");
       setCohorts([defaultB, defaultA, defaultErel, defaultEres]);
       setActiveCohortId(defaultB.id);
-      if (defaultB.sessions?.[0]) {
-        setDrillLessonId(defaultB.sessions[0].lesson_id);
-        setDrillSessionNumber(defaultB.sessions[0].session_number);
-      }
+      const { lessonId, sessionNumber } = getFirstActiveLessonId(defaultB);
+      setDrillLessonId(lessonId);
+      setDrillSessionNumber(sessionNumber);
       await saveFirestoreCohort(defaultB);
       await saveFirestoreCohort(defaultA);
       await saveFirestoreCohort(defaultErel);
@@ -233,11 +258,9 @@ export const App: React.FC = () => {
     const matchingCohort = matchingCohorts.find(c => c.is_active !== false) || matchingCohorts[0];
     if (matchingCohort) {
       setActiveCohortId(matchingCohort.id);
-      const firstSession = matchingCohort.sessions?.[0];
-      if (firstSession) {
-        setDrillLessonId(firstSession.lesson_id);
-        setDrillSessionNumber(firstSession.session_number);
-      }
+      const { lessonId, sessionNumber } = getFirstActiveLessonId(matchingCohort);
+      setDrillLessonId(lessonId);
+      setDrillSessionNumber(sessionNumber);
     } else {
       const course = DEFAULT_COURSES.find(c => c.id === courseId);
       const level = (course?.level_code || (courseId === 'course_level_b' ? 'LEVEL_B' : 'LEVEL_B_ERES')) as any;
@@ -268,11 +291,9 @@ export const App: React.FC = () => {
             const nextCohort = visibleCohorts.find(c => c.is_active !== false) || visibleCohorts[0];
             if (nextCohort) {
               setActiveCohortId(nextCohort.id);
-              const firstSession = nextCohort.sessions?.[0];
-              if (firstSession) {
-                setDrillLessonId(firstSession.lesson_id);
-                setDrillSessionNumber(firstSession.session_number);
-              }
+              const { lessonId, sessionNumber } = getFirstActiveLessonId(nextCohort);
+              setDrillLessonId(lessonId);
+              setDrillSessionNumber(sessionNumber);
             } else if (visibleIds[0]) {
               handleSelectCourse(visibleIds[0]);
             }
@@ -362,11 +383,9 @@ export const App: React.FC = () => {
       onSelectCourse={handleSelectCourse}
       onSelectCohort={(c) => {
         setActiveCohortId(c.id);
-        const firstSession = c.sessions?.[0];
-        if (firstSession) {
-          setDrillLessonId(firstSession.lesson_id);
-          setDrillSessionNumber(firstSession.session_number);
-        }
+        const { lessonId, sessionNumber } = getFirstActiveLessonId(c);
+        setDrillLessonId(lessonId);
+        setDrillSessionNumber(sessionNumber);
       }}
       onCreateCohort={handleCreateCohort}
       onOpenExcelUpload={() => setIsExcelModalOpen(true)}

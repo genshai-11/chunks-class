@@ -12,7 +12,7 @@ import {
   where,
   getCountFromServer 
 } from 'firebase/firestore';
-import { Course, Cohort, LessonDoc, ChunkItem, CourseLevel, LessonGrammar } from '../types';
+import { Course, Cohort, ClassSession, LessonDoc, ChunkItem, CourseLevel, LessonGrammar } from '../types';
 import { curriculumRegistry } from './curriculumRegistry';
 import { CURRICULUM_CATALOG_LEVEL_B_ERE } from '../data/levelBEreData';
 
@@ -745,6 +745,17 @@ export async function batchUpdateLessons(
       });
       await Promise.race([commitPromise, timeoutPromise]);
     }
+
+    // 3. Automatically synchronize course cohorts with active lessons
+    const firstLevel = updatedLessons[0]?.level_code || updatedLessons[0]?.course_id;
+    if (firstLevel) {
+      try {
+        await syncCourseCohortsWithActiveLessons(firstLevel, updatedLessons);
+      } catch (cohortSyncErr) {
+        console.warn('[Firestore] syncCourseCohortsWithActiveLessons auto-sync notice in batchUpdateLessons:', cohortSyncErr);
+      }
+    }
+
     return { success: true, count: updatedLessons.length };
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -831,6 +842,154 @@ export async function saveCohort(cohort: Cohort): Promise<void> {
     else cohorts.unshift(cohort);
     localStorage.setItem('chunks_firestore_synced_cohorts', JSON.stringify(cohorts));
   } catch {}
+}
+
+/**
+ * Automatically realigns cohort sessions when lesson configurations change (is_active, display_title, day_number).
+ * Re-aligns each cohort's sessions to match active lessons, updates total_sessions, and persists to Firestore & localStorage.
+ */
+export async function syncCourseCohortsWithActiveLessons(
+  courseLevelOrId: string,
+  lessons: LessonDoc[]
+): Promise<{ updatedCount: number; cohortIds: string[] }> {
+  if (!courseLevelOrId || !lessons || lessons.length === 0) {
+    return { updatedCount: 0, cohortIds: [] };
+  }
+
+  // Filter active lessons sorted by day_number ascending
+  const activeLessons = lessons
+    .filter(l => l.is_active !== false)
+    .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+
+  if (activeLessons.length === 0) {
+    return { updatedCount: 0, cohortIds: [] };
+  }
+
+  const matchesCourse = (c: Cohort, identifier: string): boolean => {
+    if (!identifier) return false;
+    const target = identifier.toLowerCase();
+    const cLevel = (c.level_code || '').toLowerCase();
+    const cCourse = (c.course_id || '').toLowerCase();
+
+    if (cLevel === target || cCourse === target) return true;
+
+    // Level A aliases:
+    const isTargetLevelA = target === 'level_a' || target === 'course_level_a';
+    const isCohortLevelA = cLevel === 'level_a' || cCourse === 'course_level_a' || cLevel === 'course_level_a';
+    if (isTargetLevelA && isCohortLevelA) return true;
+
+    // Level B / ERE aliases:
+    const isTargetLevelB = target === 'level_b' || target === 'course_level_b' || target === 'level_b_ere' || target === 'course_level_b_ere';
+    const isCohortLevelB = cLevel === 'level_b' || cCourse === 'course_level_b' || cLevel === 'level_b_ere' || cCourse === 'course_level_b_ere' || cLevel === 'course_level_b';
+    if (isTargetLevelB && isCohortLevelB) return true;
+
+    // EREL aliases:
+    const isTargetErel = target === 'level_b_erel' || target === 'course_level_b_erel';
+    const isCohortErel = cLevel === 'level_b_erel' || cCourse === 'course_level_b_erel';
+    if (isTargetErel && isCohortErel) return true;
+
+    // ERES aliases:
+    const isTargetEres = target === 'level_b_eres' || target === 'course_level_b_eres';
+    const isCohortEres = cLevel === 'level_b_eres' || cCourse === 'course_level_b_eres';
+    if (isTargetEres && isCohortEres) return true;
+
+    return false;
+  };
+
+  // 1. Fetch all cohorts from Firestore
+  let allCohorts: Cohort[] = [];
+  try {
+    const cohortsRef = collection(db, 'cohorts');
+    const snapshot = await getDocs(cohortsRef);
+    if (!snapshot.empty) {
+      allCohorts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Cohort));
+    }
+  } catch (err) {
+    console.warn('[Firestore] syncCourseCohortsWithActiveLessons fetch error:', err);
+  }
+
+  // Fallback / merge with localStorage cohorts if any exist
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('chunks_firestore_synced_cohorts');
+      if (saved) {
+        const localList: Cohort[] = JSON.parse(saved);
+        for (const lc of localList) {
+          if (!allCohorts.some(c => c.id === lc.id)) {
+            allCohorts.push(lc);
+          }
+        }
+      }
+    } catch {}
+  }
+
+  const matchingCohorts = allCohorts.filter(c => matchesCourse(c, courseLevelOrId));
+  if (matchingCohorts.length === 0) {
+    return { updatedCount: 0, cohortIds: [] };
+  }
+
+  const updatedCohortIds: string[] = [];
+  const now = new Date().toISOString();
+
+  // 2. Re-align each cohort's sessions
+  for (const cohort of matchingCohorts) {
+    if (!cohort.sessions || cohort.sessions.length === 0) continue;
+
+    const targetCount = Math.min(cohort.sessions.length, activeLessons.length);
+    const updatedSessions: ClassSession[] = [];
+
+    for (let i = 0; i < targetCount; i++) {
+      const session = cohort.sessions[i];
+      const lesson = activeLessons[i];
+      updatedSessions.push({
+        ...session,
+        session_number: i + 1,
+        day_number: lesson.day_number !== undefined ? lesson.day_number : session.day_number,
+        lesson_id: lesson.id,
+        lesson_title: lesson.display_title || lesson.lesson_title || session.lesson_title,
+        lesson_type: lesson.lesson_type || session.lesson_type || 'standard'
+      });
+    }
+
+    cohort.sessions = updatedSessions;
+    cohort.total_sessions = targetCount;
+    cohort.updated_at = now;
+
+    // 3. Save updated cohort to Firestore
+    try {
+      const docRef = doc(db, 'cohorts', cohort.id);
+      await setDoc(docRef, cohort, { merge: true });
+    } catch (saveErr) {
+      console.warn(`[Firestore] Failed to save aligned cohort ${cohort.id}:`, saveErr);
+    }
+
+    updatedCohortIds.push(cohort.id);
+  }
+
+  // 4. Update localStorage `chunks_firestore_synced_cohorts`
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('chunks_firestore_synced_cohorts');
+      let localCohorts: Cohort[] = saved ? JSON.parse(saved) : [];
+      for (const updated of matchingCohorts) {
+        const idx = localCohorts.findIndex(c => c.id === updated.id);
+        if (idx >= 0) {
+          localCohorts[idx] = updated;
+        } else {
+          localCohorts.push(updated);
+        }
+      }
+      localStorage.setItem('chunks_firestore_synced_cohorts', JSON.stringify(localCohorts));
+    } catch {}
+  }
+
+  // Invalidate in-memory caches
+  invalidateCohortsCache();
+
+  return {
+    updatedCount: updatedCohortIds.length,
+    cohortIds: updatedCohortIds
+  };
 }
 
 export async function deleteFirestoreCohort(cohortId: string): Promise<void> {

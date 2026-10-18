@@ -211,11 +211,14 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
 
       const res = await batchUpdateLessons(updatedLessonDocs);
       if (res.success) {
-        setSaveStatus({ success: true, message: `Đã lưu thành công cấu hình cho ${res.count} bài học!` });
+        setSaveStatus({
+          success: true,
+          message: "✅ ĐÃ LƯU THÀNH CÔNG LÊN CLOUD FIRESTORE! Đã cập nhật bài học và tự động đồng bộ toàn bộ Lịch dạy (Cohorts) trên Cloud cho mọi thiết bị."
+        });
         onLessonsUpdated(updatedLessonDocs);
         setTimeout(() => {
           onClose();
-        }, 800);
+        }, 3000);
       } else {
         setSaveStatus({ success: false, message: `Lỗi lưu Firestore: ${res.error}` });
       }
@@ -285,13 +288,23 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
               )}
               <span className="truncate">{saveStatus.message}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setSaveStatus(null)}
-              className="p-1 rounded hover:bg-black/5 text-zinc-500 hover:text-zinc-800 cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer"
+              >
+                Đóng modal (Close)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSaveStatus(null)}
+                className="p-1 rounded hover:bg-black/5 text-zinc-500 hover:text-zinc-800 cursor-pointer"
+                title="Ẩn thông báo"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -489,17 +502,26 @@ export const CourseLessonManagerModal: React.FC<CourseLessonManagerModalProps> =
         <div className="px-6 py-4 bg-zinc-50 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2 text-xs flex-1 min-w-0">
             {saveStatus && (
-              <div className={`flex items-center gap-2 font-semibold px-3 py-1.5 rounded-xl border ${
+              <div className={`flex items-center justify-between gap-3 font-semibold px-3 py-1.5 rounded-xl border flex-1 ${
                 saveStatus.success 
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
                   : 'bg-red-50 text-red-800 border-red-200'
               }`}>
-                {saveStatus.success ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                )}
-                <span className="truncate">{saveStatus.message}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  {saveStatus.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  )}
+                  <span className="truncate">{saveStatus.message}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 transition-colors cursor-pointer"
+                >
+                  Đóng modal (Close)
+                </button>
               </div>
             )}
             {!saveStatus && (

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Cohort, ClassSession, CohortAudioSettings, ChunkItem, LessonDoc, CourseLevel } from '../types';
 import { exportScheduleAsICS, calculate15Sessions, resolveCourseIdFromLevel } from '../utils/scheduler';
 import { curriculumRegistry } from '../services/curriculumRegistry';
-import { getAllLessons, deleteFirestoreCohort } from '../services/firestoreService';
+import { getAllLessons, deleteFirestoreCohort, getLessonsByLevel, saveFirestoreCohort } from '../services/firestoreService';
 import { audioPlayer, AudioProvider } from '../services/googleTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
 import { sanitizeSpeechText } from '../services/deepgramTtsService';
@@ -29,7 +29,8 @@ import {
   Activity,
   Headphones,
   Trash2,
-  CloudUpload
+  CloudUpload,
+  RefreshCw
 } from 'lucide-react';
 
 interface ScheduleViewProps {
@@ -101,6 +102,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const [editStartTime, setEditStartTime] = useState<string>(cohort.schedule_pattern?.start_time || '19:30');
   const [editEndTime, setEditEndTime] = useState<string>(cohort.schedule_pattern?.end_time || '21:00');
   const [isDeletingCohort, setIsDeletingCohort] = useState<boolean>(false);
+  const [isSyncingCurriculum, setIsSyncingCurriculum] = useState<boolean>(false);
 
   useEffect(() => {
     setEditTitle(cohort.title || '');
@@ -670,6 +672,57 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     setEditingSessionNumber(null);
   };
 
+  const handleSyncWithCloudCurriculum = async () => {
+    if (isSyncingCurriculum) return;
+    setIsSyncingCurriculum(true);
+    try {
+      const courseIdOrLevel = cohort.course_id || cohort.level_code || 'course_level_b';
+      // Fetch active lessons from Firestore with force refresh
+      const allCourseLessons = await getLessonsByLevel(courseIdOrLevel, true);
+      const activeLessons = allCourseLessons
+        .filter(l => l.is_active !== false)
+        .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+
+      if (activeLessons.length === 0) {
+        showToast('warning', 'Không tìm thấy bài học hoạt động nào trên Cloud.');
+        return;
+      }
+
+      const currentSessions = cohort.sessions || [];
+      const targetCount = Math.min(currentSessions.length, activeLessons.length);
+      const updatedSessions: ClassSession[] = [];
+
+      for (let i = 0; i < targetCount; i++) {
+        const s = currentSessions[i];
+        const l = activeLessons[i];
+        updatedSessions.push({
+          ...s,
+          session_number: i + 1,
+          day_number: l.day_number !== undefined ? l.day_number : s.day_number,
+          lesson_id: l.id,
+          lesson_title: l.display_title || l.lesson_title || s.lesson_title,
+          lesson_type: l.lesson_type || s.lesson_type || 'standard'
+        });
+      }
+
+      const updatedCohort: Cohort = {
+        ...cohort,
+        total_sessions: targetCount,
+        sessions: updatedSessions,
+        updated_at: new Date().toISOString()
+      };
+
+      await saveFirestoreCohort(updatedCohort);
+      onUpdateCohort(updatedCohort);
+      showToast('success', '✅ Đã đồng bộ lịch học với giáo trình Cloud mới nhất!');
+    } catch (err) {
+      console.error('Error syncing cohort with cloud curriculum:', err);
+      showToast('error', 'Lỗi đồng bộ với giáo trình Cloud: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsSyncingCurriculum(false);
+    }
+  };
+
   const handleLaunchSession = (lessonId: string, sessionNumber: number) => {
     onLaunchProjectorForLesson(lessonId, sessionNumber);
   };
@@ -949,6 +1002,17 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {/* Quick Sync with Cloud Curriculum */}
+            <button
+              disabled={isSyncingCurriculum}
+              onClick={handleSyncWithCloudCurriculum}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 disabled:opacity-50"
+              title="Đồng bộ buổi học của lớp với giáo trình Cloud Firestore mới nhất"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-amber-600 shrink-0 ${isSyncingCurriculum ? 'animate-spin' : ''}`} />
+              <span>⚡ Đồng bộ theo Giáo trình Cloud</span>
+            </button>
+
             {/* Audio Settings Button */}
             <button
               onClick={() => setIsAudioSettingsOpen(true)}
