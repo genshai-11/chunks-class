@@ -30,18 +30,29 @@ chunks-class/
 
 ---
 
-## 🤖 2. Multi-Agent Dispatching & Role Taxonomy
+## 🤖 2. Multi-Agent Dispatching & Role Taxonomy (Osmani Agent Team Framework)
 
-When executing tasks across this repository, agents MUST operate within their defined functional boundaries:
+This repository enforces the **Osmani Agent Team Engineering Workflow** (based on `addyosmani/agent-skills` and Everything-Claude-Code). All autonomous engineering, feature implementation, and bug fixes must operate through specialized subagent roles with structured verification gates:
 
-| Agent Role | Primary Jurisdiction | Responsibilities & Verification Gates |
-| :--- | :--- | :--- |
-| **Lead Architect & Orchestrator** | Root, `src/types/`, Lifecycle | Ensures system coherence, validates OpenSpec task matrices, enforces zero-slop contracts, and supervises cross-component handoffs. |
-| **Frontend & UI/UX Engineer** | `src/components/`, `src/hooks/` | Builds high-contrast presentation stages, presenter clicker listeners, parts drawers, and responsive schedules. Enforces `Be Vietnam Pro` glyph safety. |
-| **Data & Dynamic Specialist** | `src/services/`, `src/utils/` | Manages Firestore schemas, dynamic `CurriculumRegistry`, SheetJS Excel parser/builder, and safe chunked batch syncs. |
-| **Cloud & Audio Systems Engineer** | `src/services/*tts*`, `.github/` | Maintains GCS audio streaming, Deepgram Aura & Google Cloud TTS API, and $0/mo free tier quotas. |
-| **QA & Compliance Auditor** | Entire Codebase | Executes static typechecking (`tsc --noEmit`), verifies link graphs, ensures zero mockups in production mode, and audits frontmatter schemas. |
+| Agent Role | Persona / Specialization | Primary Jurisdiction | Responsibilities & Invariant Gates |
+| :--- | :--- | :--- | :--- |
+| **Lead Architect & Orchestrator** | `architect` / `planner` | Root, `src/types/`, Lifecycle | Owns project taxonomy, verifies specifications (`SPEC.md`), decomposes tasks into thin vertical slices, maintains system invariants, and coordinates cross-agent handoffs. |
+| **Full-Stack Developer** | `developer` / `tdd-guide` | `src/`, `scripts/` | Implements thin vertical slices with red-green-refactor loop, writes clean TypeScript code, and verifies type consistency. |
+| **Code Reviewer** | `code-reviewer` / `reviewer` | Diffs, Logic flows, Domain rules | **MANDATORY GATE**: Evaluates 5 axes (Correctness, Architecture, Readability, Security, Performance) against `LOGIC_FLOW.md` and repository domain rules before ANY change ships. |
+| **Security Auditor** | `security-auditor` | Auth, Firestore, APIs, Secrets | Audits Firestore security rules, client-side secret exposure, input sanitization, and CORS headers. |
+| **Test & QA Engineer** | `test-engineer` | Tests, Build, Clicker, Audio | Verifies test isolation, mock fidelity, audio playback edge cases, clicker debouncing, and hardware shortcut bindings. |
+| **Delivery Gatekeeper** | `delivery-gate` / Lead | Build, CI/CD, Production Gate | Verifies `bun x tsc --noEmit` and `bun run build`, audits changelogs, confirms peer review signoff, and executes zero-slop release. |
 
+### 2.0 Mandatory Post-Change Peer Review Gate (NON-NEGOTIABLE)
+
+> **STRICT RULE**: No code modification—regardless of size, simplicity, or urgency—is considered complete or ready for release until an independent peer review is executed by a specialized review agent (`code-reviewer` or `reviewer`).
+>
+> The reviewer MUST audit the diff against:
+> 1. Domain ontology and invariants in `docs/LOGIC_FLOW.md`.
+> 2. Zero-slop production standards (no mocks, no unhandled promises, clean cancellation).
+> 3. Audio pipeline safety (no unhandled promises in `playUrl`, correct silence frame stitching, bucket URI canonicalization).
+> 4. Firestore read/write quota rules (single-doc chunk containment, ID-based deduplication, batch update field filtering).
+> 5. Typecheck & build cleanliness (`bun x tsc --noEmit` and `bun run build`).
 ---
 
 ## 🧭 2.1 Codebase Graphify Research Map
@@ -101,17 +112,31 @@ Fallback stores
 └── IndexedDB: chunks_audio_db/audio_blobs   # Prepared TTS blobs keyed by voice::text and improv item/hint keys
 ```
 
-Architectural invariants discovered from current code:
+Architectural invariants discovered and enforced across the codebase:
 
-- `App.tsx` is the composition root and owns active cohort/session/projector state.
-- `firestoreService.ts` is the only Firestore data gateway for courses, lessons, cohorts, and curriculum sync.
-- Lesson chunks remain embedded in `LessonDoc.chunks`; no chunk subcollection is queried.
-- `curriculumRegistry.ts` is the offline/default data plane for Level A, Level B EREL, and Level B ERES.
-- `googleTtsService.ts` exports the singleton `audioPlayer`; UI components should route playback through it instead of constructing provider calls directly.
-- `deepgramTtsService.ts` owns Deepgram Aura REST synthesis and text prosody sanitization.
-- `improvTtsService.ts` adds an Improv-specific layer for hint language resolution, individual hint cache keys, and stitched continuous item audio.
-- Presenter runtime safety depends on `activeSequenceId` / `activeSequenceRef` invalidation in audio and presentation flows.
-
+1. **Composition Root**: `App.tsx` is the sole composition root; it owns active cohort, session selection, lesson navigation, and projector state.
+2. **Firestore Single-Doc Chunks Invariant**: `firestoreService.ts` is the single Firestore data gateway. Chunks are strictly stored in the contiguous array `doc.data().chunks: ChunkItem[]` within `/lessons/{lessonId}`. Querying chunk subcollections is **STRICTLY FORBIDDEN** to preserve the $0/mo Always Free tier.
+3. **Lesson Deduplication Invariant**: In `firestoreService.ts`, `deduplicateLessons` MUST deduplicate strictly by unique `lesson.id` (`idMap.set(lesson.id, lesson)`), NEVER by `day_number`. Multiple inactive or orientation lessons share `day_number = 0`; keying by `day_number` causes catastrophic silent lesson deletion.
+4. **Elastic Cohort Session Alignment**: In `syncCourseCohortsWithActiveLessons`, never clamp session count using `Math.min(cohort.sessions.length, activeLessons.length)`. Clamping prevents cohort expansion when disabled lessons are re-enabled. Always set `targetCount = activeLessons.length`, project missing recurrence dates via `schedule_pattern.days_of_week`, and update `cohort.total_sessions`.
+5. **Batch Update Optimization**: Never write entire chunk arrays during lesson metadata updates (titles, active states, display orders). Write only `{ is_active, display_title, lesson_title, day_number, updated_at }` with a 6-second `Promise.race` timeout guard and dual-persist to localStorage (`chunks_lesson_overrides`).
+6. **First Active Lesson Fallback**: When launching `ClassroomPresentation` or switching courses, never default blindly to Day 0 (e.g. Day 0 Word List when `is_active === false`). Always resolve to the first active curriculum lesson: `curriculumRegistry.getLessons(courseLevel).find(l => l.is_active !== false)`.
+7. **Auxiliary Courses Hidden by Default**: Auxiliary courses (`LEVEL_B_EREL` and `LEVEL_B_ERES`) MUST be hidden by default across all selectors (`CurriculumExplorer`, `AudioManagerView`, `CohortModal`, `ScheduleView`, `ClassroomPresentation`).
+8. **Canonical Audio Storage Bucket**: The only verified Firebase Storage bucket is `chunks-voicecloning-genshai.firebasestorage.app` (configured with `Access-Control-Allow-Origin: *` on GCP). The legacy bucket `chunks-mirror-audio-284566312743` returns 404 without CORS headers and triggers `net::ERR_FAILED` in browser consoles.
+9. **Audio Double-Playback Prevention**:
+   - Check active cohort `audio_settings.repeat_count` in `/cohorts/{cohortId}` (repeat count > 1 causes bilingual sequences to repeat).
+   - In `audioPlayer.playUrl`, `cancel()` must reject the Promise with a cancellation error and clear `audio.src = ''` instead of resolving cleanly; otherwise cancelled audio promises cascade into duplicate subsequent speech.
+10. **Google Cloud TTS Journey Voice Prosody & Anti-Clipping**:
+    - Journey voices (`en-US-Journey-D`, `en-US-Journey-F`) do NOT support SSML (triggers 400 `INVALID_ARGUMENT`); use plain text only.
+    - Prepend 240ms of MPEG-2 Layer III 24kHz 32kbps mono silence frames (10 frames x 96 bytes: hex `fff344c453000003480000000055...`) to prevent DAC/buffer startup latency from clipping initial consonants (e.g., "P" in "Plus").
+    - Normalize trailing punctuation to `.` (or `?`) and append 288ms silence frames (12 frames x 96 bytes) to prevent abrupt cutoff.
+    - Insert a comma after introductory discourse markers (`Plus, I...`, `Look, this...`, `Come on, you...`) to force natural pause and clear articulation.
+11. **Level A Grammar Points vs Level B 3-Column Architecture**:
+    - **Level A Grammar**: Uses dynamic `grammar_points` cards (1 to 3 cards) matching *Level A - Grammar - Chunker.pdf*, 100% English-only. Emphasized focus words are styled with `font-bold underline decoration-2 underline-offset-2 break-words leading-snug` (WITHOUT red text color or border badge pills). Items starting with `---` render as visual contrast dividers.
+    - **Level B Grammar**: Uses 3 static columns (`Sentence Structures`, `Verb Forms & Phrases`, `Tenses & Patterns`).
+12. **Part Transition Audio Canonical Keys**:
+    - Derive canonical part keys via `deriveCanonicalPartKey(partTitle, partNumber)` (e.g. `part_vocab_check`, `part_lesson_1_phrase_check`). In `findPartOverride`, prioritize exact key and exact clean title match before generic `partNumber` fallback. (In Level A, 6 distinct lessons share "Part 1"; matching on `partNumber` alone causes override collisions).
+    - In `LessonPart`, always preserve `raw_part` and `part_key`.
+    - For two-topic lessons (`EREL`), use `effectivePartNum = targetPart.part_in_topic || targetPart.part_index`.
 ---
 
 ## 🏗️ 2.2 Archify Visualization Of Current Project
@@ -289,14 +314,51 @@ flowchart TD
 
 ---
 
-## 🛡️ 6. Strict Multi-Agent Orchestration & Subagent Delegation (IMMUTABLE GUARDRAIL)
+## 🛡️ 6. Osmani Multi-Agent SDLC & Subagent Delegation Lifecycle
+
+This repository mandates the **5-Phase Osmani Agent Team Lifecycle** for all non-trivial engineering tasks:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       OSMANI AGENT TEAM SDLC PIPELINE                       │
+├──────────────┬──────────────┬──────────────┬───────────────┬────────────────┤
+│   PHASE 1    │   PHASE 2    │   PHASE 3    │    PHASE 4    │    PHASE 5     │
+│ Spec & Plan  │ Build & TDD  │ Verify Proof │ 5-Axis Review │   Gated Ship   │
+├──────────────┼──────────────┼──────────────┼───────────────┼────────────────┤
+│ Architect /  │ Developer /  │ QA / Build   │ Code Reviewer │ Delivery Gate  │
+│ Planner      │ TDD Guide    │ Test Runner  │ Sec Auditor   │ Human-in-Loop  │
+│              │              │              │ Test Engineer │ Signoff        │
+└──────────────┴──────────────┴──────────────┴───────────────┴────────────────┘
+```
+
+### 6.1 Phase Breakdown & Jurisdiction
+
+1. **Phase 1: Spec & Plan**
+   - Architect/Planner verifies contracts, types in `src/types/`, and flow models in `docs/LOGIC_FLOW.md`.
+   - Decomposes requirements into thin vertical slices with clearly specified acceptance criteria.
+2. **Phase 2: Build & TDD Implementation**
+   - Developer implements minimal, zero-bloat code to satisfy specification.
+   - Follows project conventions: typed props, React hooks, `audioPlayer` singleton, Firestore single-doc schemas.
+3. **Phase 3: Verify Proof**
+   - Runs static typechecking: `bun x tsc --noEmit`.
+   - Runs production bundle compilation: `bun run build`.
+   - Verifies zero regression in uncommitted diffs.
+4. **Phase 4: Parallel 5-Axis Peer Review (MANDATORY)**
+   - Dispatches independent review agents before shipping:
+     - **Correctness & Architecture (`code-reviewer`)**: Audits against logic flows, sequence safety, and single-doc rules.
+     - **Readability & Standards (`reviewer`)**: Audits zero-slop code, clean variable names, and maintainability.
+     - **Security & Boundaries (`security-auditor`)**: Audits Firestore security rules, client storage, API key protection, and GCS bucket access.
+     - **Test & Edge-Case Integrity (`test-engineer`)**: Audits clicker debouncing, cancellation promises, audio caching, and audio repeat loops.
+5. **Phase 5: Gated Ship**
+   - Resolves any blocking findings from the 5-axis review.
+   - Verifies CI/CD readiness (`.github/workflows/deploy-firebase.yml`).
+   - Documents state updates in changelog / commit message.
+
+### 6.2 Strict Orchestration Guardrails
 
 1. **Zero Monolithic Execution in Parent Context**:
-   - The Lead Orchestrator (Parent Agent) is **STRICTLY PROHIBITED** from using write tools (`replace_file_content`, `write_to_file`) to implement features or write production code directly.
-2. **Mandatory Subagent Dispatching (`invoke_subagent`)**:
-   - ALL code generation, UI component development, service modifications, and bug fixes MUST be decomposed into clear domain tasks and dispatched to specialized subagents via `invoke_subagent`.
-3. **Parent Lead Orchestrator Responsibilities**:
-   - Understand requirements and compile architectural contracts & domain prompts for subagents.
-   - Dispatch subagents and monitor their background execution.
-   - Coordinate cross-component handoffs.
-   - Execute QA verification gates (`bun x tsc --noEmit`, `bun run build`, and `git push`).
+   - The Lead Orchestrator is **STRICTLY PROHIBITED** from monolithic multi-file rewrites without clear domain decomposition.
+2. **Mandatory Subagent Dispatching**:
+   - All multi-step features, audits, and reviews must be dispatched to specialized agents (`code-reviewer`, `security-auditor`, `test-engineer`, `task`).
+3. **Mandatory Independent Code Review**:
+   - **NO CHANGE IS SHIPPED WITHOUT PEER REVIEW SIGN-OFF**. The reviewer must explicitly evaluate the diff against the domain invariants codified in this document and `docs/LOGIC_FLOW.md`.
