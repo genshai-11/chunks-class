@@ -1,4 +1,4 @@
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../src/services/firestoreService';
 import { CURRICULUM_CATALOG_LEVEL_A } from '../src/data/levelAData';
 import { getLevelAGrammarForLesson } from '../src/data/levelAGrammarData';
@@ -90,9 +90,27 @@ async function seedLevelAToFirestore() {
       `| Grammar: ${hasGrammar ? `YES (${grammarData?.grammar_points?.length || 0} points)` : 'NO'}`
     );
   }
+  // 3. Update Cohorts for Level A (Set audio_settings.repeat_count = 1)
+  console.log('\n3. Checking and updating Level A Cohorts (repeat_count = 1)...');
+  const cohortsSnap = await getDocs(collection(db, 'cohorts'));
+  for (const cDoc of cohortsSnap.docs) {
+    const cData = cDoc.data();
+    if (cDoc.id === 'cohort_level_a_k24' || cData.level_code === 'LEVEL_A') {
+      const currentAudioSettings = cData.audio_settings || {};
+      const updatedAudioSettings = {
+        ...currentAudioSettings,
+        repeat_count: 1
+      };
+      await updateDoc(doc(db, 'cohorts', cDoc.id), {
+        audio_settings: updatedAudioSettings,
+        updated_at: new Date().toISOString()
+      });
+      console.log(`   ✅ Cohort '${cDoc.id}' (${cData.title || cDoc.id}) audio_settings.repeat_count updated to 1.`);
+    }
+  }
 
   console.log('\n====================================================');
-  console.log('✅ ALL 16 LEVEL A LESSONS COMMITTED SUCCESSFULLY!');
+  console.log('✅ ALL 16 LEVEL A LESSONS & LEVEL A COHORTS COMMITTED SUCCESSFULLY!');
   console.log('Total Chunks Seeded:', totalCommittedChunks);
   console.log('====================================================');
   process.exit(0);
