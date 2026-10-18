@@ -59,6 +59,34 @@
     .active-card-ring {
       box-shadow: 0 0 0 2px #6366f1, 0 8px 24px -4px rgba(99, 102, 241, 0.25);
     }
+    /* Flow Animation Styles */
+    @keyframes flowDash {
+      to {
+        stroke-dashoffset: -24;
+      }
+    }
+    .flow-dash-active {
+      stroke-dasharray: 6 6;
+      animation: flowDash 0.9s linear infinite;
+    }
+    @keyframes layerPulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5), 0 10px 30px -5px rgba(99, 102, 241, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.9), 0 15px 40px -5px rgba(99, 102, 241, 0.5);
+      }
+    }
+    .layer-card-active {
+      border-color: rgba(99, 102, 241, 0.8) !important;
+      animation: layerPulseGlow 1.8s ease-in-out infinite;
+    }
+    .flow-step-pill-active {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+      color: #ffffff !important;
+      border-color: #a5b4fc !important;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+    }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans transition-colors duration-200 antialiased selection:bg-brand-500 selection:text-white" id="appBody">
@@ -69,9 +97,32 @@
       
       <!-- Brand & Stats -->
       <div class="flex items-center gap-3 min-w-max">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        <!-- Branded CHUNKS SVG Logo -->
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 p-0.5 flex items-center justify-center shadow-lg shadow-indigo-500/30 ring-1 ring-indigo-400/30 group cursor-pointer hover:scale-105 transition-transform" id="brandLogoHomeBtn" title="CHUNKS Classroom Platform">
+          <svg class="w-8 h-8" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="chunksRedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#EF4444"/>
+                <stop offset="100%" stop-color="#DC2626"/>
+              </linearGradient>
+              <linearGradient id="chunksBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38BDF8"/>
+                <stop offset="100%" stop-color="#2563EB"/>
+              </linearGradient>
+              <linearGradient id="chunksAmberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FBBF24"/>
+                <stop offset="100%" stop-color="#F59E0B"/>
+              </linearGradient>
+            </defs>
+            <!-- 3 Distinct Interlocking Pedagogical Chunks Forming 'C' -->
+            <rect x="7" y="6" width="16" height="7.5" rx="3.5" fill="url(#chunksRedGrad)" />
+            <circle cx="11" cy="9.75" r="1.5" fill="#FFFFFF" fill-opacity="0.9" />
+            <rect x="7" y="15.5" width="9" height="9" rx="3" fill="url(#chunksBlueGrad)" />
+            <path d="M10 18.5L13 20L10 21.5V18.5Z" fill="#FFFFFF" />
+            <rect x="7" y="26.5" width="22" height="7.5" rx="3.5" fill="url(#chunksAmberGrad)" />
+            <path d="M26 12L28.5 17L33.5 17.5L29.5 21L30.5 26L26 23.5L21.5 26L22.5 21L18.5 17.5L23.5 17L26 12Z" fill="#F8FAFC" fill-opacity="0.25" />
+            <circle cx="30" cy="18" r="2.5" fill="#38BDF8" />
+            <path d="M29 16.5V19.5M27.5 18H30.5" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/>
           </svg>
         </div>
         <div>
@@ -126,6 +177,14 @@
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span class="font-medium text-emerald-300">Live Server</span>
         </div>
+
+        <!-- Flow Simulator Quick Button -->
+        <button id="toggleFlowSimulatorBtn" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/25 active:scale-95" title="Mở / Thu gọn Bộ mô phỏng Kiến trúc & Luồng Dữ liệu (5 Layers)">
+          <svg class="w-4 h-4 text-amber-300 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span class="font-bold">⚡ Flow Simulator</span>
+        </button>
 
         <!-- Sync Cloud Firestore Button -->
         <button id="topSyncFirestoreBtn" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/20 active:scale-95" title="Đồng bộ toàn bộ 30 chuyên đề ngữ pháp lên Cloud Firestore">
@@ -235,6 +294,339 @@
 
     <!-- MAIN STAGE: LESSON DETAILS & MINI-LESSONS CARDS -->
     <main class="flex-1 min-w-0 flex flex-col gap-6" id="mainStage">
+
+      <!-- ================= ARCHITECTURE & FLOW SIMULATOR SECTION ================= -->
+      <section id="grammarFlowArchitectureSection" class="bg-zinc-900/90 dark:bg-zinc-900/90 border border-zinc-800 rounded-2xl p-5 lg:p-6 relative overflow-hidden shadow-2xl transition-all duration-300">
+        <!-- Ambient background glow accents -->
+        <div class="absolute -top-24 -left-24 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-80 h-80 bg-teal-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Section Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80 relative z-10">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600 p-0.5 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <div class="w-full h-full bg-zinc-950/80 rounded-[10px] flex items-center justify-center">
+                <!-- SVG Icon for Architecture Engine -->
+                <svg class="w-6 h-6 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                </svg>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-extrabold text-base lg:text-lg text-white tracking-tight flex items-center gap-2">
+                  <span>Kiến Trúc & Luồng Dữ Liệu Grammar Boost</span>
+                  <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-bold uppercase tracking-wider">5 Layers Engine</span>
+                </h3>
+              </div>
+              <p class="text-xs text-zinc-400 mt-0.5">
+                Mô hình luồng xử lý từ 253 bản thu giáo viên đến Clicker Key G trong phòng học Focus Mode
+              </p>
+            </div>
+          </div>
+
+          <!-- Flow Engine Controls -->
+          <div class="flex items-center gap-2 flex-wrap relative z-10">
+            <!-- Play / Pause Button -->
+            <button id="flowPlayBtn" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-600/30 transition-all active:scale-95">
+              <svg id="flowPlayIcon" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+              </svg>
+              <span id="flowPlayText">Chạy Flow Animation</span>
+            </button>
+
+            <!-- Reset Button -->
+            <button id="flowResetBtn" class="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/80 text-zinc-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors" title="Bắt đầu lại từ Layer 1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Bắt đầu lại</span>
+            </button>
+
+            <!-- Speed Selector -->
+            <div class="flex items-center bg-zinc-950 border border-zinc-800 rounded-xl p-0.5 text-xs font-semibold">
+              <button class="flow-speed-btn px-2 py-1 rounded-lg text-zinc-400 hover:text-white transition-colors" data-speed="1800">1x</button>
+              <button class="flow-speed-btn px-2 py-1 rounded-lg bg-zinc-800 text-indigo-300 transition-colors" data-speed="1200">1.5x</button>
+              <button class="flow-speed-btn px-2 py-1 rounded-lg text-zinc-400 hover:text-white transition-colors" data-speed="750">2x</button>
+            </div>
+
+            <!-- Collapse / Expand Toggle Button -->
+            <button id="toggleFlowSectionCollapseBtn" class="p-1.5 text-zinc-400 hover:text-white bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 rounded-xl transition-colors" title="Thu gọn / Mở rộng phần mô phỏng">
+              <svg id="flowCollapseIcon" class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsible Content Wrapper -->
+        <div id="flowSectionContent" class="space-y-4 pt-4 transition-all duration-300">
+          <!-- Step Navigation Pills -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+            <span class="text-zinc-500 font-semibold uppercase text-[10px] tracking-wider mr-1 hidden sm:inline">Bước:</span>
+            <button class="flow-step-pill px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-950/80 text-zinc-400 hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap" data-step="0">
+              <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-300 font-mono text-[10px] flex items-center justify-center font-bold">1</span>
+              <span>Audio Ingestion</span>
+            </button>
+            <button class="flow-step-pill px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-950/80 text-zinc-400 hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap" data-step="1">
+              <span class="w-4 h-4 rounded-full bg-purple-500/20 text-purple-300 font-mono text-[10px] flex items-center justify-center font-bold">2</span>
+              <span>Pedagogy Extraction</span>
+            </button>
+            <button class="flow-step-pill px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-950/80 text-zinc-400 hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap" data-step="2">
+              <span class="w-4 h-4 rounded-full bg-sky-500/20 text-sky-300 font-mono text-[10px] flex items-center justify-center font-bold">3</span>
+              <span>3-Axis Partitioning</span>
+            </button>
+            <button class="flow-step-pill px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-950/80 text-zinc-400 hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap" data-step="3">
+              <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] flex items-center justify-center font-bold">4</span>
+              <span>Firestore Cloud Sync</span>
+            </button>
+            <button class="flow-step-pill px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-950/80 text-zinc-400 hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap" data-step="4">
+              <span class="w-4 h-4 rounded-full bg-rose-500/20 text-rose-300 font-mono text-[10px] flex items-center justify-center font-bold">5</span>
+              <span>Slide 0 Runtime</span>
+            </button>
+          </div>
+
+          <!-- THE 5 ARCHITECTURAL LAYER CARDS (Flex / Grid with Connectors) -->
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 relative z-10" id="flowCardsGrid">
+
+            <!-- LAYER 1 CARD -->
+            <div id="flowCard0" class="flow-layer-card cursor-pointer rounded-xl bg-zinc-950/70 border border-zinc-800 p-3.5 flex flex-col justify-between transition-all duration-300 hover:border-zinc-700 relative overflow-hidden group">
+              <!-- Top Header & Icon -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">LAYER 1</span>
+                  <span class="flow-status-dot w-2 h-2 rounded-full bg-zinc-600"></span>
+                </div>
+                <!-- SVG Icon Layer 1: Studio Mic -->
+                <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-2.5">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"/>
+                    <path stroke-linecap="round" stroke-width="1.5" d="M3 11c0-1.5 1-3 3-3m12 0c2 0 3 1.5 3 3" opacity="0.6"/>
+                  </svg>
+                </div>
+                <h4 class="font-bold text-sm text-zinc-100 leading-snug group-hover:text-amber-300 transition-colors">
+                  Studio Audio Ingestion
+                </h4>
+                <p class="text-[11px] text-zinc-400 mt-1 line-clamp-2">
+                  253 bản thu giáo viên MP3 chất lượng cao, chuẩn hóa mã hóa & nạp GCS / server.
+                </p>
+              </div>
+              <div class="mt-3 pt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-400">
+                <span class="font-mono text-amber-400">253 MP3s</span>
+                <span class="text-zinc-500">44.1kHz • GCS</span>
+              </div>
+            </div>
+
+            <!-- LAYER 2 CARD -->
+            <div id="flowCard1" class="flow-layer-card cursor-pointer rounded-xl bg-zinc-950/70 border border-zinc-800 p-3.5 flex flex-col justify-between transition-all duration-300 hover:border-zinc-700 relative overflow-hidden group">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-300 border border-purple-500/30">LAYER 2</span>
+                  <span class="flow-status-dot w-2 h-2 rounded-full bg-zinc-600"></span>
+                </div>
+                <!-- SVG Icon Layer 2: Brain / Extraction -->
+                <div class="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-2.5">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                  </svg>
+                </div>
+                <h4 class="font-bold text-sm text-zinc-100 leading-snug group-hover:text-purple-300 transition-colors">
+                  Verbatim Extraction
+                </h4>
+                <p class="text-[11px] text-zinc-400 mt-1 line-clamp-2">
+                  Trích xuất 269 bài giảng nguyên văn từ lời dạy, triệt tiêu ảo giác sư phạm (0% Hallucination).
+                </p>
+              </div>
+              <div class="mt-3 pt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-400">
+                <span class="font-mono text-purple-400">269 Mini-Lessons</span>
+                <span class="text-zinc-500">30 Chuyên đề</span>
+              </div>
+            </div>
+
+            <!-- LAYER 3 CARD -->
+            <div id="flowCard2" class="flow-layer-card cursor-pointer rounded-xl bg-zinc-950/70 border border-zinc-800 p-3.5 flex flex-col justify-between transition-all duration-300 hover:border-zinc-700 relative overflow-hidden group">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/30">LAYER 3</span>
+                  <span class="flow-status-dot w-2 h-2 rounded-full bg-zinc-600"></span>
+                </div>
+                <!-- SVG Icon Layer 3: 3-Axis Reflex Grid -->
+                <div class="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-2.5">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v12a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"/>
+                    <circle cx="9" cy="9" r="1.5" fill="#38bdf8"/>
+                    <circle cx="19" cy="15" r="1.5" fill="#10b981"/>
+                  </svg>
+                </div>
+                <h4 class="font-bold text-sm text-zinc-100 leading-snug group-hover:text-sky-300 transition-colors">
+                  3-Axis Reflex Core
+                </h4>
+                <p class="text-[11px] text-zinc-400 mt-1 line-clamp-2">
+                  Phân rã thành 3 trục phản xạ: Cấu trúc (🔵), Biến thể từ (🟢), Phản xạ thì (🟠).
+                </p>
+              </div>
+              <div class="mt-3 pt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-400">
+                <span class="font-mono text-sky-400">🔵 🟢 🟠 3 Trục</span>
+                <span class="text-zinc-500">Reflex Matrix</span>
+              </div>
+            </div>
+
+            <!-- LAYER 4 CARD -->
+            <div id="flowCard3" class="flow-layer-card cursor-pointer rounded-xl bg-zinc-950/70 border border-zinc-800 p-3.5 flex flex-col justify-between transition-all duration-300 hover:border-zinc-700 relative overflow-hidden group">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">LAYER 4</span>
+                  <span class="flow-status-dot w-2 h-2 rounded-full bg-zinc-600"></span>
+                </div>
+                <!-- SVG Icon Layer 4: Firestore Sync -->
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-2.5">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                  </svg>
+                </div>
+                <h4 class="font-bold text-sm text-zinc-100 leading-snug group-hover:text-emerald-300 transition-colors">
+                  Cloud Firestore Sync
+                </h4>
+                <p class="text-[11px] text-zinc-400 mt-1 line-clamp-2">
+                  Đồng bộ nguyên tử vào collection <code class="text-emerald-300 font-mono">/lessons</code> (Day 1..30) + cache offline IndexedDB.
+                </p>
+              </div>
+              <div class="mt-3 pt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-400">
+                <span class="font-mono text-emerald-400">Single-Doc Sync</span>
+                <span class="text-zinc-500">Atomic Payload</span>
+              </div>
+            </div>
+
+            <!-- LAYER 5 CARD -->
+            <div id="flowCard4" class="flow-layer-card cursor-pointer rounded-xl bg-zinc-950/70 border border-zinc-800 p-3.5 flex flex-col justify-between transition-all duration-300 hover:border-zinc-700 relative overflow-hidden group">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30">LAYER 5</span>
+                  <span class="flow-status-dot w-2 h-2 rounded-full bg-zinc-600"></span>
+                </div>
+                <!-- SVG Icon Layer 5: Classroom Projector + Clicker -->
+                <div class="w-9 h-9 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 mb-2.5">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="2" y="3" width="20" height="14" rx="2" stroke-width="2"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 21h8m-4-4v4M9 9l2 2 4-4"/>
+                  </svg>
+                </div>
+                <h4 class="font-bold text-sm text-zinc-100 leading-snug group-hover:text-rose-300 transition-colors">
+                  Slide 0 Classroom Runtime
+                </h4>
+                <p class="text-[11px] text-zinc-400 mt-1 line-clamp-2">
+                  Bấm phím 'G' mở ngay Slide 0 trong Focus Mode, audio đồng bộ tức thì trên màn hình phòng học.
+                </p>
+              </div>
+              <div class="mt-3 pt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-400">
+                <span class="font-mono text-rose-400">Phím 'G' Clicker</span>
+                <span class="text-zinc-500">Focus Mode</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ANIMATED PIPELINE BEAM CONNECTOR TRACK -->
+          <div class="relative py-2 px-1">
+            <div class="flex items-center justify-between relative">
+              <!-- Background static line -->
+              <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-zinc-800 rounded-full"></div>
+              <!-- Active progress bar line -->
+              <div id="flowProgressBar" class="absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-amber-500 via-sky-500 to-rose-500 rounded-full transition-all duration-500" style="width: 0%;"></div>
+
+              <!-- 5 Pipeline Connector Beams with SVG Animated Dash -->
+              <div class="relative z-10 w-full flex items-center justify-between">
+                <!-- Node 0 -->
+                <div class="flow-track-node w-8 h-8 rounded-full bg-zinc-900 border-2 border-zinc-700 flex items-center justify-center text-xs font-mono font-bold transition-all" data-node="0">1</div>
+                <!-- Beam 0 -> 1 -->
+                <svg class="flex-1 h-3 mx-1 text-zinc-700 transition-colors" viewBox="0 0 100 12" preserveAspectRatio="none">
+                  <line id="flowBeam0" x1="0" y1="6" x2="100" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <!-- Node 1 -->
+                <div class="flow-track-node w-8 h-8 rounded-full bg-zinc-900 border-2 border-zinc-700 flex items-center justify-center text-xs font-mono font-bold transition-all" data-node="1">2</div>
+                <!-- Beam 1 -> 2 -->
+                <svg class="flex-1 h-3 mx-1 text-zinc-700 transition-colors" viewBox="0 0 100 12" preserveAspectRatio="none">
+                  <line id="flowBeam1" x1="0" y1="6" x2="100" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <!-- Node 2 -->
+                <div class="flow-track-node w-8 h-8 rounded-full bg-zinc-900 border-2 border-zinc-700 flex items-center justify-center text-xs font-mono font-bold transition-all" data-node="2">3</div>
+                <!-- Beam 2 -> 3 -->
+                <svg class="flex-1 h-3 mx-1 text-zinc-700 transition-colors" viewBox="0 0 100 12" preserveAspectRatio="none">
+                  <line id="flowBeam2" x1="0" y1="6" x2="100" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <!-- Node 3 -->
+                <div class="flow-track-node w-8 h-8 rounded-full bg-zinc-900 border-2 border-zinc-700 flex items-center justify-center text-xs font-mono font-bold transition-all" data-node="3">4</div>
+                <!-- Beam 3 -> 4 -->
+                <svg class="flex-1 h-3 mx-1 text-zinc-700 transition-colors" viewBox="0 0 100 12" preserveAspectRatio="none">
+                  <line id="flowBeam3" x1="0" y1="6" x2="100" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <!-- Node 4 -->
+                <div class="flow-track-node w-8 h-8 rounded-full bg-zinc-900 border-2 border-zinc-700 flex items-center justify-center text-xs font-mono font-bold transition-all" data-node="4">5</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DYNAMIC STEP EXPLANATION CALLOUT -->
+          <div id="flowExplanationBox" class="rounded-xl bg-zinc-950/80 border border-zinc-800 p-4 transition-all duration-300 relative overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-3 mb-3 border-b border-zinc-800/80">
+              <div class="flex items-center gap-2.5">
+                <span id="explanationBadge" class="text-xs font-mono font-extrabold px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                  BƯỚC 1/5
+                </span>
+                <h5 id="explanationTitle" class="font-extrabold text-sm sm:text-base text-white tracking-tight">
+                  Layer 1: Studio Audio Ingestion (Tầng Thu Âm & Âm Thanh)
+                </h5>
+              </div>
+              <div id="explanationStatusTag" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 self-start md:self-auto flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Active Streaming</span>
+              </div>
+            </div>
+
+            <!-- 3 Columns Detail: Action / Input / Output -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3.5 text-xs">
+              <!-- Col 1: What happens -->
+              <div class="bg-zinc-900/60 rounded-lg p-3 border border-zinc-800/60 flex flex-col justify-between">
+                <div>
+                  <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5 mb-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <span>Mô tả hoạt động</span>
+                  </div>
+                  <p id="explanationAction" class="text-zinc-300 leading-relaxed">
+                    253 bản thu giáo viên MP3 chất lượng cao (44.1kHz, 128kbps) được chuẩn hóa tên file DayX_Grammar_Y.mp3 và stream từ Google Cloud Storage hoặc server Bun local.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Col 2: Input data -->
+              <div class="bg-zinc-900/60 rounded-lg p-3 border border-zinc-800/60 flex flex-col justify-between">
+                <div>
+                  <div class="text-[11px] font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5 mb-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span>Dữ liệu đầu vào (Input)</span>
+                  </div>
+                  <p id="explanationInput" class="text-zinc-300 leading-relaxed font-mono text-[11px]">
+                    253 files .mp3 từ Google Drive giáo viên & thư mục local /audio/grammar_boost/
+                  </p>
+                </div>
+              </div>
+
+              <!-- Col 3: Output data contract -->
+              <div class="bg-zinc-900/60 rounded-lg p-3 border border-zinc-800/60 flex flex-col justify-between">
+                <div>
+                  <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Hợp đồng dữ liệu ra (Output Contract)</span>
+                  </div>
+                  <p id="explanationOutput" class="text-zinc-300 leading-relaxed font-mono text-[11px]">
+                    audioUrl, duration, verified: 26, pending: 4
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- Topic Hero Banner -->
       <section id="topicHeroBanner" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 relative overflow-hidden shadow-xl">
@@ -763,6 +1155,7 @@
         renderSidebar();
         renderActiveTopic();
         setupEventListeners();
+        initFlowSimulator();
       }
 
       // Check if running via server or file:///
@@ -2000,6 +2393,315 @@
           }
         });
       }
+
+      // =========================================================================
+      // FLOW SIMULATOR ENGINE (5 ARCHITECTURAL LAYERS)
+      // =========================================================================
+      const FLOW_STEPS_DATA = [
+        {
+          step: 0,
+          layerName: 'Layer 1: Studio Audio Ingestion (Tầng Thu Âm & Âm Thanh)',
+          badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+          statusText: '253 Recordings Ready',
+          statusClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+          actionText: '253 bản thu giáo viên MP3 chất lượng cao (44.1kHz, 128kbps) do giáo viên bản ngữ và cô Lucy trực tiếp thu âm cho 30 chuyên đề Level B ERE. Hệ thống kiểm tra checksum, chuẩn hóa tên file theo quy chuẩn DayX_Grammar_Y.mp3, và stream từ Google Cloud Storage (chunks-voicecloning-genshai.firebasestorage.app) hoặc server Bun local.',
+          inputText: '253 files .mp3 gốc từ Google Drive giáo viên & thư mục local /audio/grammar_boost/',
+          outputText: 'audioUrl công khai / stream cục bộ, metadata duration, verified: 26 topics, pending: 4 topics'
+        },
+        {
+          step: 1,
+          layerName: 'Layer 2: Verbatim Pedagogy Extraction (Tầng Bóc Tách & Chuẩn Hóa)',
+          badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+          statusText: '269 Lessons Extracted (0% Hallucination)',
+          statusClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+          actionText: 'Phân tích và trích xuất nguyên văn toàn bộ 269 mini-lessons từ lời giảng sư phạm của giáo viên. Cam kết 100% giữ trọn ngữ cảnh giao tiếp tự nhiên và văn phong giảng dạy, tuyệt đối không có ảo giác AI (Zero Hallucination). Mỗi bài học sở hữu ID riêng biệt, tiêu đề chuẩn hóa, và Teacher\'s Notes chi tiết.',
+          inputText: 'Transcripts nguyên bản bài giảng giáo viên, tài liệu giáo trình Level B ERE, notes sư phạm',
+          outputText: 'Cấu trúc MiniLesson: { id, title, audioUrl, hasAudio, teacherNotes, points: [...] } cho 30 ngày'
+        },
+        {
+          step: 2,
+          layerName: 'Layer 3: 3-Axis Reflex Partitioning (Tầng Phân Loại 3 Trục Phản Xạ)',
+          badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+          statusText: 'Reflex Matrix Activated (🔵 🟢 🟠)',
+          statusClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+          actionText: 'Thuật toán sư phạm CHUNKS phân rã điểm ngữ pháp thành 3 trục phản xạ: 1) Cấu trúc câu (Sentence Structures 🔵) - mẫu câu định hình tư duy; 2) Biến thể từ (Word Forms 🟢) - chuyển hóa danh/động/tính từ; 3) Phản xạ thì (Tense Reflexes 🟠) - phản xạ thời gian. Cung cấp quy tắc tương phản (Contrast Rules) giúp ghi nhớ sâu sắc.',
+          inputText: '269 Mini-lessons đã trích xuất & các cặp câu ví dụ đối chiếu trong giao tiếp công việc',
+          outputText: 'Bộ ba trường dữ liệu sentence_structures, word_forms, tense_reflexes chuẩn hóa màu sắc'
+        },
+        {
+          step: 3,
+          layerName: 'Layer 4: Cloud Firestore Synchronization (Tầng Đồng Bộ Đám Mây)',
+          badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+          statusText: 'Collection /lessons Synced (Atomic Batch)',
+          statusClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+          actionText: 'Đóng gói toàn bộ 30 ngày ngữ pháp vào payload nguyên tử của CHUNKS Platform. Khi nhấn "Đồng bộ Firestore", hệ thống ghi trực tiếp vào Collection /lessons tại document ID level_b_day_1 .. level_b_day_30. Đồng thời ghi đệm vào localStorage và IndexedDB chunks_audio_db, bảo đảm phòng học luôn sẵn sàng ngay cả khi mất mạng.',
+          inputText: 'Đối tượng window.GRAMMAR_DATA.topics (30 topics) và token xác thực Firebase',
+          outputText: 'Document Firestore /lessons/level_b_day_{X} chứa grammar_overview, updated_at'
+        },
+        {
+          step: 4,
+          layerName: 'Layer 5: Slide 0 Classroom Runtime (Tầng Trình Chiếu Phòng Học)',
+          badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+          statusText: 'Clicker Key G Ready (Focus Mode)',
+          statusClass: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
+          actionText: 'Trong giờ học thông minh CHUNKS, giáo viên chỉ cần bấm phím \'G\' trên clicker không dây hoặc phím tắt trên bục giảng, màn hình Focus Mode lập tức kích hoạt Slide 0: Grammar Overview. Màn hình hiển thị 3 cột phản xạ độ tương phản cao tối ưu máy chiếu, phát audio bài giảng tức thì, giúp học sinh nắm trọn linh hồn bài học trước khi vào chuỗi phản xạ.',
+          inputText: 'Document bài học activeLesson từ Firestore/cache, tín hiệu phím clicker Key G',
+          outputText: 'Giao diện trình chiếu Slide 0 toàn màn hình Focus Mode, audio đồng bộ, phím tắt linh hoạt'
+        }
+      ];
+
+      let flowSimulatorEngineInstance = null;
+
+      class FlowSimulatorEngine {
+        constructor() {
+          this.currentStep = 0;
+          this.isPlaying = false;
+          this.timerId = null;
+          this.speedMs = 1200;
+        }
+
+        init() {
+          this.bindEvents();
+          this.updateUI();
+        }
+
+        bindEvents() {
+          const playBtn = document.getElementById('flowPlayBtn');
+          if (playBtn) {
+            playBtn.addEventListener('click', () => {
+              if (this.isPlaying) {
+                this.pause();
+              } else {
+                this.play();
+              }
+            });
+          }
+
+          const resetBtn = document.getElementById('flowResetBtn');
+          if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+              this.reset();
+            });
+          }
+
+          // Speed buttons
+          document.querySelectorAll('.flow-speed-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const speed = parseInt(btn.getAttribute('data-speed'), 10);
+              if (speed) {
+                this.speedMs = speed;
+                document.querySelectorAll('.flow-speed-btn').forEach(b => {
+                  b.classList.remove('bg-zinc-800', 'text-indigo-300');
+                  b.classList.add('text-zinc-400');
+                });
+                btn.classList.add('bg-zinc-800', 'text-indigo-300');
+                btn.classList.remove('text-zinc-400');
+                if (this.isPlaying) {
+                  this.pause();
+                  this.play();
+                }
+              }
+            });
+          });
+
+          // Step navigation pills
+          document.querySelectorAll('.flow-step-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+              const step = parseInt(pill.getAttribute('data-step'), 10);
+              this.goToStep(step);
+            });
+          });
+
+          // Layer cards click to select step
+          for (let i = 0; i < 5; i++) {
+            const card = document.getElementById(`flowCard${i}`);
+            if (card) {
+              card.addEventListener('click', () => {
+                this.goToStep(i);
+              });
+            }
+          }
+
+          // Collapse toggle button
+          const toggleCollapseBtn = document.getElementById('toggleFlowSectionCollapseBtn');
+          const content = document.getElementById('flowSectionContent');
+          const collapseIcon = document.getElementById('flowCollapseIcon');
+          if (toggleCollapseBtn && content) {
+            toggleCollapseBtn.addEventListener('click', () => {
+              content.classList.toggle('hidden');
+              if (collapseIcon) {
+                collapseIcon.classList.toggle('rotate-180');
+              }
+            });
+          }
+
+          // Top Navigation Header Flow Simulator Quick Button
+          const topToggleBtn = document.getElementById('toggleFlowSimulatorBtn');
+          if (topToggleBtn) {
+            topToggleBtn.addEventListener('click', () => {
+              const section = document.getElementById('grammarFlowArchitectureSection');
+              if (section) {
+                if (content && content.classList.contains('hidden')) {
+                  content.classList.remove('hidden');
+                  if (collapseIcon) collapseIcon.classList.remove('rotate-180');
+                }
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                section.classList.add('ring-2', 'ring-indigo-500');
+                setTimeout(() => {
+                  section.classList.remove('ring-2', 'ring-indigo-500');
+                }, 1500);
+              }
+            });
+          }
+        }
+
+        play() {
+          this.isPlaying = true;
+          const playText = document.getElementById('flowPlayText');
+          const playIcon = document.getElementById('flowPlayIcon');
+          if (playText) playText.textContent = 'Tạm dừng';
+          if (playIcon) {
+            playIcon.innerHTML = `<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />`;
+          }
+
+          if (this.timerId) clearInterval(this.timerId);
+          this.timerId = setInterval(() => {
+            this.currentStep = (this.currentStep + 1) % 5;
+            this.updateUI();
+          }, this.speedMs);
+        }
+
+        pause() {
+          this.isPlaying = false;
+          if (this.timerId) {
+            clearInterval(this.timerId);
+            this.timerId = null;
+          }
+          const playText = document.getElementById('flowPlayText');
+          const playIcon = document.getElementById('flowPlayIcon');
+          if (playText) playText.textContent = 'Chạy Flow Animation';
+          if (playIcon) {
+            playIcon.innerHTML = `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />`;
+          }
+        }
+
+        reset() {
+          this.pause();
+          this.currentStep = 0;
+          this.updateUI();
+        }
+
+        goToStep(stepIndex) {
+          this.pause();
+          this.currentStep = Math.max(0, Math.min(4, stepIndex));
+          this.updateUI();
+        }
+
+        updateUI() {
+          const data = FLOW_STEPS_DATA[this.currentStep];
+          if (!data) return;
+
+          // 1. Update Layer Cards
+          for (let i = 0; i < 5; i++) {
+            const card = document.getElementById(`flowCard${i}`);
+            if (card) {
+              const dot = card.querySelector('.flow-status-dot');
+              if (i === this.currentStep) {
+                card.classList.add('layer-card-active', 'bg-zinc-900', 'border-indigo-500/80', 'scale-[1.02]');
+                card.classList.remove('bg-zinc-950/70', 'border-zinc-800');
+                if (dot) {
+                  dot.className = 'flow-status-dot w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping';
+                }
+              } else if (i < this.currentStep) {
+                card.classList.remove('layer-card-active', 'border-indigo-500/80', 'scale-[1.02]');
+                card.classList.add('bg-zinc-950/90', 'border-zinc-700/60');
+                card.classList.remove('bg-zinc-900');
+                if (dot) {
+                  dot.className = 'flow-status-dot w-2 h-2 rounded-full bg-emerald-500';
+                }
+              } else {
+                card.classList.remove('layer-card-active', 'border-indigo-500/80', 'border-zinc-700/60', 'scale-[1.02]', 'bg-zinc-900');
+                card.classList.add('bg-zinc-950/70', 'border-zinc-800');
+                if (dot) {
+                  dot.className = 'flow-status-dot w-2 h-2 rounded-full bg-zinc-600';
+                }
+              }
+            }
+          }
+
+          // 2. Update Progress Bar & Track Nodes
+          const progressBar = document.getElementById('flowProgressBar');
+          if (progressBar) {
+            const pct = (this.currentStep / 4) * 100;
+            progressBar.style.width = `${pct}%`;
+          }
+
+          document.querySelectorAll('.flow-track-node').forEach(node => {
+            const nodeIdx = parseInt(node.getAttribute('data-node'), 10);
+            if (nodeIdx === this.currentStep) {
+              node.className = 'flow-track-node w-8 h-8 rounded-full bg-indigo-600 text-white border-2 border-indigo-400 flex items-center justify-center text-xs font-mono font-bold shadow-lg shadow-indigo-500/40 scale-110 transition-all';
+            } else if (nodeIdx < this.currentStep) {
+              node.className = 'flow-track-node w-8 h-8 rounded-full bg-emerald-700 text-emerald-100 border-2 border-emerald-500 flex items-center justify-center text-xs font-mono font-bold transition-all';
+            } else {
+              node.className = 'flow-track-node w-8 h-8 rounded-full bg-zinc-900 text-zinc-500 border-2 border-zinc-700 flex items-center justify-center text-xs font-mono font-bold transition-all';
+            }
+          });
+
+          // 3. Update Connecting Beams
+          for (let b = 0; b < 4; b++) {
+            const beam = document.getElementById(`flowBeam${b}`);
+            if (beam) {
+              if (b < this.currentStep) {
+                beam.setAttribute('stroke', '#10B981'); // Completed: Emerald
+                beam.classList.remove('flow-dash-active');
+              } else if (b === this.currentStep) {
+                beam.setAttribute('stroke', '#6366F1'); // Active flowing: Indigo
+                beam.classList.add('flow-dash-active');
+              } else {
+                beam.setAttribute('stroke', '#3F3F46'); // Pending: Zinc
+                beam.classList.remove('flow-dash-active');
+              }
+            }
+          }
+
+          // 4. Update Step Pills
+          document.querySelectorAll('.flow-step-pill').forEach(pill => {
+            const stepIdx = parseInt(pill.getAttribute('data-step'), 10);
+            if (stepIdx === this.currentStep) {
+              pill.className = 'flow-step-pill flow-step-pill-active px-3 py-1.5 rounded-xl border border-indigo-400 bg-indigo-600 text-white font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md';
+            } else {
+              pill.className = 'flow-step-pill px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-950/80 text-zinc-400 hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap';
+            }
+          });
+
+          // 5. Update Dynamic Step Explanation Callout
+          const badge = document.getElementById('explanationBadge');
+          const title = document.getElementById('explanationTitle');
+          const statusTag = document.getElementById('explanationStatusTag');
+          const actionEl = document.getElementById('explanationAction');
+          const inputEl = document.getElementById('explanationInput');
+          const outputEl = document.getElementById('explanationOutput');
+
+          if (badge) {
+            badge.textContent = `BƯỚC ${data.step + 1}/5`;
+            badge.className = `text-xs font-mono font-extrabold px-2.5 py-1 rounded-lg border ${data.badgeColor}`;
+          }
+          if (title) title.textContent = data.layerName;
+          if (statusTag) {
+            statusTag.className = `text-xs font-semibold px-2.5 py-0.5 rounded-full border self-start md:self-auto flex items-center gap-1.5 ${data.statusClass}`;
+            statusTag.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-current animate-ping"></span><span>${data.statusText}</span>`;
+          }
+          if (actionEl) actionEl.textContent = data.actionText;
+          if (inputEl) inputEl.textContent = data.inputText;
+          if (outputEl) outputEl.textContent = data.outputText;
+        }
+      }
+
+      function initFlowSimulator() {
+        flowSimulatorEngineInstance = new FlowSimulatorEngine();
+        flowSimulatorEngineInstance.init();
+      }
+
 
       // Run on DOM loaded
       if (document.readyState === 'loading') {
