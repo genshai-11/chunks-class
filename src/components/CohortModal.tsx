@@ -60,9 +60,7 @@ export const CohortModal: React.FC<CohortModalProps> = ({
   };
 
   const previewSessions: ClassSession[] = useMemo(() => {
-    const course = curriculumRegistry.getCourse(levelCode);
-    const defaultTotal = (levelCode === 'LEVEL_B' || levelCode === 'LEVEL_B_ERE') ? 30 : (course?.default_sessions_count || 15);
-    return calculate15Sessions(levelCode, startDate, selectedDays, startTime, endTime, [], defaultTotal);
+    return calculate15Sessions(levelCode, startDate, selectedDays, startTime, endTime);
   }, [levelCode, startDate, selectedDays, startTime, endTime]);
 
   const handleSubmit = (e: React.FormEvent) => {

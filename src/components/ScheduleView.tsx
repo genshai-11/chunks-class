@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Cohort, ClassSession, CohortAudioSettings, ChunkItem, LessonDoc, CourseLevel } from '../types';
 import { exportScheduleAsICS, calculate15Sessions, resolveCourseIdFromLevel } from '../utils/scheduler';
 import { curriculumRegistry } from '../services/curriculumRegistry';
-import { getAllLessons, deleteFirestoreCohort, getLessonsByLevel, saveFirestoreCohort } from '../services/firestoreService';
+import { getAllLessons, deleteFirestoreCohort, getLessonsByLevel, saveFirestoreCohort, alignCohortSessionsWithActiveLessons, syncCourseCohortsWithActiveLessons } from '../services/firestoreService';
 import { audioPlayer, AudioProvider } from '../services/googleTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
 import { sanitizeSpeechText } from '../services/deepgramTtsService';
@@ -96,7 +96,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const [editTeacherId, setEditTeacherId] = useState<string>(cohort.teacher_id || 'teacher_genshai');
   const [editCourseId, setEditCourseId] = useState<string>(cohort.course_id || resolveCourseIdFromLevel(cohort.level_code) || 'course_level_b');
   const [editLevelCode, setEditLevelCode] = useState<CourseLevel | string>(cohort.level_code || 'LEVEL_B');
-  const [editTotalSessions, setEditTotalSessions] = useState<number>(cohort.total_sessions || cohort.sessions?.length || 30);
+  const [editTotalSessions, setEditTotalSessions] = useState<number>(cohort.sessions?.length || cohort.total_sessions || 30);
   const [editStartDate, setEditStartDate] = useState<string>(cohort.start_date || '2026-09-01');
   const [editDays, setEditDays] = useState<string[]>(cohort.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri']);
   const [editStartTime, setEditStartTime] = useState<string>(cohort.schedule_pattern?.start_time || '19:30');
@@ -109,7 +109,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     setEditTeacherId(cohort.teacher_id || 'teacher_genshai');
     setEditCourseId(cohort.course_id || resolveCourseIdFromLevel(cohort.level_code) || 'course_level_b');
     setEditLevelCode(cohort.level_code || 'LEVEL_B');
-    setEditTotalSessions(cohort.total_sessions || cohort.sessions?.length || 30);
+    setEditTotalSessions(cohort.sessions?.length || cohort.total_sessions || 30);
     setEditStartDate(cohort.start_date || '2026-09-01');
     setEditDays(cohort.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri']);
     setEditStartTime(cohort.schedule_pattern?.start_time || '19:30');
@@ -283,6 +283,19 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         }
         liveLessonsRef.current = { ...liveLessonsRef.current, ...lessonMap };
         setLiveLessons(prev => ({ ...prev, ...lessonMap }));
+
+        // Auto-align cohort if session count does not match active lessons count
+        const activeLessons = firestoreLessons
+          .filter(l => l.is_active !== false)
+          .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+
+        if (activeLessons.length > 0 && cohort.sessions && cohort.sessions.length !== activeLessons.length) {
+          const aligned = alignCohortSessionsWithActiveLessons(cohort, activeLessons);
+          onUpdateCohort(aligned);
+          saveFirestoreCohort(aligned).catch(err => {
+            console.warn('[ScheduleView] Auto-align cohort save notice:', err);
+          });
+        }
 
         const voiceEn = getVoiceEn();
         setSessionAudioStatus(prev => {
@@ -728,33 +741,18 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
         return;
       }
 
-      const currentSessions = cohort.sessions || [];
-      const targetCount = Math.min(currentSessions.length, activeLessons.length);
-      const updatedSessions: ClassSession[] = [];
-
-      for (let i = 0; i < targetCount; i++) {
-        const s = currentSessions[i];
-        const l = activeLessons[i];
-        updatedSessions.push({
-          ...s,
-          session_number: i + 1,
-          day_number: l.day_number !== undefined ? l.day_number : s.day_number,
-          lesson_id: l.id,
-          lesson_title: l.display_title || l.lesson_title || s.lesson_title,
-          lesson_type: l.lesson_type || s.lesson_type || 'standard'
-        });
-      }
-
-      const updatedCohort: Cohort = {
-        ...cohort,
-        total_sessions: targetCount,
-        sessions: updatedSessions,
-        updated_at: new Date().toISOString()
-      };
+      const updatedCohort = alignCohortSessionsWithActiveLessons(cohort, activeLessons);
 
       await saveFirestoreCohort(updatedCohort);
       onUpdateCohort(updatedCohort);
-      showToast('success', '✅ Đã đồng bộ lịch học với giáo trình Cloud mới nhất!');
+
+      try {
+        await syncCourseCohortsWithActiveLessons(courseIdOrLevel, allCourseLessons);
+      } catch (cohortErr) {
+        console.warn('[ScheduleView] syncCourseCohortsWithActiveLessons notice:', cohortErr);
+      }
+
+      showToast('success', `✅ Đã đồng bộ lịch học với giáo trình Cloud (${updatedCohort.sessions.length} buổi)!`);
     } catch (err) {
       console.error('Error syncing cohort with cloud curriculum:', err);
       showToast('error', 'Lỗi đồng bộ với giáo trình Cloud: ' + (err instanceof Error ? err.message : String(err)));

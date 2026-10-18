@@ -67,7 +67,8 @@ export async function calculateSessions(params: CalculateSessionParams): Promise
   }
   const catalog = rawCatalog.filter(l => l.is_active !== false);
 
-  const targetSessionsCount = params.totalSessions || (catalog.length > 0 ? catalog.length : 15);
+  const defaultCount = (courseIdOrLevel === 'LEVEL_B' || courseIdOrLevel === 'course_level_b' || courseIdOrLevel === 'LEVEL_B_ERE' || courseIdOrLevel === 'course_level_b_ere') ? 30 : 15;
+  const targetSessionsCount = params.totalSessions || (catalog.length > 0 ? catalog.length : defaultCount);
 
   let year: number, month: number, day: number;
   if (!startDateStr) {
@@ -221,7 +222,7 @@ export function createDefaultCohort(
   const course = curriculumRegistry.getCourse(levelCode);
   const courseId = course?.id || resolveCourseIdFromLevel(levelCode);
   const defaultTotal = (levelCode === 'LEVEL_B' || levelCode === 'LEVEL_B_ERE') ? 30 : (course?.default_sessions_count || 15);
-  const sessions = calculate15Sessions(levelCode, startDate, ["Mon", "Wed", "Fri"], "19:30", "21:00", [], defaultTotal);
+  const sessions = calculate15Sessions(levelCode, startDate, ["Mon", "Wed", "Fri"], "19:30", "21:00");
   const totalSessions = sessions.length || defaultTotal;
 
   return {

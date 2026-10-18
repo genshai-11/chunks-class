@@ -852,6 +852,109 @@ export async function saveCohort(cohort: Cohort): Promise<void> {
 }
 
 /**
+ * Re-aligns a cohort's sessions with active lessons list.
+ * - Updates existing sessions with current lesson metadata (title, day_number, lesson_id, type).
+ * - Dynamically generates extra recurrence sessions if activeLessons count > current sessions count.
+ * - Truncates excess sessions if activeLessons count < current sessions count.
+ * - Sets total_sessions = activeLessons.length.
+ */
+export function alignCohortSessionsWithActiveLessons(
+  cohort: Cohort,
+  activeLessons: LessonDoc[]
+): Cohort {
+  const currentSessions = cohort.sessions || [];
+  const targetCount = activeLessons.length;
+  const updatedSessions: ClassSession[] = [];
+
+  const WEEKDAY_MAP: Record<string, number> = {
+    Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 0
+  };
+  const INT_TO_DAY: Record<number, string> = {
+    1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 0: 'Sun'
+  };
+
+  const patternDays = cohort.schedule_pattern?.days_of_week?.length
+    ? cohort.schedule_pattern.days_of_week
+    : ['Mon', 'Wed', 'Fri'];
+  const targetDays: Record<number, true> = {};
+  for (const d of patternDays) {
+    targetDays[WEEKDAY_MAP[d] ?? 1] = true;
+  }
+  const startTime = cohort.schedule_pattern?.start_time || currentSessions[0]?.start_time || '19:30';
+  const endTime = cohort.schedule_pattern?.end_time || currentSessions[0]?.end_time || '21:00';
+
+  for (let i = 0; i < targetCount; i++) {
+    const lesson = activeLessons[i];
+    if (i < currentSessions.length) {
+      const session = currentSessions[i];
+      updatedSessions.push({
+        ...session,
+        session_number: i + 1,
+        day_number: lesson.day_number !== undefined ? lesson.day_number : session.day_number,
+        lesson_id: lesson.id,
+        lesson_title: lesson.display_title || lesson.lesson_title || session.lesson_title,
+        lesson_type: lesson.lesson_type || session.lesson_type || 'standard'
+      });
+    } else {
+      // Generate new recurrence session slot
+      const prevSession = updatedSessions[i - 1];
+      let scheduledDate = '';
+      let dayOfWeek = 'Mon';
+
+      if (prevSession && prevSession.scheduled_date) {
+        const [py, pm, pd] = prevSession.scheduled_date.split('-').map(Number);
+        const nextDate = new Date(py, pm - 1, pd, 12, 0, 0);
+        let safety = 0;
+        do {
+          nextDate.setDate(nextDate.getDate() + 1);
+          safety++;
+        } while (!targetDays[nextDate.getDay()] && safety < 14);
+
+        const ny = nextDate.getFullYear();
+        const nm = String(nextDate.getMonth() + 1).padStart(2, '0');
+        const nd = String(nextDate.getDate()).padStart(2, '0');
+        scheduledDate = `${ny}-${nm}-${nd}`;
+        dayOfWeek = INT_TO_DAY[nextDate.getDay()] || 'Mon';
+      } else {
+        const startDateStr = cohort.start_date || new Date().toISOString().slice(0, 10);
+        const [sy, sm, sd] = startDateStr.split('-').map(Number);
+        const nextDate = new Date(sy, sm - 1, sd, 12, 0, 0);
+        let safety = 0;
+        while (!targetDays[nextDate.getDay()] && safety < 14) {
+          nextDate.setDate(nextDate.getDate() + 1);
+          safety++;
+        }
+        const ny = nextDate.getFullYear();
+        const nm = String(nextDate.getMonth() + 1).padStart(2, '0');
+        const nd = String(nextDate.getDate()).padStart(2, '0');
+        scheduledDate = `${ny}-${nm}-${nd}`;
+        dayOfWeek = INT_TO_DAY[nextDate.getDay()] || 'Mon';
+      }
+
+      updatedSessions.push({
+        session_number: i + 1,
+        scheduled_date: scheduledDate,
+        day_of_week: dayOfWeek,
+        start_time: startTime,
+        end_time: endTime,
+        day_number: lesson.day_number !== undefined ? lesson.day_number : (i + 1),
+        lesson_id: lesson.id,
+        lesson_title: lesson.display_title || lesson.lesson_title || `Day ${i + 1}`,
+        lesson_type: lesson.lesson_type || 'standard',
+        status: 'scheduled'
+      });
+    }
+  }
+
+  return {
+    ...cohort,
+    total_sessions: targetCount,
+    sessions: updatedSessions,
+    updated_at: new Date().toISOString()
+  };
+}
+
+/**
  * Automatically realigns cohort sessions when lesson configurations change (is_active, display_title, day_number).
  * Re-aligns each cohort's sessions to match active lessons, updates total_sessions, and persists to Firestore & localStorage.
  */
@@ -863,8 +966,17 @@ export async function syncCourseCohortsWithActiveLessons(
     return { updatedCount: 0, cohortIds: [] };
   }
 
+  let fullLessonsList = lessons;
+  if (lessons.length < 5) {
+    const registryLessons = curriculumRegistry.getLessons(courseLevelOrId);
+    if (registryLessons && registryLessons.length > lessons.length) {
+      const updatedMap = new Map(lessons.map(l => [l.id, l]));
+      fullLessonsList = registryLessons.map(l => updatedMap.get(l.id) || l);
+    }
+  }
+
   // Filter active lessons sorted by day_number ascending
-  const activeLessons = lessons
+  const activeLessons = fullLessonsList
     .filter(l => l.is_active !== false)
     .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
 
@@ -940,26 +1052,9 @@ export async function syncCourseCohortsWithActiveLessons(
 
   // 2. Re-align each cohort's sessions
   for (const cohort of matchingCohorts) {
-    if (!cohort.sessions || cohort.sessions.length === 0) continue;
-
-    const targetCount = Math.min(cohort.sessions.length, activeLessons.length);
-    const updatedSessions: ClassSession[] = [];
-
-    for (let i = 0; i < targetCount; i++) {
-      const session = cohort.sessions[i];
-      const lesson = activeLessons[i];
-      updatedSessions.push({
-        ...session,
-        session_number: i + 1,
-        day_number: lesson.day_number !== undefined ? lesson.day_number : session.day_number,
-        lesson_id: lesson.id,
-        lesson_title: lesson.display_title || lesson.lesson_title || session.lesson_title,
-        lesson_type: lesson.lesson_type || session.lesson_type || 'standard'
-      });
-    }
-
-    cohort.sessions = updatedSessions;
-    cohort.total_sessions = targetCount;
+    const aligned = alignCohortSessionsWithActiveLessons(cohort, activeLessons);
+    cohort.sessions = aligned.sessions;
+    cohort.total_sessions = aligned.total_sessions;
     cohort.updated_at = now;
 
     // 3. Save updated cohort to Firestore
