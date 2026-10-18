@@ -122,6 +122,32 @@ export async function loadPartOverridesFromFirestore(courseLevel?: string): Prom
   return getPartOverrides(norm);
 }
 
+/**
+ * Derives a canonical, collision-free key for a part announcement.
+ * e.g. "Part 1 - Vocabulary Check" -> "part_vocab_check"
+ * e.g. "Vocabulary Check" -> "part_vocabulary_check"
+ */
+export function deriveCanonicalPartKey(partTitleOrCategory?: string, partNumber?: number): string {
+  const raw = (partTitleOrCategory || '').trim();
+  if (raw) {
+    // If already in key format (e.g. "part_slangs"), preserve it
+    if (/^part_[a-z0-9_]+$/i.test(raw)) {
+      return raw.toLowerCase();
+    }
+    // Remove "Part X -" or "Part X:" prefix if present to normalize semantic title
+    const stripped = raw.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
+    const target = stripped || raw;
+    const slug = target.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    if (slug) {
+      return `part_${slug}`;
+    }
+  }
+  if (partNumber !== undefined && partNumber !== null) {
+    return `part_${partNumber}`;
+  }
+  return 'part_unknown';
+}
+
 export function findPartOverride(
   overrides: Record<string, PartOverride>,
   partTitleOrCategory?: string,
@@ -136,44 +162,61 @@ export function findPartOverride(
     return overrides[raw];
   }
 
-  // 2. Direct partNumber match: e.g. overrides['part_1'] or overrides['1']
-  if (partNumber !== undefined) {
-    if (overrides[`part_${partNumber}`]) return overrides[`part_${partNumber}`];
-    if (overrides[String(partNumber)]) return overrides[String(partNumber)];
+  // 2. Canonical key match via deriveCanonicalPartKey
+  const canonicalKey = deriveCanonicalPartKey(raw, partNumber);
+  if (canonicalKey && overrides[canonicalKey]) {
+    return overrides[canonicalKey];
   }
 
-  // 3. Derived key match:
+  // 3. Normalized slug key match (raw string as slug)
   if (raw) {
-    const derivedKey = `part_${raw.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
+    const derivedKey = `part_${raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')}`;
     if (overrides[derivedKey]) return overrides[derivedKey];
   }
 
-  // 4. Extract part number from raw string if not provided:
-  let extractedNum = partNumber;
-  if (extractedNum === undefined && raw) {
-    const m = raw.match(/Part\s*(\d+)/i);
-    if (m) extractedNum = parseInt(m[1], 10);
-  }
-  if (extractedNum !== undefined) {
-    if (overrides[`part_${extractedNum}`]) return overrides[`part_${extractedNum}`];
-    if (overrides[String(extractedNum)]) return overrides[String(extractedNum)];
-  }
-
-  // 5. Search values
+  // 4. Exact title matching against override records
   const values = Object.values(overrides);
-  const found = values.find(o => {
-    if (raw && o.key && o.key === raw) return true;
-    if (extractedNum !== undefined && o.partNumber !== undefined && o.partNumber === extractedNum) return true;
-    if (raw && o.titleEn && o.titleEn.toLowerCase() === raw.toLowerCase()) return true;
-    if (raw && o.titleEn) {
-      const cleanOverride = o.titleEn.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
-      const cleanRaw = raw.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
-      if (cleanOverride && cleanRaw && cleanOverride.toLowerCase() === cleanRaw.toLowerCase()) return true;
-    }
-    return false;
-  });
+  if (raw) {
+    const rawLower = raw.toLowerCase();
+    const cleanRaw = raw.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim().toLowerCase();
 
-  return found;
+    // 4a. Match by override.key
+    const keyMatch = values.find(o => o.key && o.key.toLowerCase() === rawLower);
+    if (keyMatch) return keyMatch;
+
+    // 4b. Match by override.titleEn exactly
+    const titleExactMatch = values.find(o => o.titleEn && o.titleEn.toLowerCase() === rawLower);
+    if (titleExactMatch) return titleExactMatch;
+
+    // 4c. Match by stripped titleEn (without "Part X -")
+    if (cleanRaw) {
+      const strippedMatch = values.find(o => {
+        if (!o.titleEn) return false;
+        const cleanOverride = o.titleEn.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim().toLowerCase();
+        return cleanOverride === cleanRaw;
+      });
+      if (strippedMatch) return strippedMatch;
+    }
+  }
+
+  // 5. Fallback to partNumber ONLY if title is purely generic (e.g. empty, "Part 1", or no specific non-part name)
+  // This prevents Part 1 in Level A (Vocab Check) from colliding with Part 1 in Level B (Slangs)
+  const isGenericPartTitle = !raw || /^part\s*\d*$/i.test(raw);
+  if (isGenericPartTitle) {
+    let effectiveNum = partNumber;
+    if (effectiveNum === undefined && raw) {
+      const m = raw.match(/Part\s*(\d+)/i);
+      if (m) effectiveNum = parseInt(m[1], 10);
+    }
+    if (effectiveNum !== undefined) {
+      if (overrides[`part_${effectiveNum}`]) return overrides[`part_${effectiveNum}`];
+      if (overrides[String(effectiveNum)]) return overrides[String(effectiveNum)];
+      const numMatch = values.find(o => o.partNumber !== undefined && o.partNumber === effectiveNum);
+      if (numMatch) return numMatch;
+    }
+  }
+
+  return undefined;
 }
 export const CANONICAL_PARTS: PartAnnouncementDef[] = [
   {
@@ -294,8 +337,9 @@ export function getPartSpeechText(
     }
   }
 
-  // Check custom overrides first
-  const overrides = courseLevel ? getPartOverrides(courseLevel) : getPartOverrides('LEVEL_B');
+  // Normalize course level
+  const normCourseLevel = courseLevel ? normalizeCourseLevel(courseLevel) : 'LEVEL_B';
+  const overrides = getPartOverrides(normCourseLevel);
   const override = findPartOverride(overrides, rawInput, effectivePartNum);
   if (override?.speechText?.trim()) {
     return override.speechText.trim();
@@ -304,11 +348,10 @@ export function getPartSpeechText(
   const effectiveRawInput = override?.titleEn?.trim() || rawInput;
 
   // Normalize 14-part two-topic lessons where parts 8..14 map to topics 1..7 (if not Level A)
-  const isLevelA = courseLevel === 'LEVEL_A' || effectiveRawInput.toLowerCase().includes('orientation') || effectiveRawInput.toLowerCase().includes('teamwork');
+  const isLevelA = normCourseLevel === 'LEVEL_A' || effectiveRawInput.toLowerCase().includes('orientation') || effectiveRawInput.toLowerCase().includes('teamwork');
   if (!isLevelA && effectivePartNum && effectivePartNum > 7 && effectivePartNum <= 14) {
     effectivePartNum = effectivePartNum - 7;
   }
-
   // Check if effectiveRawInput contains an actual descriptive title
   // (i.e. more than just a bare part number like "Part 1" or generic category keyword)
   const cleanTitleAfterPart = effectiveRawInput.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
@@ -459,7 +502,7 @@ export function getCoursePartsFromLessons(lessons: LessonDoc[], courseLevel?: st
           const match = partStr.match(/Part\s*(\d+)/i);
           const partNum = match ? parseInt(match[1], 10) : undefined;
           const cleanTitle = partStr.replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim();
-          const key = `part_${partStr.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
+          const key = deriveCanonicalPartKey(partStr, partNum);
           
           rawPartsList.push({
             partStr,
@@ -588,9 +631,46 @@ export function getCoursePartsFromLessons(lessons: LessonDoc[], courseLevel?: st
 /**
  * Checks if the audio for a part announcement is already cached in memory or IndexedDB
  */
-export async function isPartAudioCached(partTitle: string, voice?: string, partNumber?: number, courseLevel?: string): Promise<boolean> {
-  const speechText = getPartSpeechText(partTitle, partNumber, courseLevel);
-  const voiceEn = voice || modelRegistryService.getMainModelEn();
+export async function isPartAudioCached(
+  partTitle: string,
+  partNumberOrVoice?: number | string,
+  voiceOrPartNumber?: string | number,
+  courseLevel?: string
+): Promise<boolean> {
+  // Standardize arguments with backward compatibility:
+  // Signature A: isPartAudioCached(partTitle, partNumber, voice, courseLevel)
+  // Signature B (legacy): isPartAudioCached(partTitle, voice, partNumber, courseLevel)
+  let effectivePartNumber: number | undefined;
+  let effectiveVoice: string | undefined;
+  let effectiveCourseLevel = courseLevel;
+
+  if (typeof partNumberOrVoice === 'number') {
+    effectivePartNumber = partNumberOrVoice;
+    if (typeof voiceOrPartNumber === 'string') {
+      effectiveVoice = voiceOrPartNumber;
+    }
+  } else if (typeof partNumberOrVoice === 'string') {
+    // If 2nd arg is a string, check if it's a numeric string or a voice name
+    if (/^\d+$/.test(partNumberOrVoice)) {
+      effectivePartNumber = parseInt(partNumberOrVoice, 10);
+      if (typeof voiceOrPartNumber === 'string') {
+        effectiveVoice = voiceOrPartNumber;
+      }
+    } else {
+      // Legacy: 2nd arg is voice
+      effectiveVoice = partNumberOrVoice;
+      if (typeof voiceOrPartNumber === 'number') {
+        effectivePartNumber = voiceOrPartNumber;
+      } else if (typeof voiceOrPartNumber === 'string' && /^\d+$/.test(voiceOrPartNumber)) {
+        effectivePartNumber = parseInt(voiceOrPartNumber, 10);
+      }
+    }
+  } else if (typeof voiceOrPartNumber === 'number') {
+    effectivePartNumber = voiceOrPartNumber;
+  }
+
+  const speechText = getPartSpeechText(partTitle, effectivePartNumber, effectiveCourseLevel);
+  const voiceEn = effectiveVoice || modelRegistryService.getMainModelEn();
   const cached = await audioPlayer.getCachedAudioAsync(speechText, voiceEn);
   return Boolean(cached);
 }

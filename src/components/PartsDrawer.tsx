@@ -10,7 +10,8 @@ import {
   regeneratePartAudio,
   savePartOverrides,
   PartOverride,
-  CANONICAL_PARTS
+  CANONICAL_PARTS,
+  deriveCanonicalPartKey
 } from '../services/partAudioService';
 import { audioPlayer } from '../services/googleTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
@@ -98,9 +99,13 @@ export function groupChunksIntoParts(
       ? rp.firstChunk.part.replace(/^Part\s*\d+\s*[-:]\s*/i, '').trim()
       : `Part ${idx + 1}: ${rp.categoryKey.toUpperCase().replace('_', ' ')}`;
 
+    // Derive canonical part key
+    const rawPartStr = rp.firstChunk.part || cleanTitle;
+    const partKey = deriveCanonicalPartKey(rawPartStr, rawPartIndex);
+
     // Apply custom part overrides if configured
     const overrides = courseLevel ? getPartOverrides(courseLevel) : getPartOverrides('LEVEL_B');
-    const override = findPartOverride(overrides, rp.firstChunk.part || cleanTitle, rawPartIndex);
+    const override = findPartOverride(overrides, rawPartStr, rawPartIndex);
     let effectiveCleanTitle = cleanTitle;
     if (override?.titleEn?.trim()) {
       effectiveCleanTitle = override.titleEn.trim().replace(/^Part\s*\d+\s*[-:.]\s*/i, '').trim() || override.titleEn.trim();
@@ -141,6 +146,8 @@ export function groupChunksIntoParts(
       start_index: rp.startIndex,
       end_index: rp.endIndex,
       chunk_count: rp.chunkCount,
+      raw_part: rp.firstChunk.part,
+      part_key: partKey,
       topic_number,
       topic_title,
       part_in_topic,
@@ -205,10 +212,11 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
   const checkPartsCache = useCallback(async () => {
     const status: Record<number, boolean> = {};
     for (const part of parts) {
+      const effectivePartNum = part.part_in_topic || part.part_index;
       status[part.part_index] = await isPartAudioCached(
-        part.title,
+        part.raw_part || part.title,
         selectedVoice,
-        part.part_in_topic || part.part_index,
+        effectivePartNum,
         courseLevel
       );
     }
@@ -252,9 +260,10 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
     if (auditioningPartIndex !== null || regeneratingPartIndex !== null || isSavingPart) return;
     setAuditioningPartIndex(part.part_index);
     try {
+      const effectivePartNum = part.part_in_topic || part.part_index;
       await playPartIntro(
-        part.title,
-        part.part_in_topic || part.part_index,
+        part.raw_part || part.title,
+        effectivePartNum,
         selectedVoice,
         courseLevel
       );
@@ -271,9 +280,10 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
     if (auditioningPartIndex !== null || regeneratingPartIndex !== null || isSavingPart) return;
     setRegeneratingPartIndex(part.part_index);
     try {
+      const effectivePartNum = part.part_in_topic || part.part_index;
       await regeneratePartAudio(
-        part.title,
-        part.part_in_topic || part.part_index,
+        part.raw_part || part.title,
+        effectivePartNum,
         selectedVoice,
         courseLevel
       );
@@ -290,12 +300,12 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
     const effectiveLevel = courseLevel || 'LEVEL_A';
     const overrides = getPartOverrides(effectiveLevel);
     const effectivePartNum = part.part_in_topic || part.part_index;
-    const existing = findPartOverride(overrides, part.title, effectivePartNum);
+    const existing = findPartOverride(overrides, part.raw_part || part.title, effectivePartNum);
 
     setEditingPartIndex(part.part_index);
     setEditTitle(existing?.titleEn || part.title);
     setEditSpeechText(
-      existing?.speechText || getPartSpeechText(part.title, effectivePartNum, courseLevel)
+      existing?.speechText || getPartSpeechText(part.raw_part || part.title, effectivePartNum, courseLevel)
     );
   };
 
@@ -324,12 +334,11 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
       const effectiveLevel = courseLevel || 'LEVEL_A';
       const existing = getPartOverrides(effectiveLevel);
       const effectivePartNum = part.part_in_topic || part.part_index;
-      const existingOverride = findPartOverride(existing, part.title, effectivePartNum);
+      const existingOverride = findPartOverride(existing, part.raw_part || part.title, effectivePartNum);
 
-      const canonical = CANONICAL_PARTS.find(p => p.partNumber === effectivePartNum);
-      const partKey = existingOverride?.key
-        || (effectiveLevel.toUpperCase().includes('LEVEL_B') && canonical ? canonical.key : undefined)
-        || `part_${effectivePartNum}`;
+      const partKey = part.part_key
+        || existingOverride?.key
+        || deriveCanonicalPartKey(part.raw_part || part.title, effectivePartNum);
 
       const overrideObj: PartOverride = {
         key: partKey,
@@ -591,14 +600,13 @@ export const PartsDrawer: React.FC<PartsDrawerProps> = ({
                     {/* Part Intro TTS Speech & Action Controls */}
                     {(() => {
                       const speechText = getPartSpeechText(
-                        part.title,
+                        part.raw_part || part.title,
                         part.part_in_topic || part.part_index,
                         courseLevel
                       );
                       const isCached = partAudioCacheStatus[part.part_index] ?? false;
                       const isAuditioning = auditioningPartIndex === part.part_index;
                       const isRegenerating = regeneratingPartIndex === part.part_index;
-
                       return (
                         <div className="mt-2.5 pt-2 border-t border-zinc-100 flex flex-col gap-2">
                           <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-200/80 text-[10px] font-mono text-zinc-700 flex items-start gap-1">

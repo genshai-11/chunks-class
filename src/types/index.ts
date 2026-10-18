@@ -211,6 +211,8 @@ export interface LessonPart {
   start_index: number;
   end_index: number;
   chunk_count: number;
+  raw_part?: string;               // Original chunk.part string before normalization
+  part_key?: string;               // Unique canonical part key (e.g. "part_vocab_check")
   topic_number?: 1 | 2;            // 1 for Topic 1, 2 for Topic 2
   topic_title?: string;            // Extracted topic title, e.g. "Gossipy" or "Office romance"
   part_in_topic?: number;          // 1 to 7 within the respective topic

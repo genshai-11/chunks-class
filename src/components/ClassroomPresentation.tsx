@@ -856,9 +856,10 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
       const seqId = ++playbackSequenceRef.current;
       audioPlayer.stop();
       setIsPlayingAudio(true);
+      const effectivePartNum = targetPart.part_in_topic || targetPart.part_index;
       setPartAnnounceBanner({
         title: targetPart.title,
-        partNumber: targetPart.part_index
+        partNumber: effectivePartNum
       });
 
       try {
@@ -869,14 +870,14 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             await new Promise(resolve => setTimeout(resolve, 120));
           }
           if (playbackSequenceRef.current === seqId) {
-            await playPartIntro(targetPart.title, targetPart.part_index, selectedVoice, effectiveLevel);
+            await playPartIntro(targetPart.raw_part || targetPart.title, effectivePartNum, selectedVoice, effectiveLevel);
           }
         }
       } catch (err) {
         console.warn('[ClassroomPresentation] Part intro playback error:', err);
       } finally {
         setTimeout(() => {
-          setPartAnnounceBanner(prev => (prev?.partNumber === targetPart.part_index ? null : prev));
+          setPartAnnounceBanner(prev => (prev?.partNumber === effectivePartNum ? null : prev));
         }, 1500);
       }
 
