@@ -481,8 +481,13 @@ export const CurriculumExplorer: React.FC<CurriculumExplorerProps> = ({
   // Delete chunk
   const handleDeleteChunk = async (chunk: ChunkItem, lesson: LessonDoc) => {
     if (window.confirm(`Bạn có chắc muốn xóa cụm "${chunk.english || chunk.chunk_id}" khỏi Day ${lesson.day_number}?`)) {
-      await deleteChunk(lesson.id, chunk.chunk_id);
-      await loadCurriculumData();
+      try {
+        await deleteChunk(lesson.id, chunk.chunk_id);
+        await loadCurriculumData();
+      } catch (error) {
+        console.error('[CurriculumExplorer] Failed to delete chunk:', error);
+        alert('Không thể xóa cụm từ. Vui lòng kiểm tra kết nối và thử lại.');
+      }
     }
   };
 

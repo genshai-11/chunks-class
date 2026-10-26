@@ -15,6 +15,7 @@ import {
 import { Course, Cohort, ClassSession, LessonDoc, ChunkItem, CourseLevel, LessonGrammar } from '../types';
 import { curriculumRegistry } from './curriculumRegistry';
 import { CURRICULUM_CATALOG_LEVEL_B_ERE } from '../data/levelBEreData';
+import { persistLessonPayload, sanitizeLessonPayload } from './firestoreLessonPersistence';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4",
@@ -645,21 +646,21 @@ export async function syncFirestoreLessonsToRegistry(
 // 5. Save / Update Lesson & Chunks
 // --------------------------------------------------------------------------
 export async function saveLesson(lesson: LessonDoc): Promise<void> {
-  // Update in-memory registry immediately so current and future tab components see changes instantly
-  curriculumRegistry.updateLesson(lesson);
-  invalidateLessonsCache(lesson.course_id || lesson.level_code);
-  memoryCache.delete(`lesson_by_id:${lesson.id}`);
-  if (lesson.id.startsWith('level_b_day_')) {
-    memoryCache.delete(`lesson_by_id:${lesson.id.replace('level_b_day_', 'level_b_ere_day_')}`);
-  } else if (lesson.id.startsWith('level_b_ere_day_')) {
-    memoryCache.delete(`lesson_by_id:${lesson.id.replace('level_b_ere_day_', 'level_b_day_')}`);
-  }
-  try {
-    const docRef = doc(db, 'lessons', lesson.id);
-    await setDoc(docRef, lesson, { merge: true });
-  } catch (e) {
-    console.warn(`[Firestore] saveLesson warning for ${lesson.id}:`, e);
-  }
+  const docRef = doc(db, 'lessons', lesson.id);
+  await persistLessonPayload(
+    lesson,
+    (sanitizedLesson) => setDoc(docRef, sanitizedLesson, { merge: true }),
+    (persistedLesson) => {
+      curriculumRegistry.updateLesson(persistedLesson);
+      invalidateLessonsCache(persistedLesson.course_id || persistedLesson.level_code);
+      memoryCache.delete(`lesson_by_id:${persistedLesson.id}`);
+      if (persistedLesson.id.startsWith('level_b_day_')) {
+        memoryCache.delete(`lesson_by_id:${persistedLesson.id.replace('level_b_day_', 'level_b_ere_day_')}`);
+      } else if (persistedLesson.id.startsWith('level_b_ere_day_')) {
+        memoryCache.delete(`lesson_by_id:${persistedLesson.id.replace('level_b_ere_day_', 'level_b_day_')}`);
+      }
+    },
+  );
 }
 /**
  * Batch update multiple lessons in Firestore and synchronize in-memory registry.
@@ -1205,7 +1206,7 @@ export async function syncAllCurriculumToFirestore(
     // 2. Sync Lessons
     for (const lesson of lessonsToSync) {
       totalChunkCount += (lesson.chunks?.length || 0);
-      batch.set(doc(db, 'lessons', lesson.id), lesson, { merge: true });
+      batch.set(doc(db, 'lessons', lesson.id), sanitizeLessonPayload(lesson), { merge: true });
       countInBatch++;
       processedOps++;
       if (countInBatch >= BATCH_SIZE) {

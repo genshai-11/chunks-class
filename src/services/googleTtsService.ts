@@ -1,6 +1,14 @@
 import { deepgramTts, DEEPGRAM_AURA_VOICES, sanitizeSpeechText } from './deepgramTtsService';
 import { modelRegistryService } from './modelRegistryService';
 import { LanguageMode, ChunkItem } from '../types';
+import {
+  audioUrlVerifier,
+  getAudioUrlCandidates,
+  getPreferredAudioUrl,
+  hasUsableAudioUrl,
+  resolveAudioLanguage,
+  type AudioUrlState,
+} from './audioReliability';
 
 export { sanitizeSpeechText };
 
@@ -37,6 +45,7 @@ export interface ChunkAudioStatus {
   hasEnAudio: boolean;
   hasViAudio: boolean;
   hasGcsAudio: boolean;
+  hasGcsAudioVi: boolean;
   enSource?: AudioSourceType;
   viSource?: AudioSourceType;
 }
@@ -1603,7 +1612,7 @@ class AudioPlayService {
    * Get in-memory audio preparation status and detailed chunk status for a lesson
    */
   getLessonAudioStatus(
-    chunks: { chunk_id?: string; english: string; vietnamese?: string; audio_url?: string | null }[],
+    chunks: ChunkItem[],
     voiceEn: string = 'flux-cliff-en',
     voiceVi: string = 'vi-VN-Neural2-A'
   ): LessonAudioStatus {
@@ -1629,10 +1638,10 @@ class AudioPlayService {
         : null;
       const hasViAudio = Boolean(viCachedAudio);
 
-      const enUrl = (c as any).audio_url_human || c.audio_url;
-      const viUrl = (c as any).audio_url_human_vi || (c as any).audio_url_vi;
-      const hasGcsAudio = Boolean(enUrl && enUrl.startsWith('http') && !enUrl.includes('placeholder'));
-      const hasGcsAudioVi = Boolean(viUrl && viUrl.startsWith('http'));
+      const enStates = audioUrlVerifier.getCachedStates(getAudioUrlCandidates(c, 'en'));
+      const viStates = audioUrlVerifier.getCachedStates(getAudioUrlCandidates(c, 'vi'));
+      const hasGcsAudio = hasUsableAudioUrl(c, 'en', enStates);
+      const hasGcsAudioVi = hasUsableAudioUrl(c, 'vi', viStates);
 
       const isEnReady = hasEnAudio || hasGcsAudio;
       const isViReady = hasViAudio || hasGcsAudioVi;
@@ -1647,6 +1656,7 @@ class AudioPlayService {
         hasEnAudio,
         hasViAudio,
         hasGcsAudio,
+        hasGcsAudioVi,
         enSource: hasEnAudio ? ((effectiveVoiceEn.startsWith('aura-') || effectiveVoiceEn.startsWith('flux-')) ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
         viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : (hasGcsAudioVi ? 'GCS_MASTER' : undefined)
       });
@@ -1666,7 +1676,7 @@ class AudioPlayService {
    * Uses dual-lookup to recognize 100% of prepared and legacy audio.
    */
   async checkLessonAudioStatus(
-    chunks: { chunk_id?: string; english: string; vietnamese?: string; audio_url?: string | null }[],
+    chunks: ChunkItem[],
     voiceEn: string = 'flux-cliff-en',
     voiceVi: string = 'vi-VN-Neural2-A'
   ): Promise<LessonAudioStatus> {
@@ -1677,43 +1687,60 @@ class AudioPlayService {
     const effectiveVoiceEn = voiceEn && !voiceEn.startsWith('vi-') ? voiceEn : 'flux-cliff-en';
     const effectiveVoiceVi = voiceVi && voiceVi.startsWith('vi-') ? voiceVi : 'vi-VN-Neural2-A';
 
-    for (let i = 0; i < chunks.length; i++) {
-      const c = chunks[i];
-      const cleanEn = sanitizeSpeechText(c.english);
-      const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
-
-      const enAudio = cleanEn 
-        ? (await this.getCachedAudioAsync(cleanEn, effectiveVoiceEn) || await this.getCachedAudioAsync(c.english, effectiveVoiceEn))
-        : null;
-      const hasEnAudio = Boolean(enAudio);
-
-      const viAudio = cleanVi 
-        ? (await this.getCachedAudioAsync(cleanVi, effectiveVoiceVi) || await this.getCachedAudioAsync(c.vietnamese || '', effectiveVoiceVi))
-        : null;
-      const hasViAudio = Boolean(viAudio);
-
-      const enUrl = (c as any).audio_url_human || c.audio_url;
-      const viUrl = (c as any).audio_url_human_vi || (c as any).audio_url_vi;
-      const hasGcsAudio = Boolean(enUrl && enUrl.startsWith('http') && !enUrl.includes('placeholder'));
-      const hasGcsAudioVi = Boolean(viUrl && viUrl.startsWith('http'));
-
-      const isEnReady = hasEnAudio || hasGcsAudio;
-      const isViReady = hasViAudio || hasGcsAudioVi;
-
-      if (isEnReady) enCached++;
-      if (isViReady) viCached++;
-
-      details.push({
-        chunk_id: c.chunk_id || `chunk_${i + 1}`,
-        english: c.english,
-        vietnamese: c.vietnamese || '',
-        hasEnAudio,
-        hasViAudio,
-        hasGcsAudio,
-        enSource: hasEnAudio ? ((effectiveVoiceEn.startsWith('aura-') || effectiveVoiceEn.startsWith('flux-')) ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
-        viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : (hasGcsAudioVi ? 'GCS_MASTER' : undefined)
-      });
+    // Status rendering must never probe the network. It consumes only verification
+    // facts already collected by an explicit user action; canonical declared URLs
+    // stay usable until a check definitively marks them missing.
+    const cachedUrlStates = new Map<string, AudioUrlState>();
+    for (const c of chunks) {
+      for (const [url, state] of audioUrlVerifier.getCachedStates([
+        ...getAudioUrlCandidates(c, 'en'),
+        ...getAudioUrlCandidates(c, 'vi'),
+      ])) {
+        cachedUrlStates.set(url, state);
+      }
     }
+    const chunkStatuses = new Array<ChunkAudioStatus>(chunks.length);
+    let cursor = 0;
+    const worker = async () => {
+      while (cursor < chunks.length) {
+        const i = cursor++;
+        const c = chunks[i];
+        const cleanEn = sanitizeSpeechText(c.english);
+        const cleanVi = c.vietnamese ? sanitizeSpeechText(c.vietnamese) : '';
+        const hasGcsAudio = hasUsableAudioUrl(c, 'en', cachedUrlStates);
+        const hasGcsAudioVi = hasUsableAudioUrl(c, 'vi', cachedUrlStates);
+
+        // Local readiness is measured independently from reachable GCS audio.
+        const enAudio = cleanEn
+          ? (await this.getCachedAudioAsync(cleanEn, effectiveVoiceEn) || await this.getCachedAudioAsync(c.english, effectiveVoiceEn))
+          : null;
+        const hasEnAudio = Boolean(enAudio);
+
+        const viAudio = cleanVi
+          ? (await this.getCachedAudioAsync(cleanVi, effectiveVoiceVi) || await this.getCachedAudioAsync(c.vietnamese || '', effectiveVoiceVi))
+          : null;
+        const hasViAudio = Boolean(viAudio);
+        const isEnReady = hasEnAudio || hasGcsAudio;
+        const isViReady = hasViAudio || hasGcsAudioVi;
+
+        if (isEnReady) enCached++;
+        if (isViReady) viCached++;
+
+        chunkStatuses[i] = {
+          chunk_id: c.chunk_id || `chunk_${i + 1}`,
+          english: c.english,
+          vietnamese: c.vietnamese || '',
+          hasEnAudio,
+          hasViAudio,
+          hasGcsAudio,
+          hasGcsAudioVi,
+          enSource: hasEnAudio ? ((effectiveVoiceEn.startsWith('aura-') || effectiveVoiceEn.startsWith('flux-')) ? 'DEEPGRAM_AURA' : 'GOOGLE_CLOUD_AI') : (hasGcsAudio ? 'GCS_MASTER' : undefined),
+          viSource: hasViAudio ? 'GOOGLE_CLOUD_AI' : (hasGcsAudioVi ? 'GCS_MASTER' : undefined)
+        };
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(4, chunks.length) }, worker));
+    details.push(...chunkStatuses);
 
     return {
       total: chunks.length,
@@ -1729,10 +1756,11 @@ class AudioPlayService {
    */
   isLessonAudioReady(lesson: { chunks?: ChunkItem[] }): boolean {
     if (!lesson.chunks || lesson.chunks.length === 0) return false;
-    return lesson.chunks.every(c => {
-      const url = c.audio_url_human || c.audio_url;
-      return Boolean(url && url.startsWith('http') && !url.includes('placeholder'));
-    });
+    return lesson.chunks.every(c => hasUsableAudioUrl(
+      c,
+      'en',
+      audioUrlVerifier.getCachedStates(getAudioUrlCandidates(c, 'en')),
+    ));
   }
 
   /**
@@ -1741,8 +1769,7 @@ class AudioPlayService {
   async isLessonFullyReadyAsync(lesson: { chunks?: ChunkItem[] }): Promise<boolean> {
     if (!lesson.chunks || lesson.chunks.length === 0) return false;
     const status = await this.checkLessonAudioStatus(lesson.chunks);
-    const allGcs = lesson.chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http')));
-    return status.isFullyCached || allGcs;
+    return status.isFullyCached;
   }
 
   /**
@@ -1775,8 +1802,7 @@ class AudioPlayService {
     }
 
     const voice = voiceName || modelRegistryService.getMainModelEn();
-    const isVi = modelRegistryService.getModelById(voice)?.language === 'vi' || voice.startsWith('vi-') || isVietnameseText(cleanText, voice);
-    const language: 'en' | 'vi' = isVi ? 'vi' : 'en';
+    const language = resolveAudioLanguage(cleanText, voice, modelRegistryService.getModelById(voice)?.language);
 
     this.setAudioLoading(true);
 
@@ -2294,54 +2320,7 @@ class AudioPlayService {
     });
   }
 
-  /**
-   * Resilient Fallback: Public Google Translate TTS (mp3)
-   * Guarantees 100% synthesis success rate when cloud API keys are exhausted, rate-limited, or blocked.
-   */
-  public async synthesizeWithTranslateTTS(text: string, isVi?: boolean): Promise<string> {
-    const cleanText = sanitizeSpeechText(text);
-    if (!cleanText) return '';
-
-    // In web browser environment, translate.google.com/translate_tts blocks direct fetch due to CORS policy
-    if (typeof window !== 'undefined') {
-      console.warn('[GoogleTTS] synthesizeWithTranslateTTS skipped in browser environment due to CORS policy.');
-      return '';
-    }
-
-    try {
-      const isVietnamese = isVi !== undefined ? isVi : isVietnameseText(cleanText);
-      const lang = isVietnamese ? 'vi' : 'en';
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${lang}&client=tw-ob`;
-
-      const resp = await fetch(url);
-      if (!resp.ok) {
-        console.warn(`[GoogleTTS] Translate TTS failed HTTP ${resp.status}`);
-        return '';
-      }
-      const blob = await resp.blob();
-      if (typeof FileReader !== 'undefined') {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              resolve(reader.result);
-            } else {
-              resolve('');
-            }
-          };
-          reader.onerror = () => resolve('');
-          reader.readAsDataURL(blob);
-        });
-      } else {
-        const buffer = await blob.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString('base64');
-        return `data:audio/mp3;base64,${base64}`;
-      }
-    } catch (err) {
-      console.warn('[GoogleTTS] synthesizeWithTranslateTTS network/CORS error:', err);
-      return '';
-    }
-  }
+  /** Direct Google Translate speech URLs are intentionally unsupported (CORS and reliability). */
 
   /**
    * Synthesize with Google Cloud TTS or Gemini Flash TTS with automatic Multi-Key Failover:
@@ -2569,27 +2548,20 @@ class AudioPlayService {
 
   private playBrowserTts(text: string, voiceName: string, speed: number): Promise<void> {
     const cleanText = sanitizeSpeechText(text);
-    return new Promise(async (resolve) => {
+    return new Promise((resolve, reject) => {
       if (typeof window === 'undefined' || !window.speechSynthesis) {
-        resolve();
+        reject(new Error('Browser speech synthesis is unavailable.'));
         return;
       }
 
-      const isVi = voiceName.startsWith('vi') || isVietnameseText(cleanText);
+      const language = resolveAudioLanguage(cleanText, voiceName, modelRegistryService.getModelById(voiceName)?.language);
+      const isVi = language === 'vi';
+      const voices = window.speechSynthesis.getVoices();
 
       if (isVi) {
-        const voices = window.speechSynthesis.getVoices();
         const viVoice = voices.find(v => v.lang.startsWith('vi') || v.lang.replace('_', '-').startsWith('vi'));
         if (!viVoice) {
-          // On Windows Chrome/Edge without Vietnamese voice pack, browser falls back to default English voice (Microsoft David).
-          // NEVER let browser speak Vietnamese with an English voice! Fallback to Public Google Translate TTS.
-          try {
-            const fallbackUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
-            await this.playUrl(fallbackUrl, speed);
-          } catch (e) {
-            console.warn('[Audio] Fallback translate_tts in playBrowserTts failed:', e);
-          }
-          resolve();
+          reject(new Error('Vietnamese browser voice is unavailable. Install a vi-VN system voice or configure Cloud TTS.'));
           return;
         }
       }
@@ -2604,7 +2576,6 @@ class AudioPlayService {
       utterance.lang = isVi ? 'vi-VN' : 'en-US';
 
       if (isVi) {
-        const voices = window.speechSynthesis.getVoices();
         const viVoice = voices.find(v => v.lang.startsWith('vi') || v.lang.replace('_', '-').startsWith('vi'));
         if (viVoice) {
           utterance.voice = viVoice;
@@ -2612,7 +2583,7 @@ class AudioPlayService {
       }
 
       utterance.onend = () => resolve();
-      utterance.onerror = () => resolve();
+      utterance.onerror = event => reject(new Error(`Browser speech synthesis failed: ${event.error || 'unknown error'}`));
 
       window.speechSynthesis.speak(utterance);
     });

@@ -17,6 +17,19 @@ import {
   sanitizeSpeechText 
 } from '../services/googleTtsService';
 import { modelRegistryService, PROVIDERS_META, getMinimalName } from '../services/modelRegistryService';
+import {
+  audioUrlVerifier,
+  createProviderPlaybackChunk,
+  getAudioAvailability,
+  getAudioUrlCandidates,
+  getFallbackUrlsToVerify,
+  getMissingAudioNeeds,
+  getMissingOnlyUrlsToVerify,
+  getPreferredAudioUrl,
+  hasUsableAudioUrl,
+  type AudioUrlState,
+} from '../services/audioReliability';
+import { buildChunkSavePayload } from '../utils/chunkEditor';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { getAllLessons, addOrUpdateChunk, updateLessonChunks } from '../services/firestoreService';
 import { 
@@ -571,13 +584,21 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     }
 
     try {
-      const calculated = await Promise.all(lessons.map(async (lesson) => {
+      const flattened = lessons.flatMap(lesson => lesson.chunks || []);
+      const combinedStatus = await audioPlayer.checkLessonAudioStatus(flattened, voiceProfileEn, voiceProfileVi);
+      let detailOffset = 0;
+      const calculated = lessons.map((lesson) => {
         const chunks = lesson.chunks || [];
-        const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
-        const gcsViCount = chunks.filter(c => Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'))).length;
+        const details = combinedStatus.details.slice(detailOffset, detailOffset + chunks.length);
+        detailOffset += chunks.length;
+        const gcsCount = details.filter(detail => detail.hasGcsAudio).length;
+        const gcsViCount = details.filter(detail => detail.hasGcsAudioVi).length;
 
         try {
-          const status = await audioPlayer.checkLessonAudioStatus(chunks, voiceProfileEn, voiceProfileVi);
+          const status = {
+            enCached: details.filter(detail => detail.hasEnAudio || detail.enSource === 'GCS_MASTER').length,
+            viCached: details.filter(detail => detail.hasViAudio || detail.viSource === 'GCS_MASTER').length,
+          };
           const isEnReady = chunks.length > 0 && status.enCached === chunks.length;
           const enPercent = chunks.length > 0 ? (isEnReady ? 100 : Math.round((status.enCached / chunks.length) * 100)) : 0;
           const effectiveViCached = Math.max(status.viCached, gcsViCount);
@@ -610,7 +631,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
             isFullyCached: chunks.length > 0 && gcsCount === chunks.length && gcsViCount === chunks.length
           };
         }
-      }));
+      });
 
       // Update statusList reliably without race condition discard bugs
       if (version >= latestAppliedVersion.current) {
@@ -656,33 +677,44 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
     const selectedEn = chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
     const selectedVi = chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
+    const auditionProvider: AudioProvider = activeProvider === 'DEEPGRAM_AURA' || selectedEn.startsWith('aura-') || selectedEn.startsWith('flux-')
+      ? 'DEEPGRAM_AURA'
+      : 'GOOGLE_TTS';
+    const playbackChunk = createProviderPlaybackChunk(chunk, auditionProvider);
     try {
       if (lang === 'en') {
         await audioPlayer.playChunk(
           chunk.english,
-          activeProvider === 'DEEPGRAM_AURA' ? null : chunk.audio_url,
+          auditionProvider === 'DEEPGRAM_AURA' ? null : getPreferredAudioUrl(chunk, 'en'),
           selectedEn,
-          1.0
+          1.0,
+          false,
+          undefined,
+          playbackChunk,
         );
       } else if (lang === 'vi') {
         await audioPlayer.playChunk(
           chunk.vietnamese,
-          chunk.audio_url_vi || null,
+          getPreferredAudioUrl(chunk, 'vi'),
           selectedVi,
-          1.0
+          1.0,
+          false,
+          undefined,
+          playbackChunk,
         );
       } else if (lang === 'sequence') {
         await audioPlayer.playBilingualSequence(
           chunk.english,
           chunk.vietnamese,
           'EN_THEN_VI',
-          activeProvider === 'DEEPGRAM_AURA' ? null : chunk.audio_url,
+          auditionProvider === 'DEEPGRAM_AURA' ? null : getPreferredAudioUrl(chunk, 'en'),
           selectedEn,
           selectedVi,
           1.0,
           1,
           undefined,
-          chunk.audio_url_vi || null
+          getPreferredAudioUrl(chunk, 'vi'),
+          playbackChunk,
         );
       }
     } catch (e: any) {
@@ -739,6 +771,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 lang: 'en'
               });
               updatedChunk.audio_url = gcsUrl;
+              for (const field of ['audio_url_human', 'audio_url_tts'] as const) {
+                if (audioUrlVerifier.getCachedState(chunk[field] || '') === 'missing') {
+                  updatedChunk[field] = null;
+                }
+              }
             } catch (uploadErr) {
               cloudFailed = true;
               console.warn(`[Regenerate] Upload EN to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
@@ -767,6 +804,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 lang: 'vi'
               });
               updatedChunk.audio_url_vi = gcsUrlVi;
+              for (const field of ['audio_url_human_vi', 'audio_url_tts_vi'] as const) {
+                if (audioUrlVerifier.getCachedState(chunk[field] || '') === 'missing') {
+                  updatedChunk[field] = null;
+                }
+              }
             } catch (uploadErr) {
               cloudFailed = true;
               console.warn(`[Regenerate] Upload VI to GCS failed for chunk ${chunk.chunk_id}:`, uploadErr);
@@ -808,11 +850,15 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
     if (!inspectingLesson) return;
     setIsSavingChunk(true);
     try {
-      const updatedChunk: ChunkItem = {
-        ...chunk,
-        english: editEnText.trim() || chunk.english,
-        vietnamese: editViText.trim() || chunk.vietnamese
-      };
+      const updatedChunk = buildChunkSavePayload(chunk, {
+        category: chunk.category,
+        english: editEnText.trim() ? editEnText : chunk.english,
+        vietnamese: editViText.trim() ? editViText : chunk.vietnamese,
+        beatProsody: chunk.beat_prosody ?? '',
+        ipa: chunk.ipa ?? '',
+        speaker: chunk.speaker ?? '',
+        notes: chunk.notes ?? '',
+      });
 
       const updatedLesson = await addOrUpdateChunk(inspectingLesson.id, updatedChunk);
       if (updatedLesson) {
@@ -849,7 +895,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       return;
     }
 
-    const confirmMsg = `Bạn có chắc chắn muốn xóa toàn bộ link audio Cloud Storage cũ của bài học "Day ${lesson.day_number}: ${lesson.lesson_title}" không?\n\nToàn bộ liên kết audio_url và audio_url_vi sẽ được đặt lại về null và cập nhật lên Firestore để bạn tạo lại từ đầu.`;
+    const confirmMsg = `Bạn có chắc chắn muốn xóa toàn bộ link audio Cloud Storage cũ của bài học "Day ${lesson.day_number}: ${lesson.lesson_title}" không?\n\nToàn bộ liên kết audio EN/VI (human, TTS và legacy) sẽ được đặt lại về null và cập nhật lên Firestore để bạn tạo lại từ đầu.`;
     if (!window.confirm(confirmMsg)) return;
 
     setIsResettingAudio(true);
@@ -857,7 +903,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       const updatedChunks = lesson.chunks.map(c => ({
         ...c,
         audio_url: null,
-        audio_url_vi: null
+        audio_url_tts: null,
+        audio_url_human: null,
+        audio_url_vi: null,
+        audio_url_tts_vi: null,
+        audio_url_human_vi: null,
       }));
 
       await updateLessonChunks(lesson.id, updatedChunks);
@@ -938,12 +988,53 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       setIsBatchRunning(false);
       return;
     }
-    // Hydrate the selected voice cache before deciding which sentences are missing.
-    await Promise.all(candidateItems.map(async ({ chunk }) => {
-      await audioPlayer.getCachedAudioAsync(chunk.english, chunkVoiceEn[chunk.chunk_id] || voiceProfileEn);
-      if (chunk.vietnamese) await audioPlayer.getCachedAudioAsync(chunk.vietnamese, chunkVoiceVi[chunk.chunk_id] || voiceProfileVi);
-    }));
+    // Missing-only is the sole network verification path. Full/failed modes do not scan URLs.
+    let verifiedUrlStatuses = new Map<string, AudioUrlState>();
+    const cacheReadiness = new Map<ChunkItem, { en: boolean; vi: boolean }>();
+    if (effectiveMode === 'missing_only') {
+      const preferredUrlsToVerify = getMissingOnlyUrlsToVerify(
+        candidateItems.map(({ chunk }) => chunk),
+        effectiveTarget,
+      );
+      verifiedUrlStatuses = await audioUrlVerifier.verifyMany(preferredUrlsToVerify);
+      const fallbackUrlsToVerify = getFallbackUrlsToVerify(
+        candidateItems.map(({ chunk }) => chunk),
+        effectiveTarget,
+        verifiedUrlStatuses,
+      );
+      if (fallbackUrlsToVerify.length > 0) {
+        const fallbackStatuses = await audioUrlVerifier.verifyMany(fallbackUrlsToVerify);
+        for (const [url, state] of fallbackStatuses) {
+          verifiedUrlStatuses.set(url, state);
+        }
+      }
+      let readinessCursor = 0;
+      const readinessWorker = async () => {
+        while (readinessCursor < candidateItems.length) {
+          const { chunk } = candidateItems[readinessCursor++];
+          const targetVoiceEn = chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
+          const targetVoiceVi = chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
+          const enAvailability = getAudioAvailability(chunk, 'en', verifiedUrlStatuses);
+          const viAvailability = getAudioAvailability(chunk, 'vi', verifiedUrlStatuses);
+          const shouldReadEnCache = effectiveTarget !== 'VIETNAMESE' && enAvailability !== 'ready';
+          const shouldReadViCache = effectiveTarget !== 'ENGLISH' && viAvailability !== 'ready' && Boolean(chunk.vietnamese);
+          const [enAudio, viAudio] = await Promise.all([
+            shouldReadEnCache ? audioPlayer.getCachedAudioAsync(chunk.english, targetVoiceEn) : Promise.resolve(null),
+            shouldReadViCache ? audioPlayer.getCachedAudioAsync(chunk.vietnamese, targetVoiceVi) : Promise.resolve(null),
+          ]);
+          cacheReadiness.set(chunk, {
+            en: enAvailability !== 'ready' && Boolean(enAudio),
+            vi: viAvailability !== 'ready' && Boolean(viAudio),
+          });
+        }
+      };
+      await Promise.all(Array.from(
+        { length: Math.min(Math.max(1, Math.min(8, batchWorkersCount)), candidateItems.length) },
+        readinessWorker,
+      ));
+    }
     let targetItems: BatchItem[] = [];
+    const missingNeeds = new Map<ChunkItem, { en: boolean; vi: boolean }>();
     let initialSkippedCount = 0;
 
     // Filter candidate items based on effectiveMode
@@ -966,17 +1057,16 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
 
       targetItems = candidateItems.filter(item => {
         const c = item.chunk;
-        const targetVoiceEn = chunkVoiceEn[c.chunk_id] || voiceProfileEn;
-        const targetVoiceVi = chunkVoiceVi[c.chunk_id] || voiceProfileVi;
-        const hasGcsEn = Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'));
-        const isCachedEn = audioPlayer.hasCachedAudio(c.english, targetVoiceEn);
-        const needsEn = shouldCheckEn && !isCachedEn;
-
-        const hasGcsVi = Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'));
-        const isCachedVi = c.vietnamese ? audioPlayer.hasCachedAudio(c.vietnamese, targetVoiceVi) : true;
-        const needsVi = shouldCheckVi && Boolean(c.vietnamese) && !isCachedVi;
-
-        return needsEn || needsVi;
+        const cached = cacheReadiness.get(c) || { en: false, vi: false };
+        const needs = getMissingAudioNeeds(
+          c,
+          shouldCheckEn && shouldCheckVi ? 'BOTH' : shouldCheckEn ? 'ENGLISH' : 'VIETNAMESE',
+          verifiedUrlStatuses,
+          cached.en,
+          cached.vi,
+        );
+        missingNeeds.set(c, needs);
+        return needs.en || needs.vi;
       });
 
       initialSkippedCount = candidateItems.length - targetItems.length;
@@ -1041,11 +1131,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           if (cancelBatchRef.current) break;
 
           const targetVoiceEn = chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
-          const hasGcsEn = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder'));
-          const isCachedEn = audioPlayer.hasCachedAudio(cleanEn, targetVoiceEn);
+          const shouldSkipExistingEn = effectiveMode === 'missing_only' && !missingNeeds.get(chunk)?.en;
 
-          // Reuse only the selected model cache in missing-only mode
-          if (!effectiveForceOverwrite && (effectiveMode === 'missing_only' && isCachedEn)) {
+          if (!effectiveForceOverwrite && shouldSkipExistingEn) {
             skippedCount++;
             processedCount++;
             addLog(`[Worker ${workerId}] Bỏ qua EN #${chunk.item_number} do đã có audio GCS cũ. (Bật 'Ghi đè' để đổi model sang ${targetVoiceEn})`, 'info');
@@ -1086,6 +1174,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                     lang: 'en'
                   });
                   chunk.audio_url = gcsUrl;
+                  for (const field of ['audio_url_human', 'audio_url_tts'] as const) {
+                    if (audioUrlVerifier.getCachedState(chunk[field] || '') === 'missing') {
+                      chunk[field] = null;
+                    }
+                  }
                   cloudSyncedCount++;
                   successCount++;
                   succeededChunkIds.add(chunk.chunk_id);
@@ -1154,10 +1247,9 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           if (cancelBatchRef.current) break;
 
           const targetVoiceVi = chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
-          const hasGcsVi = Boolean(chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http'));
-          const isCachedVi = audioPlayer.hasCachedAudio(cleanVi, targetVoiceVi);
+          const shouldSkipExistingVi = effectiveMode === 'missing_only' && !missingNeeds.get(chunk)?.vi;
 
-          if (!effectiveForceOverwrite && (effectiveMode === 'missing_only' && isCachedVi)) {
+          if (!effectiveForceOverwrite && shouldSkipExistingVi) {
             skippedCount++;
             processedCount++;
             addLog(`[Worker ${workerId}] Bỏ qua VI #${chunk.item_number} do đã có audio GCS cũ. (Bật 'Ghi đè' để đổi model sang ${targetVoiceVi})`, 'info');
@@ -1197,6 +1289,11 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                     lang: 'vi'
                   });
                   chunk.audio_url_vi = gcsUrlVi;
+                  for (const field of ['audio_url_human_vi', 'audio_url_tts_vi'] as const) {
+                    if (audioUrlVerifier.getCachedState(chunk[field] || '') === 'missing') {
+                      chunk[field] = null;
+                    }
+                  }
                   cloudSyncedCount++;
                   successCount++;
                   succeededChunkIds.add(chunk.chunk_id);
@@ -1260,16 +1357,12 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
           }));
         }
 
-        // Periodic UI update
-        if (index % 4 === 0 || cursor >= targetItems.length) {
-          calculateReadinessStatus();
-        }
       }
     };
 
     try {
       const workers = Array.from(
-        { length: Math.min(batchWorkersCount, targetItems.length) },
+        { length: Math.min(Math.max(1, Math.min(8, batchWorkersCount)), targetItems.length) },
         (_, i) => worker(i + 1)
       );
       await Promise.all(workers);
@@ -1318,7 +1411,6 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       }
 
       await loadLessons();
-      calculateReadinessStatus();
 
       // --- Stage 5: Update Failed Chunks Queue & Final Status ---
       setFailedChunks(prev => {
@@ -1349,7 +1441,6 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
       addLog(`Lỗi quy trình batch: ${err?.message || String(err)}`, 'error');
     } finally {
       setIsBatchRunning(false);
-      calculateReadinessStatus();
       setBatchProgress(prev => ({
         ...prev,
         stage: cancelBatchRef.current ? 'cancelled' : 'completed',
@@ -3663,8 +3754,16 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                   const isVoiceConfigOpen = Boolean(expandedChunkVoiceConfig[chunk.chunk_id]);
                   const selectedVoiceEn = chunkVoiceEn[chunk.chunk_id] || voiceProfileEn;
                   const selectedVoiceVi = chunkVoiceVi[chunk.chunk_id] || voiceProfileVi;
-                  const isEnCached = Boolean(chunk.audio_url && chunk.audio_url.startsWith('http') && !chunk.audio_url.includes('placeholder')) || audioPlayer.hasCachedAudio(chunk.english, selectedVoiceEn);
-                  const isViCached = Boolean(chunk.audio_url_vi && chunk.audio_url_vi.startsWith('http')) || (Boolean(chunk.vietnamese) && audioPlayer.hasCachedAudio(chunk.vietnamese, selectedVoiceVi));
+                  const isEnCached = hasUsableAudioUrl(
+                    chunk,
+                    'en',
+                    audioUrlVerifier.getCachedStates(getAudioUrlCandidates(chunk, 'en')),
+                  ) || audioPlayer.hasCachedAudio(chunk.english, selectedVoiceEn);
+                  const isViCached = hasUsableAudioUrl(
+                    chunk,
+                    'vi',
+                    audioUrlVerifier.getCachedStates(getAudioUrlCandidates(chunk, 'vi')),
+                  ) || (Boolean(chunk.vietnamese) && audioPlayer.hasCachedAudio(chunk.vietnamese, selectedVoiceVi));
 
                   if (isEditingThis) {
                     return (

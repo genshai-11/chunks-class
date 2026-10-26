@@ -59,7 +59,7 @@ export interface ChunkItem {
   source_page?: number;
   source_sheet?: string;
   source_row?: number;
-  notes?: string;
+  notes?: string | null;
   part?: string;
   is_example?: boolean;
   [key: string]: any;

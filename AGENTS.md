@@ -32,7 +32,7 @@ chunks-class/
 
 ## 🤖 2. Multi-Agent Dispatching & Role Taxonomy (Osmani Agent Team Framework)
 
-This repository enforces the **Osmani Agent Team Engineering Workflow** (based on `addyosmani/agent-skills` and Everything-Claude-Code). All autonomous engineering, feature implementation, and bug fixes must operate through specialized subagent roles with structured verification gates:
+This repository enforces the **Osmani Agent Team Engineering Workflow** (based on `addyosmani/agent-skills` and Everything-Claude-Code). Agents are accountable roles; skills are reusable process playbooks. Do not treat a skill name as an agent, and do not invoke every installed skill by default. Select and use **all skills applicable to the change's risks and phase**, and record those selections in the work artifact.
 
 | Agent Role | Persona / Specialization | Primary Jurisdiction | Responsibilities & Invariant Gates |
 | :--- | :--- | :--- | :--- |
@@ -41,18 +41,21 @@ This repository enforces the **Osmani Agent Team Engineering Workflow** (based o
 | **Code Reviewer** | `code-reviewer` / `reviewer` | Diffs, Logic flows, Domain rules | **MANDATORY GATE**: Evaluates 5 axes (Correctness, Architecture, Readability, Security, Performance) against `LOGIC_FLOW.md` and repository domain rules before ANY change ships. |
 | **Security Auditor** | `security-auditor` | Auth, Firestore, APIs, Secrets | Audits Firestore security rules, client-side secret exposure, input sanitization, and CORS headers. |
 | **Test & QA Engineer** | `test-engineer` | Tests, Build, Clicker, Audio | Verifies test isolation, mock fidelity, audio playback edge cases, clicker debouncing, and hardware shortcut bindings. |
-| **Delivery Gatekeeper** | `delivery-gate` / Lead | Build, CI/CD, Production Gate | Verifies `bun x tsc --noEmit` and `bun run build`, audits changelogs, confirms peer review signoff, and executes zero-slop release. |
+| **Delivery Gatekeeper** | `delivery-gate` / Lead | Build, CI/CD, Production Gate | Verifies `bun test`, `bun x tsc --noEmit`, and `bun run build`, audits release evidence, confirms peer review and human signoff, and prepares a reversible release. |
+
+Applicable skills map to the lifecycle rather than replacing these roles: `intent-driven-development`, `spec-driven-development`, `planning-and-task-breakdown`, `test-driven-development`, `incremental-implementation`, `security-and-hardening`, `code-review-and-quality`, `verification-loop`, `shipping-and-launch`, and `git-workflow-and-versioning`. Add domain-specific skills when their trigger conditions apply; omit unrelated skills and state why when the omission could be surprising.
 
 ### 2.0 Mandatory Post-Change Peer Review Gate (NON-NEGOTIABLE)
 
-> **STRICT RULE**: No code modification—regardless of size, simplicity, or urgency—is considered complete or ready for release until an independent peer review is executed by a specialized review agent (`code-reviewer` or `reviewer`).
+> **STRICT RULE**: Every code, data, or configuration change—regardless of size, simplicity, or urgency—requires an independent reviewer before merge or release. Documentation-only changes may receive a proportionate review, but release-affecting documentation/configuration must still pass the required CI gates. “Trivial” never means “unreviewed.”
 >
-> The reviewer MUST audit the diff against:
+> The reviewer must use a fresh, independent context: provide the task, acceptance criteria, canonical invariants, exact diff/base SHA, and verification evidence, but not the author's conclusions or private reasoning. The reviewer must be a different agent/model or a human who did not implement the change, and MUST audit the diff against:
 > 1. Domain ontology and invariants in `docs/LOGIC_FLOW.md`.
 > 2. Zero-slop production standards (no mocks, no unhandled promises, clean cancellation).
 > 3. Audio pipeline safety (no unhandled promises in `playUrl`, correct silence frame stitching, bucket URI canonicalization).
 > 4. Firestore read/write quota rules (single-doc chunk containment, ID-based deduplication, batch update field filtering).
-> 5. Typecheck & build cleanliness (`bun x tsc --noEmit` and `bun run build`).
+> 5. Test, typecheck, and build cleanliness (`bun test`, `bun x tsc --noEmit`, and `bun run build`).
+
 ---
 
 ## 🧭 2.1 Codebase Graphify Research Map
@@ -293,9 +296,11 @@ flowchart TD
 ## 🚀 4. CI/CD & Multi-Domain Hosting ($0.00 / Month Always Free)
 
 ### Automated Pipeline:
-- **Trigger**: Every push to `main` / `master` or manual workflow dispatch.
-- **Workflow**: `.github/workflows/deploy-firebase.yml`
-- **Target Site**: `chunks-classroom` → Deploys directly to **`https://chunks-classroom.web.app`**.
+- **Trigger**: Push to `main`, pull request to `main`, or manual `workflow_dispatch`.
+- **Quality job (all triggers)**: frozen install, `bun test`, `bun x tsc --noEmit`, `bun run build`; the verified bundle is uploaded as a CI artifact.
+- **Preview**: Pull requests deploy an isolated Firebase Hosting preview channel (`pr-{number}`, 7-day expiry). This is the link that must be reviewed before production.
+- **Production**: `workflow_dispatch` with `channel=live` only, gated by the GitHub `production` environment reviewer. A push to `main` **never** deploys live automatically.
+- **Target Site**: `chunks-classroom` → **`https://chunks-classroom.web.app`**.
 - **Caching Discipline**:
   - `/index.html`: `no-cache, no-store, must-revalidate` (guarantees instant updates on new deploys).
   - `/assets/**`: `public, max-age=31536000, immutable` (1-year immutable cache for content-hashed bundles).
@@ -310,7 +315,29 @@ flowchart TD
    - Firestore: ≤ 50,000 reads, 20,000 writes/day.
    - Cloud TTS / Deepgram: Controlled caching and batch worker pool.
    - Firebase Hosting: ≤ 10 GB storage, 360 MB/day egress.
-4. **Continuous Verification**: Prior to merge, execute `bun x tsc --noEmit` and `bun run build`.
+4. **Continuous Verification**: Prior to merge, execute `bun test`, `bun x tsc --noEmit`, and `bun run build`. A green local run is necessary but not sufficient: the PR preview channel must be reviewed, and the production environment must be approved by a human.
+
+### 4.1 Known Release Blockers (must remain visible until resolved)
+
+These are pre-existing production risks, not optional follow-ups. Do not describe a release as production-ready while any remain open:
+
+1. **Provider credentials in the client/bundle**: Google TTS, Gemini, and Deepgram billable keys must be revoked/rotated and moved behind an authenticated, rate-limited backend proxy. A Firebase web API key may be public only when properly restricted; billable TTS keys are not client secrets.
+2. **Allow-all Firebase rules**: `firestore.rules` and `storage.rules` must require authentication/role-based authorization, pass emulator tests, and be verified in the deployed project. CI deploys Hosting only; rule deployment is a separate, reviewed step.
+3. **Destructive operational scripts**: untracked/one-off sync/upload scripts must not be committed or run without `--apply`, project-ID verification, dry-run diff, backup/export, bounded writes, and rollback instructions.
+4. **Noise and provenance**: `index.html` caching must be verified at the deployed URL; deployed asset hashes and rollback SHA must be recorded per release.
+
+### 4.2 Definition of Done & Release Provenance
+
+A change is done only when all of the following are attached to the work artifact:
+
+- [ ] Scope, acceptance criteria, and applicable skills recorded.
+- [ ] Red-green proof: failing test first (where behavior changed), then passing focused tests.
+- [ ] `bun test`, `bun x tsc --noEmit`, and `bun run build` pass; output included.
+- [ ] Independent code, security, and test review sign-offs with severity-labeled findings resolved or explicitly deferred.
+- [ ] Preview channel URL reviewed and approved by a human.
+- [ ] Branch/SHA, base SHA, CI run URL, deployed asset hash, and rollback target recorded.
+- [ ] No secrets, generated credentials, or destructive scripts added to the diff.
+- [ ] Migration/data changes have a dry-run diff, backup, and rollback path.
 
 ---
 
@@ -340,9 +367,10 @@ This repository mandates the **5-Phase Osmani Agent Team Lifecycle** for all non
    - Developer implements minimal, zero-bloat code to satisfy specification.
    - Follows project conventions: typed props, React hooks, `audioPlayer` singleton, Firestore single-doc schemas.
 3. **Phase 3: Verify Proof**
+   - Runs the full unit suite: `bun test`.
    - Runs static typechecking: `bun x tsc --noEmit`.
    - Runs production bundle compilation: `bun run build`.
-   - Verifies zero regression in uncommitted diffs.
+   - Verifies zero regression in uncommitted diffs and records exact command output.
 4. **Phase 4: Parallel 5-Axis Peer Review (MANDATORY)**
    - Dispatches independent review agents before shipping:
      - **Correctness & Architecture (`code-reviewer`)**: Audits against logic flows, sequence safety, and single-doc rules.
@@ -350,9 +378,10 @@ This repository mandates the **5-Phase Osmani Agent Team Lifecycle** for all non
      - **Security & Boundaries (`security-auditor`)**: Audits Firestore security rules, client storage, API key protection, and GCS bucket access.
      - **Test & Edge-Case Integrity (`test-engineer`)**: Audits clicker debouncing, cancellation promises, audio caching, and audio repeat loops.
 5. **Phase 5: Gated Ship**
-   - Resolves any blocking findings from the 5-axis review.
-   - Verifies CI/CD readiness (`.github/workflows/deploy-firebase.yml`).
-   - Documents state updates in changelog / commit message.
+   - Resolves any blocking findings from the 5-axis review, or records an explicit human-approved deferral.
+   - Verifies CI/CD readiness (`.github/workflows/deploy-firebase.yml`): quality job green, preview channel deployed, production environment protected.
+   - **Never pushes to `main`, merges, or deploys live without explicit human approval.** The approval must name the approver, the preview URL reviewed, the merge/deploy SHA, and the rollback target.
+   - Documents the release artifact: branch/SHA, base SHA, CI run URL, preview URL, deployed asset hash, Definition of Done checklist, and changelog/commit message.
 
 ### 6.2 Strict Orchestration Guardrails
 

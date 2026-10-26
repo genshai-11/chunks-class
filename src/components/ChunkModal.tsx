@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChunkItem, ChunkCategory } from '../types';
 import { X, Check, Volume2, Sparkles, Music, HelpCircle } from 'lucide-react';
 import { audioPlayer } from '../services/googleTtsService';
+import { buildChunkSavePayload } from '../utils/chunkEditor';
 
 interface ChunkModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const ChunkModal: React.FC<ChunkModalProps> = ({
   const [notes, setNotes] = useState(initialChunk?.notes || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,6 +41,7 @@ export const ChunkModal: React.FC<ChunkModalProps> = ({
       setNotes(initialChunk?.notes || '');
       setIsSaving(false);
       setIsPlayingAudio(false);
+      setSaveError(null);
     }
   }, [initialChunk, isOpen]);
 
@@ -79,22 +82,23 @@ export const ChunkModal: React.FC<ChunkModalProps> = ({
     if (!english.trim() || !vietnamese.trim()) return;
 
     setIsSaving(true);
+    setSaveError(null);
     try {
-      const chunkToSave: ChunkItem = {
-        ...(initialChunk || {}),
-        chunk_id: initialChunk?.chunk_id || `chunk_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        item_number: initialChunk?.item_number || 999,
+      const chunkToSave = buildChunkSavePayload(initialChunk, {
         category,
-        english: english.trim(),
-        vietnamese: vietnamese.trim(),
-        beat_prosody: beatProsody.trim() || null,
-        ipa: ipa.trim() || null,
-        speaker: speaker.trim() || null,
-        notes: notes.trim() || undefined,
-      };
+        english,
+        vietnamese,
+        beatProsody,
+        ipa,
+        speaker,
+        notes,
+      });
 
       await onSave(chunkToSave);
       onClose();
+    } catch (error) {
+      console.error('[ChunkModal] Failed to save chunk:', error);
+      setSaveError('Không thể lưu thay đổi. Vui lòng kiểm tra kết nối và thử lại.');
     } finally {
       setIsSaving(false);
     }
@@ -115,7 +119,9 @@ export const ChunkModal: React.FC<ChunkModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
+            disabled={isSaving}
+            aria-label="Đóng"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-5 h-5" />
           </button>
@@ -246,11 +252,22 @@ export const ChunkModal: React.FC<ChunkModalProps> = ({
           </div>
 
           {/* Action Buttons */}
+          {saveError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
+            >
+              {saveError}
+            </div>
+          )}
+
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E8E8EC]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 hover:bg-zinc-100 transition-all cursor-pointer"
+              disabled={isSaving}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 hover:bg-zinc-100 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
