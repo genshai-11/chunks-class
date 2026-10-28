@@ -30,7 +30,8 @@ import {
   Headphones,
   Trash2,
   CloudUpload,
-  RefreshCw
+  RefreshCw,
+  MoreHorizontal
 } from 'lucide-react';
 
 interface ScheduleViewProps {
@@ -104,6 +105,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const [isDeletingCohort, setIsDeletingCohort] = useState<boolean>(false);
   const [isSyncingCurriculum, setIsSyncingCurriculum] = useState<boolean>(false);
 
+  // Header Command Center Dropdown Menu
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
+  const headerMenuRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     setEditTitle(cohort.title || '');
     setEditTeacherId(cohort.teacher_id || 'teacher_genshai');
@@ -164,9 +169,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     setTimeout(() => setToast(null), 4000);
   }, []);
 
-  // Close quick action dropdown on outside click
+  // Close quick action and header dropdowns on outside click
   useEffect(() => {
-    const handleClickOutside = () => setActiveActionMenuSession(null);
+    const handleClickOutside = (event: MouseEvent) => {
+      setActiveActionMenuSession(null);
+      if (headerMenuRef.current && !headerMenuRef.current.contains(event.target as Node)) {
+        setIsHeaderMenuOpen(false);
+      }
+    };
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
@@ -1016,20 +1026,23 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans">
       {/* 1. Header Banner & Actions */}
-      <div className="bg-white rounded-2xl border border-[#E8E8EC] p-4 sm:p-5 shadow-2xs">
+      <div className="relative bg-white rounded-2xl border border-[#E8E8EC] p-4 sm:p-5 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-start xl:items-center justify-between gap-4">
-          <div className="space-y-1 min-w-0">
-            {/* Top Badge Row */}
-            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
-              <span className="text-[10px] sm:text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626] uppercase tracking-wider">
-                {totalSessions}-Session Track
+          <div className="space-y-1.5 min-w-0">
+            {/* Top Context Row */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs text-zinc-500 font-medium">
+              <span className="font-mono font-bold px-2 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626] text-[10px] sm:text-[11px] uppercase tracking-wider">
+                Level {cohort?.level_code?.replace('_', ' ') || 'B'} • {totalSessions} buổi
               </span>
-              <span className="text-[11px] sm:text-xs text-zinc-500 font-mono">
-                • Start Date: {cohort.start_date}
+              <span className="text-zinc-300 hidden sm:inline">•</span>
+              <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-zinc-600">
+                <Clock className="w-3 h-3 text-zinc-400 shrink-0" />
+                <span>{daysOfWeekText} ({startTimeText} – {endTimeText})</span>
               </span>
-              <span className="text-[11px] sm:text-xs font-mono font-bold px-2 sm:px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                <span>Audio: {readySessionsCount}/{totalSessions} Ready</span>
+              <span className="text-zinc-300">•</span>
+              <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-zinc-600">
+                <Calendar className="w-3 h-3 text-zinc-400 shrink-0" />
+                <span>Bắt đầu: {cohort.start_date || 'N/A'}</span>
               </span>
             </div>
 
@@ -1038,18 +1051,23 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               {cohort.title}
             </h1>
 
-            {/* Schedule Subtitle */}
-            <p className="text-xs sm:text-sm text-zinc-500 font-medium flex items-center gap-1.5 flex-wrap">
-              <span>Level {cohort?.level_code?.replace('_', ' ') || 'B'}</span>
-              <span>•</span>
-              <span>{daysOfWeekText}</span>
-              <span>({startTimeText} – {endTimeText})</span>
-            </p>
+            {/* Sub-status Metrics (Audio Readiness Pill + Progress Text) */}
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap pt-0.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                <span>Audio: {readySessionsCount}/{totalSessions} Ready</span>
+              </span>
+              <span className="text-xs text-zinc-500 font-medium inline-flex items-center gap-1.5">
+                <span>Tiến độ:</span>
+                <span className="font-mono font-bold text-zinc-900">{completedCount}/{totalSessions} buổi</span>
+                <span className="font-mono text-zinc-400 font-semibold">({progressPercent}%)</span>
+              </span>
+            </div>
           </div>
 
-          {/* Action Group: Primary CTA + Secondary Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap lg:justify-end gap-2 shrink-0">
-            {/* Primary Action (Launch Session X) */}
+          {/* Action Hub */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 w-full lg:w-auto">
+            {/* Hero CTA (Launch Session X) */}
             {inProgressSession && (
               <button
                 onClick={() => handleLaunchSession(inProgressSession.lesson_id, inProgressSession.session_number)}
@@ -1061,107 +1079,146 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               </button>
             )}
 
-            {/* Secondary Quick Action Group */}
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2 w-full sm:w-auto">
-              {/* Quick Sync with Cloud Curriculum */}
+            {/* Secondary Actions: Quick Sync + More Actions */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2 w-full sm:w-auto">
+              {/* Quick Action: ⚡ Đồng bộ */}
               <button
                 disabled={isSyncingCurriculum}
                 onClick={handleSyncWithCloudCurriculum}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 disabled:opacity-50"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 disabled:opacity-50 min-h-[38px]"
                 title="Đồng bộ buổi học của lớp với giáo trình Cloud Firestore mới nhất"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-amber-600 shrink-0 ${isSyncingCurriculum ? 'animate-spin' : ''}`} />
-                <span className="truncate">⚡ Đồng bộ Giáo trình</span>
+                <span className="truncate">⚡ Đồng bộ</span>
               </button>
 
-              {/* Audio Settings Button */}
-              <button
-                onClick={() => setIsAudioSettingsOpen(true)}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 hover:text-zinc-950 hover:border-zinc-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
-                title="Cài đặt Audio: Cấu hình giọng đọc Deepgram / Google Cloud, tốc độ & chế độ phát"
-              >
-                <Volume2 className="w-3.5 h-3.5 text-[#DC2626] shrink-0" />
-                <span className="truncate">Cài đặt Audio</span>
-              </button>
+              {/* More Actions Dropdown Menu Button */}
+              <div className="relative w-full sm:w-auto" ref={headerMenuRef}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsHeaderMenuOpen(prev => !prev);
+                  }}
+                  aria-haspopup="true"
+                  aria-expanded={isHeaderMenuOpen}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 hover:text-zinc-950 hover:border-zinc-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 min-h-[38px]"
+                  title="Các thao tác khác: Sửa lịch học, Cài đặt âm thanh, Tải audio lên Cloud, Xuất iCal"
+                >
+                  <MoreHorizontal className="w-4 h-4 text-zinc-600 shrink-0" />
+                  <span className="truncate">Thao tác</span>
+                  <ChevronDown className={`w-3 h-3 text-zinc-400 transition-transform duration-200 shrink-0 ${isHeaderMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
 
-              {/* Sync Cloud Audio (All Cached Sessions) */}
-              <button
-                disabled={isSyncingAllCloud}
-                onClick={handleSyncAllCachedSessionsToCloud}
-                className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
-                  isSyncingAllCloud 
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 cursor-wait'
-                    : 'border-emerald-200 bg-emerald-50/70 hover:bg-emerald-50 text-emerald-800 hover:border-emerald-300'
-                }`}
-                title={
-                  sessionsWithCachedCount > 0
-                    ? `Đồng bộ toàn bộ ${sessionsWithCachedCount} buổi đã có audio trong cache lên Firebase Storage`
-                    : 'Đồng bộ audio trong cache lên Firebase Storage'
-                }
-              >
-                {isSyncingAllCloud ? (
-                  <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin shrink-0" />
-                ) : (
-                  <CloudUpload className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                {/* Dropdown Menu Popover */}
+                {isHeaderMenuOpen && (
+                  <div
+                    className="absolute right-0 top-full mt-1.5 w-60 sm:w-64 bg-white rounded-xl shadow-xl border border-[#E8E8EC] py-1 z-40 font-sans animate-in fade-in zoom-in-95 duration-100"
+                    onClick={(e) => e.stopPropagation()}
+                    role="menu"
+                    aria-orientation="vertical"
+                  >
+                    {/* 1. Sửa lịch học */}
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
+                        setEditTitle(cohort.title);
+                        setEditStartDate(cohort.start_date || '2026-09-01');
+                        setEditDays(cohort.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri']);
+                        setEditStartTime(cohort.schedule_pattern?.start_time || '19:30');
+                        setEditEndTime(cohort.schedule_pattern?.end_time || '21:00');
+                        setIsEditModalOpen(true);
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs text-zinc-700 hover:bg-zinc-100 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Edit3 className="w-4 h-4 text-[#DC2626] shrink-0" />
+                      <div>
+                        <div className="font-bold">Sửa lịch học</div>
+                        <div className="text-[10px] text-zinc-400">Ngày bắt đầu, giờ học & thứ</div>
+                      </div>
+                    </button>
+
+                    {/* 2. Cài đặt âm thanh */}
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
+                        setIsAudioSettingsOpen(true);
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs text-zinc-700 hover:bg-zinc-100 flex items-center gap-2.5 transition-colors cursor-pointer border-t border-zinc-100"
+                    >
+                      <Volume2 className="w-4 h-4 text-[#DC2626] shrink-0" />
+                      <div>
+                        <div className="font-bold">Cài đặt âm thanh</div>
+                        <div className="text-[10px] text-zinc-400">Giọng đọc, tốc độ & chế độ phát</div>
+                      </div>
+                    </button>
+
+                    {/* 3. Tải audio lên Cloud */}
+                    <button
+                      role="menuitem"
+                      disabled={isSyncingAllCloud}
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
+                        handleSyncAllCachedSessionsToCloud();
+                      }}
+                      className={`w-full text-left px-3.5 py-2 text-xs flex items-center gap-2.5 transition-colors cursor-pointer border-t border-zinc-100 ${
+                        isSyncingAllCloud ? 'bg-emerald-50 text-emerald-700 cursor-wait' : 'text-zinc-700 hover:bg-zinc-100'
+                      }`}
+                    >
+                      {isSyncingAllCloud ? (
+                        <Loader2 className="w-4 h-4 text-emerald-600 animate-spin shrink-0" />
+                      ) : (
+                        <CloudUpload className="w-4 h-4 text-emerald-600 shrink-0" />
+                      )}
+                      <div>
+                        <div className="font-bold text-emerald-800">
+                          {isSyncingAllCloud 
+                            ? 'Đang đồng bộ Cloud...' 
+                            : sessionsWithCachedCount > 0 
+                              ? `Tải audio lên Cloud (${sessionsWithCachedCount})` 
+                              : 'Tải audio lên Cloud'}
+                        </div>
+                        <div className="text-[10px] text-emerald-600/80">Lưu audio trong cache lên Firebase Storage</div>
+                      </div>
+                    </button>
+
+                    {/* 4. Xuất iCal */}
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
+                        handleExportICS();
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs text-zinc-700 hover:bg-zinc-100 flex items-center gap-2.5 transition-colors cursor-pointer border-t border-zinc-100"
+                    >
+                      <Download className="w-4 h-4 text-zinc-500 shrink-0" />
+                      <div>
+                        <div className="font-bold">Xuất iCal</div>
+                        <div className="text-[10px] text-zinc-400">Đồng bộ Google / Apple Calendar</div>
+                      </div>
+                    </button>
+                  </div>
                 )}
-                <span className="truncate">
-                  {isSyncingAllCloud 
-                    ? 'Syncing Cloud...' 
-                    : sessionsWithCachedCount > 0 
-                      ? `Sync Cloud (${sessionsWithCachedCount})` 
-                      : 'Sync Cloud'}
-                </span>
-              </button>
-
-              {/* Edit Cohort Schedule */}
-              <button
-                onClick={() => {
-                  setEditTitle(cohort.title);
-                  setEditStartDate(cohort.start_date || '2026-09-01');
-                  setEditDays(cohort.schedule_pattern?.days_of_week || ['Mon', 'Wed', 'Fri']);
-                  setEditStartTime(cohort.schedule_pattern?.start_time || '19:30');
-                  setEditEndTime(cohort.schedule_pattern?.end_time || '21:00');
-                  setIsEditModalOpen(true);
-                }}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 hover:text-zinc-950 hover:border-zinc-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
-                title="Sửa lịch học: Thay đổi ngày bắt đầu, giờ học và tính lại lịch học"
-              >
-                <Edit3 className="w-3.5 h-3.5 text-[#DC2626] shrink-0" />
-                <span className="truncate">Sửa lịch học</span>
-              </button>
-
-              {/* Export iCal */}
-              <button
-                onClick={handleExportICS}
-                className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-700 hover:text-zinc-950 hover:border-zinc-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
-                title="Xuất iCal: Xuất file đồng bộ lịch (.ics) cho Google Calendar hoặc Apple Calendar"
-              >
-                <Download className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
-                <span className="truncate">Xuất iCal</span>
-              </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Progress Bar Section */}
-        <div className="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-[#E8E8EC]">
-          <div className="flex items-center justify-between gap-2 text-xs mb-2">
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <span className="font-semibold text-zinc-900">Tiến độ lớp học:</span>
-              <span className="font-mono text-[#DC2626] font-bold">
-                {completedCount}/{totalSessions} buổi
-              </span>
-            </div>
-            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-zinc-100 text-zinc-800 border border-zinc-200 shrink-0">
-              {progressPercent}%
-            </span>
-          </div>
-          <div className="w-full h-2 sm:h-2.5 bg-[#F1F1F4] rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-[#DC2626] rounded-full transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
+        {/* Seamless Integrated Progress Rail at bottom edge */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-1 sm:h-1.5 bg-[#F1F1F4] rounded-b-2xl overflow-hidden pointer-events-none"
+          title={`Tiến độ lớp học: ${completedCount}/${totalSessions} buổi (${progressPercent}%)`}
+          role="progressbar"
+          aria-valuenow={progressPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div 
+            className="h-full bg-[#DC2626] rounded-b-2xl transition-all duration-500 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
         </div>
       </div>
 
