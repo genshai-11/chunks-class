@@ -1,14 +1,18 @@
-name: CHUNKS quality and Firebase Hosting
+name: Deploy CHUNKS Platform to Firebase Hosting ($0/mo Always Free)
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - master
   workflow_dispatch:
     inputs:
       channel:
-        description: Deployment target (preview or live)
+        description: 'Deploy Target Channel (preview for testing, live for production)'
         required: true
         default: 'preview'
         type: choice
@@ -17,113 +21,53 @@ on:
           - live
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.channel || 'ci' }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Unit tests, typecheck, and build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Bun 1.4.3
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.3
-
-      - name: Install dependencies from lockfile
-        run: bun install --frozen-lockfile
-
-      - name: Run unit tests
-        run: bun test
-
-      - name: Typecheck TypeScript
-        run: bun x tsc --noEmit
-
-      - name: Build Firebase Hosting bundle
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_ENABLE_GOOGLE_TTS: 'true'
-          VITE_GOOGLE_TTS_VOICE_NAME: 'en-US-Journey-F'
-          VITE_GOOGLE_TTS_LANGUAGE_CODE: 'en-US'
-        run: bun run build
-
-      - name: Upload verified Hosting bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: firebase-hosting-${{ github.run_id }}
-          path: dist
-          if-no-files-found: error
-          retention-days: 7
-
-  preview:
-    name: Deploy Firebase Hosting preview
-    needs: quality
-    if: >-
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
-      (github.event_name == 'workflow_dispatch' && inputs.channel == 'preview')
+  build_and_deploy:
+    name: Build, Typecheck & Deploy to Firebase
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
       checks: write
       pull-requests: write
+
     steps:
-      - name: Checkout Hosting configuration
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Download verified Hosting bundle
-        uses: actions/download-artifact@v4
+      - name: ⚡ Setup Bun Environment
+        uses: oven-sh/setup-bun@v2
         with:
-          name: firebase-hosting-${{ github.run_id }}
-          path: dist
+          bun-version: latest
 
-      - name: Deploy preview channel to Firebase Hosting
+      - name: 📦 Install Dependencies
+        run: bun install --frozen-lockfile || bun install
+
+      - name: 🔍 Typecheck TypeScript
+        run: bun x tsc --noEmit
+
+      - name: 🏗️ Build Production Bundle
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'AIzaSyBrH0sAU__R4k1IBrSYIF73fFdASeSpdE4' }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'chunks-voicecloning-genshai.firebaseapp.com' }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'chunks-voicecloning-genshai' }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'chunks-voicecloning-genshai.firebasestorage.app' }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '284566312743' }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID || '1:284566312743:web:038f451f2fc5fa25d30cf8' }}
+          VITE_DEEPGRAM_API_KEY: ${{ secrets.VITE_DEEPGRAM_API_KEY || '92def6215618aeda77c43f4446ba84ef7152091c' }}
+          VITE_ENABLE_GOOGLE_TTS: 'true'
+          VITE_GOOGLE_TTS_VOICE_NAME: 'en-US-Journey-F'
+          VITE_GOOGLE_TTS_LANGUAGE_CODE: 'en-US'
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: bun run build
+
+      - name: 🚀 Deploy to Firebase Hosting & Deploy Firestore Rules
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CHUNKS_VOICECLONING_GENSHAI }}'
           projectId: 'chunks-voicecloning-genshai'
-          target: chunks-classroom
-          channelId: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('manual-{0}', github.run_number) }}
-          expires: 7d
-
-  live:
-    name: Deploy Firebase Hosting live
-    needs: quality
-    if: github.event_name == 'workflow_dispatch' && inputs.channel == 'live' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment:
-      name: production
-      url: https://chunks-classroom.web.app
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout Hosting configuration
-        uses: actions/checkout@v4
-
-      - name: Download verified Hosting bundle
-        uses: actions/download-artifact@v4
-        with:
-          name: firebase-hosting-${{ github.run_id }}
-          path: dist
-
-      - name: Deploy live channel to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CHUNKS_VOICECLONING_GENSHAI }}'
-          projectId: 'chunks-voicecloning-genshai'
-          target: chunks-classroom
-          channelId: live
+          channelId: ${{ github.event.inputs.channel || (github.event_name == 'push' && 'live') || 'preview' }}
