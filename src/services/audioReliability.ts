@@ -8,6 +8,17 @@ const VIETNAMESE_DIACRITICS = /[\u00C0-\u1EF9\u0102\u0103\u0110\u0111\u0128\u012
 const CANONICAL_AUDIO_HOST = 'storage.googleapis.com';
 const CANONICAL_AUDIO_PATH_PREFIX = '/chunks-voicecloning-genshai.firebasestorage.app/chunks-audio/';
 
+/**
+ * Level A English URLs currently do not exist on GCS (except chunk_la_d4_0110_en.mp3).
+ * Guarding against them avoids 404 network errors, CORS noise, and 400-1100ms dead playback latency.
+ */
+export function isPhantomLevelAEn(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  if (url.includes('chunk_la_d4_0110_en.mp3')) return false;
+  const isLevelA = url.includes('/chunks-audio/level_a/') || url.includes('/chunks-audio/human/level_a/');
+  return isLevelA && url.endsWith('_en.mp3');
+}
+
 export function resolveAudioLanguage(
   text: string,
   voiceName?: string | null,
@@ -26,6 +37,7 @@ export function resolveAudioLanguage(
 
 export function isCanonicalAudioUrl(url?: string | null): url is string {
   if (!url) return false;
+  if (isPhantomLevelAEn(url)) return false;
   try {
     const parsed = new URL(url.trim());
     const allowedCacheBuster = parsed.search === '' || /^\?v=[\w.-]+$/.test(parsed.search);

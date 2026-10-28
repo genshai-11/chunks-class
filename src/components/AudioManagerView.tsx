@@ -27,6 +27,7 @@ import {
   getMissingOnlyUrlsToVerify,
   getPreferredAudioUrl,
   hasUsableAudioUrl,
+  isPhantomLevelAEn,
   type AudioUrlState,
 } from '../services/audioReliability';
 import { buildChunkSavePayload } from '../utils/chunkEditor';
@@ -115,7 +116,7 @@ interface LessonAudioStatus {
 const createBaselineStatuses = (lessonList: LessonDoc[]): LessonAudioStatus[] => {
   return lessonList.map(lesson => {
     const chunks = lesson.chunks || [];
-    const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+    const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder') && !isPhantomLevelAEn(c.audio_url))).length;
     const gcsViCount = chunks.filter(c => Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'))).length;
     return {
       lessonId: lesson.id,
@@ -519,7 +520,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const isAllLessonsGcsSynced = lessons.length > 0 && lessons.every(lesson => {
     const chunks = lesson.chunks || [];
     if (chunks.length === 0) return false;
-    return chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder')));
+    return chunks.every(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder') && !isPhantomLevelAEn(c.audio_url)));
   });
 
   // Load available courses on mount
@@ -1530,7 +1531,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const totalEnCached = useMemo(() => {
     if (statusList.length > 0) return statusList.reduce((sum, s) => sum + s.enCached, 0);
     return lessons.reduce((sum, l) => {
-      const gcs = (l.chunks || []).filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+      const gcs = (l.chunks || []).filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder') && !isPhantomLevelAEn(c.audio_url))).length;
       return sum + gcs;
     }, 0);
   }, [statusList, lessons]);
@@ -1543,7 +1544,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
   const totalGcsMaster = useMemo(() => {
     if (statusList.length > 0) return statusList.reduce((sum, s) => sum + s.gcsCount, 0);
     return lessons.reduce((sum, l) => {
-      const gcs = (l.chunks || []).filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+      const gcs = (l.chunks || []).filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder') && !isPhantomLevelAEn(c.audio_url))).length;
       return sum + gcs;
     }, 0);
   }, [statusList, lessons]);
@@ -2806,7 +2807,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                 filteredLessons.map((lesson) => {
                   const lessonDoc = lesson;
                   const chunks = lesson.chunks || [];
-                  const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+                  const gcsCount = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder') && !isPhantomLevelAEn(c.audio_url))).length;
                   const gcsViCount = chunks.filter(c => Boolean(c.audio_url_vi && c.audio_url_vi.startsWith('http'))).length;
                   const item = statusMap.get(lesson.id) || {
                     lessonId: lesson.id,
@@ -3448,7 +3449,7 @@ export const AudioManagerView: React.FC<AudioManagerViewProps> = ({
                     </h3>
                     {(() => {
                       const chunks = inspectingLesson.chunks || [];
-                      const gcs = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder'))).length;
+                      const gcs = chunks.filter(c => Boolean(c.audio_url && c.audio_url.startsWith('http') && !c.audio_url.includes('placeholder') && !isPhantomLevelAEn(c.audio_url))).length;
                       if (chunks.length > 0 && gcs === chunks.length) {
                         return (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">

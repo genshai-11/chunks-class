@@ -6,11 +6,12 @@ import {
   getAudioUrlCandidates,
   getPreferredAudioUrl,
   hasUsableAudioUrl,
+  isPhantomLevelAEn,
   resolveAudioLanguage,
   type AudioUrlState,
 } from './audioReliability';
 
-export { sanitizeSpeechText };
+export { sanitizeSpeechText, isPhantomLevelAEn };
 
 export interface VoiceOption {
   id: string;
@@ -638,12 +639,6 @@ export function normalizeLanguageMode(mode?: LanguageMode): 'EN_ONLY' | 'VI_ONLY
  * Level A English URLs currently do not exist on GCS (except chunk_la_d4_0110_en.mp3).
  * Guarding against them avoids 404 network errors, CORS noise, and 400-1100ms dead playback latency.
  */
-export function isPhantomLevelAEn(url?: string | null): boolean {
-  if (!url || typeof url !== 'string') return false;
-  if (url.includes('chunk_la_d4_0110_en.mp3')) return false;
-  const isLevelA = url.includes('/chunks-audio/level_a/') || url.includes('/chunks-audio/human/level_a/');
-  return isLevelA && url.endsWith('_en.mp3');
-}
 
 const DB_NAME = 'chunks_audio_db';
 const DB_VERSION = 1;
