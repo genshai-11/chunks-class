@@ -81,7 +81,7 @@ async function seedLevelAToFirestore() {
     };
 
     const targetRef = doc(db, 'lessons', rawLesson.id);
-    await setDoc(targetRef, sanitizeForFirestore(cleanLessonData));
+    await setDoc(targetRef, sanitizeForFirestore(cleanLessonData), { merge: true });
 
     totalCommittedChunks += rawLesson.chunks.length;
     console.log(

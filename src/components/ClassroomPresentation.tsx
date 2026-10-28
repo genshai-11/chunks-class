@@ -822,7 +822,7 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
             setActiveSpeechStep(step);
           }
         },
-        targetChunk.audio_url_vi || null,
+        targetChunk.audio_url_human_vi || targetChunk.audio_url_vi || null,
         targetChunk
       );
     } catch (err) {

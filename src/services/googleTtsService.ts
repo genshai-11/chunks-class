@@ -1816,15 +1816,42 @@ class AudioPlayService {
     const pref = this.preferredAudioSource;
 
     try {
+      // -----------------------------------------------------------------------
+      // VIETNAMESE HUMAN STUDIO AUDIO PRIORITY:
+      // When language === 'vi', authentic human studio recordings exist and must
+      // strictly be prioritized over machine TTS (unless explicitly forcing TTS).
+      // -----------------------------------------------------------------------
+      if (language === 'vi' && !forceCloudTts) {
+        const viHumanUrl = chunk
+          ? (chunk.audio_url_human_vi || chunk.audio_url_vi)
+          : (permanentAudioUrl && permanentAudioUrl.startsWith('http') ? permanentAudioUrl : null);
+
+        if (
+          viHumanUrl &&
+          viHumanUrl.startsWith('http') &&
+          !viHumanUrl.includes('placeholder') &&
+          !viHumanUrl.includes('chunks-mirror-audio-284566312743') &&
+          !isPhantomLevelAEn(viHumanUrl)
+        ) {
+          if (sequence !== this.activeSequenceId) return;
+          try {
+            this.setLastSource('GCS_MASTER');
+            await this.playUrl(viHumanUrl, speed);
+            return;
+          } catch (humanPlayErr) {
+            console.warn('[AudioPlayer] Human studio Vietnamese playback failed, proceeding to fallback:', humanPlayErr);
+          }
+        }
+      }
+
       if (pref === 'human') {
         // ---------------------------------------------------------------------
         // HUMAN MODE:
         // 1. Try Human Studio Voice first
         // ---------------------------------------------------------------------
         const humanUrl = chunk
-          ? (language === 'vi' ? chunk.audio_url_human_vi : chunk.audio_url_human)
+          ? (language === 'vi' ? (chunk.audio_url_human_vi || chunk.audio_url_vi) : chunk.audio_url_human)
           : (permanentAudioUrl && (permanentAudioUrl.includes('/human/') || !forceCloudTts) ? permanentAudioUrl : null);
-
         if (humanUrl && humanUrl.startsWith('http') && !humanUrl.includes('placeholder') && !humanUrl.includes('chunks-mirror-audio-284566312743') && !isPhantomLevelAEn(humanUrl)) {
           if (sequence !== this.activeSequenceId) return;
           try {
@@ -2053,7 +2080,7 @@ class AudioPlayService {
       speed,
       repeatCount,
       onStepChange,
-      chunk.audio_url_vi || null,
+      chunk.audio_url_human_vi || chunk.audio_url_vi || null,
       chunk
     );
   }
