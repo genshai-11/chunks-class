@@ -9,14 +9,11 @@ const CANONICAL_AUDIO_HOST = 'storage.googleapis.com';
 const CANONICAL_AUDIO_PATH_PREFIX = '/chunks-voicecloning-genshai.firebasestorage.app/chunks-audio/';
 
 /**
- * Level A English URLs currently do not exist on GCS (except chunk_la_d4_0110_en.mp3).
- * Guarding against them avoids 404 network errors, CORS noise, and 400-1100ms dead playback latency.
+ * Level A English audio files are permanently uploaded to GCS under /chunks-audio/level_a/level_a_day_X/.
+ * Legacy guard returns false since all Level A English chunks (Days 1..15) now exist on GCS.
  */
-export function isPhantomLevelAEn(url?: string | null): boolean {
-  if (!url || typeof url !== 'string') return false;
-  if (url.includes('chunk_la_d4_0110_en.mp3')) return false;
-  const isLevelA = url.includes('/chunks-audio/level_a/') || url.includes('/chunks-audio/human/level_a/');
-  return isLevelA && url.endsWith('_en.mp3');
+export function isPhantomLevelAEn(_url?: string | null): boolean {
+  return false;
 }
 
 export function resolveAudioLanguage(
