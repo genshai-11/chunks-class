@@ -634,6 +634,17 @@ export function normalizeLanguageMode(mode?: LanguageMode): 'EN_ONLY' | 'VI_ONLY
   return 'EN_THEN_VI';
 }
 
+/**
+ * Level A English URLs currently do not exist on GCS (except chunk_la_d4_0110_en.mp3).
+ * Guarding against them avoids 404 network errors, CORS noise, and 400-1100ms dead playback latency.
+ */
+export function isPhantomLevelAEn(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  if (url.includes('chunk_la_d4_0110_en.mp3')) return false;
+  const isLevelA = url.includes('/chunks-audio/level_a/') || url.includes('/chunks-audio/human/level_a/');
+  return isLevelA && url.endsWith('_en.mp3');
+}
+
 const DB_NAME = 'chunks_audio_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'audio_blobs';
@@ -1392,6 +1403,7 @@ class AudioPlayService {
     if (!url || !url.startsWith('http')) return false;
     // Immediately reject unverified / non-existent buckets to avoid console CORS errors
     if (url.includes('chunks-mirror-audio-284566312743')) return false;
+    if (isPhantomLevelAEn(url)) return false;
     if (!url.includes('chunks-voicecloning-genshai.firebasestorage.app') &&
         !url.includes('firebasestorage.googleapis.com') &&
         !url.includes('storage.googleapis.com')) {
@@ -1818,7 +1830,7 @@ class AudioPlayService {
           ? (language === 'vi' ? chunk.audio_url_human_vi : chunk.audio_url_human)
           : (permanentAudioUrl && (permanentAudioUrl.includes('/human/') || !forceCloudTts) ? permanentAudioUrl : null);
 
-        if (humanUrl && humanUrl.startsWith('http') && !humanUrl.includes('placeholder') && !humanUrl.includes('chunks-mirror-audio-284566312743')) {
+        if (humanUrl && humanUrl.startsWith('http') && !humanUrl.includes('placeholder') && !humanUrl.includes('chunks-mirror-audio-284566312743') && !isPhantomLevelAEn(humanUrl)) {
           if (sequence !== this.activeSequenceId) return;
           try {
             this.setLastSource('GCS_MASTER');
@@ -1834,7 +1846,7 @@ class AudioPlayService {
           ? (language === 'vi' ? (chunk.audio_url_tts_vi || chunk.audio_url_vi) : (chunk.audio_url_tts || chunk.audio_url))
           : permanentAudioUrl;
 
-        if (fallbackUrl && fallbackUrl.startsWith('http') && fallbackUrl !== humanUrl && !fallbackUrl.includes('placeholder') && !fallbackUrl.includes('chunks-mirror-audio-284566312743')) {
+        if (fallbackUrl && fallbackUrl.startsWith('http') && fallbackUrl !== humanUrl && !fallbackUrl.includes('placeholder') && !fallbackUrl.includes('chunks-mirror-audio-284566312743') && !isPhantomLevelAEn(fallbackUrl)) {
           if (sequence !== this.activeSequenceId) return;
           try {
             this.setLastSource('GCS_MASTER');
@@ -1885,7 +1897,7 @@ class AudioPlayService {
           ? (language === 'vi' ? (chunk.audio_url_tts_vi || (!chunk.audio_url_vi?.includes('/human/') ? chunk.audio_url_vi : null)) : (chunk.audio_url_tts || (!chunk.audio_url?.includes('/human/') ? chunk.audio_url : null)))
           : (!permanentAudioUrl?.includes('/human/') ? permanentAudioUrl : null);
 
-        if (!forceCloudTts && ttsUrl && ttsUrl.startsWith('http') && !ttsUrl.includes('placeholder') && !ttsUrl.includes('chunks-mirror-audio-284566312743')) {
+        if (!forceCloudTts && ttsUrl && ttsUrl.startsWith('http') && !ttsUrl.includes('placeholder') && !ttsUrl.includes('chunks-mirror-audio-284566312743') && !isPhantomLevelAEn(ttsUrl)) {
           if (sequence !== this.activeSequenceId) return;
           try {
             this.setLastSource('GCS_MASTER');

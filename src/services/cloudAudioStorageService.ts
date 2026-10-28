@@ -2,7 +2,7 @@ import { storage } from './firebase';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { ChunkItem, LessonDoc, ImprovPackage, ImprovHint, ImprovItem } from '../types';
 import { updateLessonChunks } from './firestoreService';
-import { audioPlayer } from './googleTtsService';
+import { audioPlayer, isPhantomLevelAEn } from './googleTtsService';
 import { sanitizeSpeechText } from './deepgramTtsService';
 import { curriculumRegistry } from './curriculumRegistry';
 import { saveImprovPackage, getAllImprovPackages } from './improvService';
@@ -170,7 +170,7 @@ export async function syncLessonCachedAudioToCloud(
 
     // 1. Sync English if requested and (chunk lacks permanent audio_url or forceOverwrite is true)
     if (shouldSyncEn && chunk.english) {
-      const needsEn = forceOverwrite || !chunk.audio_url || !chunk.audio_url.startsWith('http') || chunk.audio_url.includes('placeholder');
+      const needsEn = forceOverwrite || !chunk.audio_url || !chunk.audio_url.startsWith('http') || chunk.audio_url.includes('placeholder') || isPhantomLevelAEn(chunk.audio_url);
       if (needsEn) {
         let cachedEn = await audioPlayer.getCachedAudioAsync(chunk.english, options?.voiceEn);
         if (!cachedEn) {

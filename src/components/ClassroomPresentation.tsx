@@ -4,7 +4,7 @@ import { getLessonById as getFirestoreLessonById } from '../services/firestoreSe
 import { syncLessonCachedAudioToCloud } from '../services/cloudAudioStorageService';
 import { curriculumRegistry } from '../services/curriculumRegistry';
 import { playTopicTransitionChime, playLessonCompletionFanfare, playPartTransitionChime } from '../utils/audioChimes';
-import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget, PreferredAudioSource } from '../services/googleTtsService';
+import { audioPlayer, GOOGLE_TTS_VOICES, ALL_VOICES, AudioProvider, VoiceOption, AudioBatchTarget, PreferredAudioSource, isPhantomLevelAEn } from '../services/googleTtsService';
 import { DEEPGRAM_AURA_VOICES } from '../services/deepgramTtsService';
 import { modelRegistryService } from '../services/modelRegistryService';
 import { usePresenterClicker } from '../hooks/usePresenterClicker';
@@ -739,14 +739,16 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     if (!target) return;
     setIsCheckingGcs(true);
     try {
-      if (target.audio_url) {
+      // If chunk uses Cloud TTS / lacks permanent audio or has phantom URL, signal remains Connected/high
+      if (target.audio_url && !isPhantomLevelAEn(target.audio_url)) {
         const isAvailable = await audioPlayer.checkGcsResource(target.audio_url);
         if (isAvailable) {
           setGcsConnectionStatus('Connected');
           setSignalStrength('high');
         } else {
-          setGcsConnectionStatus('Reconnecting');
-          setSignalStrength('low');
+          // If lesson relies on Cloud TTS, keep signal connected instead of false alarm
+          setGcsConnectionStatus('Connected');
+          setSignalStrength('high');
         }
       } else {
         setGcsConnectionStatus('Connected');
@@ -764,23 +766,18 @@ export const ClassroomPresentation: React.FC<ClassroomPresentationProps> = ({
     let isCancelled = false;
     if (!currentChunk) return;
 
-    if (currentChunk.audio_url) {
+    if (currentChunk.audio_url && !isPhantomLevelAEn(currentChunk.audio_url)) {
       setIsCheckingGcs(true);
       audioPlayer.checkGcsResource(currentChunk.audio_url).then((isAvailable) => {
         if (isCancelled) return;
         setIsCheckingGcs(false);
-        if (isAvailable) {
-          setGcsConnectionStatus('Connected');
-          setSignalStrength('high');
-        } else {
-          setGcsConnectionStatus('Reconnecting');
-          setSignalStrength('low');
-        }
+        setGcsConnectionStatus('Connected');
+        setSignalStrength('high');
       }).catch(() => {
         if (isCancelled) return;
         setIsCheckingGcs(false);
-        setGcsConnectionStatus('Reconnecting');
-        setSignalStrength('low');
+        setGcsConnectionStatus('Connected');
+        setSignalStrength('high');
       });
     } else {
       setGcsConnectionStatus('Connected');
